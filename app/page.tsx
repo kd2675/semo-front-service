@@ -2,30 +2,39 @@
 
 import { useState, useEffect } from 'react';
 import Image from "next/image";
-import axios from 'axios';
+import {
+  clearAccessToken,
+  ensureAccessToken,
+  logout,
+} from './lib/auth';
 
 export default function Home() {
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
 
   useEffect(() => {
-    const token = localStorage.getItem('accessToken');
-    setIsLoggedIn(!!token);
+    let cancelled = false;
+
+    const bootstrap = async () => {
+      const token = await ensureAccessToken();
+      if (!cancelled) {
+        setIsLoggedIn(Boolean(token));
+      }
+    };
+
+    void bootstrap();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const handleSignOut = async () => {
-    const token = localStorage.getItem('accessToken');
-    
     try {
-      await axios.post('http://localhost:8080/auth/logout', {}, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        },
-        withCredentials: true
-      });
+      await logout();
     } catch (error) {
       console.error('Logout failed:', error);
     } finally {
-      localStorage.removeItem('accessToken');
+      clearAccessToken();
       setIsLoggedIn(false);
       window.location.reload();
     }

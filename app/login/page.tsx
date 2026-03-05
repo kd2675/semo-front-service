@@ -1,23 +1,46 @@
 'use client';
 
-import { useEffect } from 'react';
+import { Suspense, useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
+import { ensureAccessToken, setAccessToken } from '../lib/auth';
 
-export default function LoginPage() {
+const GATEWAY_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080';
+
+function LoginPageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
   useEffect(() => {
-    const token = searchParams.get('token');
-    if (token) {
-      localStorage.setItem('accessToken', token);
-      router.push('/');
-    }
+    let cancelled = false;
+
+    const bootstrap = async () => {
+      const token = searchParams.get('token');
+      if (token) {
+        setAccessToken(token);
+        router.push('/');
+        return;
+      }
+
+      const restoredToken = await ensureAccessToken();
+      if (!cancelled && restoredToken) {
+        router.push('/');
+      }
+    };
+
+    void bootstrap();
+
+    return () => {
+      cancelled = true;
+    };
   }, [searchParams, router]);
 
   const handleNaverLogin = () => {
-    window.location.href = 'http://localhost:8080/oauth2/authorize/naver';
+    window.location.href = `${GATEWAY_BASE_URL}/oauth2/authorize/naver-semo`;
+  };
+
+  const handleKakaoLogin = () => {
+    window.location.href = `${GATEWAY_BASE_URL}/oauth2/authorize/kakao-semo`;
   };
 
   return (
@@ -58,6 +81,12 @@ export default function LoginPage() {
             />
             <span>Login with Naver</span>
           </button>
+          <button
+            onClick={handleKakaoLogin}
+            className="group relative flex w-full items-center justify-center gap-3 rounded-lg border border-transparent bg-[#FEE500] py-3 px-4 text-lg font-semibold text-[#191919] transition-all duration-300 ease-in-out hover:bg-[#FEE500]/90 focus:outline-none focus:ring-2 focus:ring-[#FEE500] focus:ring-offset-2 dark:focus:ring-offset-gray-800"
+          >
+            <span>Login with Kakao</span>
+          </button>
         </div>
 
         <p className="text-center text-xs text-gray-500 dark:text-gray-400">
@@ -65,5 +94,13 @@ export default function LoginPage() {
         </p>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-gray-50 dark:bg-gray-900" />}>
+      <LoginPageContent />
+    </Suspense>
   );
 }
