@@ -1,29 +1,48 @@
 'use client';
 
-import { useEffect } from 'react';
+import { Suspense, useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
+import {
+  beginOAuthLogin,
+  clearAuthTokens,
+  getAccessToken,
+  refreshAccessToken,
+} from '../lib/auth';
 
-export default function LoginPage() {
+function LoginPageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
   useEffect(() => {
-    const token = searchParams.get('token');
-    if (token) {
-      localStorage.setItem('accessToken', token);
+    const oauth = searchParams.get('oauth') === '1';
+    let active = true;
+    (async () => {
+      let accessToken = getAccessToken();
+      if (oauth || !accessToken) {
+        accessToken = await refreshAccessToken();
+      }
+      if (!active || !accessToken) {
+        if (oauth) {
+          clearAuthTokens();
+        }
+        return;
+      }
       router.push('/');
-    }
+    })();
+
+    return () => {
+      active = false;
+    };
   }, [searchParams, router]);
 
-  const handleNaverLogin = () => {
-    window.location.href = 'http://localhost:8080/oauth2/authorize/naver';
+  const handleNaverLogin = async () => {
+    await beginOAuthLogin('naver');
   };
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-gray-50 dark:bg-gray-900">
       <div className="w-full max-w-md space-y-8 rounded-2xl bg-white p-8 shadow-lg dark:bg-gray-800 md:p-10">
-        
         <div className="text-center">
           <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white">
             Welcome to Semo
@@ -65,5 +84,13 @@ export default function LoginPage() {
         </p>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-gray-50 dark:bg-gray-900" />}>
+      <LoginPageContent />
+    </Suspense>
   );
 }

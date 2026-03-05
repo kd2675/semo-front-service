@@ -3,29 +3,46 @@
 import { useState, useEffect } from 'react';
 import Image from "next/image";
 import axios from 'axios';
+import { clearAuthTokens, getAccessToken, refreshAccessToken } from './lib/auth';
+
+const AUTH_BASE_URL =
+  process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:8080';
 
 export default function Home() {
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
 
   useEffect(() => {
-    const token = localStorage.getItem('accessToken');
-    setIsLoggedIn(!!token);
+    let active = true;
+    (async () => {
+      let token = getAccessToken();
+      if (!token) {
+        token = await refreshAccessToken();
+      }
+      if (active) {
+        setIsLoggedIn(Boolean(token));
+      }
+    })();
+    return () => {
+      active = false;
+    };
   }, []);
 
   const handleSignOut = async () => {
-    const token = localStorage.getItem('accessToken');
+    const token = getAccessToken();
     
     try {
-      await axios.post('http://localhost:8080/auth/logout', {}, {
-        headers: {
-          'Authorization': `Bearer ${token}`
+      await axios.post(
+        `${AUTH_BASE_URL}/auth/logout`,
+        {},
+        {
+          headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+          withCredentials: true,
         },
-        withCredentials: true
-      });
+      );
     } catch (error) {
       console.error('Logout failed:', error);
     } finally {
-      localStorage.removeItem('accessToken');
+      clearAuthTokens();
       setIsLoggedIn(false);
       window.location.reload();
     }
