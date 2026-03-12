@@ -1,37 +1,10 @@
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080";
+import { postJson } from "@/app/lib/api";
+import { emitAuthChanged, emitAuthExpired } from "@/app/lib/authEvents";
+import type { LoginResponse, AuthUser } from "@/app/types/auth";
 
+const TOKEN_EXPIRY_LEEWAY_SECONDS = 300;
 let accessTokenMemory: string | null = null;
 let refreshInFlight: Promise<string | null> | null = null;
-
-type LoginPayload = {
-  accessToken?: string;
-};
-
-type ResponseEnvelope<T> = {
-  success?: boolean;
-  data?: T;
-};
-
-function resolveAccessToken(payload: unknown): string | null {
-  if (!payload || typeof payload !== "object") {
-    return null;
-  }
-
-  const record = payload as Record<string, unknown>;
-  if (typeof record.accessToken === "string") {
-    return record.accessToken;
-  }
-
-  const data = record.data;
-  if (data && typeof data === "object") {
-    const typed = data as LoginPayload;
-    if (typeof typed.accessToken === "string") {
-      return typed.accessToken;
-    }
-  }
-
-  return null;
-}
 
 export function getAccessToken(): string | null {
   return accessTokenMemory;
@@ -39,42 +12,116 @@ export function getAccessToken(): string | null {
 
 export function setAccessToken(token: string): void {
   accessTokenMemory = token;
+  emitAuthChanged();
 }
 
 export function clearAccessToken(): void {
   accessTokenMemory = null;
+  emitAuthChanged();
+}
+
+function decodeBase64Url(value: string): string | null {
+  try {
+    const normalized = value.replace(/-/g, "+").replace(/_/g, "/");
+    const padded = normalized + "=".repeat((4 - (normalized.length % 4)) % 4);
+    return atob(padded);
+  } catch {
+    return null;
+  }
+}
+
+export function getUserFromToken(token?: string | null): AuthUser | null {
+  const rawToken = token ?? getAccessToken();
+  if (!rawToken) {
+    return null;
+  }
+
+  const parts = rawToken.split(".");
+  if (parts.length < 2) {
+    return null;
+  }
+
+  const payload = decodeBase64Url(parts[1]);
+  if (!payload) {
+    return null;
+  }
+
+  try {
+    const parsed = JSON.parse(payload) as Record<string, unknown>;
+    const rawUserKey = parsed.userKey;
+    const userKey = typeof rawUserKey === "string" ? rawUserKey : undefined;
+
+    return {
+      username: typeof parsed.sub === "string" ? parsed.sub : undefined,
+      userKey,
+      role: typeof parsed.role === "string" ? parsed.role : undefined,
+      exp: typeof parsed.exp === "number" ? parsed.exp : undefined,
+    };
+  } catch {
+    return null;
+  }
+}
+
+export function normalizeRole(role?: string | null): string | null {
+  if (!role) {
+    return null;
+  }
+
+  const normalized = role.trim().toUpperCase();
+  return normalized.startsWith("ROLE_") ? normalized.slice(5) : normalized;
+}
+
+export function isUserRole(role?: string | null): boolean {
+  return normalizeRole(role) === "USER";
+}
+
+export function isTokenExpired(
+  exp?: number,
+  leewaySeconds = TOKEN_EXPIRY_LEEWAY_SECONDS,
+): boolean {
+  if (!exp) {
+    return false;
+  }
+
+  const now = Math.floor(Date.now() / 1000);
+  return exp <= now + leewaySeconds;
+}
+
+export function scheduleTokenExpiry(
+  onExpire: () => void,
+  exp?: number,
+  leewaySeconds = TOKEN_EXPIRY_LEEWAY_SECONDS,
+): () => void {
+  if (!exp) {
+    return () => undefined;
+  }
+
+  const now = Math.floor(Date.now() / 1000);
+  const delayMs = Math.max((exp - now - leewaySeconds) * 1000, 0);
+  const timeoutId = window.setTimeout(onExpire, delayMs);
+  return () => window.clearTimeout(timeoutId);
+}
+
+export type AuthExpireReason = "expired" | "refresh_failed";
+
+export function notifyAuthExpired(reason: AuthExpireReason = "expired"): void {
+  emitAuthExpired(reason);
+}
+
+export async function logout(): Promise<void> {
+  const token = getAccessToken();
+  const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
+  await postJson<void>("/auth/logout", {}, headers);
 }
 
 async function requestRefreshAccessToken(): Promise<string | null> {
-  const response = await fetch(`${API_BASE}/auth/refresh`, {
-    method: "POST",
-    credentials: "include",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({}),
-  });
-
-  if (!response.ok) {
+  const result = await postJson<LoginResponse>("/auth/refresh", {});
+  if (!result.ok || !result.data?.accessToken) {
     return null;
   }
 
-  const text = await response.text();
-  let parsed: unknown = null;
-  if (text) {
-    try {
-      parsed = JSON.parse(text);
-    } catch {
-      parsed = null;
-    }
-  }
-  const accessToken = resolveAccessToken(parsed as ResponseEnvelope<LoginPayload>);
-  if (!accessToken) {
-    return null;
-  }
-
-  setAccessToken(accessToken);
-  return accessToken;
+  setAccessToken(result.data.accessToken);
+  return result.data.accessToken;
 }
 
 export async function refreshAccessToken(): Promise<string | null> {
@@ -88,22 +135,16 @@ export async function refreshAccessToken(): Promise<string | null> {
   return refreshInFlight;
 }
 
-export async function ensureAccessToken(): Promise<string | null> {
+export async function bootstrapAccessToken(): Promise<string | null> {
   if (accessTokenMemory) {
     return accessTokenMemory;
   }
   return refreshAccessToken();
 }
 
-export async function logout(): Promise<void> {
-  const token = getAccessToken();
-  await fetch(`${API_BASE}/auth/logout`, {
-    method: "POST",
-    credentials: "include",
-    headers: {
-      "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
-    body: JSON.stringify({}),
-  });
+export async function ensureAccessToken(): Promise<string | null> {
+  if (accessTokenMemory) {
+    return accessTokenMemory;
+  }
+  return bootstrapAccessToken();
 }

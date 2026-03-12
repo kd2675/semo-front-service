@@ -1,26 +1,139 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background-light: #f6f6f8;
+  --foreground: #0f172a;
+  --muted: #5b6474;
+  --line: rgba(15, 23, 42, 0.08);
+  --primary: #135bec;
+  --naver: #03c75a;
+  --kakao: #fee500;
+  --kakao-text: #191919;
+  --radius-lg: 0.5rem;
+  --radius-xl: 0.75rem;
+  --shadow: 0 28px 60px rgba(19, 91, 236, 0.12);
+  --shadow-soft: 0 14px 30px rgba(15, 23, 42, 0.08);
+  --font-display:
+    var(--font-semo-display), "Pretendard", "Noto Sans KR", "Apple SD Gothic Neo", sans-serif;
 }
 
 @theme inline {
-  --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-display);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  min-height: 100%;
 }
 
 body {
-  background: var(--background);
+  min-height: max(884px, 100dvh);
+  background:
+    radial-gradient(circle at top left, rgba(19, 91, 236, 0.08), transparent 32%),
+    radial-gradient(circle at bottom right, rgba(19, 91, 236, 0.08), transparent 28%),
+    var(--background-light);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-display);
+  letter-spacing: -0.015em;
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+a {
+  color: inherit;
+}
+
+.material-symbols-outlined {
+  font-family: "Material Symbols Outlined";
+  font-weight: 400;
+  font-style: normal;
+  font-size: 24px;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  direction: ltr;
+  -webkit-font-smoothing: antialiased;
+  font-variation-settings:
+    "FILL" 0,
+    "wght" 400,
+    "GRAD" 0,
+    "opsz" 24;
+}
+
+.semo-panel {
+  border: 1px solid var(--line);
+  border-radius: 1.5rem;
+  background: rgba(255, 255, 255, 0.74);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(20px);
+}
+
+.semo-orb {
+  position: fixed;
+  width: 16rem;
+  height: 16rem;
+  border-radius: 9999px;
+  background: rgba(19, 91, 236, 0.08);
+  filter: blur(60px);
+  pointer-events: none;
+}
+
+.semo-orb-left {
+  left: -6rem;
+  bottom: -6rem;
+}
+
+.semo-orb-right {
+  top: -6rem;
+  right: -6rem;
+}
+
+.semo-loading-bar {
+  position: relative;
+  overflow: hidden;
+  height: 0.375rem;
+  border-radius: 9999px;
+  background: rgba(19, 91, 236, 0.16);
+}
+
+.semo-loading-bar::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -40%;
+  width: 40%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(19, 91, 236, 0.8),
+    transparent
+  );
+  animation: semo-loading-bar 1.2s ease-in-out infinite;
+}
+
+@keyframes semo-loading-bar {
+  100% {
+    transform: translateX(250%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .semo-loading-bar::after {
+    animation: none;
+  }
 }
