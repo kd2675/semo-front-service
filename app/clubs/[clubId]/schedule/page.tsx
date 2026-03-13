@@ -1,9 +1,9 @@
-import { notFound } from "next/navigation";
 import {
   CLUB_DASHBOARDS,
   getClubDashboard,
   getClubScheduleMonths,
 } from "@/app/lib/mock-clubs";
+import { ClubScheduleFallbackClient } from "./ClubScheduleFallbackClient";
 import { ScheduleClient } from "./ScheduleClient";
 
 type ClubSchedulePageProps = {
@@ -21,7 +21,7 @@ export default async function ClubSchedulePage({ params }: ClubSchedulePageProps
   const club = getClubDashboard(clubId);
 
   if (!club) {
-    notFound();
+    return <ClubScheduleFallbackClient clubId={clubId} />;
   }
 
   return (

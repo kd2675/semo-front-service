@@ -129,30 +129,10 @@ function LoginPageContent() {
       <div className="semo-orb semo-orb-left" />
       <div className="semo-orb semo-orb-right" />
 
-      <motion.div
-        className="absolute inset-x-0 top-0 flex items-center justify-between px-4 py-4 sm:px-6"
-        {...staggeredFadeUpMotion(0, reduceMotion)}
-      >
-        <button
-          type="button"
-          onClick={() => router.push("/")}
-          aria-label="홈으로 이동"
-          className="flex size-10 items-center justify-center rounded-full border border-transparent text-[var(--foreground)] transition hover:border-[var(--line)] hover:bg-white/70"
-        >
-          <span className="material-symbols-outlined">close</span>
-        </button>
-        <div className="flex-1 text-center">
-          <span className="text-sm font-semibold uppercase tracking-[0.28em] text-[var(--muted)]">
-            SEMO
-          </span>
-        </div>
-        <div className="size-10" />
-      </motion.div>
-
       <main className="relative z-10 flex w-full max-w-sm flex-col items-center">
         <motion.section
           className="flex w-full flex-col items-center"
-          {...staggeredFadeUpMotion(1, reduceMotion)}
+          {...staggeredFadeUpMotion(0, reduceMotion)}
         >
           <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-[calc(var(--radius-xl)+0.5rem)] bg-[var(--primary)]/10 text-[var(--primary)] shadow-[var(--shadow-soft)]">
             <span className="material-symbols-outlined !text-5xl">groups</span>
@@ -163,7 +143,7 @@ function LoginPageContent() {
           </p>
         </motion.section>
 
-        <motion.section className="w-full pt-10" {...staggeredFadeUpMotion(2, reduceMotion)}>
+        <motion.section className="w-full pt-10" {...staggeredFadeUpMotion(1, reduceMotion)}>
           <div className="flex flex-col gap-4">
             <motion.button
               type="button"
@@ -194,7 +174,7 @@ function LoginPageContent() {
         {expired ? (
           <motion.p
             className="mt-5 w-full rounded-[var(--radius-lg)] border border-blue-200 bg-blue-50 px-4 py-3 text-center text-sm text-blue-700"
-            {...staggeredFadeUpMotion(3, reduceMotion)}
+            {...staggeredFadeUpMotion(2, reduceMotion)}
           >
             세션이 만료되었습니다. 다시 로그인해 주세요.
           </motion.p>
@@ -202,13 +182,13 @@ function LoginPageContent() {
         {error ? (
           <motion.p
             className="mt-5 w-full rounded-[var(--radius-lg)] border border-red-200 bg-red-50 px-4 py-3 text-center text-sm text-red-700"
-            {...staggeredFadeUpMotion(3, reduceMotion)}
+            {...staggeredFadeUpMotion(2, reduceMotion)}
           >
             {error}
           </motion.p>
         ) : null}
 
-        <motion.section className="pt-12 text-center" {...staggeredFadeUpMotion(4, reduceMotion)}>
+        <motion.section className="pt-12 text-center" {...staggeredFadeUpMotion(3, reduceMotion)}>
           <div className="mb-4 flex items-center justify-center gap-2">
             <div className="h-1 w-8 rounded-full bg-[var(--primary)]/20" />
             <div className="h-1 w-12 rounded-full bg-[var(--primary)]" />

@@ -1,5 +1,5 @@
-import { notFound } from "next/navigation";
 import { ClubDashboardClient } from "./ClubDashboardClient";
+import { ClubDashboardFallbackClient } from "./ClubDashboardFallbackClient";
 import { CLUB_DASHBOARDS, getClubDashboard } from "@/app/lib/mock-clubs";
 
 type ClubPageProps = {
@@ -16,9 +16,9 @@ export default async function ClubDashboardPage({ params }: ClubPageProps) {
   const { clubId } = await params;
   const club = getClubDashboard(clubId);
 
-  if (!club) {
-    notFound();
+  if (club) {
+    return <ClubDashboardClient club={club} />;
   }
 
-  return <ClubDashboardClient club={club} />;
+  return <ClubDashboardFallbackClient clubId={clubId} />;
 }

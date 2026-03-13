@@ -1,5 +1,5 @@
-import { notFound } from "next/navigation";
 import { ClubProfileClient } from "./ClubProfileClient";
+import { ClubProfileFallbackClient } from "./ClubProfileFallbackClient";
 import { CLUB_DASHBOARDS, getClubDashboard, getClubMemberProfile } from "@/app/lib/mock-clubs";
 
 type ClubProfilePageProps = {
@@ -18,7 +18,7 @@ export default async function ClubProfilePage({ params }: ClubProfilePageProps) 
   const profile = getClubMemberProfile(clubId);
 
   if (!club || !profile) {
-    notFound();
+    return <ClubProfileFallbackClient clubId={clubId} />;
   }
 
   return <ClubProfileClient club={club} profile={profile} />;

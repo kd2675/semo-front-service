@@ -1,13 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { motion, useReducedMotion } from "motion/react";
-import { startTransition, useDeferredValue, useEffect, useState } from "react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { clearAccessToken, getUserFromToken, logout, normalizeRole } from "@/app/lib/auth";
 import { onAuthChanged } from "@/app/lib/authEvents";
-import { staggeredFadeUpMotion } from "@/app/lib/motion";
-import { MY_CLUBS, RECOMMENDED_CLUBS } from "@/app/lib/mock-clubs";
+import { getMyClubs, type MyClubSummary } from "@/app/lib/clubs";
+import { overlayFadeMotion, popInMotion, staggeredFadeUpMotion } from "@/app/lib/motion";
 import type { AuthUser } from "@/app/types/auth";
 
 function createProfileLabel(user: AuthUser | null): string {
@@ -25,10 +25,22 @@ export default function Home() {
   const reduceMotion = Boolean(prefersReducedMotion);
   const [user, setUser] = useState<AuthUser | null>(() => getUserFromToken());
   const [searchQuery, setSearchQuery] = useState("");
-  const deferredSearchQuery = useDeferredValue(searchQuery);
+  const [isSigningOut, setIsSigningOut] = useState(false);
+  const [myClubs, setMyClubs] = useState<MyClubSummary[]>([]);
+  const [isLoadingMyClubs, setIsLoadingMyClubs] = useState(true);
+  const [myClubsError, setMyClubsError] = useState<string | null>(null);
 
   const handleSignOut = async () => {
+    if (isSigningOut) {
+      return;
+    }
+
+    setIsSigningOut(true);
+
     try {
+      if (!reduceMotion) {
+        await new Promise((resolve) => window.setTimeout(resolve, 180));
+      }
       await logout();
     } catch {
       // Ignore logout API failure and clear the local session regardless.
@@ -41,13 +53,6 @@ export default function Home() {
   const roleLabel = normalizeRole(user?.role) ?? "GUEST";
   const profileLabel = createProfileLabel(user);
   const userName = user?.username ?? "익명 사용자";
-  const normalizedQuery = deferredSearchQuery.trim().toLowerCase();
-  const visibleRecommendations = normalizedQuery
-    ? RECOMMENDED_CLUBS.filter((club) => {
-        const haystack = `${club.name} ${club.description}`.toLowerCase();
-        return haystack.includes(normalizedQuery);
-      })
-    : RECOMMENDED_CLUBS;
 
   useEffect(() => {
     const unsubscribe = onAuthChanged(() => {
@@ -59,8 +64,61 @@ export default function Home() {
     };
   }, []);
 
+  useEffect(() => {
+    let cancelled = false;
+
+    void (async () => {
+      setIsLoadingMyClubs(true);
+      setMyClubsError(null);
+      const result = await getMyClubs();
+      if (cancelled) {
+        return;
+      }
+
+      if (!result.ok || !result.data) {
+        setMyClubs([]);
+        setMyClubsError(result.message ?? "내 클럽을 불러오지 못했습니다.");
+        setIsLoadingMyClubs(false);
+        return;
+      }
+
+      setMyClubs(result.data);
+      setIsLoadingMyClubs(false);
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   return (
     <div className="bg-[var(--background-light)] font-display text-slate-900 antialiased">
+      <AnimatePresence>
+        {isSigningOut ? (
+          <>
+            <motion.div
+              className="fixed inset-0 z-40 bg-white/55 backdrop-blur-sm"
+              {...overlayFadeMotion(reduceMotion)}
+            />
+            <motion.div
+              className="fixed inset-0 z-50 flex items-center justify-center px-6"
+              {...popInMotion(reduceMotion)}
+            >
+              <div className="semo-panel w-full max-w-sm px-6 py-7 text-center">
+                <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--primary)]">
+                  SIGNING OUT
+                </p>
+                <h2 className="mt-3 text-2xl font-extrabold tracking-tight">로그아웃 중입니다.</h2>
+                <p className="mt-2 text-sm text-[var(--muted)]">
+                  세션을 정리하고 로그인 화면으로 이동합니다.
+                </p>
+                <div className="mt-5 semo-loading-bar" />
+              </div>
+            </motion.div>
+          </>
+        ) : null}
+      </AnimatePresence>
+
       <div className="relative flex min-h-screen w-full flex-col">
         <main className="relative mx-auto flex min-h-screen w-full max-w-md flex-col overflow-x-hidden bg-white shadow-xl">
           <motion.header
@@ -77,7 +135,7 @@ export default function Home() {
               </div>
             </div>
             <h2 className="ml-3 flex-1 text-xl font-bold leading-tight tracking-tight text-slate-900">SEMO</h2>
-            <div className="flex w-12 items-center justify-end">
+            <div className="flex items-center justify-end gap-2">
               <button
                 type="button"
                 className="flex size-10 items-center justify-center rounded-full bg-slate-100 text-slate-700"
@@ -85,6 +143,20 @@ export default function Home() {
               >
                 <span className="material-symbols-outlined">notifications</span>
               </button>
+              <motion.button
+                type="button"
+                onClick={handleSignOut}
+                className="flex h-10 items-center justify-center rounded-full border border-slate-200 bg-white px-3 text-xs font-bold text-slate-700 shadow-sm transition-colors hover:bg-slate-50"
+                aria-label="로그아웃"
+                whileTap={reduceMotion ? undefined : { scale: 0.96 }}
+                animate={
+                  isSigningOut && !reduceMotion
+                    ? { scale: [1, 0.96, 1], opacity: [1, 0.85, 1] }
+                    : undefined
+                }
+              >
+                로그아웃
+              </motion.button>
             </div>
           </motion.header>
 
@@ -98,12 +170,7 @@ export default function Home() {
                   className="form-input flex w-full border-none bg-transparent px-3 text-base font-normal text-slate-900 placeholder:text-slate-500 focus:ring-0"
                   placeholder="Find your next community..."
                   value={searchQuery}
-                  onChange={(event) => {
-                    const nextValue = event.target.value;
-                    startTransition(() => {
-                      setSearchQuery(nextValue);
-                    });
-                  }}
+                  onChange={(event) => setSearchQuery(event.target.value)}
                 />
               </div>
             </label>
@@ -116,12 +183,12 @@ export default function Home() {
                 <p className="mt-0.5 text-xs text-blue-100">Start your own community today</p>
                 <p className="mt-1 text-[10px] font-medium text-blue-100/70">클럽 만들기</p>
               </div>
-              <button
-                type="button"
+              <Link
+                href="/clubs/create"
                 className="rounded-lg bg-white px-4 py-2 text-sm font-bold text-[var(--primary)] shadow-sm transition-transform active:scale-95"
               >
                 Get Started
-              </button>
+              </Link>
             </div>
           </motion.section>
 
@@ -138,38 +205,67 @@ export default function Home() {
             </button>
           </motion.section>
 
-          <section className="hide-scrollbar flex overflow-x-auto pb-4">
-            <div className="flex items-stretch gap-4 px-4">
-              {MY_CLUBS.map((club, index) => (
-                <motion.div
-                  key={club.id}
-                  {...staggeredFadeUpMotion(index + 4, reduceMotion)}
-                >
-                  <Link
-                    href={`/clubs/${club.id}`}
-                    className="flex min-w-[240px] flex-col gap-3 rounded-xl border border-slate-100 bg-slate-50 p-3 shadow-sm transition-transform hover:-translate-y-0.5"
-                  >
-                    <div
-                      className="aspect-[16/9] w-full rounded-lg bg-cover bg-center bg-no-repeat"
-                      style={{ backgroundImage: `url("${club.imageUrl}")` }}
-                    />
-                    <div>
-                      <p className="text-base font-bold text-slate-900">{club.name}</p>
-                      <div className="mt-1 flex items-center gap-1.5">
-                        <span
-                          className="material-symbols-outlined text-sm text-[var(--primary)]"
-                          style={{ fontVariationSettings: "'FILL' 1" }}
+          <motion.section className="px-4 pb-4" {...staggeredFadeUpMotion(4, reduceMotion)}>
+            {isLoadingMyClubs ? (
+              <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-10 text-center">
+                <p className="text-sm font-semibold text-slate-700">내 클럽을 불러오는 중입니다.</p>
+                <p className="mt-1 text-xs text-slate-500">가입한 모임을 확인하고 있습니다.</p>
+              </div>
+            ) : myClubs.length > 0 ? (
+              <div className="hide-scrollbar flex overflow-x-auto pb-1">
+                <div className="flex items-stretch gap-4">
+                  {myClubs.map((club, index) => (
+                    <motion.div
+                      key={club.clubId}
+                      className="min-w-[240px]"
+                      {...staggeredFadeUpMotion(index + 4, reduceMotion)}
+                    >
+                      <Link
+                        href={`/clubs/${club.clubId}`}
+                        className="flex h-full min-w-[240px] flex-col gap-3 rounded-xl border border-slate-100 bg-slate-50 p-3 shadow-sm transition-transform hover:-translate-y-0.5"
+                      >
+                        <div
+                          className="aspect-[16/9] w-full rounded-lg bg-slate-200 bg-cover bg-center"
+                          style={club.imageUrl ? { backgroundImage: `url("${club.imageUrl}")` } : undefined}
                         >
-                          {club.icon}
-                        </span>
-                        <p className="text-xs font-medium text-slate-600">{club.subtitle}</p>
-                      </div>
-                    </div>
-                  </Link>
-                </motion.div>
-              ))}
-            </div>
-          </section>
+                          {!club.imageUrl ? (
+                            <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-[var(--primary)]/10 to-blue-100 text-[var(--primary)]">
+                              <span className="material-symbols-outlined text-4xl">groups</span>
+                            </div>
+                          ) : null}
+                        </div>
+                        <div>
+                          <div className="flex items-center justify-between gap-3">
+                            <p className="text-base font-bold text-slate-900">{club.name}</p>
+                            {club.admin ? (
+                              <span className="rounded-full bg-[var(--primary)]/10 px-2 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--primary)]">
+                                Admin
+                              </span>
+                            ) : null}
+                          </div>
+                          <p className="mt-1 line-clamp-2 text-xs font-medium text-slate-500">
+                            {club.summary ?? club.description ?? "클럽 소개가 아직 없습니다."}
+                          </p>
+                          <div className="mt-3 flex items-center gap-1.5 text-xs font-medium text-slate-500">
+                            <span className="material-symbols-outlined text-sm text-[var(--primary)]">group</span>
+                            <span>{club.roleCode}</span>
+                            {club.categoryKey ? <span>· {club.categoryKey}</span> : null}
+                          </div>
+                        </div>
+                      </Link>
+                    </motion.div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-10 text-center">
+                <p className="text-sm font-semibold text-slate-700">아직 가입한 클럽이 없습니다.</p>
+                <p className="mt-1 text-xs text-slate-500">
+                  {myClubsError ?? "클럽에 가입하면 이 영역에 내 모임이 표시됩니다."}
+                </p>
+              </div>
+            )}
+          </motion.section>
 
           <motion.section className="px-4 pb-3 pt-6" {...staggeredFadeUpMotion(6, reduceMotion)}>
             <div className="flex items-baseline gap-2">
@@ -180,65 +276,31 @@ export default function Home() {
           </motion.section>
 
           <section className="flex flex-1 flex-col gap-4 px-4 pb-20">
-            {visibleRecommendations.map((club, index) => (
-              <motion.article
-                key={club.id}
-                className="flex gap-4 rounded-xl border border-slate-100 bg-white p-3 shadow-sm"
-                {...staggeredFadeUpMotion(index + 7, reduceMotion)}
-              >
-                <div
-                  className="size-20 shrink-0 rounded-lg bg-cover bg-center bg-no-repeat"
-                  style={{ backgroundImage: `url("${club.imageUrl}")` }}
-                />
-                <div className="flex flex-1 flex-col justify-center">
-                  <h3 className="text-base font-bold text-slate-900">{club.name}</h3>
-                  <p className="mt-0.5 line-clamp-1 text-xs text-slate-500">{club.description}</p>
-                  <div className="mt-2 flex items-center gap-3">
-                    <div className="flex items-center gap-1">
-                      <span className="material-symbols-outlined text-[14px] text-slate-400">group</span>
-                      <span className="text-[10px] font-medium text-slate-500">{club.members}</span>
-                    </div>
-                    <button
-                      type="button"
-                      className="ml-auto rounded-full bg-[var(--primary)] px-3 py-1.5 text-[10px] font-bold text-white"
-                    >
-                      Join
-                    </button>
-                  </div>
-                </div>
-              </motion.article>
-            ))}
-
-            {visibleRecommendations.length === 0 ? (
-              <motion.div
-                className="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-10 text-center"
-                {...staggeredFadeUpMotion(7, reduceMotion)}
-              >
-                <p className="text-sm font-semibold text-slate-700">검색 결과가 없습니다.</p>
-                <p className="mt-1 text-xs text-slate-500">다른 키워드로 새로운 커뮤니티를 찾아보세요.</p>
-              </motion.div>
-            ) : null}
+            <motion.div
+              className="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-10 text-center"
+              {...staggeredFadeUpMotion(7, reduceMotion)}
+            >
+              <p className="text-sm font-semibold text-slate-700">추천 클럽 데이터가 아직 없습니다.</p>
+              <p className="mt-1 text-xs text-slate-500">
+                백엔드 추천 API가 연결되면 이 영역에 클럽이 표시됩니다.
+              </p>
+            </motion.div>
           </section>
 
-          <motion.button
-            type="button"
+          <motion.div
             className="fixed bottom-6 right-[max(1.5rem,calc(50%-180px))] z-20 flex size-14 items-center justify-center rounded-full bg-[var(--primary)] text-white shadow-2xl transition-transform active:scale-90"
-            aria-label="클럽 만들기"
             {...staggeredFadeUpMotion(8, reduceMotion)}
             whileTap={reduceMotion ? undefined : { scale: 0.9 }}
           >
-            <span className="material-symbols-outlined text-3xl">add</span>
-          </motion.button>
+            <Link
+              href="/clubs/create"
+              aria-label="클럽 만들기"
+              className="flex size-full items-center justify-center"
+            >
+              <span className="material-symbols-outlined text-3xl">add</span>
+            </Link>
+          </motion.div>
 
-          <motion.button
-            type="button"
-            onClick={handleSignOut}
-            className="fixed bottom-6 left-[max(1.5rem,calc(50%-180px))] z-20 rounded-full border border-slate-200 bg-white px-4 py-3 text-xs font-bold text-slate-700 shadow-lg"
-            {...staggeredFadeUpMotion(9, reduceMotion)}
-            whileTap={reduceMotion ? undefined : { scale: 0.96 }}
-          >
-            로그아웃
-          </motion.button>
         </main>
       </div>
     </div>

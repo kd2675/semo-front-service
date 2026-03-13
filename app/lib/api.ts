@@ -1,4 +1,10 @@
 import type { ResponseEnvelope } from "@/app/types/response";
+import {
+  clearAccessToken,
+  getAccessToken,
+  notifyAuthExpired,
+  refreshAccessToken,
+} from "@/app/lib/auth";
 
 export const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080";
 
@@ -34,19 +40,35 @@ function isEnvelope<T>(value: unknown): value is ResponseEnvelope<T> {
 async function requestJson<T>(
   path: string,
   options: RequestOptions = {},
+  retried = false,
 ): Promise<ApiResult<T>> {
   const method = options.method ?? "GET";
+  const token = getAccessToken();
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...(options.headers ?? {}),
+  };
+
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
 
   try {
     const response = await fetch(`${API_BASE}${path}`, {
       method,
-      headers: {
-        "Content-Type": "application/json",
-        ...(options.headers ?? {}),
-      },
+      headers,
       credentials: options.credentials ?? "include",
       body: options.body === undefined ? undefined : JSON.stringify(options.body),
     });
+
+    if (response.status === 401 && !retried) {
+      const refreshedToken = await refreshAccessToken();
+      if (refreshedToken) {
+        return requestJson<T>(path, options, true);
+      }
+      clearAccessToken();
+      notifyAuthExpired("refresh_failed");
+    }
 
     const text = await response.text();
     const parsed: unknown = text ? JSON.parse(text) : null;

@@ -1,5 +1,5 @@
-import { notFound } from "next/navigation";
 import { CLUB_DASHBOARDS, getClubDashboard, getClubNotices } from "@/app/lib/mock-clubs";
+import { ClubBoardFallbackClient } from "./ClubBoardFallbackClient";
 import { NoticeBoardClient } from "./NoticeBoardClient";
 
 type ClubBoardPageProps = {
@@ -17,7 +17,7 @@ export default async function ClubBoardPage({ params }: ClubBoardPageProps) {
   const club = getClubDashboard(clubId);
 
   if (!club) {
-    notFound();
+    return <ClubBoardFallbackClient clubId={clubId} />;
   }
 
   return (

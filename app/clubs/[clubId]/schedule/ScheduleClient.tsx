@@ -4,6 +4,7 @@ import Link from "next/link";
 import { startTransition, useState } from "react";
 import { motion, useReducedMotion } from "motion/react";
 import { ClubBottomNav } from "@/app/components/ClubBottomNav";
+import { ClubModeSwitchFab } from "@/app/components/ClubModeSwitchFab";
 import { staggeredFadeUpMotion } from "@/app/lib/motion";
 import type { ClubScheduleEvent, ClubScheduleMonth } from "@/app/lib/mock-clubs";
 
@@ -99,8 +100,8 @@ export function ScheduleClient({ clubId, clubName, months, isAdmin = false }: Sc
             </div>
 
             <div className="mb-2 grid grid-cols-7 text-center">
-              {WEEKDAY_LABELS.map((label) => (
-                <p key={`${month.id}-${label}`} className="py-2 text-xs font-bold text-slate-400">
+              {WEEKDAY_LABELS.map((label, index) => (
+                <p key={`${month.id}-weekday-${index}`} className="py-2 text-xs font-bold text-slate-400">
                   {label}
                 </p>
               ))}
@@ -196,6 +197,7 @@ export function ScheduleClient({ clubId, clubName, months, isAdmin = false }: Sc
           </div>
         </div>
 
+        {isAdmin ? <ClubModeSwitchFab clubId={clubId} mode="user" /> : null}
         <ClubBottomNav clubId={clubId} isAdmin={isAdmin} />
       </div>
     </div>

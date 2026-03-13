@@ -6,62 +6,62 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { overlayFadeMotion, popInMotion } from "@/app/lib/motion";
 
-type ClubBottomNavProps = {
+type AdminBottomNavProps = {
   clubId: string;
-  isAdmin?: boolean;
 };
 
-type NavItem = {
+type AdminNavItem = {
   label: string;
   icon: string;
-  href: (clubId: string) => string | null;
+  href?: (clubId: string) => string;
+  exact?: boolean;
 };
 
-type MoreMenuItem = {
+type AdminMoreMenuItem = {
   label: string;
   icon: string;
   accentClassName: string;
   href: (clubId: string) => string;
 };
 
-const BASE_NAV_ITEMS: NavItem[] = [
-  { label: "Home", icon: "home", href: (clubId) => `/clubs/${clubId}` },
-  { label: "Board", icon: "leaderboard", href: (clubId) => `/clubs/${clubId}/board` },
-  { label: "Schedule", icon: "calendar_month", href: (clubId) => `/clubs/${clubId}/schedule` },
-  { label: "More", icon: "more_horiz", href: () => null },
-  { label: "Profile", icon: "person", href: (clubId) => `/clubs/${clubId}/profile` },
+const ADMIN_ITEMS: AdminNavItem[] = [
+  { label: "Home", icon: "home", href: (clubId: string) => `/clubs/${clubId}/admin`, exact: true },
+  { label: "Menu", icon: "apps", href: (clubId: string) => `/clubs/${clubId}/admin/menu` },
+  { label: "Members", icon: "groups", href: (clubId: string) => `/clubs/${clubId}/admin/members` },
+  { label: "More", icon: "more_horiz" },
+  { label: "Stats", icon: "insights", href: (clubId: string) => `/clubs/${clubId}/admin/stats` },
 ];
 
-const MORE_MENU_ITEMS: MoreMenuItem[] = [
+const ADMIN_MORE_MENU_ITEMS: AdminMoreMenuItem[] = [
   {
-    label: "Match Records",
-    icon: "assignment",
-    accentClassName: "bg-blue-50 text-blue-600",
-    href: (clubId) => `/clubs/${clubId}/board`,
-  },
-  {
-    label: "Leaderboard",
-    icon: "leaderboard",
+    label: "Admin Home",
+    icon: "admin_panel_settings",
     accentClassName: "bg-orange-50 text-orange-500",
-    href: (clubId) => `/clubs/${clubId}`,
+    href: (clubId) => `/clubs/${clubId}/admin`,
   },
   {
-    label: "Finance",
-    icon: "payments",
+    label: "Widget Setup",
+    icon: "widgets",
+    accentClassName: "bg-blue-50 text-blue-600",
+    href: (clubId) => `/clubs/${clubId}/admin/menu`,
+  },
+  {
+    label: "Members",
+    icon: "groups",
     accentClassName: "bg-emerald-50 text-emerald-500",
-    href: (clubId) => `/clubs/${clubId}/profile`,
+    href: (clubId) => `/clubs/${clubId}/admin/members`,
   },
   {
-    label: "Clubs",
-    icon: "apartment",
+    label: "Stats",
+    icon: "insights",
+    accentClassName: "bg-amber-50 text-amber-500",
+    href: (clubId) => `/clubs/${clubId}/admin/stats`,
+  },
+  {
+    label: "Club Home",
+    icon: "home_app_logo",
     accentClassName: "bg-purple-50 text-purple-500",
-    href: () => "/",
-  },
-  {
-    label: "Training",
-    icon: "bolt",
-    accentClassName: "bg-rose-50 text-rose-500",
-    href: (clubId) => `/clubs/${clubId}/schedule`,
+    href: (clubId) => `/clubs/${clubId}`,
   },
 ];
 
@@ -82,8 +82,7 @@ const POPOVER_ITEM_VARIANTS = {
 const DOCK_TRIGGER_OFFSET_PX = 120;
 let persistedDockedState = true;
 
-export function ClubBottomNav({ clubId, isAdmin = false }: ClubBottomNavProps) {
-  void isAdmin;
+export function AdminBottomNav({ clubId }: AdminBottomNavProps) {
   const pathname = usePathname();
   const prefersReducedMotion = useReducedMotion();
   const reduceMotion = Boolean(prefersReducedMotion);
@@ -160,17 +159,22 @@ export function ClubBottomNav({ clubId, isAdmin = false }: ClubBottomNavProps) {
         transition: { duration: 0.3, ease: "easeOut" as const },
       };
 
-  const navItems = BASE_NAV_ITEMS;
-  const floatingMenuClassName = "w-[clamp(280px,33vw,460px)] max-w-[calc(100vw-2.5rem)] gap-3";
-  const dockedMenuContentClassName = "w-[clamp(360px,44vw,640px)] max-w-[calc(100vw-1.5rem)] gap-6";
-
   const renderButtons = () =>
-    navItems.map((item) => {
-      const href = item.href(clubId);
+    ADMIN_ITEMS.map((item) => {
+      const href = item.href?.(clubId);
       const isMoreItem = item.label === "More";
-      const isActive = isMoreItem ? isMoreOpen : href ? pathname === href : false;
-      const textClassName = isActive ? "text-[#135bec]" : "text-slate-400 hover:text-slate-500";
-      const iconClassName = isActive ? "text-[#135bec]" : "text-slate-400";
+      const isActive = Boolean(
+        isMoreItem
+          ? isMoreOpen
+          : href &&
+              (item.exact
+                ? pathname === href
+                : pathname === href || pathname.startsWith(`${href}/`)),
+      );
+      const textClassName = isActive
+        ? "text-[var(--primary)]"
+        : "text-slate-400 hover:text-slate-500";
+      const iconClassName = isActive ? "text-[var(--primary)]" : "text-slate-400";
 
       if (isMoreItem) {
         return (
@@ -191,8 +195,8 @@ export function ClubBottomNav({ clubId, isAdmin = false }: ClubBottomNavProps) {
               </span>
               {isMoreOpen ? (
                 <motion.div
-                  layoutId="club-nav-active-dot"
-                  className="absolute -right-0.5 top-1 size-2 rounded-full border-2 border-white bg-[#135bec]"
+                  layoutId="admin-nav-active-dot"
+                  className="absolute -right-0.5 top-1 size-2 rounded-full border-2 border-white bg-[var(--primary)]"
                 />
               ) : null}
             </div>
@@ -205,13 +209,14 @@ export function ClubBottomNav({ clubId, isAdmin = false }: ClubBottomNavProps) {
           <button
             key={item.label}
             type="button"
-            className={`flex h-10 w-10 touch-manipulation items-center justify-center transition ${textClassName}`}
             aria-disabled="true"
-            aria-label={item.label}
+            className={`flex h-10 w-10 touch-manipulation items-center justify-center transition ${textClassName}`}
           >
-            <span className={`material-symbols-outlined text-[24px] ${iconClassName}`}>
-              {item.icon}
-            </span>
+            <div className="relative flex h-10 w-10 items-center justify-center">
+              <span className={`material-symbols-outlined text-[24px] ${iconClassName}`}>
+                {item.icon}
+              </span>
+            </div>
           </button>
         );
       }
@@ -235,8 +240,8 @@ export function ClubBottomNav({ clubId, isAdmin = false }: ClubBottomNavProps) {
             </span>
             {isActive ? (
               <motion.div
-                layoutId="club-nav-active-dot"
-                className="absolute -right-0.5 top-1 size-2 rounded-full border-2 border-white bg-[#135bec]"
+                layoutId="admin-nav-active-dot"
+                className="absolute -right-0.5 top-1 size-2 rounded-full border-2 border-white bg-[var(--primary)]"
               />
             ) : null}
           </motion.div>
@@ -245,16 +250,14 @@ export function ClubBottomNav({ clubId, isAdmin = false }: ClubBottomNavProps) {
     });
 
   const FloatingMenu = (
-    <nav
-      className={`flex items-center justify-center rounded-full border border-white/70 bg-white/82 px-4 py-3 shadow-[0_18px_42px_rgba(15,23,42,0.12)] backdrop-blur-md ${floatingMenuClassName}`}
-    >
+    <nav className="flex w-[clamp(280px,33vw,460px)] max-w-[calc(100vw-2rem)] items-center justify-center gap-4 rounded-full border border-white/70 bg-white/82 px-5 py-3 shadow-[0_18px_42px_rgba(15,23,42,0.12)] backdrop-blur-md">
       {renderButtons()}
     </nav>
   );
 
   const DockedMenu = (
     <nav className="flex w-full items-center justify-center border-t border-slate-200/70 bg-white/88 px-4 pt-3 pb-[calc(env(safe-area-inset-bottom)+12px)] backdrop-blur-md">
-      <div className={`flex items-center justify-center ${dockedMenuContentClassName}`}>
+      <div className="flex w-[clamp(360px,44vw,640px)] max-w-[calc(100vw-1rem)] items-center justify-center gap-6">
         {renderButtons()}
       </div>
     </nav>
@@ -279,7 +282,7 @@ export function ClubBottomNav({ clubId, isAdmin = false }: ClubBottomNavProps) {
               <div className="pointer-events-auto mx-auto w-full max-w-sm">
                 <div className="relative rounded-[32px] bg-white p-6 shadow-[0_20px_50px_rgba(0,0,0,0.15)]">
                   <div className="grid grid-cols-3 gap-6">
-                    {MORE_MENU_ITEMS.map((item, index) => (
+                    {ADMIN_MORE_MENU_ITEMS.map((item, index) => (
                       <motion.div
                         key={item.label}
                         custom={index}
@@ -318,7 +321,7 @@ export function ClubBottomNav({ clubId, isAdmin = false }: ClubBottomNavProps) {
       <AnimatePresence initial={false}>
         {isDocked ? (
           <motion.div
-            key="club-bottom-docked"
+            key="admin-bottom-docked"
             {...unifiedMotion}
             className="pointer-events-auto fixed inset-x-0 bottom-0 z-30 flex flex-col items-stretch"
           >
@@ -326,7 +329,7 @@ export function ClubBottomNav({ clubId, isAdmin = false }: ClubBottomNavProps) {
           </motion.div>
         ) : (
           <motion.div
-            key="club-bottom-floating"
+            key="admin-bottom-floating"
             {...unifiedMotion}
             className="pointer-events-auto fixed bottom-0 left-1/2 z-30 flex -translate-x-1/2 flex-col items-center gap-4 pb-[calc(env(safe-area-inset-bottom)+12px)]"
           >

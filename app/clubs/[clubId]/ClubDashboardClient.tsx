@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { motion, useReducedMotion } from "motion/react";
 import { ClubBottomNav } from "@/app/components/ClubBottomNav";
+import { ClubModeSwitchFab } from "@/app/components/ClubModeSwitchFab";
 import { staggeredFadeUpMotion } from "@/app/lib/motion";
 import type { ClubDashboard } from "@/app/lib/mock-clubs";
 
@@ -282,16 +283,7 @@ export function ClubDashboardClient({ club }: ClubDashboardClientProps) {
           </section>
         </main>
 
-        {isAdmin ? (
-          <motion.button
-            type="button"
-            className="fixed bottom-24 right-6 z-40 flex size-14 items-center justify-center rounded-full bg-[var(--primary)] text-white shadow-xl transition-transform hover:scale-105 active:scale-95"
-            aria-label="위젯 추가"
-            {...staggeredFadeUpMotion(7, reduceMotion)}
-          >
-            <span className="material-symbols-outlined text-2xl">add</span>
-          </motion.button>
-        ) : null}
+        {isAdmin ? <ClubModeSwitchFab clubId={club.id} mode="user" /> : null}
 
         <ClubBottomNav clubId={club.id} isAdmin={isAdmin} />
       </div>
