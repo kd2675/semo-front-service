@@ -1,6 +1,4 @@
-import { CLUB_DASHBOARDS, getClubDashboard, getClubNotices } from "@/app/lib/mock-clubs";
 import { ClubBoardFallbackClient } from "./ClubBoardFallbackClient";
-import { NoticeBoardClient } from "./NoticeBoardClient";
 
 type ClubBoardPageProps = {
   params: Promise<{
@@ -8,24 +6,7 @@ type ClubBoardPageProps = {
   }>;
 };
 
-export async function generateStaticParams() {
-  return CLUB_DASHBOARDS.map((club) => ({ clubId: club.id }));
-}
-
 export default async function ClubBoardPage({ params }: ClubBoardPageProps) {
   const { clubId } = await params;
-  const club = getClubDashboard(clubId);
-
-  if (!club) {
-    return <ClubBoardFallbackClient clubId={clubId} />;
-  }
-
-  return (
-    <NoticeBoardClient
-      clubId={club.id}
-      clubName={club.name}
-      notices={getClubNotices(club.id)}
-      isAdmin={club.isAdmin}
-    />
-  );
+  return <ClubBoardFallbackClient clubId={clubId} />;
 }

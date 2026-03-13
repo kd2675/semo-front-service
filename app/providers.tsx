@@ -11,7 +11,7 @@ type ProvidersProps = {
 
 export default function Providers({ children }: ProvidersProps) {
   return (
-    <MotionConfig>
+    <MotionConfig reducedMotion="user">
       <AuthGate>{children}</AuthGate>
       <Suspense fallback={null}>
         <AuthWatcher />

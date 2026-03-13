@@ -154,3 +154,10 @@ export function patchJson<T>(
 ): Promise<ApiResult<T>> {
   return requestJson(path, { method: "PATCH", body, headers });
 }
+
+export function deleteJson<T>(
+  path: string,
+  headers?: Record<string, string>,
+): Promise<ApiResult<T>> {
+  return requestJson(path, { method: "DELETE", headers });
+}

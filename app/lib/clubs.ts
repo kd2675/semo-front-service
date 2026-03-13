@@ -1,4 +1,4 @@
-import { getJson, postJson } from "@/app/lib/api";
+import { deleteJson, getJson, postJson, putJson } from "@/app/lib/api";
 
 export type CreateClubRequest = {
   name: string;
@@ -51,6 +51,80 @@ export type ClubBoardResponse = {
   }>;
 };
 
+export type NoticeFeedCategory =
+  | "all"
+  | "announcement"
+  | "tournament"
+  | "match"
+  | "social";
+
+export type ClubNoticeListItem = {
+  noticeId: number;
+  title: string;
+  summary: string;
+  authorDisplayName: string;
+  authorRoleCode: string | null;
+  categoryKey: string;
+  categoryLabel: string;
+  publishedAtLabel: string;
+  timeAgo: string;
+  pinned: boolean;
+  scheduleAtLabel: string | null;
+  locationLabel: string | null;
+};
+
+export type ClubNoticeFeedResponse = {
+  clubId: number;
+  clubName: string;
+  admin: boolean;
+  notices: ClubNoticeListItem[];
+  nextCursorPublishedAt: string | null;
+  nextCursorNoticeId: number | null;
+  hasNext: boolean;
+};
+
+export type ClubNoticeDetailResponse = {
+  clubId: number;
+  clubName: string;
+  admin: boolean;
+  noticeId: number;
+  title: string;
+  content: string;
+  categoryKey: string;
+  categoryLabel: string;
+  authorDisplayName: string;
+  authorRoleCode: string | null;
+  publishedAtLabel: string;
+  updatedAtLabel: string;
+  pinned: boolean;
+  locationLabel: string | null;
+  scheduleAt: string | null;
+  scheduleAtLabel: string | null;
+  scheduleEndAt: string | null;
+  scheduleEndAtLabel: string | null;
+  canManage: boolean;
+};
+
+export type UpsertClubNoticeRequest = {
+  title: string;
+  content: string;
+  categoryKey?: string | null;
+  locationLabel?: string | null;
+  scheduleAt?: string | null;
+  scheduleEndAt?: string | null;
+  postToSchedule?: boolean;
+  pinned?: boolean;
+};
+
+export type ClubNoticeUpsertResponse = {
+  noticeId: number;
+  title: string;
+  categoryKey: string;
+  scheduleAt: string | null;
+  scheduleAtLabel: string | null;
+  locationLabel: string | null;
+};
+
 export type ClubScheduleResponse = {
   clubId: number;
   clubName: string;
@@ -77,6 +151,45 @@ export type ClubScheduleResponse = {
       }>;
     }>;
   }>;
+};
+
+export type ClubScheduleEventDetailResponse = {
+  clubId: number;
+  clubName: string;
+  admin: boolean;
+  eventId: number;
+  title: string;
+  description: string | null;
+  categoryKey: string;
+  locationLabel: string | null;
+  startAt: string;
+  startAtLabel: string;
+  endAt: string | null;
+  endAtLabel: string | null;
+  postedToBoard: boolean;
+  linkedNoticeId: number | null;
+  canManage: boolean;
+};
+
+export type UpsertScheduleEventRequest = {
+  title: string;
+  description?: string | null;
+  categoryKey?: string | null;
+  locationLabel?: string | null;
+  startAt: string;
+  endAt?: string | null;
+  postToBoard?: boolean;
+};
+
+export type ScheduleEventUpsertResponse = {
+  eventId: number;
+  linkedNoticeId: number | null;
+  title: string;
+  startAt: string;
+  startAtLabel: string;
+  endAt: string | null;
+  endAtLabel: string | null;
+  postedToBoard: boolean;
 };
 
 export type ClubProfileResponse = {
@@ -110,6 +223,89 @@ export type ClubProfileResponse = {
   }>;
 };
 
+export type ClubFeatureSummary = {
+  featureKey: string;
+  displayName: string;
+  description: string | null;
+  iconName: string;
+  enabled: boolean;
+  userPath: string;
+  adminPath: string;
+};
+
+export type UpdateClubFeaturesRequest = {
+  enabledFeatureKeys: string[];
+};
+
+export type AttendanceSession = {
+  sessionId: number;
+  title: string;
+  attendanceDateLabel: string;
+  status: string;
+  openAtLabel: string | null;
+  closeAtLabel: string | null;
+  checkedIn: boolean;
+  checkedInAtLabel: string | null;
+  canCheckIn: boolean;
+  checkedInCount: number;
+  memberCount: number;
+};
+
+export type AttendanceHistoryItem = {
+  sessionId: number;
+  title: string;
+  attendanceDateLabel: string;
+  status: string;
+  checkedIn: boolean;
+  checkedInAtLabel: string | null;
+};
+
+export type ClubAttendanceResponse = {
+  clubId: number;
+  clubName: string;
+  featureEnabled: boolean;
+  currentSession: AttendanceSession | null;
+  recentSessions: AttendanceHistoryItem[];
+};
+
+export type AdminAttendanceMember = {
+  clubProfileId: number;
+  displayName: string;
+  roleCode: string;
+  checkedIn: boolean;
+  checkedInAtLabel: string | null;
+};
+
+export type ClubAdminAttendanceResponse = {
+  clubId: number;
+  clubName: string;
+  featureEnabled: boolean;
+  currentSession: AttendanceSession | null;
+  members: AdminAttendanceMember[];
+  recentSessions: AttendanceHistoryItem[];
+};
+
+export type CreateAttendanceSessionRequest = {
+  title?: string | null;
+  attendanceDate?: string | null;
+};
+
+export type AttendanceCheckInRequest = {
+  sessionId: number;
+};
+
+export const MOCK_CLUB_FEATURES: ClubFeatureSummary[] = [
+  {
+    featureKey: "ATTENDANCE",
+    displayName: "Attendance Check",
+    description: "Check in members and manage attendance sessions.",
+    iconName: "fact_check",
+    enabled: true,
+    userPath: "/clubs/tennis/more/attendance",
+    adminPath: "/clubs/tennis/admin/more/attendance",
+  },
+];
+
 export function createClub(request: CreateClubRequest) {
   return postJson<ClubCreateResponse>("/api/semo/v1/clubs", request);
 }
@@ -126,10 +322,150 @@ export function getClubBoard(clubId: string | number) {
   return getJson<ClubBoardResponse>(`/api/semo/v1/clubs/${clubId}/board`);
 }
 
+export function getClubNoticeFeed(
+  clubId: string | number,
+  options: {
+    category?: NoticeFeedCategory;
+    query?: string;
+    cursorPublishedAt?: string | null;
+    cursorNoticeId?: number | null;
+    size?: number;
+  } = {},
+) {
+  const params = new URLSearchParams();
+  if (options.category && options.category !== "all") {
+    params.set("category", options.category);
+  }
+  if (options.query?.trim()) {
+    params.set("query", options.query.trim());
+  }
+  if (options.cursorPublishedAt) {
+    params.set("cursorPublishedAt", options.cursorPublishedAt);
+  }
+  if (options.cursorNoticeId) {
+    params.set("cursorNoticeId", String(options.cursorNoticeId));
+  }
+  if (options.size) {
+    params.set("size", String(options.size));
+  }
+  const queryString = params.toString();
+  return getJson<ClubNoticeFeedResponse>(
+    `/api/semo/v1/clubs/${clubId}/board/notices${queryString ? `?${queryString}` : ""}`,
+  );
+}
+
+export function getClubNoticeDetail(clubId: string | number, noticeId: string | number) {
+  return getJson<ClubNoticeDetailResponse>(
+    `/api/semo/v1/clubs/${clubId}/board/notices/${noticeId}`,
+  );
+}
+
+export function createClubNotice(
+  clubId: string | number,
+  request: UpsertClubNoticeRequest,
+) {
+  return postJson<ClubNoticeUpsertResponse>(
+    `/api/semo/v1/clubs/${clubId}/board/notices`,
+    request,
+  );
+}
+
+export function updateClubNotice(
+  clubId: string | number,
+  noticeId: string | number,
+  request: UpsertClubNoticeRequest,
+) {
+  return putJson<ClubNoticeUpsertResponse>(
+    `/api/semo/v1/clubs/${clubId}/board/notices/${noticeId}`,
+    request,
+  );
+}
+
+export function deleteClubNotice(clubId: string | number, noticeId: string | number) {
+  return deleteJson<void>(`/api/semo/v1/clubs/${clubId}/board/notices/${noticeId}`);
+}
+
 export function getClubSchedule(clubId: string | number) {
   return getJson<ClubScheduleResponse>(`/api/semo/v1/clubs/${clubId}/schedule`);
 }
 
+export function getClubScheduleEventDetail(clubId: string | number, eventId: string | number) {
+  return getJson<ClubScheduleEventDetailResponse>(
+    `/api/semo/v1/clubs/${clubId}/schedule/events/${eventId}`,
+  );
+}
+
+export function createClubScheduleEvent(
+  clubId: string | number,
+  request: UpsertScheduleEventRequest,
+) {
+  return postJson<ScheduleEventUpsertResponse>(
+    `/api/semo/v1/clubs/${clubId}/schedule/events`,
+    request,
+  );
+}
+
+export function updateClubScheduleEvent(
+  clubId: string | number,
+  eventId: string | number,
+  request: UpsertScheduleEventRequest,
+) {
+  return putJson<ScheduleEventUpsertResponse>(
+    `/api/semo/v1/clubs/${clubId}/schedule/events/${eventId}`,
+    request,
+  );
+}
+
+export function deleteClubScheduleEvent(clubId: string | number, eventId: string | number) {
+  return deleteJson<void>(`/api/semo/v1/clubs/${clubId}/schedule/events/${eventId}`);
+}
+
 export function getClubProfile(clubId: string | number) {
   return getJson<ClubProfileResponse>(`/api/semo/v1/clubs/${clubId}/profile`);
+}
+
+export function getClubFeatures(clubId: string | number) {
+  return getJson<ClubFeatureSummary[]>(`/api/semo/v1/clubs/${clubId}/features`);
+}
+
+export function updateClubFeatures(
+  clubId: string | number,
+  request: UpdateClubFeaturesRequest,
+) {
+  return putJson<ClubFeatureSummary[]>(`/api/semo/v1/clubs/${clubId}/features`, request);
+}
+
+export function getClubAttendance(clubId: string | number) {
+  return getJson<ClubAttendanceResponse>(`/api/semo/v1/clubs/${clubId}/more/attendance`);
+}
+
+export function checkInClubAttendance(
+  clubId: string | number,
+  request: AttendanceCheckInRequest,
+) {
+  return postJson<AttendanceSession>(
+    `/api/semo/v1/clubs/${clubId}/more/attendance/check-in`,
+    request,
+  );
+}
+
+export function getClubAdminAttendance(clubId: string | number) {
+  return getJson<ClubAdminAttendanceResponse>(`/api/semo/v1/clubs/${clubId}/admin/more/attendance`);
+}
+
+export function createClubAttendanceSession(
+  clubId: string | number,
+  request: CreateAttendanceSessionRequest = {},
+) {
+  return postJson<AttendanceSession>(
+    `/api/semo/v1/clubs/${clubId}/admin/more/attendance/sessions`,
+    request,
+  );
+}
+
+export function closeClubAttendanceSession(clubId: string | number, sessionId: number) {
+  return postJson<AttendanceSession>(
+    `/api/semo/v1/clubs/${clubId}/admin/more/attendance/sessions/${sessionId}/close`,
+    {},
+  );
 }

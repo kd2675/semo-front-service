@@ -4,6 +4,11 @@ import Link from "next/link";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+import {
+  getClubFeatures,
+  MOCK_CLUB_FEATURES,
+  type ClubFeatureSummary,
+} from "@/app/lib/clubs";
 import { overlayFadeMotion, popInMotion } from "@/app/lib/motion";
 
 type ClubBottomNavProps = {
@@ -17,13 +22,6 @@ type NavItem = {
   href: (clubId: string) => string | null;
 };
 
-type MoreMenuItem = {
-  label: string;
-  icon: string;
-  accentClassName: string;
-  href: (clubId: string) => string;
-};
-
 const BASE_NAV_ITEMS: NavItem[] = [
   { label: "Home", icon: "home", href: (clubId) => `/clubs/${clubId}` },
   { label: "Board", icon: "leaderboard", href: (clubId) => `/clubs/${clubId}/board` },
@@ -32,38 +30,9 @@ const BASE_NAV_ITEMS: NavItem[] = [
   { label: "Profile", icon: "person", href: (clubId) => `/clubs/${clubId}/profile` },
 ];
 
-const MORE_MENU_ITEMS: MoreMenuItem[] = [
-  {
-    label: "Match Records",
-    icon: "assignment",
-    accentClassName: "bg-blue-50 text-blue-600",
-    href: (clubId) => `/clubs/${clubId}/board`,
-  },
-  {
-    label: "Leaderboard",
-    icon: "leaderboard",
-    accentClassName: "bg-orange-50 text-orange-500",
-    href: (clubId) => `/clubs/${clubId}`,
-  },
-  {
-    label: "Finance",
-    icon: "payments",
-    accentClassName: "bg-emerald-50 text-emerald-500",
-    href: (clubId) => `/clubs/${clubId}/profile`,
-  },
-  {
-    label: "Clubs",
-    icon: "apartment",
-    accentClassName: "bg-purple-50 text-purple-500",
-    href: () => "/",
-  },
-  {
-    label: "Training",
-    icon: "bolt",
-    accentClassName: "bg-rose-50 text-rose-500",
-    href: (clubId) => `/clubs/${clubId}/schedule`,
-  },
-];
+const FEATURE_ACCENT_CLASS: Record<string, string> = {
+  ATTENDANCE: "bg-blue-50 text-blue-600",
+};
 
 const POPOVER_ITEM_VARIANTS = {
   hidden: { opacity: 0, y: 12, scale: 0.96 },
@@ -81,6 +50,9 @@ const POPOVER_ITEM_VARIANTS = {
 
 const DOCK_TRIGGER_OFFSET_PX = 120;
 let persistedDockedState = true;
+const USER_ACTIVE_TEXT_CLASS = "text-[#135bec]";
+const USER_INACTIVE_TEXT_CLASS = "text-slate-400";
+const USER_ACTIVE_DOT_CLASS = "bg-[#135bec]";
 
 export function ClubBottomNav({ clubId, isAdmin = false }: ClubBottomNavProps) {
   void isAdmin;
@@ -89,7 +61,50 @@ export function ClubBottomNav({ clubId, isAdmin = false }: ClubBottomNavProps) {
   const reduceMotion = Boolean(prefersReducedMotion);
   const [isDocked, setIsDocked] = useState(() => persistedDockedState);
   const [openMenuPathname, setOpenMenuPathname] = useState<string | null>(null);
+  const [enabledFeatures, setEnabledFeatures] = useState<ClubFeatureSummary[]>([]);
   const isMoreOpen = openMenuPathname === pathname;
+  const isFeatureRouteActive = enabledFeatures.some((feature) => pathname === feature.userPath);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadFeatures = async () => {
+      if (Number.isNaN(Number(clubId))) {
+        setEnabledFeatures(
+          MOCK_CLUB_FEATURES.map((feature) => ({
+            ...feature,
+            userPath: `/clubs/${clubId}/more/attendance`,
+            adminPath: `/clubs/${clubId}/admin/more/attendance`,
+          })),
+        );
+        return;
+      }
+
+      const result = await getClubFeatures(clubId);
+      if (cancelled) {
+        return;
+      }
+
+      if (!result.ok || !result.data) {
+        setEnabledFeatures([]);
+        return;
+      }
+
+      setEnabledFeatures(result.data.filter((feature) => feature.enabled));
+    };
+
+    void loadFeatures();
+
+    const onFeatureUpdate = () => {
+      void loadFeatures();
+    };
+
+    window.addEventListener("semo:club-features-updated", onFeatureUpdate);
+    return () => {
+      cancelled = true;
+      window.removeEventListener("semo:club-features-updated", onFeatureUpdate);
+    };
+  }, [clubId]);
 
   useEffect(() => {
     persistedDockedState = isDocked;
@@ -168,9 +183,13 @@ export function ClubBottomNav({ clubId, isAdmin = false }: ClubBottomNavProps) {
     navItems.map((item) => {
       const href = item.href(clubId);
       const isMoreItem = item.label === "More";
-      const isActive = isMoreItem ? isMoreOpen : href ? pathname === href : false;
-      const textClassName = isActive ? "text-[#135bec]" : "text-slate-400 hover:text-slate-500";
-      const iconClassName = isActive ? "text-[#135bec]" : "text-slate-400";
+      const isActive = isMoreItem
+        ? isMoreOpen || isFeatureRouteActive
+        : href
+          ? pathname === href
+          : false;
+      const textClassName = isActive ? USER_ACTIVE_TEXT_CLASS : USER_INACTIVE_TEXT_CLASS;
+      const iconClassName = isActive ? USER_ACTIVE_TEXT_CLASS : USER_INACTIVE_TEXT_CLASS;
 
       if (isMoreItem) {
         return (
@@ -189,10 +208,10 @@ export function ClubBottomNav({ clubId, isAdmin = false }: ClubBottomNavProps) {
               <span className={`material-symbols-outlined text-[24px] ${iconClassName}`}>
                 {item.icon}
               </span>
-              {isMoreOpen ? (
+              {isActive ? (
                 <motion.div
                   layoutId="club-nav-active-dot"
-                  className="absolute -right-0.5 top-1 size-2 rounded-full border-2 border-white bg-[#135bec]"
+                  className={`absolute -right-0.5 top-1 size-2 rounded-full border-2 border-white ${USER_ACTIVE_DOT_CLASS}`}
                 />
               ) : null}
             </div>
@@ -236,7 +255,7 @@ export function ClubBottomNav({ clubId, isAdmin = false }: ClubBottomNavProps) {
             {isActive ? (
               <motion.div
                 layoutId="club-nav-active-dot"
-                className="absolute -right-0.5 top-1 size-2 rounded-full border-2 border-white bg-[#135bec]"
+                className={`absolute -right-0.5 top-1 size-2 rounded-full border-2 border-white ${USER_ACTIVE_DOT_CLASS}`}
               />
             ) : null}
           </motion.div>
@@ -279,9 +298,9 @@ export function ClubBottomNav({ clubId, isAdmin = false }: ClubBottomNavProps) {
               <div className="pointer-events-auto mx-auto w-full max-w-sm">
                 <div className="relative rounded-[32px] bg-white p-6 shadow-[0_20px_50px_rgba(0,0,0,0.15)]">
                   <div className="grid grid-cols-3 gap-6">
-                    {MORE_MENU_ITEMS.map((item, index) => (
+                    {enabledFeatures.map((item, index) => (
                       <motion.div
-                        key={item.label}
+                        key={item.featureKey}
                         custom={index}
                         variants={POPOVER_ITEM_VARIANTS}
                         initial="hidden"
@@ -289,23 +308,30 @@ export function ClubBottomNav({ clubId, isAdmin = false }: ClubBottomNavProps) {
                         exit="hidden"
                       >
                         <Link
-                          href={item.href(clubId)}
+                          href={item.userPath}
                           className="flex flex-col items-center space-y-2"
                           onClick={() => setOpenMenuPathname(null)}
                         >
                           <div
-                            className={`flex h-14 w-14 items-center justify-center rounded-2xl ${item.accentClassName}`}
+                            className={`flex h-14 w-14 items-center justify-center rounded-2xl ${
+                              FEATURE_ACCENT_CLASS[item.featureKey] ?? "bg-slate-100 text-slate-600"
+                            }`}
                           >
                             <span className="material-symbols-outlined text-[28px]">
-                              {item.icon}
+                              {item.iconName}
                             </span>
                           </div>
                           <span className="text-center text-[11px] font-semibold leading-4">
-                            {item.label}
+                            {item.displayName}
                           </span>
                         </Link>
                       </motion.div>
                     ))}
+                    {enabledFeatures.length === 0 ? (
+                      <div className="col-span-3 rounded-2xl bg-slate-50 px-4 py-5 text-center text-xs font-medium text-slate-500">
+                        활성화된 기능이 없습니다.
+                      </div>
+                    ) : null}
                   </div>
                   <div className="absolute -bottom-2 left-[70%] h-5 w-5 -translate-x-1/2 rotate-45 border-b border-r border-slate-100 bg-white" />
                 </div>

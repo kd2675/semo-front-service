@@ -3,7 +3,12 @@
 import Link from "next/link";
 import { Public_Sans } from "next/font/google";
 import { motion, useReducedMotion } from "motion/react";
+import { startTransition, useMemo, useState } from "react";
 import type { CSSProperties } from "react";
+import {
+  updateClubFeatures,
+  type ClubFeatureSummary,
+} from "@/app/lib/clubs";
 import { staggeredFadeUpMotion } from "@/app/lib/motion";
 
 const publicSans = Public_Sans({
@@ -11,36 +16,88 @@ const publicSans = Public_Sans({
   weight: ["300", "400", "500", "600", "700"],
 });
 
-type ActiveWidget = {
-  id: string;
-  title: string;
-  description: string;
-  icon: string;
-};
-
-type AvailableWidget = {
-  id: string;
-  title: string;
-  description: string;
-  icon: string;
-  imageUrl?: string;
-};
-
 type ClubAdminMenuClientProps = {
   clubId: string;
   clubName: string;
-  activeWidgets: ActiveWidget[];
-  availableWidgets: AvailableWidget[];
+  initialFeatures: ClubFeatureSummary[];
+  canPersist?: boolean;
 };
 
 export function ClubAdminMenuClient({
   clubId,
   clubName,
-  activeWidgets,
-  availableWidgets,
+  initialFeatures,
+  canPersist = true,
 }: ClubAdminMenuClientProps) {
   const prefersReducedMotion = useReducedMotion();
   const reduceMotion = Boolean(prefersReducedMotion);
+  const [features, setFeatures] = useState(initialFeatures);
+  const [isSaving, setIsSaving] = useState(false);
+  const [feedback, setFeedback] = useState<string | null>(null);
+
+  const enabledFeatures = useMemo(
+    () => features.filter((feature) => feature.enabled),
+    [features],
+  );
+  const disabledFeatures = useMemo(
+    () => features.filter((feature) => !feature.enabled),
+    [features],
+  );
+  const initialEnabledFeatureKeys = useMemo(
+    () =>
+      initialFeatures
+        .filter((feature) => feature.enabled)
+        .map((feature) => feature.featureKey)
+        .sort(),
+    [initialFeatures],
+  );
+  const currentEnabledFeatureKeys = useMemo(
+    () => enabledFeatures.map((feature) => feature.featureKey).sort(),
+    [enabledFeatures],
+  );
+  const isDirty = useMemo(
+    () =>
+      initialEnabledFeatureKeys.length !== currentEnabledFeatureKeys.length ||
+      initialEnabledFeatureKeys.some((featureKey, index) => featureKey !== currentEnabledFeatureKeys[index]),
+    [currentEnabledFeatureKeys, initialEnabledFeatureKeys],
+  );
+
+  const handleToggle = (featureKey: string) => {
+    startTransition(() => {
+      setFeatures((current) =>
+        current.map((feature) =>
+          feature.featureKey === featureKey
+            ? { ...feature, enabled: !feature.enabled }
+            : feature,
+        ),
+      );
+    });
+  };
+
+  const handleSave = async () => {
+    if (!canPersist) {
+      setFeedback("Mock mode에서는 저장되지 않습니다.");
+      return;
+    }
+
+    setIsSaving(true);
+    setFeedback(null);
+    const result = await updateClubFeatures(clubId, {
+      enabledFeatureKeys: features
+        .filter((feature) => feature.enabled)
+        .map((feature) => feature.featureKey),
+    });
+    setIsSaving(false);
+
+    if (!result.ok || !result.data) {
+      setFeedback(result.message ?? "기능 설정 저장에 실패했습니다.");
+      return;
+    }
+
+    setFeatures(result.data);
+    setFeedback("기능 설정이 저장되었습니다.");
+    window.dispatchEvent(new Event("semo:club-features-updated"));
+  };
 
   return (
     <div
@@ -64,17 +121,15 @@ export function ClubAdminMenuClient({
                 <span className="material-symbols-outlined">arrow_back</span>
               </Link>
               <div>
-                <h1 className="text-lg font-bold tracking-tight">Widget Customization</h1>
-                <p className="text-[10px] text-slate-500">Menu Management • {clubName}</p>
+                <h1 className="text-lg font-bold tracking-tight">Feature Settings</h1>
+                <p className="text-[10px] text-slate-500">
+                  Club Functions • {clubName}
+                </p>
               </div>
             </div>
-            <button
-              type="button"
-              className="flex size-10 items-center justify-center rounded-full bg-white text-slate-600 shadow-sm transition hover:bg-[var(--primary)]/10 hover:text-[var(--primary)]"
-              aria-label="도움말"
-            >
-              <span className="material-symbols-outlined">info</span>
-            </button>
+            <div className="rounded-full bg-white px-3 py-1.5 text-xs font-bold text-[var(--primary)] shadow-sm">
+              {enabledFeatures.length} enabled
+            </div>
           </div>
         </header>
 
@@ -82,27 +137,44 @@ export function ClubAdminMenuClient({
           <motion.section className="p-4" {...staggeredFadeUpMotion(0, reduceMotion)}>
             <div className="mb-4 flex items-center gap-2">
               <span className="material-symbols-outlined text-[var(--primary)]">dashboard</span>
-              <h2 className="text-lg font-bold">Layout Preview</h2>
+              <h2 className="text-lg font-bold">Feature Overview</h2>
             </div>
             <div className="grid grid-cols-1 gap-3">
-              <div
-                className="relative aspect-[16/9] overflow-hidden rounded-xl border border-slate-200 bg-cover bg-center shadow-sm"
-                style={{
-                  backgroundImage:
-                    "linear-gradient(rgba(0,0,0,0.38), rgba(0,0,0,0.38)), url('https://lh3.googleusercontent.com/aida-public/AB6AXuBuuDJecOabU9easE-Y4QW3oZ0NMgQxAbLIgB1Pj4cTatmIsqnKm0u_nl92SKXdie0qyT2lN2ng-AJP9oyqUnE6xO1-lZvwBImObgaFuuI8BiVrJVeorUWPgqhOC37DB2gT74hksE5Tzz6GuYunze3llCj5TOZwPYGy4CWnsOs6RRJZ2lj9jjMSxrsNRTdMmmxbvCpW0ZHOTEURFTA_1Ve1d6BuMlwo8RYPpg8vum_yloYXtLyuIhl19Qvz1R8wMRpnzcLJq0qh5w9Q')",
-                }}
-              >
-                <div className="absolute inset-0 flex flex-col gap-2 p-4">
-                  <div className="h-8 rounded-lg bg-white/20 backdrop-blur-sm" />
-                  <div className="flex gap-2">
-                    <div className="h-24 w-2/3 rounded-lg bg-white/20 backdrop-blur-sm" />
-                    <div className="h-24 w-1/3 rounded-lg border border-[var(--primary)]/50 bg-[var(--primary)]/35 backdrop-blur-sm" />
+              <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-[var(--primary)] to-orange-300" />
+                <div className="grid gap-4 md:grid-cols-[1.5fr_1fr]">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">
+                      Activated Features
+                    </p>
+                    <h3 className="mt-3 text-2xl font-bold">
+                      {enabledFeatures.length === 0
+                        ? "No features enabled yet"
+                        : `${enabledFeatures.length} feature${enabledFeatures.length > 1 ? "s" : ""} live`}
+                    </h3>
+                    <p className="mt-2 text-sm text-slate-500">
+                      활성화된 기능은 유저 More 메뉴에서 사용되고, 관리자 More 메뉴에서는 설정 화면으로 연결됩니다.
+                    </p>
                   </div>
-                  <div className="h-12 rounded-lg bg-white/20 backdrop-blur-sm" />
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="rounded-xl bg-orange-50 p-4">
+                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-orange-400">
+                        User More
+                      </p>
+                      <p className="mt-2 text-xl font-bold text-[var(--primary)]">
+                        {enabledFeatures.length}
+                      </p>
+                    </div>
+                    <div className="rounded-xl bg-slate-100 p-4">
+                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
+                        Available
+                      </p>
+                      <p className="mt-2 text-xl font-bold text-slate-900">
+                        {disabledFeatures.length}
+                      </p>
+                    </div>
+                  </div>
                 </div>
-                <span className="absolute inset-x-0 bottom-4 mx-auto w-fit rounded-full bg-white px-4 py-2 text-xs font-bold shadow-lg">
-                  Live Club Home Preview
-                </span>
               </div>
             </div>
           </motion.section>
@@ -110,85 +182,116 @@ export function ClubAdminMenuClient({
           <motion.section className="px-4 py-4" {...staggeredFadeUpMotion(1, reduceMotion)}>
             <div className="mb-4 flex items-center gap-2">
               <span className="material-symbols-outlined text-[var(--primary)]">view_quilt</span>
-              <h2 className="text-lg font-bold">Active Widgets</h2>
+              <h2 className="text-lg font-bold">Active Features</h2>
             </div>
             <div className="flex flex-col gap-3">
-              {activeWidgets.map((widget, index) => (
-                <motion.article
-                  key={widget.id}
-                  className="flex min-h-[72px] items-center gap-4 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm"
-                  {...staggeredFadeUpMotion(index + 2, reduceMotion)}
-                >
-                  <div className="flex size-12 shrink-0 items-center justify-center rounded-lg bg-[var(--primary)]/10 text-[var(--primary)]">
-                    <span className="material-symbols-outlined">{widget.icon}</span>
-                  </div>
-                  <div className="flex flex-1 flex-col justify-center">
-                    <p className="text-base font-bold leading-tight">{widget.title}</p>
-                    <p className="text-sm text-slate-500">{widget.description}</p>
-                  </div>
-                  <div className="shrink-0">
-                    <span className="material-symbols-outlined cursor-grab text-slate-300">
-                      drag_indicator
-                    </span>
-                  </div>
-                </motion.article>
-              ))}
+              {enabledFeatures.length === 0 ? (
+                <div className="rounded-xl border border-dashed border-slate-300 bg-white px-4 py-8 text-center text-sm text-slate-500">
+                  아직 활성화된 기능이 없습니다.
+                </div>
+              ) : (
+                enabledFeatures.map((feature, index) => (
+                  <motion.article
+                    key={feature.featureKey}
+                    className="flex min-h-[88px] items-center gap-4 rounded-xl border border-slate-200 bg-white px-4 py-4 shadow-sm"
+                    {...staggeredFadeUpMotion(index + 2, reduceMotion)}
+                  >
+                    <div className="flex size-12 shrink-0 items-center justify-center rounded-lg bg-[var(--primary)]/10 text-[var(--primary)]">
+                      <span className="material-symbols-outlined">{feature.iconName}</span>
+                    </div>
+                    <div className="flex flex-1 flex-col">
+                      <p className="text-base font-bold">{feature.displayName}</p>
+                      <p className="text-sm text-slate-500">
+                        {feature.description ?? "기능 설명이 없습니다."}
+                      </p>
+                      <p className="mt-2 text-xs font-medium text-slate-400">
+                        User: {feature.userPath}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleToggle(feature.featureKey)}
+                      className="rounded-full bg-[var(--primary)]/10 px-4 py-2 text-xs font-bold text-[var(--primary)] transition hover:bg-[var(--primary)]/20"
+                    >
+                      Disable
+                    </button>
+                  </motion.article>
+                ))
+              )}
             </div>
           </motion.section>
 
-          <motion.section className="mb-8 px-4 py-4" {...staggeredFadeUpMotion(5, reduceMotion)}>
+          <motion.section className="mb-8 px-4 py-4" {...staggeredFadeUpMotion(4, reduceMotion)}>
             <div className="mb-4 flex items-center gap-2">
               <span className="material-symbols-outlined text-[var(--primary)]">add_box</span>
-              <h2 className="text-lg font-bold">Available Widgets</h2>
+              <h2 className="text-lg font-bold">Available Features</h2>
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              {availableWidgets.map((widget, index) => (
-                <motion.article
-                  key={widget.id}
-                  className="group flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition-all hover:border-[var(--primary)]/30"
-                  {...staggeredFadeUpMotion(index + 6, reduceMotion)}
-                >
-                  <div className="flex h-24 items-center justify-center overflow-hidden rounded-lg bg-slate-50">
-                    {widget.imageUrl ? (
-                      <div
-                        className="h-full w-full bg-cover bg-center opacity-50 grayscale transition-all group-hover:grayscale-0"
-                        style={{ backgroundImage: `url('${widget.imageUrl}')` }}
-                        aria-hidden="true"
-                      />
-                    ) : (
-                      <span className="material-symbols-outlined text-4xl text-slate-400">
-                        {widget.icon}
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex min-h-[48px] flex-col">
-                    <p className="text-sm font-bold">{widget.title}</p>
-                    <p className="text-xs text-slate-500">{widget.description}</p>
-                  </div>
-                  <button
-                    type="button"
-                    className="flex w-full items-center justify-center gap-1 rounded-lg bg-[var(--primary)]/10 py-2 text-xs font-bold text-[var(--primary)] transition-colors hover:bg-[var(--primary)]/20"
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              {disabledFeatures.length === 0 ? (
+                <div className="col-span-full rounded-xl border border-dashed border-slate-300 bg-white px-4 py-8 text-center text-sm text-slate-500">
+                  현재 추가 가능한 기능이 더 없습니다.
+                </div>
+              ) : (
+                disabledFeatures.map((feature, index) => (
+                  <motion.article
+                    key={feature.featureKey}
+                    className="group flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition-all hover:border-[var(--primary)]/30"
+                    {...staggeredFadeUpMotion(index + 5, reduceMotion)}
                   >
-                    <span className="material-symbols-outlined text-sm">add</span>
-                    Add
-                  </button>
-                </motion.article>
-              ))}
+                    <div className="flex h-24 items-center justify-center rounded-xl bg-slate-50">
+                      <span className="material-symbols-outlined text-4xl text-[var(--primary)]">
+                        {feature.iconName}
+                      </span>
+                    </div>
+                    <div className="flex min-h-[58px] flex-col">
+                      <p className="text-sm font-bold">{feature.displayName}</p>
+                      <p className="text-xs text-slate-500">
+                        {feature.description ?? "기능 설명이 없습니다."}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleToggle(feature.featureKey)}
+                      className="flex w-full items-center justify-center gap-1 rounded-lg bg-[var(--primary)]/10 py-2 text-xs font-bold text-[var(--primary)] transition-colors hover:bg-[var(--primary)]/20"
+                    >
+                      <span className="material-symbols-outlined text-sm">add</span>
+                      Enable
+                    </button>
+                  </motion.article>
+                ))
+              )}
             </div>
           </motion.section>
         </main>
 
-        <div className="pointer-events-none fixed bottom-[76px] left-0 right-0 z-30 p-4">
-          <div className="pointer-events-auto mx-auto max-w-5xl">
-            <button
-              type="button"
-              className="flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--primary)] py-4 text-base font-bold text-white shadow-lg transition-all hover:scale-[1.01] hover:shadow-[0_18px_36px_rgba(236,91,19,0.22)]"
-            >
-              <span className="material-symbols-outlined">save</span>
-              Save Changes
-            </button>
+        {isDirty ? (
+          <div className="pointer-events-none fixed bottom-[76px] left-0 right-0 z-30 p-4">
+            <div className="pointer-events-auto mx-auto max-w-5xl">
+              <button
+                type="button"
+                onClick={() => void handleSave()}
+                disabled={isSaving}
+                className="flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--primary)] py-4 text-base font-bold text-white shadow-lg transition-all hover:scale-[1.01] hover:shadow-[0_18px_36px_rgba(236,91,19,0.22)] disabled:cursor-not-allowed disabled:opacity-70"
+              >
+                <span className="material-symbols-outlined">
+                  {isSaving ? "progress_activity" : "save"}
+                </span>
+                {isSaving ? "Saving..." : "Save Changes"}
+              </button>
+              {feedback ? (
+                <p className="mt-3 text-center text-xs font-medium text-slate-500">
+                  {feedback}
+                </p>
+              ) : null}
+            </div>
           </div>
-        </div>
+        ) : feedback ? (
+          <div className="pointer-events-none fixed bottom-[92px] left-0 right-0 z-30 p-4">
+            <p className="pointer-events-auto mx-auto max-w-xl rounded-full bg-white/90 px-4 py-2 text-center text-xs font-medium text-slate-500 shadow-sm backdrop-blur-sm">
+              {feedback}
+            </p>
+          </div>
+        ) : null}
       </div>
     </div>
   );
