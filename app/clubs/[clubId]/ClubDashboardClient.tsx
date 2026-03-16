@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { RouterLink } from "@/app/components/RouterLink";
 import { motion, useReducedMotion } from "motion/react";
 import { ClubBottomNav } from "@/app/components/ClubBottomNav";
 import { ClubModeSwitchFab } from "@/app/components/ClubModeSwitchFab";
@@ -45,12 +45,12 @@ export function ClubDashboardClient({ club }: ClubDashboardClientProps) {
         <header className="sticky top-0 z-50 border-b border-slate-200 bg-white/80 backdrop-blur-md">
           <div className="flex items-center justify-between p-4">
             <div className="flex items-center gap-3">
-              <Link
+              <RouterLink
                 href="/"
                 className="flex size-10 items-center justify-center rounded-full bg-[var(--primary)]/10 text-[var(--primary)]"
               >
                 <span className="material-symbols-outlined">menu</span>
-              </Link>
+              </RouterLink>
               <h1 className="text-xl font-bold tracking-tight">{club.name}</h1>
             </div>
             {isAdmin ? (

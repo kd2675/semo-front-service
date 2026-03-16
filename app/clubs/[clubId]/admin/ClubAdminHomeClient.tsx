@@ -1,7 +1,7 @@
 "use client";
 
 import { Public_Sans } from "next/font/google";
-import Link from "next/link";
+import { RouterLink } from "@/app/components/RouterLink";
 import { motion, useReducedMotion } from "motion/react";
 import type { CSSProperties } from "react";
 import { staggeredFadeUpMotion } from "@/app/lib/motion";
@@ -146,7 +146,7 @@ export function ClubAdminHomeClient({
                   {...staggeredFadeUpMotion(index + 5, reduceMotion)}
                 >
                   {action.href ? (
-                    <Link
+                    <RouterLink
                       href={action.href}
                       className="group flex gap-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:border-[var(--primary)]/50"
                     >
@@ -157,7 +157,7 @@ export function ClubAdminHomeClient({
                         <h3 className="text-base font-bold leading-tight">{action.title}</h3>
                         <p className="text-sm leading-normal text-slate-500">{action.description}</p>
                       </div>
-                    </Link>
+                    </RouterLink>
                   ) : (
                     <div className="group flex cursor-pointer gap-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:border-[var(--primary)]/50">
                       <div className="flex size-12 shrink-0 items-center justify-center rounded-lg bg-[var(--primary)]/10 text-[var(--primary)] transition-colors group-hover:bg-[var(--primary)] group-hover:text-white">

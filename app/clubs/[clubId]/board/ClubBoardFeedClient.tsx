@@ -1,7 +1,7 @@
 "use client";
 
-import Link from "next/link";
-import { AnimatePresence } from "motion/react";
+import { RouterLink } from "@/app/components/RouterLink";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import {
   startTransition,
   useDeferredValue,
@@ -20,7 +20,9 @@ import {
   type NoticeFeedCategory,
 } from "@/app/lib/clubs";
 import { toDateTimeLocalString } from "@/app/lib/date-time";
+import { staggeredFadeUpMotion } from "@/app/lib/motion";
 import { ClubNoticeEditorClient } from "./ClubNoticeEditorClient";
+import { ClubBoardFeedLoadingShell } from "../ClubRouteLoadingShells";
 
 const CATEGORIES: Array<{ id: NoticeFeedCategory; label: string }> = [
   { id: "all", label: "All Posts" },
@@ -51,7 +53,19 @@ type NoticeCreateDefaults = {
   scheduleEndAt: string;
 };
 
+function getNoticeHref(clubId: string, notice: ClubNoticeListItem) {
+  if (notice.linkedTargetType === "SCHEDULE_EVENT" && notice.linkedTargetId != null) {
+    return `/clubs/${clubId}/schedule/${notice.linkedTargetId}`;
+  }
+  if (notice.linkedTargetType === "SCHEDULE_VOTE" && notice.linkedTargetId != null) {
+    return `/clubs/${clubId}/schedule/votes/${notice.linkedTargetId}`;
+  }
+  return `/clubs/${clubId}/board/${notice.noticeId}`;
+}
+
 export function ClubBoardFeedClient({ clubId }: ClubBoardFeedClientProps) {
+  const prefersReducedMotion = useReducedMotion();
+  const reduceMotion = Boolean(prefersReducedMotion);
   const [query, setQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState<NoticeFeedCategory>("all");
   const [items, setItems] = useState<ClubNoticeListItem[]>([]);
@@ -147,17 +161,21 @@ export function ClubBoardFeedClient({ clubId }: ClubBoardFeedClientProps) {
     setShowCreateModal(true);
   };
 
+  if (!initialLoaded && !error) {
+    return <ClubBoardFeedLoadingShell />;
+  }
+
   return (
     <div className="bg-[var(--background-light)] font-display text-slate-900">
-      <div className="relative flex min-h-screen max-w-md flex-col overflow-hidden bg-white mx-auto">
+      <div className="relative mx-auto flex min-h-screen max-w-md flex-col bg-white">
         <header className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-200 bg-white p-4">
-          <Link
+          <RouterLink
             href={`/clubs/${clubId}`}
             className="flex size-10 items-center justify-start text-slate-900"
             aria-label={`${clubName} 홈으로 돌아가기`}
           >
             <span className="material-symbols-outlined">arrow_back</span>
-          </Link>
+          </RouterLink>
           <h2 className="flex-1 text-center text-lg font-bold leading-tight tracking-tight">
             Notice Board
           </h2>
@@ -183,8 +201,8 @@ export function ClubBoardFeedClient({ clubId }: ClubBoardFeedClientProps) {
           </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto pb-28">
-          <div className="px-4 py-4">
+        <main className="flex-1 pb-28">
+          <motion.div className="px-4 py-4" {...staggeredFadeUpMotion(0, reduceMotion)}>
             <label className="flex w-full flex-col">
               <div className="flex h-12 w-full items-stretch rounded-xl bg-slate-100">
                 <div className="flex items-center justify-center pl-4 text-slate-500">
@@ -204,9 +222,9 @@ export function ClubBoardFeedClient({ clubId }: ClubBoardFeedClientProps) {
                 />
               </div>
             </label>
-          </div>
+          </motion.div>
 
-          <div className="mb-2 px-4">
+          <motion.div className="mb-2 px-4" {...staggeredFadeUpMotion(1, reduceMotion)}>
             <div className="hide-scrollbar flex gap-6 overflow-x-auto border-b border-slate-200">
               {CATEGORIES.map((category) => {
                 const isActive = activeCategory === category.id;
@@ -230,81 +248,100 @@ export function ClubBoardFeedClient({ clubId }: ClubBoardFeedClientProps) {
                 );
               })}
             </div>
-          </div>
+          </motion.div>
 
           <div className="flex flex-col divide-y divide-slate-100">
-            {items.map((notice) => (
-              <Link
-                key={notice.noticeId}
-                href={`/clubs/${clubId}/board/${notice.noticeId}`}
-                className="flex gap-4 bg-white px-4 py-5 transition-colors hover:bg-slate-50"
-              >
-                <div className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-[var(--primary)]/10 text-[var(--primary)]">
-                  <span className="material-symbols-outlined">
-                    {CATEGORY_ICON[notice.categoryKey] ?? "campaign"}
-                  </span>
-                </div>
-                <div className="min-w-0 flex flex-1 flex-col gap-1">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
+            {items.map((notice, index) => (
+              <motion.article key={notice.noticeId} {...staggeredFadeUpMotion(index + 2, reduceMotion)}>
+                <RouterLink
+                  href={getNoticeHref(clubId, notice)}
+                  className="flex gap-4 bg-white px-4 py-5 transition-colors hover:bg-slate-50"
+                >
+                  <div className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-[var(--primary)]/10 text-[var(--primary)]">
+                    <span className="material-symbols-outlined">
+                      {CATEGORY_ICON[notice.categoryKey] ?? "campaign"}
+                    </span>
+                  </div>
+                  <div className="min-w-0 flex flex-1 flex-col gap-1">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2">
+                          {notice.pinned ? (
+                            <span className="rounded-full bg-[var(--primary)]/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[var(--primary)]">
+                              Pin
+                            </span>
+                          ) : null}
+                          <p className="truncate text-base font-bold leading-snug text-slate-900">
+                            {notice.title}
+                          </p>
+                        </div>
+                      </div>
+                      <span className="whitespace-nowrap text-xs text-slate-400">{notice.timeAgo}</span>
+                    </div>
+                    <p className="line-clamp-3 text-sm text-slate-600">{notice.summary}</p>
+                    <div className="mt-1 flex flex-wrap items-center gap-2 text-xs">
                       <div className="flex items-center gap-2">
-                        {notice.pinned ? (
-                          <span className="rounded-full bg-[var(--primary)]/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[var(--primary)]">
-                            Pin
-                          </span>
-                        ) : null}
-                        <p className="truncate text-base font-bold leading-snug text-slate-900">
-                          {notice.title}
-                        </p>
+                        <div className="flex size-5 items-center justify-center overflow-hidden rounded-full bg-[var(--primary)]/20">
+                          <span className="material-symbols-outlined text-[12px]">person</span>
+                        </div>
+                        <p className="font-semibold text-[var(--primary)]">{notice.authorDisplayName}</p>
                       </div>
+                      {notice.scheduleAtLabel ? (
+                        <span className="rounded-full bg-slate-100 px-2 py-1 font-medium text-slate-600">
+                          {notice.scheduleAtLabel}
+                        </span>
+                      ) : null}
+                      {notice.locationLabel ? (
+                        <span className="rounded-full bg-slate-100 px-2 py-1 font-medium text-slate-600">
+                          {notice.locationLabel}
+                        </span>
+                      ) : null}
                     </div>
-                    <span className="whitespace-nowrap text-xs text-slate-400">{notice.timeAgo}</span>
                   </div>
-                  <p className="line-clamp-3 text-sm text-slate-600">{notice.summary}</p>
-                  <div className="mt-1 flex flex-wrap items-center gap-2 text-xs">
-                    <div className="flex items-center gap-2">
-                      <div className="flex size-5 items-center justify-center overflow-hidden rounded-full bg-[var(--primary)]/20">
-                        <span className="material-symbols-outlined text-[12px]">person</span>
-                      </div>
-                      <p className="font-semibold text-[var(--primary)]">{notice.authorDisplayName}</p>
-                    </div>
-                    {notice.scheduleAtLabel ? (
-                      <span className="rounded-full bg-slate-100 px-2 py-1 font-medium text-slate-600">
-                        {notice.scheduleAtLabel}
-                      </span>
-                    ) : null}
-                    {notice.locationLabel ? (
-                      <span className="rounded-full bg-slate-100 px-2 py-1 font-medium text-slate-600">
-                        {notice.locationLabel}
-                      </span>
-                    ) : null}
-                  </div>
-                </div>
-              </Link>
+                </RouterLink>
+              </motion.article>
             ))}
           </div>
 
-          {loading && !initialLoaded ? (
-            <div className="flex justify-center p-8 text-sm font-medium text-slate-500">Loading notices...</div>
-          ) : null}
-
           {!loading && initialLoaded && items.length === 0 ? (
-            <div className="flex justify-center p-8 text-sm font-medium text-slate-500">
+            <motion.div
+              className="flex justify-center p-8 text-sm font-medium text-slate-500"
+              {...staggeredFadeUpMotion(4, reduceMotion)}
+            >
               등록된 공지가 없습니다.
-            </div>
+            </motion.div>
           ) : null}
 
           {error ? (
-            <div className="mx-4 mt-6 rounded-2xl bg-rose-50 px-4 py-3 text-sm font-medium text-rose-600">
+            <motion.div
+              className="mx-4 mt-6 rounded-2xl bg-rose-50 px-4 py-3 text-sm font-medium text-rose-600"
+              {...staggeredFadeUpMotion(5, reduceMotion)}
+            >
               {error}
-            </div>
+            </motion.div>
           ) : null}
 
           <div ref={setSentinelNode} className="h-16" />
 
           {loading && initialLoaded ? (
-            <div className="flex justify-center pb-8 text-sm font-medium text-slate-500">
-              Loading more...
+            <div className="space-y-3 px-4 pb-8">
+              {Array.from({ length: 2 }, (_, index) => (
+                <motion.article
+                  key={`append-shell-${index}`}
+                  className="flex gap-4 rounded-2xl border border-slate-100 bg-white px-4 py-5"
+                  {...staggeredFadeUpMotion(index + 6, reduceMotion)}
+                >
+                  <div className="size-12 rounded-xl bg-[var(--primary)]/10" />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <div className="h-5 w-10 rounded-full bg-[var(--primary)]/10" />
+                      <div className="h-4 w-24 rounded-full bg-slate-200" />
+                    </div>
+                    <div className="mt-3 h-4 w-full rounded-full bg-slate-200" />
+                    <div className="mt-2 h-4 w-2/3 rounded-full bg-slate-100" />
+                  </div>
+                </motion.article>
+              ))}
             </div>
           ) : null}
         </main>

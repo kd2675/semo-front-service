@@ -1,11 +1,14 @@
 "use client";
 
-import Link from "next/link";
+import { RouterLink } from "@/app/components/RouterLink";
+import { motion, useReducedMotion } from "motion/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useEffectEvent, useState } from "react";
 import { ClubBottomNav } from "@/app/components/ClubBottomNav";
 import { ClubModeSwitchFab } from "@/app/components/ClubModeSwitchFab";
 import { deleteClubNotice, getClubNoticeDetail, type ClubNoticeDetailResponse } from "@/app/lib/clubs";
+import { staggeredFadeUpMotion } from "@/app/lib/motion";
+import { ClubDetailLoadingShell } from "../../ClubRouteLoadingShells";
 
 type ClubNoticeDetailClientProps = {
   clubId: string;
@@ -13,6 +16,8 @@ type ClubNoticeDetailClientProps = {
 };
 
 export function ClubNoticeDetailClient({ clubId, noticeId }: ClubNoticeDetailClientProps) {
+  const prefersReducedMotion = useReducedMotion();
+  const reduceMotion = Boolean(prefersReducedMotion);
   const router = useRouter();
   const [payload, setPayload] = useState<ClubNoticeDetailResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -49,45 +54,51 @@ export function ClubNoticeDetailClient({ clubId, noticeId }: ClubNoticeDetailCli
     router.replace(`/clubs/${clubId}/board`);
   };
 
+  if (loading && !payload && !error) {
+    return <ClubDetailLoadingShell />;
+  }
+
   return (
     <div className="bg-[var(--background-light)] font-display text-slate-900">
       <div className="relative mx-auto flex min-h-screen max-w-md flex-col bg-white">
         <header className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-200 bg-white p-4">
-          <Link
+          <RouterLink
             href={`/clubs/${clubId}/board`}
             className="flex size-10 items-center justify-start text-slate-900"
             aria-label="공지 목록으로 돌아가기"
           >
             <span className="material-symbols-outlined">arrow_back</span>
-          </Link>
+          </RouterLink>
           <h2 className="flex-1 text-center text-lg font-bold leading-tight tracking-tight">Notice</h2>
           <div className="flex w-10 items-center justify-end">
             {payload?.canManage ? (
-              <Link
+              <RouterLink
                 href={`/clubs/${clubId}/board/${noticeId}/edit`}
                 className="flex h-10 w-10 items-center justify-center rounded-lg bg-[var(--primary)]/10 text-[var(--primary)]"
                 aria-label="공지 수정"
               >
                 <span className="material-symbols-outlined">edit</span>
-              </Link>
+              </RouterLink>
             ) : null}
           </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto pb-28">
-          {loading ? (
-            <div className="flex justify-center p-10 text-sm font-medium text-slate-500">Loading notice...</div>
-          ) : null}
-
+        <main className="flex-1 pb-28">
           {error ? (
-            <div className="mx-4 mt-6 rounded-2xl bg-rose-50 px-4 py-3 text-sm font-medium text-rose-600">
+            <motion.div
+              className="mx-4 mt-6 rounded-2xl bg-rose-50 px-4 py-3 text-sm font-medium text-rose-600"
+              {...staggeredFadeUpMotion(1, reduceMotion)}
+            >
               {error}
-            </div>
+            </motion.div>
           ) : null}
 
           {payload ? (
             <>
-              <section className="border-b border-slate-100 px-4 py-6">
+              <motion.section
+                className="border-b border-slate-100 px-4 py-6"
+                {...staggeredFadeUpMotion(2, reduceMotion)}
+              >
                 <div className="mb-3 flex flex-wrap items-center gap-2">
                   <span className="rounded-full bg-[var(--primary)]/10 px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-[var(--primary)]">
                     {payload.categoryLabel}
@@ -104,10 +115,10 @@ export function ClubNoticeDetailClient({ clubId, noticeId }: ClubNoticeDetailCli
                   <p>Published {payload.publishedAtLabel}</p>
                   <p>Updated {payload.updatedAtLabel}</p>
                 </div>
-              </section>
+              </motion.section>
 
               {(payload.scheduleAtLabel || payload.locationLabel) ? (
-                <section className="px-4 pt-5">
+                <motion.section className="px-4 pt-5" {...staggeredFadeUpMotion(3, reduceMotion)}>
                   <div className="rounded-2xl bg-[var(--primary)]/5 px-4 py-4">
                     <div className="mb-2 flex items-center gap-2 text-sm font-bold text-[var(--primary)]">
                       <span className="material-symbols-outlined text-[18px]">calendar_month</span>
@@ -123,17 +134,17 @@ export function ClubNoticeDetailClient({ clubId, noticeId }: ClubNoticeDetailCli
                       <p className="mt-1 text-sm text-slate-600">{payload.locationLabel}</p>
                     ) : null}
                   </div>
-                </section>
+                </motion.section>
               ) : null}
 
-              <section className="px-4 py-6">
+              <motion.section className="px-4 py-6" {...staggeredFadeUpMotion(4, reduceMotion)}>
                 <div className="whitespace-pre-wrap text-[15px] leading-7 text-slate-700">
                   {payload.content}
                 </div>
-              </section>
+              </motion.section>
 
               {payload.canManage ? (
-                <section className="px-4 pb-8">
+                <motion.section className="px-4 pb-8" {...staggeredFadeUpMotion(5, reduceMotion)}>
                   <button
                     type="button"
                     onClick={handleDelete}
@@ -142,7 +153,7 @@ export function ClubNoticeDetailClient({ clubId, noticeId }: ClubNoticeDetailCli
                   >
                     {deleting ? "Deleting..." : "Delete Notice"}
                   </button>
-                </section>
+                </motion.section>
               ) : null}
             </>
           ) : null}

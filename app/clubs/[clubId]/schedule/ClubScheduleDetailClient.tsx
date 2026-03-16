@@ -1,26 +1,77 @@
 "use client";
 
-import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { RouterLink } from "@/app/components/RouterLink";
+import { motion, useReducedMotion } from "motion/react";
 import { useEffect, useEffectEvent, useState } from "react";
 import { ClubBottomNav } from "@/app/components/ClubBottomNav";
 import { ClubModeSwitchFab } from "@/app/components/ClubModeSwitchFab";
 import {
-  deleteClubScheduleEvent,
   getClubScheduleEventDetail,
+  updateClubScheduleEventParticipation,
   type ClubScheduleEventDetailResponse,
 } from "@/app/lib/clubs";
+import { staggeredFadeUpMotion } from "@/app/lib/motion";
+import { ClubDetailLoadingShell } from "../ClubRouteLoadingShells";
 
 type ClubScheduleDetailClientProps = {
   clubId: string;
   eventId: string;
 };
 
+function toAttendanceLabel(status: ClubScheduleEventDetailResponse["myParticipationStatus"]) {
+  return status === "GOING" ? "참석" : status === "NOT_GOING" ? "불참" : "응답 대기";
+}
+
+function buildMapHref(locationLabel: string | null) {
+  if (!locationLabel) {
+    return null;
+  }
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(locationLabel)}`;
+}
+
+function buildDurationLabel(payload: ClubScheduleEventDetailResponse) {
+  if (!payload.startTime || !payload.endTime) {
+    return null;
+  }
+
+  const endDate = payload.endDate ?? payload.startDate;
+  const start = new Date(`${payload.startDate}T${payload.startTime}`);
+  const end = new Date(`${endDate}T${payload.endTime}`);
+  const diffMinutes = Math.round((end.getTime() - start.getTime()) / 60000);
+  if (!Number.isFinite(diffMinutes) || diffMinutes <= 0) {
+    return null;
+  }
+
+  if (diffMinutes < 60) {
+    return `${diffMinutes} min`;
+  }
+
+  const hours = Math.floor(diffMinutes / 60);
+  const minutes = diffMinutes % 60;
+  return minutes === 0 ? `${hours} hr` : `${hours} hr ${minutes} min`;
+}
+
+function getParticipationPrimaryLabel(status: ClubScheduleEventDetailResponse["myParticipationStatus"]) {
+  if (status === "GOING") {
+    return "참석 완료";
+  }
+  if (status === "NOT_GOING") {
+    return "다시 참석하기";
+  }
+  return "참석하기";
+}
+
+function getParticipationSecondaryLabel(status: ClubScheduleEventDetailResponse["myParticipationStatus"]) {
+  return status === "NOT_GOING" ? "불참 완료" : "불참";
+}
+
 export function ClubScheduleDetailClient({ clubId, eventId }: ClubScheduleDetailClientProps) {
-  const router = useRouter();
+  const prefersReducedMotion = useReducedMotion();
+  const reduceMotion = Boolean(prefersReducedMotion);
   const [payload, setPayload] = useState<ClubScheduleEventDetailResponse | null>(null);
   const [loading, setLoading] = useState(true);
-  const [deleting, setDeleting] = useState(false);
+  const [savingParticipation, setSavingParticipation] = useState(false);
+  const [sharing, setSharing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const loadDetail = useEffectEvent(async () => {
@@ -39,116 +90,266 @@ export function ClubScheduleDetailClient({ clubId, eventId }: ClubScheduleDetail
     void loadDetail();
   }, [clubId, eventId]);
 
-  const handleDelete = async () => {
-    if (!window.confirm("이 일정을 삭제하시겠습니까?")) {
+  const handleParticipation = async (participationStatus: "GOING" | "NOT_GOING") => {
+    setSavingParticipation(true);
+    setError(null);
+    const result = await updateClubScheduleEventParticipation(clubId, eventId, { participationStatus });
+    setSavingParticipation(false);
+    if (!result.ok || !result.data) {
+      setError(result.message ?? "참석 상태 저장에 실패했습니다.");
       return;
     }
-    setDeleting(true);
-    const result = await deleteClubScheduleEvent(clubId, eventId);
-    setDeleting(false);
-    if (!result.ok) {
-      setError(result.message ?? "일정 삭제에 실패했습니다.");
-      return;
-    }
-    router.replace(`/clubs/${clubId}/schedule`);
+    setPayload(result.data);
   };
 
+  const handleShare = async () => {
+    setSharing(true);
+    try {
+      const url = window.location.href;
+      const shareData = {
+        title: payload?.title ?? "일정 공유",
+        text: payload?.dateLabel ?? "일정 상세 링크",
+        url,
+      };
+
+      if (navigator.share) {
+        await navigator.share(shareData);
+      } else if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(url);
+        window.alert("일정 링크를 복사했습니다.");
+      } else {
+        window.prompt("일정 링크를 복사하세요.", url);
+      }
+    } catch (shareError) {
+      if (!(shareError instanceof DOMException && shareError.name === "AbortError")) {
+        setError("일정 링크를 공유하지 못했습니다.");
+      }
+    } finally {
+      setSharing(false);
+    }
+  };
+
+  if (loading && !payload && !error) {
+    return <ClubDetailLoadingShell />;
+  }
+
+  const mapHref = buildMapHref(payload?.locationLabel ?? null);
+  const durationLabel = payload ? buildDurationLabel(payload) : null;
+  const showParticipationActions = Boolean(payload?.participationEnabled);
+  const showAdminActions = Boolean(payload?.canManage);
+  const showFooter = showParticipationActions || showAdminActions;
+
   return (
-    <div className="bg-[var(--background-light)] font-display text-slate-900">
+    <div className="min-h-screen bg-white font-display text-slate-900">
       <div className="relative mx-auto flex min-h-screen max-w-md flex-col bg-white">
-        <header className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-200 bg-white p-4">
-          <Link
+        <header className="sticky top-0 z-50 flex h-14 items-center justify-between border-b border-slate-100 bg-white px-4">
+          <RouterLink
             href={`/clubs/${clubId}/schedule`}
-            className="flex size-10 items-center justify-start text-slate-900"
+            className="rounded-full p-2 transition-colors hover:bg-slate-100"
             aria-label="일정 목록으로 돌아가기"
           >
-            <span className="material-symbols-outlined">arrow_back</span>
-          </Link>
-          <h2 className="flex-1 text-center text-lg font-bold leading-tight tracking-tight">Schedule</h2>
-          <div className="flex w-10 items-center justify-end">
-            {payload?.canManage ? (
-              <Link
-                href={`/clubs/${clubId}/schedule/${eventId}/edit`}
-                className="flex h-10 w-10 items-center justify-center rounded-lg bg-[var(--primary)]/10 text-[var(--primary)]"
-                aria-label="일정 수정"
-              >
-                <span className="material-symbols-outlined">edit</span>
-              </Link>
-            ) : null}
-          </div>
+            <span className="material-symbols-outlined text-[24px]">arrow_back</span>
+          </RouterLink>
+          <h1 className="text-lg font-bold">Event Details</h1>
+          <div className="w-10" />
         </header>
 
-        <main className="flex-1 overflow-y-auto pb-28">
-          {loading ? (
-            <div className="flex justify-center p-10 text-sm font-medium text-slate-500">Loading schedule...</div>
-          ) : null}
-
+        <main className="flex-1 overflow-y-auto">
           {error ? (
-            <div className="mx-4 mt-6 rounded-2xl bg-rose-50 px-4 py-3 text-sm font-medium text-rose-600">
+            <motion.div
+              className="mx-4 mt-4 rounded-2xl bg-rose-50 px-4 py-3 text-sm font-medium text-rose-600"
+              {...staggeredFadeUpMotion(1, reduceMotion)}
+            >
               {error}
-            </div>
+            </motion.div>
           ) : null}
 
           {payload ? (
             <>
-              <section className="border-b border-slate-100 px-4 py-6">
+              <motion.section className="bg-white p-6" {...staggeredFadeUpMotion(2, reduceMotion)}>
                 <div className="mb-3 flex flex-wrap items-center gap-2">
-                  <span className="rounded-full bg-[var(--primary)]/10 px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-[var(--primary)]">
-                    {payload.categoryKey}
+                  <span className="rounded-md bg-[#e7effd] px-2 py-1 text-xs font-bold uppercase text-[#135bec]">
+                    Schedule
                   </span>
                   {payload.postedToBoard ? (
-                    <span className="rounded-full bg-slate-100 px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-600">
-                      Posted to Board
+                    <span className="rounded-md bg-slate-100 px-2 py-1 text-xs font-bold uppercase text-slate-500">
+                      Notice
                     </span>
                   ) : null}
+                  <span className="text-sm text-slate-400">#{toAttendanceLabel(payload.myParticipationStatus)}</span>
                 </div>
-                <h1 className="text-2xl font-extrabold tracking-tight text-slate-900">{payload.title}</h1>
-                <div className="mt-4 space-y-2 text-sm text-slate-600">
-                  <p>{payload.startAtLabel}{payload.endAtLabel ? ` - ${payload.endAtLabel}` : ""}</p>
-                  {payload.locationLabel ? <p>{payload.locationLabel}</p> : null}
-                </div>
-              </section>
 
-              {payload.description ? (
-                <section className="px-4 py-6">
-                  <div className="whitespace-pre-wrap text-[15px] leading-7 text-slate-700">
-                    {payload.description}
+                <h2 className="mb-4 text-2xl font-bold">{payload.title}</h2>
+
+                <div className="space-y-3">
+                  <div className="flex items-center text-slate-600">
+                    <span className="material-symbols-outlined mr-3 text-[#135bec]">calendar_today</span>
+                    <span className="text-[15px]">{payload.dateLabel}</span>
                   </div>
-                </section>
-              ) : null}
+                  <div className="flex items-center text-slate-600">
+                    <span className="material-symbols-outlined mr-3 text-[#135bec]">schedule</span>
+                    <span className="text-[15px]">
+                      {payload.timeLabel ?? "시간 미정"}
+                      {durationLabel ? <small className="ml-1 text-slate-400">({durationLabel})</small> : null}
+                    </span>
+                  </div>
+                </div>
+              </motion.section>
 
-              {payload.linkedNoticeId ? (
-                <section className="px-4 pb-4">
-                  <Link
+              <hr className="border-t-8 border-[#f9fafb]" />
+
+              <motion.section className="space-y-8 p-6" {...staggeredFadeUpMotion(3, reduceMotion)}>
+                {payload.locationLabel ? (
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-sm font-bold uppercase tracking-wider text-slate-500">Location</h3>
+                      {mapHref ? (
+                        <a
+                          href={mapHref}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-sm font-semibold text-[#135bec]"
+                        >
+                          Open Maps
+                        </a>
+                      ) : null}
+                    </div>
+
+                    <div className="mb-3 flex items-start gap-3">
+                      <span className="material-symbols-outlined mt-0.5 shrink-0 text-[#135bec]">location_on</span>
+                      <div>
+                        <p className="font-semibold">{payload.locationLabel}</p>
+                        <p className="text-sm text-slate-500">등록된 위치 정보를 기준으로 지도 앱으로 이동할 수 있습니다.</p>
+                      </div>
+                    </div>
+
+                    <div className="relative flex h-32 w-full items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-[linear-gradient(135deg,#f3f4f6_25%,#e5e7eb_100%)]">
+                      <div className="flex flex-col items-center text-slate-400">
+                        <span className="material-symbols-outlined mb-1 text-[32px]">map</span>
+                        <span className="text-[10px] font-bold uppercase tracking-[0.24em]">Map Preview</span>
+                      </div>
+                    </div>
+                  </div>
+                ) : null}
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="rounded-xl border border-[#f3f4f6] bg-[#f9fafb] p-4">
+                    <p className="mb-1 text-[11px] font-bold uppercase text-slate-400">Participants</p>
+                    <p className="font-bold">
+                      {payload.goingCount}
+                      {payload.attendeeLimit ? ` / ${payload.attendeeLimit}` : ""}{" "}
+                      <span className="text-xs font-normal text-slate-400">Joined</span>
+                    </p>
+                  </div>
+                  <div className="rounded-xl border border-[#f3f4f6] bg-[#f9fafb] p-4">
+                    <p className="mb-1 text-[11px] font-bold uppercase text-slate-400">Condition</p>
+                    <p className="font-bold">{payload.participationConditionText ?? "조건 없음"}</p>
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <h3 className="text-sm font-bold uppercase tracking-wider text-slate-500">Fees & Settlement</h3>
+                  <div className="flex items-center justify-between rounded-xl border border-[#e7effd] bg-[#e7effd]/40 p-4">
+                    <div className="flex items-center gap-3">
+                      <div className="rounded-lg bg-[#135bec] p-2 text-white">
+                        <span className="material-symbols-outlined text-[20px]">payments</span>
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold text-[#135bec]">
+                          {payload.feeRequired ? (payload.feeNWaySplit ? "N-way Settlement" : "Fee Required") : "No Fee"}
+                        </p>
+                        <p className="text-[11px] font-medium text-[#135bec]/70">
+                          {payload.feeRequired
+                            ? payload.feeNWaySplit
+                              ? "행사 종료 후 1/N 정산 예정"
+                              : "참가비가 있는 일정입니다."
+                            : "별도 참가비가 없는 일정입니다."}
+                        </p>
+                      </div>
+                    </div>
+                    <span className="font-bold text-[#135bec]">{payload.feeRequired ? "확인 필요" : "무료"}</span>
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <h3 className="text-sm font-bold uppercase tracking-wider text-slate-500">Memo</h3>
+                  <div className="rounded-xl bg-slate-50 p-4 text-[15px] leading-relaxed text-slate-700">
+                    {payload.participationConditionText ?? "추가 메모가 없습니다."}
+                  </div>
+                </div>
+
+                {payload.linkedNoticeId ? (
+                  <RouterLink
                     href={`/clubs/${clubId}/board/${payload.linkedNoticeId}`}
-                    className="flex items-center justify-between rounded-2xl bg-[var(--primary)]/5 px-4 py-4"
+                    className="flex items-center justify-between rounded-2xl border border-slate-100 bg-slate-50 px-5 py-4"
                   >
                     <div>
-                      <p className="text-sm font-bold text-[var(--primary)]">공지에도 게시됨</p>
-                      <p className="mt-1 text-xs text-slate-600">공지 상세에서 함께 확인할 수 있습니다.</p>
+                      <p className="text-sm font-bold text-slate-900">게시판 공지와 연결됨</p>
+                      <p className="mt-1 text-xs text-slate-500">공지 화면에서도 이 일정을 함께 확인할 수 있습니다.</p>
                     </div>
-                    <span className="material-symbols-outlined text-[var(--primary)]">chevron_right</span>
-                  </Link>
-                </section>
-              ) : null}
+                    <span className="material-symbols-outlined text-slate-500">chevron_right</span>
+                  </RouterLink>
+                ) : null}
+              </motion.section>
 
-              {payload.canManage ? (
-                <section className="px-4 pb-8">
-                  <button
-                    type="button"
-                    onClick={handleDelete}
-                    disabled={deleting}
-                    className="w-full rounded-2xl bg-rose-50 px-4 py-3 text-sm font-bold text-rose-600 transition hover:bg-rose-100 disabled:opacity-60"
-                  >
-                    {deleting ? "Deleting..." : "Delete Schedule"}
-                  </button>
-                </section>
-              ) : null}
+              <div className={showFooter ? "h-48" : "h-24"} />
             </>
           ) : null}
         </main>
 
-        {payload?.admin ? <ClubModeSwitchFab clubId={clubId} mode="user" /> : null}
+        {showFooter && payload ? (
+          <footer className="fixed bottom-0 left-0 right-0 z-30 border-t border-[#f3f4f6] bg-white p-4 shadow-[0_-4px_12px_rgba(0,0,0,0.05)]">
+            <div className="mx-auto max-w-md space-y-3 pb-[calc(env(safe-area-inset-bottom)+4.75rem)]">
+              {showParticipationActions ? (
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => handleParticipation("GOING")}
+                    disabled={savingParticipation || payload.myParticipationStatus === "GOING"}
+                    className="rounded-2xl bg-[#135bec] px-4 py-4 font-bold text-white transition-all active:scale-[0.98] disabled:opacity-70"
+                  >
+                    {savingParticipation && payload.myParticipationStatus !== "GOING"
+                      ? "처리 중..."
+                      : getParticipationPrimaryLabel(payload.myParticipationStatus)}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleParticipation("NOT_GOING")}
+                    disabled={savingParticipation || payload.myParticipationStatus === "NOT_GOING"}
+                    className="rounded-2xl border-2 border-slate-100 bg-slate-50 px-4 py-4 font-bold text-slate-600 transition-colors disabled:opacity-70"
+                  >
+                    {savingParticipation && payload.myParticipationStatus !== "NOT_GOING"
+                      ? "처리 중..."
+                      : getParticipationSecondaryLabel(payload.myParticipationStatus)}
+                  </button>
+                </div>
+              ) : null}
+
+              {showAdminActions ? (
+                <div className="grid grid-cols-2 gap-3">
+                  <RouterLink
+                    href={`/clubs/${clubId}/schedule/${eventId}/edit`}
+                    className="flex items-center justify-center gap-2 rounded-xl border-2 border-slate-100 bg-slate-50 py-3 font-bold text-slate-600 transition-colors hover:bg-slate-100"
+                  >
+                    <span className="material-symbols-outlined text-[20px]">edit</span>
+                    Edit
+                  </RouterLink>
+                  <button
+                    type="button"
+                    onClick={handleShare}
+                    disabled={sharing}
+                    className="flex items-center justify-center gap-2 rounded-xl border-2 border-slate-100 bg-slate-50 py-3 font-bold text-slate-600 transition-colors hover:bg-slate-100 disabled:opacity-60"
+                  >
+                    <span className="material-symbols-outlined text-[20px]">share</span>
+                    {sharing ? "Sharing..." : "Share"}
+                  </button>
+                </div>
+              ) : null}
+            </div>
+          </footer>
+        ) : null}
+
+        {payload?.admin ? <ClubModeSwitchFab clubId={clubId} mode="user" className="bottom-32" /> : null}
         <ClubBottomNav clubId={clubId} isAdmin={payload?.admin ?? false} />
       </div>
     </div>

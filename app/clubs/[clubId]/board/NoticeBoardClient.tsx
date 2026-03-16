@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { RouterLink } from "@/app/components/RouterLink";
 import { startTransition, useDeferredValue, useState } from "react";
 import { motion, useReducedMotion } from "motion/react";
 import { ClubBottomNav } from "@/app/components/ClubBottomNav";
@@ -48,15 +48,15 @@ export function NoticeBoardClient({
 
   return (
     <div className="bg-[var(--background-light)] font-display text-slate-900">
-      <div className="relative flex h-screen max-w-md flex-col overflow-hidden bg-white mx-auto">
+      <div className="relative mx-auto flex min-h-screen max-w-md flex-col bg-white">
         <header className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-200 bg-white p-4">
-          <Link
+          <RouterLink
             href={`/clubs/${clubId}`}
             className="flex size-10 items-center justify-start text-slate-900"
             aria-label={`${clubName} 홈으로 돌아가기`}
           >
             <span className="material-symbols-outlined">arrow_back</span>
-          </Link>
+          </RouterLink>
           <h2 className="flex-1 text-center text-lg font-bold leading-tight tracking-tight">
             Notice Board
           </h2>
@@ -71,7 +71,7 @@ export function NoticeBoardClient({
           </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto pb-28">
+        <main className="flex-1 pb-28">
           <motion.div className="px-4 py-4" {...staggeredFadeUpMotion(0, reduceMotion)}>
             <label className="flex w-full flex-col">
               <div className="flex h-12 w-full items-stretch rounded-xl bg-slate-100">

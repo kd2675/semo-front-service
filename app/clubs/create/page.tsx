@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { RouterLink } from "@/app/components/RouterLink";
 import { motion, useReducedMotion } from "motion/react";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -151,20 +151,20 @@ export default function CreateClubPage() {
           className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-100 bg-white/90 p-4 backdrop-blur-md"
           {...staggeredFadeUpMotion(0, reduceMotion)}
         >
-          <Link
+          <RouterLink
             href="/"
             className="flex size-10 items-center justify-center rounded-full text-slate-900 transition-colors hover:bg-slate-100"
             aria-label="홈으로 돌아가기"
           >
             <span className="material-symbols-outlined">arrow_back</span>
-          </Link>
+          </RouterLink>
           <h2 className="flex-1 pr-10 text-center text-lg font-bold leading-tight tracking-tight">
             Create Club
           </h2>
         </motion.header>
 
         <form onSubmit={handleSubmit} className="flex flex-1 flex-col">
-          <main className="flex-1 overflow-y-auto pb-28">
+          <main className="flex-1 pb-28">
             <motion.section className="flex p-6" {...staggeredFadeUpMotion(1, reduceMotion)}>
               <div className="flex w-full flex-col items-center gap-4">
                 <label className="group relative cursor-pointer">

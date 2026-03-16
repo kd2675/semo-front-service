@@ -9,6 +9,7 @@ import {
   type MyClubSummary,
 } from "@/app/lib/clubs";
 import { ClubAdminAttendanceClient } from "./ClubAdminAttendanceClient";
+import { AdminAttendanceLoadingShell } from "../../AdminRouteLoadingShells";
 
 type ClubAdminAttendanceFallbackClientProps = {
   clubId: string;
@@ -43,7 +44,6 @@ export function ClubAdminAttendanceFallbackClient({
         router.replace(`/clubs/${clubId}/admin`);
         return;
       }
-
       setClub(clubResult.data);
       setAttendance(attendanceResult.data);
     })();
@@ -54,7 +54,7 @@ export function ClubAdminAttendanceFallbackClient({
   }, [clubId, router]);
 
   if (!club || !attendance) {
-    return null;
+    return <AdminAttendanceLoadingShell />;
   }
 
   return <ClubAdminAttendanceClient clubId={clubId} initialData={attendance} />;

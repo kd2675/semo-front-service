@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { AdminMenuLoadingShell } from "../AdminRouteLoadingShells";
 import { ClubAdminMenuClient } from "./ClubAdminMenuClient";
 import {
   getClubFeatures,
@@ -41,7 +42,7 @@ export function ClubAdminMenuFallbackClient({ clubId }: ClubAdminMenuFallbackCli
   }, [clubId, router]);
 
   if (!club) {
-    return null;
+    return <AdminMenuLoadingShell />;
   }
 
   return (

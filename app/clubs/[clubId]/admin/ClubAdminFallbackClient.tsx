@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ClubAdminHomeClient } from "./ClubAdminHomeClient";
+import { AdminHomeLoadingShell } from "./AdminRouteLoadingShells";
 import { getMyClub, type MyClubSummary } from "@/app/lib/clubs";
 
 type ClubAdminFallbackClientProps = {
@@ -134,7 +135,7 @@ export function ClubAdminFallbackClient({ clubId }: ClubAdminFallbackClientProps
   );
 
   if (!club) {
-    return null;
+    return <AdminHomeLoadingShell />;
   }
 
   return (

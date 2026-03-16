@@ -1,9 +1,9 @@
 "use client";
 
-import Link from "next/link";
+import { RouterLink } from "@/app/components/RouterLink";
 import { Public_Sans } from "next/font/google";
 import { motion, useReducedMotion } from "motion/react";
-import { startTransition, useMemo, useState } from "react";
+import { startTransition, useEffect, useMemo, useState } from "react";
 import type { CSSProperties } from "react";
 import {
   updateClubFeatures,
@@ -15,6 +15,13 @@ const publicSans = Public_Sans({
   subsets: ["latin"],
   weight: ["300", "400", "500", "600", "700"],
 });
+
+function extractEnabledFeatureKeys(features: ClubFeatureSummary[]) {
+  return features
+    .filter((feature) => feature.enabled)
+    .map((feature) => feature.featureKey)
+    .sort();
+}
 
 type ClubAdminMenuClientProps = {
   clubId: string;
@@ -32,8 +39,16 @@ export function ClubAdminMenuClient({
   const prefersReducedMotion = useReducedMotion();
   const reduceMotion = Boolean(prefersReducedMotion);
   const [features, setFeatures] = useState(initialFeatures);
+  const [savedEnabledFeatureKeys, setSavedEnabledFeatureKeys] = useState<string[]>(
+    () => extractEnabledFeatureKeys(initialFeatures),
+  );
   const [isSaving, setIsSaving] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
+
+  useEffect(() => {
+    setFeatures(initialFeatures);
+    setSavedEnabledFeatureKeys(extractEnabledFeatureKeys(initialFeatures));
+  }, [initialFeatures]);
 
   const enabledFeatures = useMemo(
     () => features.filter((feature) => feature.enabled),
@@ -43,23 +58,15 @@ export function ClubAdminMenuClient({
     () => features.filter((feature) => !feature.enabled),
     [features],
   );
-  const initialEnabledFeatureKeys = useMemo(
-    () =>
-      initialFeatures
-        .filter((feature) => feature.enabled)
-        .map((feature) => feature.featureKey)
-        .sort(),
-    [initialFeatures],
-  );
   const currentEnabledFeatureKeys = useMemo(
     () => enabledFeatures.map((feature) => feature.featureKey).sort(),
     [enabledFeatures],
   );
   const isDirty = useMemo(
     () =>
-      initialEnabledFeatureKeys.length !== currentEnabledFeatureKeys.length ||
-      initialEnabledFeatureKeys.some((featureKey, index) => featureKey !== currentEnabledFeatureKeys[index]),
-    [currentEnabledFeatureKeys, initialEnabledFeatureKeys],
+      savedEnabledFeatureKeys.length !== currentEnabledFeatureKeys.length ||
+      savedEnabledFeatureKeys.some((featureKey, index) => featureKey !== currentEnabledFeatureKeys[index]),
+    [currentEnabledFeatureKeys, savedEnabledFeatureKeys],
   );
 
   const handleToggle = (featureKey: string) => {
@@ -95,6 +102,7 @@ export function ClubAdminMenuClient({
     }
 
     setFeatures(result.data);
+    setSavedEnabledFeatureKeys(extractEnabledFeatureKeys(result.data));
     setFeedback("기능 설정이 저장되었습니다.");
     window.dispatchEvent(new Event("semo:club-features-updated"));
   };
@@ -113,13 +121,13 @@ export function ClubAdminMenuClient({
         <header className="sticky top-0 z-20 border-b border-slate-200 bg-[#f8f6f6]/85 backdrop-blur-md">
           <div className="mx-auto flex w-full max-w-5xl items-center justify-between p-4">
             <div className="flex items-center gap-3">
-              <Link
+              <RouterLink
                 href={`/clubs/${clubId}/admin`}
                 className="flex size-10 items-center justify-center rounded-full text-slate-900 transition hover:bg-white"
                 aria-label="관리자 홈으로 돌아가기"
               >
                 <span className="material-symbols-outlined">arrow_back</span>
-              </Link>
+              </RouterLink>
               <div>
                 <h1 className="text-lg font-bold tracking-tight">Feature Settings</h1>
                 <p className="text-[10px] text-slate-500">

@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { RouterLink } from "@/app/components/RouterLink";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -235,7 +235,7 @@ export function AdminBottomNav({ clubId }: AdminBottomNavProps) {
       }
 
       return (
-        <Link
+        <RouterLink
           key={item.label}
           href={href}
           className={`flex h-10 w-10 touch-manipulation items-center justify-center transition ${textClassName}`}
@@ -258,7 +258,7 @@ export function AdminBottomNav({ clubId }: AdminBottomNavProps) {
               />
             ) : null}
           </motion.div>
-        </Link>
+        </RouterLink>
       );
     });
 
@@ -304,7 +304,7 @@ export function AdminBottomNav({ clubId }: AdminBottomNavProps) {
                         animate="visible"
                         exit="hidden"
                       >
-                        <Link
+                        <RouterLink
                           href={item.adminPath}
                           className="flex flex-col items-center space-y-2"
                           onClick={() => setOpenMenuPathname(null)}
@@ -321,7 +321,7 @@ export function AdminBottomNav({ clubId }: AdminBottomNavProps) {
                           <span className="text-center text-[11px] font-semibold leading-4">
                             {item.displayName}
                           </span>
-                        </Link>
+                        </RouterLink>
                       </motion.div>
                     ))}
                     {enabledFeatures.length === 0 ? (

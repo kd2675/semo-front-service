@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getMyClub, type MyClubSummary } from "@/app/lib/clubs";
+import { AdminMembersLoadingShell } from "../AdminRouteLoadingShells";
 import { ClubAdminMembersClient } from "./ClubAdminMembersClient";
 
 type ClubAdminMembersFallbackClientProps = {
@@ -79,7 +80,7 @@ export function ClubAdminMembersFallbackClient({
   );
 
   if (!club) {
-    return null;
+    return <AdminMembersLoadingShell />;
   }
 
   return <ClubAdminMembersClient clubId={clubId} clubName={club.name} members={members} />;

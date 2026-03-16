@@ -1,12 +1,13 @@
 "use client";
 
-import Link from "next/link";
+import { RouterLink } from "@/app/components/RouterLink";
 import { motion, useReducedMotion } from "motion/react";
 import { useEffect, useState } from "react";
 import { ClubBottomNav } from "@/app/components/ClubBottomNav";
 import { ClubModeSwitchFab } from "@/app/components/ClubModeSwitchFab";
 import { getClubProfile, type ClubProfileResponse } from "@/app/lib/clubs";
 import { staggeredFadeUpMotion } from "@/app/lib/motion";
+import { ClubProfileLoadingShell } from "../ClubRouteLoadingShells";
 
 type ClubProfileFallbackClientProps = {
   clubId: string;
@@ -16,11 +17,16 @@ export function ClubProfileFallbackClient({ clubId }: ClubProfileFallbackClientP
   const prefersReducedMotion = useReducedMotion();
   const reduceMotion = Boolean(prefersReducedMotion);
   const [payload, setPayload] = useState<ClubProfileResponse | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
     void (async () => {
       const result = await getClubProfile(clubId);
+      if (cancelled) {
+        return;
+      }
+      setIsLoading(false);
       if (cancelled || !result.ok || !result.data) {
         return;
       }
@@ -34,21 +40,25 @@ export function ClubProfileFallbackClient({ clubId }: ClubProfileFallbackClientP
   const appProfile = payload?.appProfile;
   const clubProfile = payload?.clubProfile;
 
+  if (isLoading) {
+    return <ClubProfileLoadingShell />;
+  }
+
   return (
     <div className="min-h-screen bg-[var(--background-light)] font-display text-slate-900">
       <div className="mx-auto flex min-h-screen max-w-md flex-col bg-white shadow-xl">
         <header className="flex items-center justify-between px-4 pb-2 pt-6">
-          <Link
+          <RouterLink
             href={`/clubs/${clubId}`}
             className="flex size-10 items-center justify-center rounded-full transition-colors hover:bg-slate-100"
           >
             <span className="material-symbols-outlined">arrow_back</span>
-          </Link>
+          </RouterLink>
           <h1 className="text-lg font-bold tracking-tight">Club Profile</h1>
           <div className="size-10" />
         </header>
 
-        <main className="flex-1 overflow-y-auto pb-28">
+        <main className="flex-1 pb-28">
           <motion.section className="px-4 py-6" {...staggeredFadeUpMotion(0, reduceMotion)}>
             <div className="rounded-2xl border border-slate-100 bg-slate-50 p-5">
               <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">App Profile</p>

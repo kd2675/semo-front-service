@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { RouterLink } from "@/app/components/RouterLink";
 import { useRouter } from "next/navigation";
 import { useEffect, useEffectEvent, useState } from "react";
 import {
@@ -9,6 +9,7 @@ import {
   updateClubNotice,
   type ClubNoticeDetailResponse,
 } from "@/app/lib/clubs";
+import { ClubEditorLoadingShell } from "../ClubRouteLoadingShells";
 
 type ClubNoticeEditorClientProps = {
   clubId: string;
@@ -88,6 +89,10 @@ export function ClubNoticeEditorClient({
     void loadDetail();
   }, [isEdit]);
 
+  if (loading) {
+    return <ClubEditorLoadingShell presentation={presentation} />;
+  }
+
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setSaving(true);
@@ -110,7 +115,7 @@ export function ClubNoticeEditorClient({
       setError(result.message ?? "공지 저장에 실패했습니다.");
       return;
     }
-    router.replace(`/clubs/${clubId}/board/${result.data.noticeId}`, { scroll: !isModal });
+    router.replace(`/clubs/${clubId}/board/${result.data.noticeId}`);
   };
 
   return (
@@ -137,15 +142,14 @@ export function ClubNoticeEditorClient({
               <span className="material-symbols-outlined">close</span>
             </button>
           ) : (
-            <Link
+            <RouterLink
               href={backHref}
               replace={isModal}
-              scroll={!isModal}
               className="flex size-10 items-center justify-start text-slate-900"
               aria-label="공지 목록으로 돌아가기"
             >
               <span className="material-symbols-outlined">{isModal ? "close" : "arrow_back"}</span>
-            </Link>
+            </RouterLink>
           )}
           <h2 className="flex-1 text-center text-lg font-bold leading-tight tracking-tight">
             {isEdit ? "Edit Notice" : "Write Notice"}
@@ -153,11 +157,8 @@ export function ClubNoticeEditorClient({
           <div className="w-10" />
         </header>
 
-        <main className={`flex-1 overflow-y-auto px-4 py-5 ${isModal ? "pb-6" : "pb-10"}`}>
-          {loading ? (
-            <div className="flex justify-center p-8 text-sm font-medium text-slate-500">Loading notice...</div>
-          ) : (
-            <form className="space-y-4" onSubmit={handleSubmit}>
+        <main className={`flex-1 px-4 py-5 ${isModal ? "overflow-y-auto pb-6" : "pb-10"}`}>
+          <form className="space-y-4" onSubmit={handleSubmit}>
               <div>
                 <p className="mb-2 text-sm font-bold text-slate-800">{clubName}</p>
               </div>
@@ -256,8 +257,7 @@ export function ClubNoticeEditorClient({
               >
                 {saving ? "Saving..." : isEdit ? "Save Notice" : "Publish Notice"}
               </button>
-            </form>
-          )}
+          </form>
         </main>
       </div>
     </div>

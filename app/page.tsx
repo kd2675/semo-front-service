@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { RouterLink } from "@/app/components/RouterLink";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -183,12 +183,12 @@ export default function Home() {
                 <p className="mt-0.5 text-xs text-blue-100">Start your own community today</p>
                 <p className="mt-1 text-[10px] font-medium text-blue-100/70">클럽 만들기</p>
               </div>
-              <Link
+              <RouterLink
                 href="/clubs/create"
                 className="rounded-lg bg-white px-4 py-2 text-sm font-bold text-[var(--primary)] shadow-sm transition-transform active:scale-95"
               >
                 Get Started
-              </Link>
+              </RouterLink>
             </div>
           </motion.section>
 
@@ -220,7 +220,7 @@ export default function Home() {
                       className="min-w-[240px]"
                       {...staggeredFadeUpMotion(index + 4, reduceMotion)}
                     >
-                      <Link
+                      <RouterLink
                         href={`/clubs/${club.clubId}`}
                         className="flex h-full min-w-[240px] flex-col gap-3 rounded-xl border border-slate-100 bg-slate-50 p-3 shadow-sm transition-transform hover:-translate-y-0.5"
                       >
@@ -252,7 +252,7 @@ export default function Home() {
                             {club.categoryKey ? <span>· {club.categoryKey}</span> : null}
                           </div>
                         </div>
-                      </Link>
+                      </RouterLink>
                     </motion.div>
                   ))}
                 </div>
@@ -292,13 +292,13 @@ export default function Home() {
             {...staggeredFadeUpMotion(8, reduceMotion)}
             whileTap={reduceMotion ? undefined : { scale: 0.9 }}
           >
-            <Link
+            <RouterLink
               href="/clubs/create"
               aria-label="클럽 만들기"
               className="flex size-full items-center justify-center"
             >
               <span className="material-symbols-outlined text-3xl">add</span>
-            </Link>
+            </RouterLink>
           </motion.div>
 
         </main>

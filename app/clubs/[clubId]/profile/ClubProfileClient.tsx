@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { RouterLink } from "@/app/components/RouterLink";
 import { motion, useReducedMotion } from "motion/react";
 import { ClubBottomNav } from "@/app/components/ClubBottomNav";
 import { ClubModeSwitchFab } from "@/app/components/ClubModeSwitchFab";
@@ -43,13 +43,13 @@ export function ClubProfileClient({ club, profile }: ClubProfileClientProps) {
     <div className="min-h-screen bg-[var(--background-light)] font-display text-slate-900">
       <div className="mx-auto flex min-h-screen max-w-md flex-col bg-white shadow-xl">
         <header className="flex items-center justify-between px-4 pb-2 pt-6">
-          <Link
+          <RouterLink
             href={`/clubs/${club.id}`}
             className="flex size-10 items-center justify-center rounded-full transition-colors hover:bg-slate-100"
             aria-label={`${club.name} 홈으로 이동`}
           >
             <span className="material-symbols-outlined">arrow_back</span>
-          </Link>
+          </RouterLink>
           <h1 className="text-lg font-bold tracking-tight">My Profile</h1>
           <button
             type="button"
@@ -60,7 +60,7 @@ export function ClubProfileClient({ club, profile }: ClubProfileClientProps) {
           </button>
         </header>
 
-        <main className="flex-1 overflow-y-auto pb-28">
+        <main className="flex-1 pb-28">
           <motion.section
             className="flex flex-col items-center px-4 py-8"
             {...staggeredFadeUpMotion(0, reduceMotion)}
@@ -152,7 +152,7 @@ export function ClubProfileClient({ club, profile }: ClubProfileClientProps) {
             >
               {profile.quickLinks.map((link, index) => (
                 <motion.div key={link.id} {...staggeredFadeUpMotion(index + 7, reduceMotion)}>
-                  <Link
+                  <RouterLink
                     href={link.href}
                     className="group flex items-center justify-between rounded-xl p-3 transition-colors hover:bg-white"
                   >
@@ -167,7 +167,7 @@ export function ClubProfileClient({ club, profile }: ClubProfileClientProps) {
                     <span className="material-symbols-outlined text-slate-400 transition-colors group-hover:text-[var(--primary)]">
                       chevron_right
                     </span>
-                  </Link>
+                  </RouterLink>
                 </motion.div>
               ))}
             </motion.div>

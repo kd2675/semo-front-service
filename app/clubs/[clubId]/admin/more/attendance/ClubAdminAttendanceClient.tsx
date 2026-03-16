@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { RouterLink } from "@/app/components/RouterLink";
 import { Public_Sans } from "next/font/google";
 import { motion, useReducedMotion } from "motion/react";
 import { useState } from "react";
@@ -122,13 +122,13 @@ export function ClubAdminAttendanceClient({
         <header className="sticky top-0 z-20 border-b border-slate-200 bg-[#f8f6f6]/85 backdrop-blur-md">
           <div className="mx-auto flex w-full max-w-md items-center justify-between p-4">
             <div className="flex items-center gap-3">
-              <Link
+              <RouterLink
                 href={`/clubs/${clubId}/admin`}
                 className="flex size-10 items-center justify-center rounded-full text-slate-900 transition hover:bg-white"
                 aria-label="관리자 홈으로 돌아가기"
               >
                 <span className="material-symbols-outlined">arrow_back</span>
-              </Link>
+              </RouterLink>
               <div>
                 <h1 className="text-lg font-bold tracking-tight">Attendance Admin</h1>
                 <p className="text-xs text-slate-500">{attendance.clubName}</p>
