@@ -6,8 +6,10 @@ import { useEffect, useEffectEvent, useState } from "react";
 import {
   createClubNotice,
   getClubNoticeDetail,
+  getNoticeCategoryOptions,
   updateClubNotice,
   type ClubNoticeDetailResponse,
+  type NoticeCategoryOption,
 } from "@/app/lib/clubs";
 import { ClubEditorLoadingShell } from "../ClubRouteLoadingShells";
 
@@ -19,13 +21,6 @@ type ClubNoticeEditorClientProps = {
   initialScheduleEndAt?: string;
   onRequestClose?: () => void;
 };
-
-const CATEGORY_OPTIONS = [
-  { value: "ANNOUNCEMENT", label: "Announcement" },
-  { value: "TOURNAMENT", label: "Tournament" },
-  { value: "MATCH", label: "Match" },
-  { value: "SOCIAL", label: "Social" },
-];
 
 function toDateTimeLocalValue(value: string | null | undefined) {
   if (!value) {
@@ -48,6 +43,7 @@ export function ClubNoticeEditorClient({
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [categoryKey, setCategoryKey] = useState("ANNOUNCEMENT");
+  const [categoryOptions, setCategoryOptions] = useState<NoticeCategoryOption[]>([]);
   const [locationLabel, setLocationLabel] = useState("");
   const [scheduleAt, setScheduleAt] = useState(initialScheduleAt ?? "");
   const [scheduleEndAt, setScheduleEndAt] = useState(initialScheduleEndAt ?? "");
@@ -81,6 +77,24 @@ export function ClubNoticeEditorClient({
     setPostToSchedule(Boolean(payload.scheduleAt));
     setPinned(payload.pinned);
   });
+
+  useEffect(() => {
+    let cancelled = false;
+
+    void (async () => {
+      const result = await getNoticeCategoryOptions(clubId);
+      if (cancelled || !result.ok || !result.data) {
+        return;
+      }
+      const options = result.data;
+      setCategoryOptions(options);
+      setCategoryKey((current) => current || options[0]?.categoryKey || "ANNOUNCEMENT");
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [clubId]);
 
   useEffect(() => {
     if (!isEdit) {
@@ -179,9 +193,11 @@ export function ClubNoticeEditorClient({
                   onChange={(event) => setCategoryKey(event.target.value)}
                   className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-[var(--primary)]"
                 >
-                  {CATEGORY_OPTIONS.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
+                  {(categoryOptions.length > 0
+                    ? categoryOptions
+                    : [{ categoryKey: "ANNOUNCEMENT", displayName: "Announcement", iconName: "campaign", accentTone: "blue" }]).map((option) => (
+                    <option key={option.categoryKey} value={option.categoryKey}>
+                      {option.displayName}
                     </option>
                   ))}
                 </select>

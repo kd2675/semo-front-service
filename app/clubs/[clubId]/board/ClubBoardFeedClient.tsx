@@ -15,29 +15,17 @@ import { ClubModeSwitchFab } from "@/app/components/ClubModeSwitchFab";
 import { RouteModal } from "@/app/components/RouteModal";
 import {
   getClubNoticeFeed,
+  getNoticeCategoryOptions,
   type ClubNoticeFeedResponse,
   type ClubNoticeListItem,
+  type NoticeCategoryOption,
   type NoticeFeedCategory,
 } from "@/app/lib/clubs";
 import { toDateTimeLocalString } from "@/app/lib/date-time";
 import { staggeredFadeUpMotion } from "@/app/lib/motion";
+import { getNoticeAccentClasses } from "@/app/lib/notice-category";
 import { ClubNoticeEditorClient } from "./ClubNoticeEditorClient";
 import { ClubBoardFeedLoadingShell } from "../ClubRouteLoadingShells";
-
-const CATEGORIES: Array<{ id: NoticeFeedCategory; label: string }> = [
-  { id: "all", label: "All Posts" },
-  { id: "announcement", label: "Announcements" },
-  { id: "tournament", label: "Tournaments" },
-  { id: "match", label: "Matches" },
-  { id: "social", label: "Social" },
-];
-
-const CATEGORY_ICON: Record<string, string> = {
-  ANNOUNCEMENT: "campaign",
-  TOURNAMENT: "emoji_events",
-  MATCH: "sports_tennis",
-  SOCIAL: "celebration",
-};
 
 type CursorState = {
   publishedAt: string | null;
@@ -68,6 +56,7 @@ export function ClubBoardFeedClient({ clubId }: ClubBoardFeedClientProps) {
   const reduceMotion = Boolean(prefersReducedMotion);
   const [query, setQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState<NoticeFeedCategory>("all");
+  const [categories, setCategories] = useState<NoticeCategoryOption[]>([]);
   const [items, setItems] = useState<ClubNoticeListItem[]>([]);
   const [clubName, setClubName] = useState("Notice Board");
   const [isAdmin, setIsAdmin] = useState(false);
@@ -129,6 +118,22 @@ export function ClubBoardFeedClient({ clubId }: ClubBoardFeedClientProps) {
   useEffect(() => {
     void loadFeed("reset");
   }, [clubId, activeCategory, deferredQuery]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    void (async () => {
+      const result = await getNoticeCategoryOptions(clubId);
+      if (cancelled || !result.ok || !result.data) {
+        return;
+      }
+      setCategories(result.data);
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [clubId]);
 
   useEffect(() => {
     if (!sentinelNode || !hasNext || loading) {
@@ -226,15 +231,15 @@ export function ClubBoardFeedClient({ clubId }: ClubBoardFeedClientProps) {
 
           <motion.div className="mb-2 px-4" {...staggeredFadeUpMotion(1, reduceMotion)}>
             <div className="hide-scrollbar flex gap-6 overflow-x-auto border-b border-slate-200">
-              {CATEGORIES.map((category) => {
-                const isActive = activeCategory === category.id;
+              {[{ categoryKey: "all", displayName: "All Posts", iconName: "apps", accentTone: "blue" }, ...categories].map((category) => {
+                const isActive = activeCategory === category.categoryKey;
                 return (
                   <button
-                    key={category.id}
+                    key={category.categoryKey}
                     type="button"
                     onClick={() => {
                       startTransition(() => {
-                        setActiveCategory(category.id);
+                        setActiveCategory(category.categoryKey);
                       });
                     }}
                     className={`flex shrink-0 flex-col items-center justify-center border-b-2 pb-3 pt-2 ${
@@ -243,7 +248,7 @@ export function ClubBoardFeedClient({ clubId }: ClubBoardFeedClientProps) {
                         : "border-transparent text-slate-500"
                     }`}
                   >
-                    <p className={`text-sm ${isActive ? "font-bold" : "font-medium"}`}>{category.label}</p>
+                    <p className={`text-sm ${isActive ? "font-bold" : "font-medium"}`}>{category.displayName}</p>
                   </button>
                 );
               })}
@@ -253,52 +258,58 @@ export function ClubBoardFeedClient({ clubId }: ClubBoardFeedClientProps) {
           <div className="flex flex-col divide-y divide-slate-100">
             {items.map((notice, index) => (
               <motion.article key={notice.noticeId} {...staggeredFadeUpMotion(index + 2, reduceMotion)}>
-                <RouterLink
-                  href={getNoticeHref(clubId, notice)}
-                  className="flex gap-4 bg-white px-4 py-5 transition-colors hover:bg-slate-50"
-                >
-                  <div className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-[var(--primary)]/10 text-[var(--primary)]">
-                    <span className="material-symbols-outlined">
-                      {CATEGORY_ICON[notice.categoryKey] ?? "campaign"}
-                    </span>
-                  </div>
-                  <div className="min-w-0 flex flex-1 flex-col gap-1">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-2">
-                          {notice.pinned ? (
-                            <span className="rounded-full bg-[var(--primary)]/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[var(--primary)]">
-                              Pin
+                {(() => {
+                  const accent = getNoticeAccentClasses(notice.categoryAccentTone);
+                  return (
+                    <RouterLink
+                      href={getNoticeHref(clubId, notice)}
+                      className="flex gap-4 bg-white px-4 py-5 transition-colors hover:bg-slate-50"
+                    >
+                      <div className={`flex size-12 shrink-0 items-center justify-center rounded-xl ${accent.icon}`}>
+                        <span className="material-symbols-outlined">{notice.categoryIconName}</span>
+                      </div>
+                      <div className="min-w-0 flex flex-1 flex-col gap-1">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2">
+                              {notice.pinned ? (
+                                <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${accent.badge}`}>
+                                  Pin
+                                </span>
+                              ) : null}
+                              <p className="truncate text-base font-bold leading-snug text-slate-900">
+                                {notice.title}
+                              </p>
+                            </div>
+                          </div>
+                          <span className="whitespace-nowrap text-xs text-slate-400">{notice.timeAgo}</span>
+                        </div>
+                        <p className="line-clamp-3 text-sm text-slate-600">{notice.summary}</p>
+                        <div className="mt-1 flex flex-wrap items-center gap-2 text-xs">
+                          <div className="flex items-center gap-2">
+                            <div className="flex size-5 items-center justify-center overflow-hidden rounded-full bg-slate-200">
+                              <span className="material-symbols-outlined text-[12px]">person</span>
+                            </div>
+                            <p className="font-semibold text-slate-700">{notice.authorDisplayName}</p>
+                          </div>
+                          <span className={`rounded-full border px-2 py-1 font-medium ${accent.chip}`}>
+                            {notice.categoryLabel}
+                          </span>
+                          {notice.scheduleAtLabel ? (
+                            <span className="rounded-full bg-slate-100 px-2 py-1 font-medium text-slate-600">
+                              {notice.scheduleAtLabel}
                             </span>
                           ) : null}
-                          <p className="truncate text-base font-bold leading-snug text-slate-900">
-                            {notice.title}
-                          </p>
+                          {notice.locationLabel ? (
+                            <span className="rounded-full bg-slate-100 px-2 py-1 font-medium text-slate-600">
+                              {notice.locationLabel}
+                            </span>
+                          ) : null}
                         </div>
                       </div>
-                      <span className="whitespace-nowrap text-xs text-slate-400">{notice.timeAgo}</span>
-                    </div>
-                    <p className="line-clamp-3 text-sm text-slate-600">{notice.summary}</p>
-                    <div className="mt-1 flex flex-wrap items-center gap-2 text-xs">
-                      <div className="flex items-center gap-2">
-                        <div className="flex size-5 items-center justify-center overflow-hidden rounded-full bg-[var(--primary)]/20">
-                          <span className="material-symbols-outlined text-[12px]">person</span>
-                        </div>
-                        <p className="font-semibold text-[var(--primary)]">{notice.authorDisplayName}</p>
-                      </div>
-                      {notice.scheduleAtLabel ? (
-                        <span className="rounded-full bg-slate-100 px-2 py-1 font-medium text-slate-600">
-                          {notice.scheduleAtLabel}
-                        </span>
-                      ) : null}
-                      {notice.locationLabel ? (
-                        <span className="rounded-full bg-slate-100 px-2 py-1 font-medium text-slate-600">
-                          {notice.locationLabel}
-                        </span>
-                      ) : null}
-                    </div>
-                  </div>
-                </RouterLink>
+                    </RouterLink>
+                  );
+                })()}
               </motion.article>
             ))}
           </div>

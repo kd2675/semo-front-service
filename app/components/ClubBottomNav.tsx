@@ -32,7 +32,24 @@ const BASE_NAV_ITEMS: NavItem[] = [
 
 const FEATURE_ACCENT_CLASS: Record<string, string> = {
   ATTENDANCE: "bg-blue-50 text-blue-600",
+  TIMELINE: "bg-indigo-50 text-indigo-600",
 };
+
+function withMockFeaturePaths(clubId: string, feature: ClubFeatureSummary): ClubFeatureSummary {
+  if (feature.featureKey === "TIMELINE") {
+    return {
+      ...feature,
+      userPath: `/clubs/${clubId}/more/timeline`,
+      adminPath: `/clubs/${clubId}/admin/more/timeline`,
+    };
+  }
+
+  return {
+    ...feature,
+    userPath: `/clubs/${clubId}/more/attendance`,
+    adminPath: `/clubs/${clubId}/admin/more/attendance`,
+  };
+}
 
 const POPOVER_ITEM_VARIANTS = {
   hidden: { opacity: 0, y: 12, scale: 0.96 },
@@ -71,11 +88,7 @@ export function ClubBottomNav({ clubId, isAdmin = false }: ClubBottomNavProps) {
     const loadFeatures = async () => {
       if (Number.isNaN(Number(clubId))) {
         setEnabledFeatures(
-          MOCK_CLUB_FEATURES.map((feature) => ({
-            ...feature,
-            userPath: `/clubs/${clubId}/more/attendance`,
-            adminPath: `/clubs/${clubId}/admin/more/attendance`,
-          })),
+          MOCK_CLUB_FEATURES.map((feature) => withMockFeaturePaths(clubId, feature)),
         );
         return;
       }
