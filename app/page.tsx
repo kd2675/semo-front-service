@@ -120,7 +120,7 @@ export default function Home() {
       </AnimatePresence>
 
       <div className="relative flex min-h-screen w-full flex-col">
-        <main className="relative mx-auto flex min-h-screen w-full max-w-md flex-col overflow-x-hidden bg-white shadow-xl">
+        <main className="relative mx-auto flex min-h-screen w-full max-w-md flex-col overflow-x-hidden bg-white pb-24 shadow-xl">
           <motion.header
             className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-100 bg-white p-4 pb-2"
             {...staggeredFadeUpMotion(0, reduceMotion)}

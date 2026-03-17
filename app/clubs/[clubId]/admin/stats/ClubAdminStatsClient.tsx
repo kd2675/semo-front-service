@@ -95,7 +95,7 @@ export function ClubAdminStatsClient({
           </div>
         </header>
 
-        <main className="mx-auto max-w-md pb-28">
+        <main className="semo-nav-bottom-space mx-auto max-w-md">
           <motion.section className="grid grid-cols-2 gap-3 p-4" {...staggeredFadeUpMotion(0, reduceMotion)}>
             {metrics.map((metric, index) => (
               <motion.article

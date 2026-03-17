@@ -81,8 +81,25 @@ function NoticeDetailBody({ clubId, payload, error, reduceMotion }: NoticeDetail
             </div>
           </motion.section>
 
-          {payload.scheduleAtLabel || payload.locationLabel ? (
+          {linkedTargetHref && linkedTargetLabel ? (
             <motion.section className="px-4 pt-5" {...staggeredFadeUpMotion(3, reduceMotion)}>
+              <RouterLink
+                href={linkedTargetHref}
+                className="flex items-center justify-between rounded-2xl border border-[var(--primary)]/10 bg-[var(--primary)]/[0.04] px-4 py-4 transition-colors hover:bg-[var(--primary)]/[0.08]"
+              >
+                <div>
+                  <p className="text-sm font-bold text-slate-900">{linkedTargetLabel}</p>
+                  <p className="mt-1 text-xs text-slate-500">
+                    공지와 연결된 원본 {payload.linkedTargetType === "SCHEDULE_EVENT" ? "일정" : "투표"} 상세로 이동합니다.
+                  </p>
+                </div>
+                <span className="material-symbols-outlined text-slate-400">chevron_right</span>
+              </RouterLink>
+            </motion.section>
+          ) : null}
+
+          {payload.scheduleAtLabel || payload.locationLabel ? (
+            <motion.section className="px-4 pt-5" {...staggeredFadeUpMotion(4, reduceMotion)}>
               <div className="rounded-2xl bg-[var(--primary)]/5 px-4 py-4">
                 <div className="mb-2 flex items-center gap-2 text-sm font-bold text-[var(--primary)]">
                   <span className="material-symbols-outlined text-[18px]">calendar_month</span>
@@ -101,28 +118,11 @@ function NoticeDetailBody({ clubId, payload, error, reduceMotion }: NoticeDetail
             </motion.section>
           ) : null}
 
-          <motion.section className="px-4 py-6" {...staggeredFadeUpMotion(4, reduceMotion)}>
+          <motion.section className="px-4 py-6" {...staggeredFadeUpMotion(5, reduceMotion)}>
             <div className="whitespace-pre-wrap text-[15px] leading-7 text-slate-700">
               {payload.content}
             </div>
           </motion.section>
-
-          {linkedTargetHref && linkedTargetLabel ? (
-            <motion.section className="px-4 pb-6" {...staggeredFadeUpMotion(5, reduceMotion)}>
-              <RouterLink
-                href={linkedTargetHref}
-                className="flex items-center justify-between rounded-2xl border border-[var(--primary)]/10 bg-[var(--primary)]/[0.04] px-4 py-4 transition-colors hover:bg-[var(--primary)]/[0.08]"
-              >
-                <div>
-                  <p className="text-sm font-bold text-slate-900">{linkedTargetLabel}</p>
-                  <p className="mt-1 text-xs text-slate-500">
-                    공지와 연결된 원본 {payload.linkedTargetType === "SCHEDULE_EVENT" ? "일정" : "투표"} 상세로 이동합니다.
-                  </p>
-                </div>
-                <span className="material-symbols-outlined text-slate-400">chevron_right</span>
-              </RouterLink>
-            </motion.section>
-          ) : null}
         </>
       ) : null}
     </>
@@ -177,7 +177,7 @@ export function ClubNoticeDetailClient({
           <div className="w-10" />
         </header>
 
-        <main className="flex-1 overflow-y-auto pb-8">
+        <main className="semo-nav-bottom-space flex-1 overflow-y-auto">
           <NoticeDetailBody clubId={clubId} payload={payload} error={error} reduceMotion={reduceMotion} />
         </main>
       </div>
@@ -186,7 +186,7 @@ export function ClubNoticeDetailClient({
 
   return (
     <div className="bg-[var(--background-light)] font-display text-slate-900">
-      <div className="relative mx-auto flex min-h-screen max-w-md flex-col bg-white">
+      <div className="relative mx-auto flex min-h-full max-w-md flex-col bg-white">
         <header className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-200 bg-white p-4">
           <RouterLink
             href={`/clubs/${clubId}/board`}
@@ -199,7 +199,7 @@ export function ClubNoticeDetailClient({
           <div className="w-10" />
         </header>
 
-        <main className="flex-1 pb-28">
+        <main className="semo-nav-bottom-space flex-1">
           <NoticeDetailBody clubId={clubId} payload={payload} error={error} reduceMotion={reduceMotion} />
         </main>
 

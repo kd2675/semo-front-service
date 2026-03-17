@@ -27,7 +27,7 @@ function MobileBottomNavShell() {
 function MobilePageShell({
   titleWidthClassName,
   actionWidthClassName = "size-10",
-  mainClassName = "space-y-4 px-4 pb-28 pt-4",
+  mainClassName = "semo-nav-bottom-space space-y-4 px-4 pt-4",
   children,
   showBottomNav = true,
 }: {
@@ -39,7 +39,7 @@ function MobilePageShell({
 }) {
   return (
     <div className="bg-[var(--background-light)] font-display text-slate-900">
-      <div className="relative mx-auto flex min-h-screen max-w-md flex-col bg-white">
+      <div className="relative mx-auto flex min-h-full max-w-md flex-col bg-white">
         <header className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-200 bg-white p-4">
           <div className="size-10 rounded-full bg-slate-100" />
           <ShellLine className={`h-5 ${titleWidthClassName}`} />
@@ -56,7 +56,7 @@ function MobilePageShell({
 export function ClubDashboardLoadingShell() {
   return (
     <div className="bg-[var(--background-light)] text-slate-900 antialiased">
-      <div className="relative flex min-h-screen w-full flex-col overflow-x-hidden">
+      <div className="relative flex min-h-full w-full flex-col overflow-x-hidden">
         <header className="sticky top-0 z-50 border-b border-slate-200 bg-white/80 backdrop-blur-md">
           <div className="flex items-center justify-between p-4">
             <div className="flex items-center gap-3">
@@ -67,7 +67,7 @@ export function ClubDashboardLoadingShell() {
           </div>
         </header>
 
-        <main className="flex-1 space-y-6 p-4 pb-28 md:p-6 md:pb-32">
+        <main className="semo-nav-bottom-space flex-1 space-y-6 p-4 md:p-6">
           <section className="relative h-48 w-full overflow-hidden rounded-xl bg-slate-200 shadow-sm" />
           <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
             <ShellLine className="h-6 w-40" />
@@ -305,7 +305,9 @@ export function ClubEditorLoadingShell({
           <div className="size-10" />
         </header>
 
-        <main className={`flex-1 px-4 py-5 ${isModal ? "overflow-y-auto pb-6" : "pb-10"}`}>
+        <main
+          className={`flex-1 px-4 py-5 ${isModal ? "overflow-y-auto pb-6" : "semo-nav-bottom-space"}`}
+        >
           <div className="space-y-4">
             <ShellLine className="h-4 w-20" />
             {Array.from({ length: 5 }, (_, index) => (

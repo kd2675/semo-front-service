@@ -126,11 +126,9 @@ export function AdminBottomNav({ clubId }: AdminBottomNavProps) {
     let rafId = 0;
 
     const recalcDocking = () => {
-      const doc = document.documentElement;
-      const body = document.body;
       const viewportHeight = window.innerHeight;
-      const scrollTop = window.scrollY || doc.scrollTop || 0;
-      const contentHeight = Math.max(doc.scrollHeight, body.scrollHeight);
+      const scrollTop = window.scrollY ?? 0;
+      const contentHeight = document.documentElement.scrollHeight;
       const hasScrollableContent = contentHeight > viewportHeight + 2;
       const atBottom = scrollTop + viewportHeight >= contentHeight - DOCK_TRIGGER_OFFSET_PX;
       setIsDocked(!hasScrollableContent || atBottom);

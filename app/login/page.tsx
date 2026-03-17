@@ -104,7 +104,7 @@ function LoginPageContent() {
 
   if (isProcessing) {
     return (
-      <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[var(--background-light)] px-6 py-12 text-[var(--foreground)]">
+      <div className="relative flex min-h-screen items-center justify-center overflow-x-hidden bg-[var(--background-light)] px-6 py-12 text-[var(--foreground)]">
         <div className="semo-orb semo-orb-left" />
         <div className="semo-orb semo-orb-right" />
         <motion.div
@@ -125,11 +125,11 @@ function LoginPageContent() {
   }
 
   return (
-    <div className="relative flex min-h-screen w-full flex-col items-center justify-center overflow-hidden bg-[var(--background-light)] px-6 py-8 text-[var(--foreground)]">
+    <div className="relative flex min-h-screen w-full flex-col items-center justify-center overflow-x-hidden bg-[var(--background-light)] px-6 py-8 text-[var(--foreground)]">
       <div className="semo-orb semo-orb-left" />
       <div className="semo-orb semo-orb-right" />
 
-      <main className="relative z-10 flex w-full max-w-sm flex-col items-center">
+      <main className="relative z-10 flex w-full max-w-sm flex-col items-center pb-24">
         <motion.section
           className="flex w-full flex-col items-center"
           {...staggeredFadeUpMotion(0, reduceMotion)}

@@ -136,7 +136,7 @@ export function ClubAdminMembersClient({
           </div>
         </header>
 
-        <main className="space-y-3 px-4 py-3 pb-28">
+        <main className="semo-nav-bottom-space space-y-3 px-4 py-3">
           <motion.div
             className="flex items-center justify-between px-1"
             {...staggeredFadeUpMotion(0, reduceMotion)}

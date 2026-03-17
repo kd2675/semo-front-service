@@ -39,8 +39,8 @@ export function ClubProfileClient({ club, profile }: ClubProfileClientProps) {
   const reduceMotion = Boolean(prefersReducedMotion);
 
   return (
-    <div className="min-h-screen bg-[var(--background-light)] font-display text-slate-900">
-      <div className="mx-auto flex min-h-screen max-w-md flex-col bg-white shadow-xl">
+    <div className="min-h-full bg-[var(--background-light)] font-display text-slate-900">
+      <div className="mx-auto flex min-h-full max-w-md flex-col bg-white shadow-xl">
         <header className="flex items-center justify-between px-4 pb-2 pt-6">
           <RouterLink
             href={`/clubs/${club.id}`}
@@ -59,7 +59,7 @@ export function ClubProfileClient({ club, profile }: ClubProfileClientProps) {
           </button>
         </header>
 
-        <main className="flex-1 pb-28">
+        <main className="semo-nav-bottom-space flex-1">
           <motion.section
             className="flex flex-col items-center px-4 py-8"
             {...staggeredFadeUpMotion(0, reduceMotion)}

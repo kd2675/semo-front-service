@@ -155,8 +155,8 @@ export function ClubScheduleVoteDetailClient({
   const backHref = `/clubs/${clubId}/schedule`;
 
   return (
-    <div className={isModal ? "flex min-h-0 flex-1 flex-col bg-white font-display text-gray-900 antialiased" : "min-h-screen bg-gray-50 font-display text-gray-900 antialiased"}>
-      <div className={`relative flex flex-col bg-white ${isModal ? "min-h-0 flex-1" : "mx-auto min-h-screen max-w-md shadow-lg"}`}>
+    <div className={isModal ? "flex min-h-0 flex-1 flex-col bg-white font-display text-gray-900 antialiased" : "min-h-full bg-gray-50 font-display text-gray-900 antialiased"}>
+      <div className={`relative flex flex-col bg-white ${isModal ? "min-h-0 flex-1" : "mx-auto min-h-full max-w-md shadow-lg"}`}>
         <header className="sticky top-0 z-10 flex items-center justify-between border-b border-gray-100 bg-white px-4 py-4">
           <div className="flex items-center gap-3">
             {isModal && onRequestClose ? (
@@ -182,7 +182,11 @@ export function ClubScheduleVoteDetailClient({
           <div className="w-8" />
         </header>
 
-        <main className={`no-scrollbar flex-1 overflow-y-auto p-5 ${isModal ? "pb-8" : "pb-28"}`}>
+        <main
+          className={`no-scrollbar flex-1 overflow-y-auto p-5 ${
+            isModal ? "pb-8" : "semo-nav-bottom-space"
+          }`}
+        >
           {error ? (
             <motion.div
               className="mb-4 rounded-2xl bg-rose-50 px-4 py-3 text-sm font-medium text-rose-600"

@@ -66,7 +66,7 @@ export function ClubAdminTimelineClient({
           </div>
         </header>
 
-        <main className="space-y-4 px-4 pt-4">
+        <main className="semo-nav-bottom-space space-y-4 px-4 pt-4">
           <motion.section
             className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm"
             {...staggeredFadeUpMotion(0, reduceMotion)}

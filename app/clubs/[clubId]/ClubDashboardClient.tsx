@@ -40,7 +40,7 @@ export function ClubDashboardClient({ club }: ClubDashboardClientProps) {
 
   return (
     <div className="bg-[var(--background-light)] text-slate-900 antialiased">
-      <div className="relative flex min-h-screen w-full flex-col overflow-x-hidden">
+      <div className="relative flex min-h-full w-full flex-col overflow-x-hidden">
         <header className="sticky top-0 z-50 border-b border-slate-200 bg-white/80 backdrop-blur-md">
           <div className="flex items-center justify-between p-4">
             <div className="flex items-center gap-3">
@@ -75,7 +75,7 @@ export function ClubDashboardClient({ club }: ClubDashboardClientProps) {
           </div>
         </header>
 
-        <main className="flex-1 space-y-6 p-4 pb-28 md:p-6 md:pb-32">
+        <main className="semo-nav-bottom-space flex-1 space-y-6 p-4 md:p-6">
           <motion.section {...staggeredFadeUpMotion(0, reduceMotion)}>
             <div className="relative h-48 w-full overflow-hidden rounded-xl bg-slate-200 shadow-sm">
               <div

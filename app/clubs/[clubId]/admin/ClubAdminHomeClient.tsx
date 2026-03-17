@@ -101,7 +101,7 @@ export function ClubAdminHomeClient({
           </div>
         </header>
 
-        <main className="mx-auto w-full max-w-5xl space-y-6 px-4 pb-28 pt-4">
+        <main className="semo-nav-bottom-space mx-auto w-full max-w-5xl space-y-6 px-4 pt-4">
           <section className="grid grid-cols-2 gap-4 md:grid-cols-4">
             {metrics.map((metric, index) => (
               <motion.article

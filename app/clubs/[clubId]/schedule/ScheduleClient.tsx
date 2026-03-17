@@ -346,7 +346,7 @@ export function ScheduleClient({
 
   return (
     <div className="bg-[var(--background-light)] font-display text-slate-900">
-      <div className="relative mx-auto flex min-h-screen w-full max-w-md flex-col bg-[var(--background-light)]">
+      <div className="relative mx-auto flex min-h-full w-full max-w-md flex-col bg-[var(--background-light)]">
         <header className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-200 bg-white p-4">
           <RouterLink
             href={`/clubs/${clubId}`}
@@ -380,7 +380,7 @@ export function ScheduleClient({
           </div>
         </header>
 
-        <div className="relative flex-1 pb-28">
+        <main className="semo-nav-bottom-space relative flex-1">
           <motion.div className="bg-white p-4 shadow-sm" {...staggeredFadeUpMotion(0, reduceMotion)}>
             <div className="mb-4 flex items-center justify-between">
               <button
@@ -597,7 +597,7 @@ export function ScheduleClient({
               </motion.div>
             )}
           </div>
-        </div>
+        </main>
 
         {payload.admin ? <ClubModeSwitchFab clubId={clubId} mode="user" /> : null}
         <AnimatePresence>

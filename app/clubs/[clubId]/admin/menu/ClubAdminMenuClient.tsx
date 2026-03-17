@@ -141,7 +141,7 @@ export function ClubAdminMenuClient({
           </div>
         </header>
 
-        <main className="mx-auto w-full max-w-5xl pb-40">
+        <main className="semo-nav-bottom-space mx-auto w-full max-w-5xl">
           <motion.section className="p-4" {...staggeredFadeUpMotion(0, reduceMotion)}>
             <div className="mb-4 flex items-center gap-2">
               <span className="material-symbols-outlined text-[var(--primary)]">dashboard</span>

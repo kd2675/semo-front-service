@@ -9,7 +9,7 @@ function ShellLine({ className }: { className: string }) {
 function AdminShellFrame({
   titleWidthClassName,
   subtitleWidthClassName,
-  mainClassName = "mx-auto w-full max-w-5xl space-y-6 px-4 pb-28 pt-4",
+  mainClassName = "semo-nav-bottom-space mx-auto w-full max-w-5xl space-y-6 px-4 pt-4",
   children,
 }: {
   titleWidthClassName: string;
@@ -178,7 +178,11 @@ export function AdminMenuLoadingShell() {
 
 export function AdminStatsLoadingShell() {
   return (
-    <AdminShellFrame titleWidthClassName="w-32" subtitleWidthClassName="w-24" mainClassName="mx-auto max-w-md pb-28">
+    <AdminShellFrame
+      titleWidthClassName="w-32"
+      subtitleWidthClassName="w-24"
+      mainClassName="semo-nav-bottom-space mx-auto max-w-md"
+    >
       <section className="grid grid-cols-2 gap-3 p-4">
         {Array.from({ length: 4 }, (_, index) => (
           <article
@@ -231,7 +235,7 @@ export function AdminMembersLoadingShell() {
           </div>
         </div>
       </div>
-      <main className="space-y-3 px-4 py-3 pb-28">
+      <main className="semo-nav-bottom-space space-y-3 px-4 py-3">
         <ShellLine className="h-4 w-28" />
         {Array.from({ length: 5 }, (_, index) => (
           <article
@@ -278,7 +282,7 @@ export function AdminAttendanceLoadingShell() {
           </div>
         </header>
 
-        <main className="mx-auto w-full max-w-md space-y-4 px-4 pb-32 pt-4">
+        <main className="semo-nav-bottom-space mx-auto w-full max-w-md space-y-4 px-4 pt-4">
           <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
             <div className="flex items-start justify-between gap-3">
               <div className="space-y-3">

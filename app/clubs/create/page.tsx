@@ -164,7 +164,7 @@ export default function CreateClubPage() {
         </motion.header>
 
         <form onSubmit={handleSubmit} className="flex flex-1 flex-col">
-          <main className="flex-1 pb-28">
+          <main className="semo-nav-bottom-space flex-1">
             <motion.section className="flex p-6" {...staggeredFadeUpMotion(1, reduceMotion)}>
               <div className="flex w-full flex-col items-center gap-4">
                 <label className="group relative cursor-pointer">

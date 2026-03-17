@@ -167,8 +167,8 @@ export function ClubTimelineClient({
   }, [timeline.entries]);
 
   return (
-    <div className="min-h-screen bg-[var(--background-light)] text-slate-900">
-      <div className="mx-auto flex min-h-screen max-w-md flex-col bg-[var(--background-light)]">
+    <div className="min-h-full bg-[var(--background-light)] text-slate-900">
+      <div className="mx-auto flex min-h-full max-w-md flex-col bg-[var(--background-light)]">
         <header className="sticky top-0 z-20 border-b border-[#135bec]/10 bg-white/85 backdrop-blur-md">
           <div className="flex items-center justify-between p-4">
             <RouterLink
@@ -208,7 +208,7 @@ export function ClubTimelineClient({
           </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto px-4 pb-28 pt-4">
+        <main className="semo-nav-bottom-space flex-1 overflow-y-auto px-4 pt-4">
           <div className="relative">
             <div className="absolute left-[19px] top-4 bottom-4 w-0.5 bg-[#135bec]/10" />
             <div className="space-y-6">

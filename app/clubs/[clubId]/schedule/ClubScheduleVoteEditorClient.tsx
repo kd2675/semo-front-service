@@ -169,7 +169,9 @@ export function ClubScheduleVoteEditorClient({
           <div className="w-8" />
         </header>
 
-        <main className={`bg-white p-4 ${isModal ? "flex-1 overflow-y-auto pb-24" : "pb-28"}`}>
+        <main
+          className={`bg-white p-4 ${isModal ? "flex-1 overflow-y-auto pb-24" : "semo-nav-bottom-space"}`}
+        >
           <form id={formId} className="space-y-8" onSubmit={handleSubmit}>
             <p className="text-xs font-medium text-gray-400">{helperClubName}</p>
 

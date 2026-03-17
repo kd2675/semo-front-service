@@ -247,7 +247,9 @@ export function ClubNoticeEditorClient({
           <div className="w-10" />
         </header>
 
-        <main className={`flex-1 ${isModal ? "overflow-y-auto pb-24" : "pb-28"}`}>
+        <main
+          className={`flex-1 ${isModal ? "overflow-y-auto pb-24" : "semo-nav-bottom-space"}`}
+        >
           <form id={formId} className="space-y-0" onSubmit={handleSubmit}>
             <section className="space-y-4 p-4">
               <div className="mb-2 flex items-center gap-2">

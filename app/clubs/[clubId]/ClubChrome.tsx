@@ -16,6 +16,7 @@ export function ClubChrome({ clubId, children }: ClubChromeProps) {
 
   return (
     <div
+      className="min-h-screen"
       style={
         {
           "--primary": "#135bec",

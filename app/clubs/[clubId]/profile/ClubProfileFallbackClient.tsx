@@ -44,8 +44,8 @@ export function ClubProfileFallbackClient({ clubId }: ClubProfileFallbackClientP
   }
 
   return (
-    <div className="min-h-screen bg-[var(--background-light)] font-display text-slate-900">
-      <div className="mx-auto flex min-h-screen max-w-md flex-col bg-white shadow-xl">
+    <div className="min-h-full bg-[var(--background-light)] font-display text-slate-900">
+      <div className="mx-auto flex min-h-full max-w-md flex-col bg-white shadow-xl">
         <header className="flex items-center justify-between px-4 pb-2 pt-6">
           <RouterLink
             href={`/clubs/${clubId}`}
@@ -57,7 +57,7 @@ export function ClubProfileFallbackClient({ clubId }: ClubProfileFallbackClientP
           <div className="size-10" />
         </header>
 
-        <main className="flex-1 pb-28">
+        <main className="semo-nav-bottom-space flex-1">
           <motion.section className="px-4 py-6" {...staggeredFadeUpMotion(0, reduceMotion)}>
             <div className="rounded-2xl border border-slate-100 bg-slate-50 p-5">
               <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">App Profile</p>

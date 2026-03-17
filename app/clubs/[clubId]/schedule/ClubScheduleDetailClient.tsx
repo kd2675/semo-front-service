@@ -159,8 +159,8 @@ export function ClubScheduleDetailClient({
   const backHref = `/clubs/${clubId}/schedule`;
 
   return (
-    <div className={isModal ? "flex min-h-0 flex-1 flex-col bg-white font-display text-slate-900" : "min-h-screen bg-white font-display text-slate-900"}>
-      <div className={`relative flex flex-col bg-white ${isModal ? "min-h-0 flex-1" : "mx-auto min-h-screen max-w-md"}`}>
+    <div className={isModal ? "flex min-h-0 flex-1 flex-col bg-white font-display text-slate-900" : "min-h-full bg-white font-display text-slate-900"}>
+      <div className={`relative flex flex-col bg-white ${isModal ? "min-h-0 flex-1" : "mx-auto min-h-full max-w-md"}`}>
         <header className="sticky top-0 z-50 flex h-14 items-center justify-between border-b border-slate-100 bg-white px-4">
           {isModal && onRequestClose ? (
             <button
@@ -184,7 +184,7 @@ export function ClubScheduleDetailClient({
           <div className="w-10" />
         </header>
 
-        <main className="flex-1 overflow-y-auto">
+        <main className={`${isModal ? "" : "semo-nav-bottom-space "}flex-1 overflow-y-auto`}>
           {error ? (
             <motion.div
               className="mx-4 mt-4 rounded-2xl bg-rose-50 px-4 py-3 text-sm font-medium text-rose-600"

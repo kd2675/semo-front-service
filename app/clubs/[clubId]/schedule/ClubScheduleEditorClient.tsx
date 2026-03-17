@@ -322,7 +322,11 @@ export function ClubScheduleEditorClient({
             <h2 className="flex-1 text-lg font-bold leading-tight tracking-tight text-slate-900">일정 수정</h2>
           </header>
 
-          <main className={`flex flex-1 flex-col gap-1 overflow-y-auto ${isModal ? "pb-24" : "pb-28"}`}>
+          <main
+            className={`flex flex-1 flex-col gap-1 overflow-y-auto ${
+              isModal ? "pb-24" : "semo-nav-bottom-space"
+            }`}
+          >
             <form id={formId} onSubmit={handleSubmit}>
               <div className="flex flex-wrap items-end gap-4 px-4 py-3">
                 <label className="flex min-w-40 flex-1 flex-col">
@@ -637,7 +641,7 @@ export function ClubScheduleEditorClient({
         <main
           ref={mainRef}
           onScroll={handleMainScroll}
-          className={`flex-1 overflow-y-auto ${isModal ? "pb-6" : "pb-28"}`}
+          className={`flex-1 overflow-y-auto ${isModal ? "pb-6" : "semo-nav-bottom-space"}`}
         >
           <form id={formId} onSubmit={handleSubmit}>
             <section className="space-y-4 p-4">

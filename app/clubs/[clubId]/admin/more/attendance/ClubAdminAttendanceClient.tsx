@@ -138,7 +138,7 @@ export function ClubAdminAttendanceClient({
           </div>
         </header>
 
-        <main className="mx-auto w-full max-w-md space-y-4 px-4 pb-32 pt-4">
+        <main className="semo-nav-bottom-space mx-auto w-full max-w-md space-y-4 px-4 pt-4">
           <motion.section
             className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
             {...staggeredFadeUpMotion(0, reduceMotion)}

@@ -18,7 +18,7 @@ function GateScreen({
   title: string;
 }) {
   return (
-    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[var(--background-light)] px-6 py-12 text-[var(--foreground)]">
+    <div className="relative flex min-h-screen items-center justify-center overflow-x-hidden bg-[var(--background-light)] px-6 py-12 text-[var(--foreground)]">
       <div className="semo-orb semo-orb-left" />
       <div className="semo-orb semo-orb-right" />
       <div className="semo-panel flex w-full max-w-md flex-col gap-4 px-6 py-8 text-center">

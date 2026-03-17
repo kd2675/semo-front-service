@@ -47,7 +47,7 @@ export function NoticeBoardClient({
 
   return (
     <div className="bg-[var(--background-light)] font-display text-slate-900">
-      <div className="relative mx-auto flex min-h-screen max-w-md flex-col bg-white">
+      <div className="relative mx-auto flex min-h-full max-w-md flex-col bg-white">
         <header className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-200 bg-white p-4">
           <RouterLink
             href={`/clubs/${clubId}`}
@@ -70,7 +70,7 @@ export function NoticeBoardClient({
           </div>
         </header>
 
-        <main className="flex-1 pb-28">
+        <main className="semo-nav-bottom-space flex-1">
           <motion.div className="px-4 py-4" {...staggeredFadeUpMotion(0, reduceMotion)}>
             <label className="flex w-full flex-col">
               <div className="flex h-12 w-full items-stretch rounded-xl bg-slate-100">
