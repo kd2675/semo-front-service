@@ -354,6 +354,37 @@ export type ClubFeatureSummary = {
   adminPath: string;
 };
 
+export type ClubAdminMember = {
+  clubMemberId: number;
+  clubProfileId: number | null;
+  profileId: number;
+  displayName: string;
+  tagline: string | null;
+  avatarImageUrl: string | null;
+  joinedAtLabel: string | null;
+  lastActivityAtLabel: string | null;
+  roleCode: "OWNER" | "ADMIN" | "MEMBER" | string;
+  membershipStatus: "ACTIVE" | "DORMANT" | "PENDING" | string;
+  canManage: boolean;
+  canApprove: boolean;
+  self: boolean;
+};
+
+export type ClubAdminMembersResponse = {
+  clubId: number;
+  clubName: string;
+  admin: boolean;
+  members: ClubAdminMember[];
+};
+
+export type UpdateClubAdminMemberRoleRequest = {
+  roleCode: "OWNER" | "ADMIN" | "MEMBER" | string;
+};
+
+export type UpdateClubAdminMemberStatusRequest = {
+  membershipStatus: "ACTIVE" | "DORMANT" | string;
+};
+
 export type ClubTimelineEntry = {
   noticeId: number;
   title: string;
@@ -757,6 +788,39 @@ export function updateClubFeatures(
 
 export function getClubAttendance(clubId: string | number) {
   return getJson<ClubAttendanceResponse>(`/api/semo/v1/clubs/${clubId}/more/attendance`);
+}
+
+export function getClubAdminMembers(clubId: string | number) {
+  return getJson<ClubAdminMembersResponse>(`/api/semo/v1/clubs/${clubId}/admin/members`);
+}
+
+export function updateClubAdminMemberRole(
+  clubId: string | number,
+  clubMemberId: string | number,
+  request: UpdateClubAdminMemberRoleRequest,
+) {
+  return putJson<ClubAdminMember>(
+    `/api/semo/v1/clubs/${clubId}/admin/members/${clubMemberId}/role`,
+    request,
+  );
+}
+
+export function updateClubAdminMemberStatus(
+  clubId: string | number,
+  clubMemberId: string | number,
+  request: UpdateClubAdminMemberStatusRequest,
+) {
+  return putJson<ClubAdminMember>(
+    `/api/semo/v1/clubs/${clubId}/admin/members/${clubMemberId}/status`,
+    request,
+  );
+}
+
+export function approveClubAdminMember(clubId: string | number, clubMemberId: string | number) {
+  return postJson<ClubAdminMember>(
+    `/api/semo/v1/clubs/${clubId}/admin/members/${clubMemberId}/approve`,
+    undefined,
+  );
 }
 
 export function checkInClubAttendance(
