@@ -16,6 +16,7 @@ export function ClubScheduleFallbackClient({ clubId }: ClubScheduleFallbackClien
   const [payload, setPayload] = useState<ClubScheduleResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isMonthLoading, setIsMonthLoading] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -38,12 +39,18 @@ export function ClubScheduleFallbackClient({ clubId }: ClubScheduleFallbackClien
     return () => {
       cancelled = true;
     };
-  }, [activeMonth, activeYear, clubId]);
+  }, [activeMonth, activeYear, clubId, reloadKey]);
 
   const handleMonthChange = (year: number, month: number) => {
     startTransition(() => {
       setActiveYear(year);
       setActiveMonth(month);
+    });
+  };
+
+  const handleReloadMonth = () => {
+    startTransition(() => {
+      setReloadKey((current) => current + 1);
     });
   };
 
@@ -79,6 +86,7 @@ export function ClubScheduleFallbackClient({ clubId }: ClubScheduleFallbackClien
       activeMonth={payload?.calendarMonth ?? activeMonth}
       isMonthLoading={isMonthLoading}
       onChangeMonth={handleMonthChange}
+      onReloadMonth={handleReloadMonth}
     />
   );
 }

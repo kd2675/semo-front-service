@@ -17,6 +17,7 @@ type ClubScheduleVoteEditorClientProps = {
   clubName?: string;
   presentation?: "page" | "modal";
   onRequestClose?: () => void;
+  onSaved?: (voteId: number) => void;
 };
 
 export function ClubScheduleVoteEditorClient({
@@ -25,6 +26,7 @@ export function ClubScheduleVoteEditorClient({
   clubName: initialClubName,
   presentation = "page",
   onRequestClose,
+  onSaved,
 }: ClubScheduleVoteEditorClientProps) {
   const router = useRouter();
   const formId = useId();
@@ -115,6 +117,11 @@ export function ClubScheduleVoteEditorClient({
     setSaving(false);
     if (!result.ok || !result.data) {
       setError(result.message ?? "투표 저장에 실패했습니다.");
+      return;
+    }
+
+    if (onSaved) {
+      onSaved(result.data.voteId);
       return;
     }
 

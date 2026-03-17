@@ -79,6 +79,7 @@ export type ClubNoticeListItem = {
   pinned: boolean;
   scheduleAtLabel: string | null;
   locationLabel: string | null;
+  canManage: boolean;
   linkedTargetType: "SCHEDULE_EVENT" | "SCHEDULE_VOTE" | null;
   linkedTargetId: number | null;
 };
@@ -170,6 +171,8 @@ export type ClubScheduleEventSummary = {
   participationConditionText: string | null;
   participationEnabled: boolean;
   feeRequired: boolean;
+  feeAmount: number | null;
+  feeAmountUndecided: boolean;
   feeNWaySplit: boolean;
   postedToBoard: boolean;
   linkedNoticeId: number | null;
@@ -218,6 +221,8 @@ export type ClubScheduleEventDetailResponse = {
   participationConditionText: string | null;
   participationEnabled: boolean;
   feeRequired: boolean;
+  feeAmount: number | null;
+  feeAmountUndecided: boolean;
   feeNWaySplit: boolean;
   postedToBoard: boolean;
   linkedNoticeId: number | null;
@@ -238,6 +243,8 @@ export type UpsertScheduleEventRequest = {
   participationConditionText?: string | null;
   participationEnabled?: boolean;
   feeRequired?: boolean;
+  feeAmount?: number | null;
+  feeAmountUndecided?: boolean;
   feeNWaySplit?: boolean;
   postToBoard?: boolean;
 };

@@ -14,6 +14,7 @@ import { ClubBottomNav } from "@/app/components/ClubBottomNav";
 import { ClubModeSwitchFab } from "@/app/components/ClubModeSwitchFab";
 import { RouteModal } from "@/app/components/RouteModal";
 import {
+  deleteClubNotice,
   getClubNoticeFeed,
   getNoticeCategoryOptions,
   type ClubNoticeFeedResponse,
@@ -23,9 +24,11 @@ import {
 } from "@/app/lib/clubs";
 import { toDateTimeLocalString } from "@/app/lib/date-time";
 import { staggeredFadeUpMotion } from "@/app/lib/motion";
-import { getNoticeAccentClasses } from "@/app/lib/notice-category";
 import { ClubNoticeEditorClient } from "./ClubNoticeEditorClient";
+import { NoticeManageCard } from "./NoticeManageCard";
 import { ClubBoardFeedLoadingShell } from "../ClubRouteLoadingShells";
+import { ScheduleActionConfirmModal } from "../schedule/ScheduleActionConfirmModal";
+import { ClubNoticeDetailClient } from "./[noticeId]/ClubNoticeDetailClient";
 
 type CursorState = {
   publishedAt: string | null;
@@ -41,16 +44,6 @@ type NoticeCreateDefaults = {
   scheduleEndAt: string;
 };
 
-function getNoticeHref(clubId: string, notice: ClubNoticeListItem) {
-  if (notice.linkedTargetType === "SCHEDULE_EVENT" && notice.linkedTargetId != null) {
-    return `/clubs/${clubId}/schedule/${notice.linkedTargetId}`;
-  }
-  if (notice.linkedTargetType === "SCHEDULE_VOTE" && notice.linkedTargetId != null) {
-    return `/clubs/${clubId}/schedule/votes/${notice.linkedTargetId}`;
-  }
-  return `/clubs/${clubId}/board/${notice.noticeId}`;
-}
-
 export function ClubBoardFeedClient({ clubId }: ClubBoardFeedClientProps) {
   const prefersReducedMotion = useReducedMotion();
   const reduceMotion = Boolean(prefersReducedMotion);
@@ -65,6 +58,12 @@ export function ClubBoardFeedClient({ clubId }: ClubBoardFeedClientProps) {
   const [initialLoaded, setInitialLoaded] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [detailNoticeId, setDetailNoticeId] = useState<string | null>(null);
+  const [editingNoticeId, setEditingNoticeId] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<ClubNoticeListItem | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [activeActionNoticeId, setActiveActionNoticeId] = useState<number | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
   const [createDefaults, setCreateDefaults] = useState<NoticeCreateDefaults | null>(null);
   const [cursor, setCursor] = useState<CursorState>({ publishedAt: null, noticeId: null });
   const [sentinelNode, setSentinelNode] = useState<HTMLDivElement | null>(null);
@@ -81,6 +80,8 @@ export function ClubBoardFeedClient({ clubId }: ClubBoardFeedClientProps) {
       setHasNext(false);
       setCursor({ publishedAt: null, noticeId: null });
       setInitialLoaded(false);
+      setActiveActionNoticeId(null);
+      setDetailNoticeId(null);
     }
 
     loadingRef.current = true;
@@ -117,7 +118,7 @@ export function ClubBoardFeedClient({ clubId }: ClubBoardFeedClientProps) {
 
   useEffect(() => {
     void loadFeed("reset");
-  }, [clubId, activeCategory, deferredQuery]);
+  }, [clubId, activeCategory, deferredQuery, reloadKey]);
 
   useEffect(() => {
     let cancelled = false;
@@ -163,7 +164,34 @@ export function ClubBoardFeedClient({ clubId }: ClubBoardFeedClientProps) {
       scheduleAt: toDateTimeLocalString(now),
       scheduleEndAt: toDateTimeLocalString(oneHourLater),
     });
+    setActiveActionNoticeId(null);
     setShowCreateModal(true);
+  };
+
+  const handleDeleteNotice = async () => {
+    if (!deleteTarget) {
+      return;
+    }
+    setDeleting(true);
+    setError(null);
+    const result = await deleteClubNotice(clubId, deleteTarget.noticeId);
+    setDeleting(false);
+    if (!result.ok) {
+      setError(result.message ?? "공지 삭제에 실패했습니다.");
+      return;
+    }
+    setDeleteTarget(null);
+    setActiveActionNoticeId(null);
+    setReloadKey((current) => current + 1);
+  };
+
+  const handleModalSaved = () => {
+    setShowCreateModal(false);
+    setDetailNoticeId(null);
+    setEditingNoticeId(null);
+    setCreateDefaults(null);
+    setActiveActionNoticeId(null);
+    setReloadKey((current) => current + 1);
   };
 
   if (!initialLoaded && !error) {
@@ -172,7 +200,7 @@ export function ClubBoardFeedClient({ clubId }: ClubBoardFeedClientProps) {
 
   return (
     <div className="bg-[var(--background-light)] font-display text-slate-900">
-      <div className="relative mx-auto flex min-h-screen max-w-md flex-col bg-white">
+      <div className="relative mx-auto flex min-h-screen max-w-md flex-col overflow-x-hidden bg-white">
         <header className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-200 bg-white p-4">
           <RouterLink
             href={`/clubs/${clubId}`}
@@ -258,58 +286,28 @@ export function ClubBoardFeedClient({ clubId }: ClubBoardFeedClientProps) {
           <div className="flex flex-col divide-y divide-slate-100">
             {items.map((notice, index) => (
               <motion.article key={notice.noticeId} {...staggeredFadeUpMotion(index + 2, reduceMotion)}>
-                {(() => {
-                  const accent = getNoticeAccentClasses(notice.categoryAccentTone);
-                  return (
-                    <RouterLink
-                      href={getNoticeHref(clubId, notice)}
-                      className="flex gap-4 bg-white px-4 py-5 transition-colors hover:bg-slate-50"
-                    >
-                      <div className={`flex size-12 shrink-0 items-center justify-center rounded-xl ${accent.icon}`}>
-                        <span className="material-symbols-outlined">{notice.categoryIconName}</span>
-                      </div>
-                      <div className="min-w-0 flex flex-1 flex-col gap-1">
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="min-w-0">
-                            <div className="flex items-center gap-2">
-                              {notice.pinned ? (
-                                <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${accent.badge}`}>
-                                  Pin
-                                </span>
-                              ) : null}
-                              <p className="truncate text-base font-bold leading-snug text-slate-900">
-                                {notice.title}
-                              </p>
-                            </div>
-                          </div>
-                          <span className="whitespace-nowrap text-xs text-slate-400">{notice.timeAgo}</span>
-                        </div>
-                        <p className="line-clamp-3 text-sm text-slate-600">{notice.summary}</p>
-                        <div className="mt-1 flex flex-wrap items-center gap-2 text-xs">
-                          <div className="flex items-center gap-2">
-                            <div className="flex size-5 items-center justify-center overflow-hidden rounded-full bg-slate-200">
-                              <span className="material-symbols-outlined text-[12px]">person</span>
-                            </div>
-                            <p className="font-semibold text-slate-700">{notice.authorDisplayName}</p>
-                          </div>
-                          <span className={`rounded-full border px-2 py-1 font-medium ${accent.chip}`}>
-                            {notice.categoryLabel}
-                          </span>
-                          {notice.scheduleAtLabel ? (
-                            <span className="rounded-full bg-slate-100 px-2 py-1 font-medium text-slate-600">
-                              {notice.scheduleAtLabel}
-                            </span>
-                          ) : null}
-                          {notice.locationLabel ? (
-                            <span className="rounded-full bg-slate-100 px-2 py-1 font-medium text-slate-600">
-                              {notice.locationLabel}
-                            </span>
-                          ) : null}
-                        </div>
-                      </div>
-                    </RouterLink>
-                  );
-                })()}
+                <NoticeManageCard
+                  notice={notice}
+                  manageable={isAdmin || notice.canManage}
+                  open={activeActionNoticeId === notice.noticeId}
+                  onOpenChange={(nextOpen) => {
+                    setActiveActionNoticeId(nextOpen ? notice.noticeId : null);
+                  }}
+                  onOpen={() => {
+                    setActiveActionNoticeId(null);
+                    setDetailNoticeId(String(notice.noticeId));
+                  }}
+                  onEdit={() => {
+                    setActiveActionNoticeId(null);
+                    setDetailNoticeId(null);
+                    setEditingNoticeId(String(notice.noticeId));
+                  }}
+                  onDelete={() => {
+                    setActiveActionNoticeId(null);
+                    setDetailNoticeId(null);
+                    setDeleteTarget(notice);
+                  }}
+                />
               </motion.article>
             ))}
           </div>
@@ -369,8 +367,59 @@ export function ClubBoardFeedClient({ clubId }: ClubBoardFeedClientProps) {
                 initialScheduleAt={createDefaults?.scheduleAt}
                 initialScheduleEndAt={createDefaults?.scheduleEndAt}
                 onRequestClose={() => setShowCreateModal(false)}
+                onSaved={handleModalSaved}
               />
             </RouteModal>
+          ) : null}
+          {detailNoticeId ? (
+            <RouteModal
+              onDismiss={() => {
+                setDetailNoticeId(null);
+              }}
+            >
+              <ClubNoticeDetailClient
+                clubId={clubId}
+                noticeId={detailNoticeId}
+                presentation="modal"
+                onRequestClose={() => setDetailNoticeId(null)}
+              />
+            </RouteModal>
+          ) : null}
+          {editingNoticeId ? (
+            <RouteModal
+              onDismiss={() => {
+                setEditingNoticeId(null);
+              }}
+              dismissOnBackdrop={false}
+            >
+              <ClubNoticeEditorClient
+                clubId={clubId}
+                noticeId={editingNoticeId}
+                presentation="modal"
+                onRequestClose={() => setEditingNoticeId(null)}
+                onSaved={handleModalSaved}
+                onDeleted={() => {
+                  setEditingNoticeId(null);
+                  setActiveActionNoticeId(null);
+                  setReloadKey((current) => current + 1);
+                }}
+              />
+            </RouteModal>
+          ) : null}
+          {deleteTarget ? (
+            <ScheduleActionConfirmModal
+              title="공지를 삭제할까요?"
+              description={`"${deleteTarget.title}" 공지는 삭제 후 복구할 수 없습니다.`}
+              confirmLabel="공지 삭제"
+              busyLabel="삭제 중..."
+              busy={deleting}
+              onCancel={() => {
+                if (!deleting) {
+                  setDeleteTarget(null);
+                }
+              }}
+              onConfirm={handleDeleteNotice}
+            />
           ) : null}
         </AnimatePresence>
       </div>

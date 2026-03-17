@@ -1,4 +1,4 @@
-import { ClubScheduleEditorClient } from "../../ClubScheduleEditorClient";
+import { ClubScheduleEditRouteModal } from "./ClubScheduleEditRouteModal";
 
 type ClubScheduleEditPageProps = {
   params: Promise<{
@@ -9,5 +9,5 @@ type ClubScheduleEditPageProps = {
 
 export default async function ClubScheduleEditPage({ params }: ClubScheduleEditPageProps) {
   const { clubId, eventId } = await params;
-  return <ClubScheduleEditorClient clubId={clubId} eventId={eventId} />;
+  return <ClubScheduleEditRouteModal clubId={clubId} eventId={eventId} />;
 }

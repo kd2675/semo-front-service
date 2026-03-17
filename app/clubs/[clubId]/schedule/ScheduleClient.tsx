@@ -12,9 +12,14 @@ import type {
   ClubScheduleResponse,
   ClubScheduleVoteSummary,
 } from "@/app/lib/clubs";
+import { deleteClubScheduleEvent, deleteClubScheduleVote } from "@/app/lib/clubs";
 import { ClubScheduleEditorClient } from "./ClubScheduleEditorClient";
+import { ClubScheduleDetailClient } from "./ClubScheduleDetailClient";
+import { ClubScheduleVoteDetailClient } from "./ClubScheduleVoteDetailClient";
 import { ClubScheduleVoteEditorClient } from "./ClubScheduleVoteEditorClient";
 import { ClubScheduleLoadingShell } from "../ClubRouteLoadingShells";
+import { ScheduleActionConfirmModal } from "./ScheduleActionConfirmModal";
+import { ScheduleManageCard } from "./ScheduleManageCard";
 
 type ScheduleClientProps = {
   clubId: string;
@@ -23,6 +28,7 @@ type ScheduleClientProps = {
   activeMonth: number;
   isMonthLoading: boolean;
   onChangeMonth: (year: number, month: number) => void;
+  onReloadMonth: () => void;
 };
 
 type CalendarMonth = {
@@ -157,68 +163,102 @@ function getEventDotClassName(eventCount: number, maxEventCount: number, isActiv
 }
 
 function EventCard({
-  clubId,
   event,
+  manageable,
+  open,
+  onOpenChange,
+  onOpen,
+  onEdit,
+  onDelete,
 }: {
-  clubId: string;
   event: ClubScheduleEventSummary;
+  manageable: boolean;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onOpen: () => void;
+  onEdit: () => void;
+  onDelete: () => void;
 }) {
   const visual = getEventVisual(event);
 
   return (
-    <RouterLink
-      href={`/clubs/${clubId}/schedule/${event.eventId}`}
-      className="flex items-center gap-4 rounded-xl border border-slate-100 bg-white p-3 shadow-sm transition-all hover:border-[var(--primary)]/50"
+    <ScheduleManageCard
+      label={event.title}
+      manageable={manageable}
+      open={open}
+      onOpenChange={onOpenChange}
+      onOpen={onOpen}
+      onEdit={onEdit}
+      onDelete={onDelete}
     >
-      <div
-        className={`flex size-12 shrink-0 items-center justify-center rounded-lg ${visual.iconSurfaceClassName} ${visual.iconClassName}`}
-      >
-        <span className="material-symbols-outlined">{visual.icon}</span>
+      <div className="flex items-center gap-4 rounded-xl border border-slate-100 bg-white p-3 pr-7 shadow-sm transition-all hover:border-[var(--primary)]/50">
+        <div
+          className={`flex size-12 shrink-0 items-center justify-center rounded-lg ${visual.iconSurfaceClassName} ${visual.iconClassName}`}
+        >
+          <span className="material-symbols-outlined">{visual.icon}</span>
+        </div>
+        <div className="flex flex-1 flex-col justify-center">
+          <p className="mb-1 text-base font-bold leading-none text-slate-900">{event.title}</p>
+          <p className="text-sm font-normal text-slate-500">{getEventSecondaryText(event)}</p>
+        </div>
+        <div className="shrink-0 text-right">
+          <p className="text-sm font-bold text-slate-900">{event.timeLabel ?? "종일"}</p>
+          <p className="text-[10px] font-medium uppercase tracking-wider text-slate-400">
+            {getEventStatusLabel(event)}
+          </p>
+        </div>
       </div>
-      <div className="flex flex-1 flex-col justify-center">
-        <p className="mb-1 text-base font-bold leading-none text-slate-900">{event.title}</p>
-        <p className="text-sm font-normal text-slate-500">{getEventSecondaryText(event)}</p>
-      </div>
-      <div className="shrink-0 text-right">
-        <p className="text-sm font-bold text-slate-900">{event.timeLabel ?? "종일"}</p>
-        <p className="text-[10px] font-medium uppercase tracking-wider text-slate-400">
-          {getEventStatusLabel(event)}
-        </p>
-      </div>
-    </RouterLink>
+    </ScheduleManageCard>
   );
 }
 
 function VoteCard({
-  clubId,
   vote,
+  manageable,
+  open,
+  onOpenChange,
+  onOpen,
+  onEdit,
+  onDelete,
 }: {
-  clubId: string;
   vote: ClubScheduleVoteSummary;
+  manageable: boolean;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onOpen: () => void;
+  onEdit: () => void;
+  onDelete: () => void;
 }) {
   return (
-    <RouterLink
-      href={`/clubs/${clubId}/schedule/votes/${vote.voteId}`}
-      className="flex items-center gap-4 rounded-xl border border-slate-100 bg-white p-3 shadow-sm transition-all hover:border-amber-500/50"
+    <ScheduleManageCard
+      label={vote.title}
+      manageable={manageable}
+      open={open}
+      onOpenChange={onOpenChange}
+      onOpen={onOpen}
+      onEdit={onEdit}
+      onDelete={onDelete}
     >
-      <div className="flex size-12 shrink-0 items-center justify-center rounded-lg bg-amber-500/10 text-amber-500">
-        <span className="material-symbols-outlined">poll</span>
+      <div className="flex items-center gap-4 rounded-xl border border-slate-100 bg-white p-3 pr-7 shadow-sm transition-all hover:border-amber-500/50">
+        <div className="flex size-12 shrink-0 items-center justify-center rounded-lg bg-amber-500/10 text-amber-500">
+          <span className="material-symbols-outlined">poll</span>
+        </div>
+        <div className="flex flex-1 flex-col justify-center">
+          <p className="mb-1 text-base font-bold leading-none text-slate-900">{vote.title}</p>
+          <p className="text-sm font-normal text-slate-500">
+            {vote.votePeriodLabel}
+            {vote.voteTimeLabel ? ` • ${vote.voteTimeLabel}` : ""}
+            {` • ${vote.optionCount}개 항목`}
+          </p>
+        </div>
+        <div className="shrink-0 text-right">
+          <p className="text-sm font-bold text-slate-900">{vote.totalResponses}명</p>
+          <p className="text-[10px] font-medium uppercase tracking-wider text-slate-400">
+            {!vote.votingOpen ? "CLOSED" : vote.mySelectedOptionId ? "VOTED" : "PENDING"}
+          </p>
+        </div>
       </div>
-      <div className="flex flex-1 flex-col justify-center">
-        <p className="mb-1 text-base font-bold leading-none text-slate-900">{vote.title}</p>
-        <p className="text-sm font-normal text-slate-500">
-          {vote.votePeriodLabel}
-          {vote.voteTimeLabel ? ` • ${vote.voteTimeLabel}` : ""}
-          {` • ${vote.optionCount}개 항목`}
-        </p>
-      </div>
-      <div className="shrink-0 text-right">
-        <p className="text-sm font-bold text-slate-900">{vote.totalResponses}명</p>
-        <p className="text-[10px] font-medium uppercase tracking-wider text-slate-400">
-          {!vote.votingOpen ? "CLOSED" : vote.mySelectedOptionId ? "VOTED" : "PENDING"}
-        </p>
-      </div>
-    </RouterLink>
+    </ScheduleManageCard>
   );
 }
 
@@ -229,6 +269,7 @@ export function ScheduleClient({
   activeMonth,
   isMonthLoading,
   onChangeMonth,
+  onReloadMonth,
 }: ScheduleClientProps) {
   const prefersReducedMotion = useReducedMotion();
   const reduceMotion = Boolean(prefersReducedMotion);
@@ -241,6 +282,14 @@ export function ScheduleClient({
   const [selectedDay, setSelectedDay] = useState(month.defaultSelectedDay);
   const [showEventCreateModal, setShowEventCreateModal] = useState(false);
   const [showVoteCreateModal, setShowVoteCreateModal] = useState(false);
+  const [detailEventId, setDetailEventId] = useState<string | null>(null);
+  const [editingEventId, setEditingEventId] = useState<string | null>(null);
+  const [detailVoteId, setDetailVoteId] = useState<string | null>(null);
+  const [editingVoteId, setEditingVoteId] = useState<string | null>(null);
+  const [deleteEventTarget, setDeleteEventTarget] = useState<ClubScheduleEventSummary | null>(null);
+  const [deleteVoteTarget, setDeleteVoteTarget] = useState<ClubScheduleVoteSummary | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [activeActionKey, setActiveActionKey] = useState<string | null>(null);
 
   if (!month) {
     return <ClubScheduleLoadingShell />;
@@ -264,6 +313,36 @@ export function ScheduleClient({
     startTransition(() => {
       setSelectedDay(day);
     });
+  };
+
+  const handleDeleteEvent = async () => {
+    if (!deleteEventTarget) {
+      return;
+    }
+    setDeleting(true);
+    const result = await deleteClubScheduleEvent(clubId, deleteEventTarget.eventId);
+    setDeleting(false);
+    if (!result.ok) {
+      return;
+    }
+    setDeleteEventTarget(null);
+    setActiveActionKey(null);
+    onReloadMonth();
+  };
+
+  const handleDeleteVote = async () => {
+    if (!deleteVoteTarget) {
+      return;
+    }
+    setDeleting(true);
+    const result = await deleteClubScheduleVote(clubId, deleteVoteTarget.voteId);
+    setDeleting(false);
+    if (!result.ok) {
+      return;
+    }
+    setDeleteVoteTarget(null);
+    setActiveActionKey(null);
+    onReloadMonth();
   };
 
   return (
@@ -402,7 +481,26 @@ export function ScheduleClient({
                   className="rounded-xl"
                   {...staggeredFadeUpMotion(index + 2, reduceMotion)}
                 >
-                  <EventCard clubId={clubId} event={event} />
+                  <EventCard
+                    event={event}
+                    manageable={canManageSchedule}
+                    open={activeActionKey === `event-${event.eventId}`}
+                    onOpenChange={(nextOpen) => {
+                      setActiveActionKey(nextOpen ? `event-${event.eventId}` : null);
+                    }}
+                    onOpen={() => {
+                      setActiveActionKey(null);
+                      setDetailEventId(String(event.eventId));
+                    }}
+                    onEdit={() => {
+                      setActiveActionKey(null);
+                      setEditingEventId(String(event.eventId));
+                    }}
+                    onDelete={() => {
+                      setActiveActionKey(null);
+                      setDeleteEventTarget(event);
+                    }}
+                  />
                 </motion.article>
               ))
             ) : (
@@ -420,9 +518,10 @@ export function ScheduleClient({
                 {...staggeredFadeUpMotion(events.length + 3, reduceMotion)}
               >
                 <p className="mb-3 text-xs font-bold tracking-[0.22em] text-slate-500">다음 일정</p>
-                <RouterLink
-                  href={`/clubs/${clubId}/schedule/${nextUpcomingEvent.eventId}`}
-                  className="flex items-center gap-4 rounded-xl border border-dashed border-slate-300 bg-slate-100 p-3 transition-all hover:border-[var(--primary)]/40"
+                <button
+                  type="button"
+                  onClick={() => setDetailEventId(String(nextUpcomingEvent.eventId))}
+                  className="flex w-full items-center gap-4 rounded-xl border border-dashed border-slate-300 bg-slate-100 p-3 text-left transition-all hover:border-[var(--primary)]/40"
                 >
                   <div className="flex size-12 shrink-0 items-center justify-center rounded-lg bg-slate-200 text-slate-400">
                     <span className="material-symbols-outlined">group</span>
@@ -440,7 +539,7 @@ export function ScheduleClient({
                       {nextUpcomingEvent.timeLabel ?? nextUpcomingEvent.dateLabel}
                     </p>
                   </div>
-                </RouterLink>
+                </button>
               </motion.div>
             ) : null}
           </div>
@@ -468,7 +567,26 @@ export function ScheduleClient({
                   className="rounded-xl"
                   {...staggeredFadeUpMotion(events.length + index + 4, reduceMotion)}
                 >
-                  <VoteCard clubId={clubId} vote={vote} />
+                  <VoteCard
+                    vote={vote}
+                    manageable={canManageSchedule}
+                    open={activeActionKey === `vote-${vote.voteId}`}
+                    onOpenChange={(nextOpen) => {
+                      setActiveActionKey(nextOpen ? `vote-${vote.voteId}` : null);
+                    }}
+                    onOpen={() => {
+                      setActiveActionKey(null);
+                      setDetailVoteId(String(vote.voteId));
+                    }}
+                    onEdit={() => {
+                      setActiveActionKey(null);
+                      setEditingVoteId(String(vote.voteId));
+                    }}
+                    onDelete={() => {
+                      setActiveActionKey(null);
+                      setDeleteVoteTarget(vote);
+                    }}
+                  />
                 </motion.article>
               ))
             ) : (
@@ -494,6 +612,41 @@ export function ScheduleClient({
                 presentation="modal"
                 initialEventDate={selectedDateValue}
                 onRequestClose={() => setShowEventCreateModal(false)}
+                onSaved={(savedEventId) => {
+                  setShowEventCreateModal(false);
+                  onReloadMonth();
+                  setDetailEventId(String(savedEventId));
+                }}
+              />
+            </RouteModal>
+          ) : null}
+          {detailEventId ? (
+            <RouteModal onDismiss={() => setDetailEventId(null)}>
+              <ClubScheduleDetailClient
+                clubId={clubId}
+                eventId={detailEventId}
+                presentation="modal"
+                onRequestClose={() => setDetailEventId(null)}
+              />
+            </RouteModal>
+          ) : null}
+          {editingEventId ? (
+            <RouteModal onDismiss={() => setEditingEventId(null)} dismissOnBackdrop={false}>
+              <ClubScheduleEditorClient
+                clubId={clubId}
+                eventId={editingEventId}
+                clubName={payload.clubName}
+                presentation="modal"
+                onRequestClose={() => setEditingEventId(null)}
+                onSaved={(savedEventId) => {
+                  setEditingEventId(null);
+                  onReloadMonth();
+                  setDetailEventId(String(savedEventId));
+                }}
+                onDeleted={() => {
+                  setEditingEventId(null);
+                  onReloadMonth();
+                }}
               />
             </RouteModal>
           ) : null}
@@ -504,8 +657,69 @@ export function ScheduleClient({
                 clubName={payload.clubName}
                 presentation="modal"
                 onRequestClose={() => setShowVoteCreateModal(false)}
+                onSaved={(savedVoteId) => {
+                  setShowVoteCreateModal(false);
+                  onReloadMonth();
+                  setDetailVoteId(String(savedVoteId));
+                }}
               />
             </RouteModal>
+          ) : null}
+          {detailVoteId ? (
+            <RouteModal onDismiss={() => setDetailVoteId(null)}>
+              <ClubScheduleVoteDetailClient
+                clubId={clubId}
+                voteId={detailVoteId}
+                presentation="modal"
+                onRequestClose={() => setDetailVoteId(null)}
+              />
+            </RouteModal>
+          ) : null}
+          {editingVoteId ? (
+            <RouteModal onDismiss={() => setEditingVoteId(null)} dismissOnBackdrop={false}>
+              <ClubScheduleVoteEditorClient
+                clubId={clubId}
+                voteId={editingVoteId}
+                clubName={payload.clubName}
+                presentation="modal"
+                onRequestClose={() => setEditingVoteId(null)}
+                onSaved={(savedVoteId) => {
+                  setEditingVoteId(null);
+                  onReloadMonth();
+                  setDetailVoteId(String(savedVoteId));
+                }}
+              />
+            </RouteModal>
+          ) : null}
+          {deleteEventTarget ? (
+            <ScheduleActionConfirmModal
+              title="일정을 삭제할까요?"
+              description={`"${deleteEventTarget.title}" 일정은 삭제 후 복구할 수 없습니다.`}
+              confirmLabel="일정 삭제"
+              busyLabel="삭제 중..."
+              busy={deleting}
+              onCancel={() => {
+                if (!deleting) {
+                  setDeleteEventTarget(null);
+                }
+              }}
+              onConfirm={handleDeleteEvent}
+            />
+          ) : null}
+          {deleteVoteTarget ? (
+            <ScheduleActionConfirmModal
+              title="투표를 삭제할까요?"
+              description={`"${deleteVoteTarget.title}" 투표는 삭제 후 복구할 수 없습니다.`}
+              confirmLabel="투표 삭제"
+              busyLabel="삭제 중..."
+              busy={deleting}
+              onCancel={() => {
+                if (!deleting) {
+                  setDeleteVoteTarget(null);
+                }
+              }}
+              onConfirm={handleDeleteVote}
+            />
           ) : null}
         </AnimatePresence>
       </div>

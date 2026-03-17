@@ -1,4 +1,4 @@
-import { ClubNoticeDetailClient } from "./ClubNoticeDetailClient";
+import { ClubNoticeDetailRouteModal } from "./ClubNoticeDetailRouteModal";
 
 type ClubNoticeDetailPageProps = {
   params: Promise<{
@@ -9,5 +9,5 @@ type ClubNoticeDetailPageProps = {
 
 export default async function ClubNoticeDetailPage({ params }: ClubNoticeDetailPageProps) {
   const { clubId, noticeId } = await params;
-  return <ClubNoticeDetailClient clubId={clubId} noticeId={noticeId} />;
+  return <ClubNoticeDetailRouteModal clubId={clubId} noticeId={noticeId} />;
 }

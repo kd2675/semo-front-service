@@ -21,6 +21,8 @@ type ClubScheduleEditorClientProps = {
   presentation?: "page" | "modal";
   initialEventDate?: string;
   onRequestClose?: () => void;
+  onSaved?: (eventId: number) => void;
+  onDeleted?: () => void;
 };
 
 type ScheduleDateMode = "single" | "range";
@@ -84,6 +86,8 @@ export function ClubScheduleEditorClient({
   presentation = "page",
   initialEventDate,
   onRequestClose,
+  onSaved,
+  onDeleted,
 }: ClubScheduleEditorClientProps) {
   const router = useRouter();
   const formId = useId();
@@ -101,6 +105,8 @@ export function ClubScheduleEditorClient({
   const [participationConditionText, setParticipationConditionText] = useState("");
   const [participationEnabled, setParticipationEnabled] = useState(false);
   const [feeRequired, setFeeRequired] = useState(false);
+  const [feeAmount, setFeeAmount] = useState("");
+  const [feeAmountUndecided, setFeeAmountUndecided] = useState(false);
   const [feeNWaySplit, setFeeNWaySplit] = useState(false);
   const [postToBoard, setPostToBoard] = useState(false);
   const [clubName, setClubName] = useState(initialClubName ?? "Schedule Studio");
@@ -139,6 +145,8 @@ export function ClubScheduleEditorClient({
     setParticipationConditionText(payload.participationConditionText ?? "");
     setParticipationEnabled(payload.participationEnabled);
     setFeeRequired(payload.feeRequired);
+    setFeeAmount(payload.feeAmount ? String(payload.feeAmount) : "");
+    setFeeAmountUndecided(payload.feeAmountUndecided);
     setFeeNWaySplit(payload.feeNWaySplit);
     setPostToBoard(payload.postedToBoard);
   });
@@ -161,12 +169,14 @@ export function ClubScheduleEditorClient({
       endDate: endDate || null,
       startTime: startTime || null,
       endTime: endTime || null,
-      attendeeLimit: attendeeLimit ? Number(attendeeLimit) : null,
+      attendeeLimit: participationEnabled && attendeeLimit ? Number(attendeeLimit) : null,
       locationLabel: locationLabel.trim() || null,
-      participationConditionText: participationConditionText.trim() || null,
+      participationConditionText: participationEnabled ? participationConditionText.trim() || null : null,
       participationEnabled,
       feeRequired,
-      feeNWaySplit: feeRequired && feeNWaySplit,
+      feeAmount: feeRequired && !feeAmountUndecided && feeAmount ? Number(feeAmount) : null,
+      feeAmountUndecided: feeRequired && feeAmountUndecided,
+      feeNWaySplit: feeRequired && participationEnabled && feeNWaySplit,
       postToBoard,
     };
 
@@ -177,6 +187,11 @@ export function ClubScheduleEditorClient({
     setSaving(false);
     if (!result.ok || !result.data) {
       setError(result.message ?? "일정 저장에 실패했습니다.");
+      return;
+    }
+
+    if (onSaved) {
+      onSaved(result.data.eventId);
       return;
     }
 
@@ -205,6 +220,21 @@ export function ClubScheduleEditorClient({
     });
   };
 
+  const handleFeeRequiredChange = (checked: boolean) => {
+    setFeeRequired(checked);
+    if (!checked) {
+      setFeeAmountUndecided(false);
+      setFeeNWaySplit(false);
+    }
+  };
+
+  const handleParticipationEnabledChange = (checked: boolean) => {
+    setParticipationEnabled(checked);
+    if (!checked) {
+      setFeeNWaySplit(false);
+    }
+  };
+
   const submitLabel = saving ? "저장 중..." : isEdit ? "수정 저장" : "저장하기";
   const actionBarClassName = isModal
     ? "sticky bottom-0 border-t border-slate-200 bg-white/95 p-4 backdrop-blur"
@@ -225,6 +255,10 @@ export function ClubScheduleEditorClient({
     }
 
     setShowDeleteModal(false);
+    if (onDeleted) {
+      onDeleted();
+      return;
+    }
     router.replace(`/clubs/${clubId}/schedule`);
   };
 
@@ -389,25 +423,7 @@ export function ClubScheduleEditorClient({
                 />
               </EditRow>
 
-              <EditRow label="참가 신청 여부">
-                <SettingSwitch checked={participationEnabled} onChange={setParticipationEnabled} />
-              </EditRow>
-
               <div className="mt-2 flex flex-col gap-1">
-                <EditRow label="참가 인원 제한">
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="number"
-                      min={1}
-                      value={attendeeLimit}
-                      onChange={(event) => setAttendeeLimit(event.target.value)}
-                      className="w-16 rounded-md border-none bg-transparent px-0 text-right text-base font-bold text-[var(--primary)] outline-none focus:ring-0"
-                      placeholder="0"
-                    />
-                    <span className="text-slate-400">명</span>
-                  </div>
-                </EditRow>
-
                 <EditRow label="장소">
                   <div className="flex items-center gap-1">
                     <span className="material-symbols-outlined text-lg text-[var(--primary)]">location_on</span>
@@ -419,44 +435,93 @@ export function ClubScheduleEditorClient({
                     />
                   </div>
                 </EditRow>
-
-                <EditRow label="참가 조건">
-                  <input
-                    value={participationConditionText}
-                    onChange={(event) => setParticipationConditionText(event.target.value)}
-                    className="w-44 rounded-md border-none bg-transparent px-0 text-right text-base text-slate-600 outline-none focus:ring-0"
-                    placeholder="참가 조건 입력"
-                  />
-                </EditRow>
               </div>
 
               <div className="mt-2 flex flex-col gap-1">
-                <EditRow label="회비 사용 여부">
-                  <SettingSwitch
-                    checked={feeRequired}
-                    onChange={(checked) => {
-                      setFeeRequired(checked);
-                      if (!checked) {
-                        setFeeNWaySplit(false);
-                      }
-                    }}
-                  />
-                </EditRow>
-
-                <EditRow label="N분의 1 정산">
-                  <SettingSwitch
-                    checked={feeNWaySplit}
-                    onChange={setFeeNWaySplit}
-                    disabled={!feeRequired}
-                  />
-                </EditRow>
-              </div>
-
-              <div className="mt-2">
                 <EditRow label="게시판에 공유" withBorder={false}>
                   <SettingSwitch checked={postToBoard} onChange={setPostToBoard} />
                 </EditRow>
               </div>
+
+              <div className="mt-2 flex flex-col gap-1">
+                <EditRow label="참가비" withBorder={!feeRequired}>
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm text-slate-500">금액 또는 미정</span>
+                    <SettingSwitch
+                      checked={feeRequired}
+                      onChange={handleFeeRequiredChange}
+                    />
+                  </div>
+                </EditRow>
+
+                {feeRequired ? (
+                  <>
+                    <EditRow label="참가비 금액">
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="number"
+                          min={1}
+                          value={feeAmount}
+                          onChange={(event) => setFeeAmount(event.target.value)}
+                          disabled={feeAmountUndecided}
+                          className="w-24 rounded-md border-none bg-transparent px-0 text-right text-base font-bold text-[var(--primary)] outline-none focus:ring-0 disabled:cursor-not-allowed disabled:text-slate-400"
+                          placeholder="금액"
+                        />
+                        <span className="text-slate-400">원</span>
+                      </div>
+                    </EditRow>
+
+                    <EditRow label="금액 미정">
+                      <SettingSwitch checked={feeAmountUndecided} onChange={setFeeAmountUndecided} />
+                    </EditRow>
+
+                  </>
+                ) : null}
+              </div>
+
+              <div className="mt-2 flex flex-col gap-1">
+                <EditRow label="참가 신청 여부" withBorder={!participationEnabled}>
+                  <SettingSwitch checked={participationEnabled} onChange={handleParticipationEnabledChange} />
+                </EditRow>
+
+                {participationEnabled ? (
+                  <>
+                    <EditRow label="참가 인원 제한">
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="number"
+                          min={1}
+                          value={attendeeLimit}
+                          onChange={(event) => setAttendeeLimit(event.target.value)}
+                          className="w-16 rounded-md border-none bg-transparent px-0 text-right text-base font-bold text-[var(--primary)] outline-none focus:ring-0"
+                          placeholder="0"
+                        />
+                        <span className="text-slate-400">명</span>
+                      </div>
+                    </EditRow>
+
+                    <EditRow label="참가 조건" withBorder={false}>
+                      <input
+                        value={participationConditionText}
+                        onChange={(event) => setParticipationConditionText(event.target.value)}
+                        className="w-44 rounded-md border-none bg-transparent px-0 text-right text-base text-slate-600 outline-none focus:ring-0"
+                        placeholder="참가 조건 입력"
+                      />
+                    </EditRow>
+                  </>
+                ) : null}
+              </div>
+
+              {feeRequired && participationEnabled ? (
+                <div className="mt-2 flex flex-col gap-1">
+                  <EditRow label="1/n 정산" withBorder={false}>
+                    <SettingSwitch
+                      checked={feeNWaySplit}
+                      onChange={setFeeNWaySplit}
+                    />
+                  </EditRow>
+                </div>
+              ) : null}
 
               {error ? (
                 <div className="px-4 py-3">
@@ -558,10 +623,7 @@ export function ClubScheduleEditorClient({
           </div>
 
           <div className={`flex flex-col gap-2 p-4 ${isModal ? "px-0" : ""}`}>
-            <div className="flex items-center justify-between gap-6">
-              <p className="text-sm font-medium text-slate-700">일정 정보 입력</p>
-              <p className="text-xs font-bold text-[var(--primary)]">Step 1/3</p>
-            </div>
+            <p className="text-sm font-medium text-slate-700">일정 정보 입력</p>
             <p className="text-xs text-slate-500">{clubName}</p>
             <div className="h-1.5 overflow-hidden rounded-full bg-[var(--primary)]/10">
               <div
@@ -678,27 +740,6 @@ export function ClubScheduleEditorClient({
                 <h3 className="text-base font-bold text-slate-900">추가 옵션</h3>
               </div>
 
-              <div className="flex items-center justify-between rounded-xl border border-[var(--primary)]/5 bg-white p-4 shadow-sm">
-                <div className="flex items-center gap-3">
-                  <span className="material-symbols-outlined text-[var(--primary)]">how_to_reg</span>
-                  <div>
-                    <span className="block text-sm font-semibold text-slate-900">참석 응답 (RSVP)</span>
-                    <span className="mt-0.5 block text-[11px] text-slate-500">
-                      {participationEnabled ? "사용 중" : "미사용"}
-                    </span>
-                  </div>
-                </div>
-                <label className="relative inline-flex cursor-pointer items-center">
-                  <input
-                    checked={participationEnabled}
-                    className="peer sr-only"
-                    type="checkbox"
-                    onChange={(event) => setParticipationEnabled(event.target.checked)}
-                  />
-                  <div className="h-6 w-11 rounded-full bg-slate-200 transition peer-checked:bg-[var(--primary)] after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-slate-300 after:bg-white after:transition-all after:content-[''] peer-checked:after:translate-x-full peer-checked:after:border-white" />
-                </label>
-              </div>
-
               <div className="grid grid-cols-2 gap-3">
                 <label className="block">
                   <span className="mb-1 block text-xs font-medium text-slate-700">시작 시간</span>
@@ -722,21 +763,6 @@ export function ClubScheduleEditorClient({
 
               <div className="space-y-4">
                 <label className="block">
-                  <span className="mb-1.5 block text-sm font-medium text-slate-700">참가 인원 제한</span>
-                  <div className="relative">
-                    <input
-                      type="number"
-                      min={1}
-                      value={attendeeLimit}
-                      onChange={(event) => setAttendeeLimit(event.target.value)}
-                      className="h-12 w-full rounded-xl border border-[var(--primary)]/20 bg-white px-4 pr-12 text-sm outline-none transition focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/20"
-                      placeholder="0"
-                    />
-                    <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-sm text-slate-400">명</span>
-                  </div>
-                </label>
-
-                <label className="block">
                   <span className="mb-1.5 block text-sm font-medium text-slate-700">장소 명칭</span>
                   <input
                     value={locationLabel}
@@ -745,68 +771,167 @@ export function ClubScheduleEditorClient({
                     placeholder="장소 이름을 입력하세요 (예: 강남역 카페)"
                   />
                 </label>
-
-                <label className="block">
-                  <span className="mb-1.5 block text-sm font-medium text-slate-700">참가 조건</span>
-                  <textarea
-                    value={participationConditionText}
-                    onChange={(event) => setParticipationConditionText(event.target.value)}
-                    className="min-h-[100px] w-full rounded-xl border border-[var(--primary)]/20 bg-white px-4 py-3 text-sm outline-none transition focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/20"
-                    placeholder="참가 자격이나 조건을 입력하세요"
-                  />
-                </label>
               </div>
 
-              <div className="space-y-3 pt-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-slate-900">참가비 필요 여부</span>
+              <div className="space-y-3 border-t border-slate-100 pt-4">
+                <div className="flex items-center justify-between rounded-xl border border-[var(--primary)]/5 bg-white p-4 shadow-sm">
+                  <div className="flex items-center gap-3">
+                    <span className="material-symbols-outlined text-[var(--primary)]">campaign</span>
+                    <div>
+                      <span className="block text-sm font-semibold text-slate-900">게시판 공지로 등록</span>
+                      <span className="mt-0.5 block text-[11px] text-slate-500">
+                        {postToBoard ? "사용 중 · 생성과 함께 공지에 노출" : "미사용"}
+                      </span>
+                    </div>
+                  </div>
+                  <label className="relative inline-flex cursor-pointer items-center">
+                    <input
+                      checked={postToBoard}
+                      className="peer sr-only"
+                      type="checkbox"
+                      onChange={(event) => setPostToBoard(event.target.checked)}
+                    />
+                    <div className="h-6 w-11 rounded-full bg-slate-200 transition peer-checked:bg-[var(--primary)] after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-slate-300 after:bg-white after:transition-all after:content-[''] peer-checked:after:translate-x-full peer-checked:after:border-white" />
+                  </label>
+                </div>
+              </div>
+
+              <div className="space-y-3 border-t border-slate-100 pt-4">
+                <div className="flex items-center justify-between rounded-xl border border-[var(--primary)]/5 bg-white p-4 shadow-sm">
+                  <div className="flex items-center gap-3">
+                    <span className="material-symbols-outlined text-[var(--primary)]">payments</span>
+                    <div>
+                      <span className="block text-sm font-semibold text-slate-900">참가비</span>
+                      <span className="mt-0.5 block text-[11px] text-slate-500">
+                        {feeRequired ? "사용 중 · 금액 입력 또는 미정 가능" : "미사용"}
+                      </span>
+                    </div>
+                  </div>
                   <label className="relative inline-flex cursor-pointer items-center">
                     <input
                       checked={feeRequired}
                       className="peer sr-only"
                       type="checkbox"
-                      onChange={(event) => {
-                        const nextChecked = event.target.checked;
-                        setFeeRequired(nextChecked);
-                        if (!nextChecked) {
-                          setFeeNWaySplit(false);
-                        }
-                      }}
+                      onChange={(event) => handleFeeRequiredChange(event.target.checked)}
                     />
                     <div className="h-6 w-11 rounded-full bg-slate-200 transition peer-checked:bg-[var(--primary)] after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-slate-300 after:bg-white after:transition-all after:content-[''] peer-checked:after:translate-x-full peer-checked:after:border-white" />
                   </label>
                 </div>
 
-                <div className={`flex items-center justify-between border-l-2 py-1 pl-4 ${feeRequired ? "border-[var(--primary)]/20" : "border-slate-200 opacity-50"}`}>
-                  <div className="flex flex-col">
-                    <span className="text-sm font-medium text-slate-700">N-Way Split (1/N 정산)</span>
-                    <span className="text-[10px] text-slate-400">비용 발생 시 인원별 자동 분할</span>
+                {feeRequired ? (
+                  <div className="space-y-3 rounded-2xl border border-[var(--primary)]/15 bg-[var(--primary)]/[0.03] p-4 shadow-sm">
+                    <label className="block">
+                      <span className="mb-1.5 block text-sm font-medium text-slate-700">참가비 금액</span>
+                      <div className="relative">
+                        <input
+                          type="number"
+                          min={1}
+                          value={feeAmount}
+                          onChange={(event) => setFeeAmount(event.target.value)}
+                          disabled={feeAmountUndecided}
+                          className="h-12 w-full rounded-xl border border-[var(--primary)]/20 bg-white px-4 pr-12 text-sm outline-none transition focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/20 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400"
+                          placeholder="금액을 입력하세요"
+                        />
+                        <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-sm text-slate-400">원</span>
+                      </div>
+                    </label>
+
+                    <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+                      <div className="flex flex-col">
+                        <span className="text-sm font-medium text-slate-700">금액 미정</span>
+                        <span className="text-[10px] text-slate-400">아직 금액이 확정되지 않았으면 켜두세요</span>
+                      </div>
+                      <label className="relative inline-flex cursor-pointer items-center">
+                        <input
+                          checked={feeAmountUndecided}
+                          className="peer sr-only"
+                          type="checkbox"
+                          onChange={(event) => setFeeAmountUndecided(event.target.checked)}
+                        />
+                        <div className="h-5 w-10 rounded-full bg-slate-200 transition peer-checked:bg-[var(--primary)] after:absolute after:left-[2px] after:top-[2px] after:h-4 after:w-4 after:rounded-full after:border after:border-slate-300 after:bg-white after:transition-all after:content-[''] peer-checked:after:translate-x-full peer-checked:after:border-white" />
+                      </label>
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+
+              <div className="space-y-4 border-t border-slate-100 pt-4">
+                <div className="flex items-center justify-between rounded-xl border border-[var(--primary)]/5 bg-white p-4 shadow-sm">
+                  <div className="flex items-center gap-3">
+                    <span className="material-symbols-outlined text-[var(--primary)]">how_to_reg</span>
+                    <div>
+                      <span className="block text-sm font-semibold text-slate-900">참석 응답 (RSVP)</span>
+                      <span className="mt-0.5 block text-[11px] text-slate-500">
+                        {participationEnabled ? "사용 중" : "미사용"}
+                      </span>
+                    </div>
                   </div>
                   <label className="relative inline-flex cursor-pointer items-center">
                     <input
-                      checked={feeNWaySplit}
+                      checked={participationEnabled}
                       className="peer sr-only"
-                      disabled={!feeRequired}
                       type="checkbox"
-                      onChange={(event) => setFeeNWaySplit(event.target.checked)}
+                      onChange={(event) => handleParticipationEnabledChange(event.target.checked)}
                     />
-                    <div className="h-5 w-10 rounded-full bg-slate-200 transition peer-checked:bg-[var(--primary)] after:absolute after:left-[2px] after:top-[2px] after:h-4 after:w-4 after:rounded-full after:border after:border-slate-300 after:bg-white after:transition-all after:content-[''] peer-checked:after:translate-x-full peer-checked:after:border-white" />
+                    <div className="h-6 w-11 rounded-full bg-slate-200 transition peer-checked:bg-[var(--primary)] after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-slate-300 after:bg-white after:transition-all after:content-[''] peer-checked:after:translate-x-full peer-checked:after:border-white" />
                   </label>
                 </div>
+
+                {participationEnabled ? (
+                  <div className="space-y-3 rounded-2xl border border-[var(--primary)]/15 bg-[var(--primary)]/[0.03] p-4 shadow-sm">
+                    <label className="block">
+                      <span className="mb-1.5 block text-sm font-medium text-slate-700">참가 인원 제한</span>
+                      <div className="relative">
+                        <input
+                          type="number"
+                          min={1}
+                          value={attendeeLimit}
+                          onChange={(event) => setAttendeeLimit(event.target.value)}
+                          className="h-12 w-full rounded-xl border border-[var(--primary)]/20 bg-white px-4 pr-12 text-sm outline-none transition focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/20"
+                          placeholder="0"
+                        />
+                        <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-sm text-slate-400">명</span>
+                      </div>
+                    </label>
+
+                    <label className="block">
+                      <span className="mb-1.5 block text-sm font-medium text-slate-700">참가 조건</span>
+                      <textarea
+                        value={participationConditionText}
+                        onChange={(event) => setParticipationConditionText(event.target.value)}
+                        className="min-h-[100px] w-full rounded-xl border border-[var(--primary)]/20 bg-white px-4 py-3 text-sm outline-none transition focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/20"
+                        placeholder="참가 자격이나 조건을 입력하세요"
+                      />
+                    </label>
+
+                  </div>
+                ) : null}
               </div>
 
-              <div className="flex items-center justify-between border-t border-slate-100 pt-4">
-                <span className="text-sm font-semibold text-slate-900">게시판 공지로 등록</span>
-                <label className="relative inline-flex cursor-pointer items-center">
-                  <input
-                    checked={postToBoard}
-                    className="peer sr-only"
-                    type="checkbox"
-                    onChange={(event) => setPostToBoard(event.target.checked)}
-                  />
-                  <div className="h-6 w-11 rounded-full bg-slate-200 transition peer-checked:bg-[var(--primary)] after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-slate-300 after:bg-white after:transition-all after:content-[''] peer-checked:after:translate-x-full peer-checked:after:border-white" />
-                </label>
-              </div>
+              {feeRequired && participationEnabled ? (
+                <div className="space-y-3 border-t border-slate-100 pt-4">
+                  <div className="flex items-center justify-between rounded-xl border border-[var(--primary)]/10 bg-white p-4 shadow-sm">
+                    <div className="flex items-center gap-3">
+                      <span className="material-symbols-outlined text-[var(--primary)]">account_balance_wallet</span>
+                      <div>
+                        <span className="block text-sm font-semibold text-slate-900">1/n 정산</span>
+                        <span className="mt-0.5 block text-[11px] text-slate-500">
+                          참석 인원 기준으로 참가비를 균등 분할합니다
+                        </span>
+                      </div>
+                    </div>
+                    <label className="relative inline-flex cursor-pointer items-center">
+                      <input
+                        checked={feeNWaySplit}
+                        className="peer sr-only"
+                        type="checkbox"
+                        onChange={(event) => setFeeNWaySplit(event.target.checked)}
+                      />
+                      <div className="h-6 w-11 rounded-full bg-slate-200 transition peer-checked:bg-[var(--primary)] after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-slate-300 after:bg-white after:transition-all after:content-[''] peer-checked:after:translate-x-full peer-checked:after:border-white" />
+                    </label>
+                  </div>
+                </div>
+              ) : null}
 
               {error ? (
                 <div className="rounded-xl bg-rose-50 px-4 py-3 text-sm font-medium text-rose-600">

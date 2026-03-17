@@ -16,6 +16,8 @@ import { ClubDetailLoadingShell } from "../ClubRouteLoadingShells";
 type ClubScheduleDetailClientProps = {
   clubId: string;
   eventId: string;
+  presentation?: "page" | "modal";
+  onRequestClose?: () => void;
 };
 
 function toAttendanceLabel(status: ClubScheduleEventDetailResponse["myParticipationStatus"]) {
@@ -51,6 +53,46 @@ function buildDurationLabel(payload: ClubScheduleEventDetailResponse) {
   return minutes === 0 ? `${hours} hr` : `${hours} hr ${minutes} min`;
 }
 
+function formatFeeLabel(payload: ClubScheduleEventDetailResponse) {
+  if (!payload.feeRequired) {
+    return "무료";
+  }
+  if (payload.feeAmountUndecided) {
+    return "금액 미정";
+  }
+  if (payload.feeAmount == null) {
+    return "확인 필요";
+  }
+  if (payload.feeNWaySplit) {
+    if (payload.goingCount <= 0) {
+      return "계산 대기";
+    }
+    return `1인 ${new Intl.NumberFormat("ko-KR").format(Math.ceil(payload.feeAmount / payload.goingCount))}원`;
+  }
+  return `${new Intl.NumberFormat("ko-KR").format(payload.feeAmount)}원`;
+}
+
+function buildFeeDescription(payload: ClubScheduleEventDetailResponse) {
+  if (!payload.feeRequired) {
+    return "별도 참가비가 없는 일정입니다.";
+  }
+  if (payload.feeAmountUndecided) {
+    return payload.feeNWaySplit
+      ? "금액은 미정이며, 참석 인원 기준 1/n 정산 예정입니다."
+      : "금액은 아직 미정입니다.";
+  }
+  if (payload.feeAmount == null) {
+    return "참가비 정보를 확인해 주세요.";
+  }
+  if (!payload.feeNWaySplit) {
+    return "등록된 참가비가 있는 일정입니다.";
+  }
+  if (payload.goingCount <= 0) {
+    return `총 ${new Intl.NumberFormat("ko-KR").format(payload.feeAmount)}원이며, 참석 인원 확정 후 1/n 금액이 계산됩니다.`;
+  }
+  return `총 ${new Intl.NumberFormat("ko-KR").format(payload.feeAmount)}원을 현재 참석 ${payload.goingCount}명 기준으로 나눈 금액입니다.`;
+}
+
 function getParticipationPrimaryLabel(status: ClubScheduleEventDetailResponse["myParticipationStatus"]) {
   if (status === "GOING") {
     return "참석 완료";
@@ -65,13 +107,17 @@ function getParticipationSecondaryLabel(status: ClubScheduleEventDetailResponse[
   return status === "NOT_GOING" ? "불참 완료" : "불참";
 }
 
-export function ClubScheduleDetailClient({ clubId, eventId }: ClubScheduleDetailClientProps) {
+export function ClubScheduleDetailClient({
+  clubId,
+  eventId,
+  presentation = "page",
+  onRequestClose,
+}: ClubScheduleDetailClientProps) {
   const prefersReducedMotion = useReducedMotion();
   const reduceMotion = Boolean(prefersReducedMotion);
   const [payload, setPayload] = useState<ClubScheduleEventDetailResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [savingParticipation, setSavingParticipation] = useState(false);
-  const [sharing, setSharing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const loadDetail = useEffectEvent(async () => {
@@ -102,33 +148,6 @@ export function ClubScheduleDetailClient({ clubId, eventId }: ClubScheduleDetail
     setPayload(result.data);
   };
 
-  const handleShare = async () => {
-    setSharing(true);
-    try {
-      const url = window.location.href;
-      const shareData = {
-        title: payload?.title ?? "일정 공유",
-        text: payload?.dateLabel ?? "일정 상세 링크",
-        url,
-      };
-
-      if (navigator.share) {
-        await navigator.share(shareData);
-      } else if (navigator.clipboard?.writeText) {
-        await navigator.clipboard.writeText(url);
-        window.alert("일정 링크를 복사했습니다.");
-      } else {
-        window.prompt("일정 링크를 복사하세요.", url);
-      }
-    } catch (shareError) {
-      if (!(shareError instanceof DOMException && shareError.name === "AbortError")) {
-        setError("일정 링크를 공유하지 못했습니다.");
-      }
-    } finally {
-      setSharing(false);
-    }
-  };
-
   if (loading && !payload && !error) {
     return <ClubDetailLoadingShell />;
   }
@@ -136,20 +155,32 @@ export function ClubScheduleDetailClient({ clubId, eventId }: ClubScheduleDetail
   const mapHref = buildMapHref(payload?.locationLabel ?? null);
   const durationLabel = payload ? buildDurationLabel(payload) : null;
   const showParticipationActions = Boolean(payload?.participationEnabled);
-  const showAdminActions = Boolean(payload?.canManage);
-  const showFooter = showParticipationActions || showAdminActions;
+  const showFooter = showParticipationActions;
+  const isModal = presentation === "modal";
+  const backHref = `/clubs/${clubId}/schedule`;
 
   return (
-    <div className="min-h-screen bg-white font-display text-slate-900">
-      <div className="relative mx-auto flex min-h-screen max-w-md flex-col bg-white">
+    <div className={isModal ? "flex min-h-0 flex-1 flex-col bg-white font-display text-slate-900" : "min-h-screen bg-white font-display text-slate-900"}>
+      <div className={`relative flex flex-col bg-white ${isModal ? "min-h-0 flex-1" : "mx-auto min-h-screen max-w-md"}`}>
         <header className="sticky top-0 z-50 flex h-14 items-center justify-between border-b border-slate-100 bg-white px-4">
-          <RouterLink
-            href={`/clubs/${clubId}/schedule`}
-            className="rounded-full p-2 transition-colors hover:bg-slate-100"
-            aria-label="일정 목록으로 돌아가기"
-          >
-            <span className="material-symbols-outlined text-[24px]">arrow_back</span>
-          </RouterLink>
+          {isModal && onRequestClose ? (
+            <button
+              type="button"
+              onClick={onRequestClose}
+              className="rounded-full p-2 transition-colors hover:bg-slate-100"
+              aria-label="일정 상세 닫기"
+            >
+              <span className="material-symbols-outlined text-[24px]">close</span>
+            </button>
+          ) : (
+            <RouterLink
+              href={backHref}
+              className="rounded-full p-2 transition-colors hover:bg-slate-100"
+              aria-label="일정 목록으로 돌아가기"
+            >
+              <span className="material-symbols-outlined text-[24px]">arrow_back</span>
+            </RouterLink>
+          )}
           <h1 className="text-lg font-bold">Event Details</h1>
           <div className="w-10" />
         </header>
@@ -256,18 +287,14 @@ export function ClubScheduleDetailClient({ clubId, eventId }: ClubScheduleDetail
                       </div>
                       <div>
                         <p className="text-sm font-bold text-[#135bec]">
-                          {payload.feeRequired ? (payload.feeNWaySplit ? "N-way Settlement" : "Fee Required") : "No Fee"}
+                          {payload.feeRequired ? (payload.feeNWaySplit ? "1/n 정산" : "참가비 있음") : "No Fee"}
                         </p>
                         <p className="text-[11px] font-medium text-[#135bec]/70">
-                          {payload.feeRequired
-                            ? payload.feeNWaySplit
-                              ? "행사 종료 후 1/N 정산 예정"
-                              : "참가비가 있는 일정입니다."
-                            : "별도 참가비가 없는 일정입니다."}
+                          {buildFeeDescription(payload)}
                         </p>
                       </div>
                     </div>
-                    <span className="font-bold text-[#135bec]">{payload.feeRequired ? "확인 필요" : "무료"}</span>
+                    <span className="font-bold text-[#135bec]">{formatFeeLabel(payload)}</span>
                   </div>
                 </div>
 
@@ -325,32 +352,12 @@ export function ClubScheduleDetailClient({ clubId, eventId }: ClubScheduleDetail
                 </div>
               ) : null}
 
-              {showAdminActions ? (
-                <div className="grid grid-cols-2 gap-3">
-                  <RouterLink
-                    href={`/clubs/${clubId}/schedule/${eventId}/edit`}
-                    className="flex items-center justify-center gap-2 rounded-xl border-2 border-slate-100 bg-slate-50 py-3 font-bold text-slate-600 transition-colors hover:bg-slate-100"
-                  >
-                    <span className="material-symbols-outlined text-[20px]">edit</span>
-                    Edit
-                  </RouterLink>
-                  <button
-                    type="button"
-                    onClick={handleShare}
-                    disabled={sharing}
-                    className="flex items-center justify-center gap-2 rounded-xl border-2 border-slate-100 bg-slate-50 py-3 font-bold text-slate-600 transition-colors hover:bg-slate-100 disabled:opacity-60"
-                  >
-                    <span className="material-symbols-outlined text-[20px]">share</span>
-                    {sharing ? "Sharing..." : "Share"}
-                  </button>
-                </div>
-              ) : null}
             </div>
           </footer>
         ) : null}
 
-        {payload?.admin ? <ClubModeSwitchFab clubId={clubId} mode="user" className="bottom-32" /> : null}
-        <ClubBottomNav clubId={clubId} isAdmin={payload?.admin ?? false} />
+        {!isModal && payload?.admin ? <ClubModeSwitchFab clubId={clubId} mode="user" className="bottom-32" /> : null}
+        {!isModal ? <ClubBottomNav clubId={clubId} isAdmin={payload?.admin ?? false} /> : null}
       </div>
     </div>
   );

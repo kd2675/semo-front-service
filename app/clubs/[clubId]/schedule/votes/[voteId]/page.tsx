@@ -1,4 +1,4 @@
-import { ClubScheduleVoteDetailClient } from "../../ClubScheduleVoteDetailClient";
+import { ClubScheduleVoteDetailRouteModal } from "./ClubScheduleVoteDetailRouteModal";
 
 type ClubScheduleVoteDetailPageProps = {
   params: Promise<{
@@ -11,5 +11,5 @@ export default async function ClubScheduleVoteDetailPage({
   params,
 }: ClubScheduleVoteDetailPageProps) {
   const { clubId, voteId } = await params;
-  return <ClubScheduleVoteDetailClient clubId={clubId} voteId={voteId} />;
+  return <ClubScheduleVoteDetailRouteModal clubId={clubId} voteId={voteId} />;
 }

@@ -1,25 +1,24 @@
 "use client";
 
 import { RouterLink } from "@/app/components/RouterLink";
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { useRouter } from "next/navigation";
+import { motion, useReducedMotion } from "motion/react";
 import { useEffect, useEffectEvent, useState } from "react";
 import { ClubBottomNav } from "@/app/components/ClubBottomNav";
 import { ClubModeSwitchFab } from "@/app/components/ClubModeSwitchFab";
 import {
   closeClubScheduleVote,
-  deleteClubScheduleVote,
   getClubScheduleVoteDetail,
   submitClubScheduleVoteSelection,
   type ClubScheduleVoteDetailResponse,
 } from "@/app/lib/clubs";
 import { staggeredFadeUpMotion } from "@/app/lib/motion";
 import { ClubDetailLoadingShell } from "../ClubRouteLoadingShells";
-import { ScheduleActionConfirmModal } from "./ScheduleActionConfirmModal";
 
 type ClubScheduleVoteDetailClientProps = {
   clubId: string;
   voteId: string;
+  presentation?: "page" | "modal";
+  onRequestClose?: () => void;
 };
 
 function getVoteStatusLabel(payload: ClubScheduleVoteDetailResponse) {
@@ -77,14 +76,13 @@ function getSubmitLabel(
 export function ClubScheduleVoteDetailClient({
   clubId,
   voteId,
+  presentation = "page",
+  onRequestClose,
 }: ClubScheduleVoteDetailClientProps) {
   const prefersReducedMotion = useReducedMotion();
   const reduceMotion = Boolean(prefersReducedMotion);
-  const router = useRouter();
   const [payload, setPayload] = useState<ClubScheduleVoteDetailResponse | null>(null);
   const [loading, setLoading] = useState(true);
-  const [deleting, setDeleting] = useState(false);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [closing, setClosing] = useState(false);
   const [submittingVoteOptionId, setSubmittingVoteOptionId] = useState<number | null>(null);
   const [selectedOptionId, setSelectedOptionId] = useState<number | null>(null);
@@ -106,19 +104,6 @@ export function ClubScheduleVoteDetailClient({
   useEffect(() => {
     void loadDetail();
   }, [clubId, voteId]);
-
-  const handleDelete = async () => {
-    setDeleting(true);
-    setError(null);
-    const result = await deleteClubScheduleVote(clubId, voteId);
-    setDeleting(false);
-    if (!result.ok) {
-      setError(result.message ?? "투표 삭제에 실패했습니다.");
-      return;
-    }
-    setShowDeleteModal(false);
-    router.replace(`/clubs/${clubId}/schedule`);
-  };
 
   const handleVoteSubmit = async () => {
     if (!payload?.votingOpen || selectedOptionId == null) {
@@ -162,30 +147,43 @@ export function ClubScheduleVoteDetailClient({
   }
 
   const showPrimaryAction = Boolean(payload?.votingOpen);
-  const showAdminActions = Boolean(payload?.canManage);
+  const showAdminCloseAction = Boolean(payload?.canManage && payload?.votingOpen);
   const submitDisabled = !payload?.votingOpen
     || selectedOptionId == null
     || submittingVoteOptionId !== null
     || selectedOptionId === payload?.mySelectedOptionId;
+  const isModal = presentation === "modal";
+  const backHref = `/clubs/${clubId}/schedule`;
 
   return (
-    <div className="min-h-screen bg-gray-50 font-display text-gray-900 antialiased">
-      <div className="relative mx-auto flex min-h-screen max-w-md flex-col bg-white shadow-lg">
+    <div className={isModal ? "flex min-h-0 flex-1 flex-col bg-white font-display text-gray-900 antialiased" : "min-h-screen bg-gray-50 font-display text-gray-900 antialiased"}>
+      <div className={`relative flex flex-col bg-white ${isModal ? "min-h-0 flex-1" : "mx-auto min-h-screen max-w-md shadow-lg"}`}>
         <header className="sticky top-0 z-10 flex items-center justify-between border-b border-gray-100 bg-white px-4 py-4">
           <div className="flex items-center gap-3">
-            <RouterLink
-              href={`/clubs/${clubId}/schedule`}
-              aria-label="뒤로 가기"
-              className="rounded-full p-1 transition-colors hover:bg-gray-100"
-            >
-              <span className="material-symbols-outlined text-[24px] text-gray-700">arrow_back</span>
-            </RouterLink>
+            {isModal && onRequestClose ? (
+              <button
+                type="button"
+                onClick={onRequestClose}
+                aria-label="투표 상세 닫기"
+                className="rounded-full p-1 transition-colors hover:bg-gray-100"
+              >
+                <span className="material-symbols-outlined text-[24px] text-gray-700">close</span>
+              </button>
+            ) : (
+              <RouterLink
+                href={backHref}
+                aria-label="뒤로 가기"
+                className="rounded-full p-1 transition-colors hover:bg-gray-100"
+              >
+                <span className="material-symbols-outlined text-[24px] text-gray-700">arrow_back</span>
+              </RouterLink>
+            )}
             <h1 className="text-lg font-bold">투표 상세</h1>
           </div>
           <div className="w-8" />
         </header>
 
-        <main className="no-scrollbar flex-1 overflow-y-auto p-5 pb-44">
+        <main className={`no-scrollbar flex-1 overflow-y-auto p-5 ${isModal ? "pb-8" : "pb-28"}`}>
           {error ? (
             <motion.div
               className="mb-4 rounded-2xl bg-rose-50 px-4 py-3 text-sm font-medium text-rose-600"
@@ -288,75 +286,40 @@ export function ClubScheduleVoteDetailClient({
                   </RouterLink>
                 ) : null}
               </motion.section>
+
+              {showPrimaryAction || showAdminCloseAction ? (
+                <motion.section className="pt-6" {...staggeredFadeUpMotion(4, reduceMotion)}>
+                  <div className="space-y-3">
+                    {showPrimaryAction ? (
+                      <button
+                        type="button"
+                        onClick={handleVoteSubmit}
+                        disabled={submitDisabled}
+                        className="w-full rounded-2xl bg-blue-600 py-4 font-bold text-white shadow-lg shadow-blue-100 transition-all active:scale-[0.98] disabled:opacity-60"
+                      >
+                        {getSubmitLabel(payload, selectedOptionId, submittingVoteOptionId)}
+                      </button>
+                    ) : null}
+
+                    {showAdminCloseAction ? (
+                      <button
+                        type="button"
+                        onClick={handleCloseVote}
+                        disabled={closing}
+                        className="w-full rounded-xl border border-amber-100 bg-white py-3 text-sm font-semibold text-amber-600 transition-colors hover:bg-amber-50 disabled:opacity-60"
+                      >
+                        {closing ? "종료 중..." : "투표 종료"}
+                      </button>
+                    ) : null}
+                  </div>
+                </motion.section>
+              ) : null}
             </>
           ) : null}
         </main>
 
-        {(showPrimaryAction || showAdminActions) && payload ? (
-          <footer className="fixed bottom-[4.75rem] left-1/2 z-20 w-full max-w-md -translate-x-1/2 border-t border-gray-100 bg-white/80 p-4 backdrop-blur-lg">
-            <div className="space-y-3 pb-safe">
-              {showPrimaryAction ? (
-                <button
-                  type="button"
-                  onClick={handleVoteSubmit}
-                  disabled={submitDisabled}
-                  className="w-full rounded-2xl bg-blue-600 py-4 font-bold text-white shadow-lg shadow-blue-100 transition-all active:scale-[0.98] disabled:opacity-60"
-                >
-                  {getSubmitLabel(payload, selectedOptionId, submittingVoteOptionId)}
-                </button>
-              ) : null}
-
-              {showAdminActions ? (
-                <div className={`grid gap-3 ${payload.votingOpen ? "grid-cols-3" : "grid-cols-2"}`}>
-                  {payload.votingOpen ? (
-                    <button
-                      type="button"
-                      onClick={handleCloseVote}
-                      disabled={closing}
-                      className="rounded-xl border border-amber-100 bg-white py-3 text-sm font-semibold text-amber-600 transition-colors hover:bg-amber-50 disabled:opacity-60"
-                    >
-                      {closing ? "종료 중..." : "투표 종료"}
-                    </button>
-                  ) : null}
-                  <RouterLink
-                    href={`/clubs/${clubId}/schedule/votes/${voteId}/edit`}
-                    className="rounded-xl border border-gray-200 bg-white py-3 text-center text-sm font-semibold text-gray-600 transition-colors hover:bg-gray-50"
-                  >
-                    수정
-                  </RouterLink>
-                  <button
-                    type="button"
-                    onClick={() => setShowDeleteModal(true)}
-                    disabled={deleting}
-                    className="rounded-xl border border-red-100 bg-white py-3 text-sm font-semibold text-red-500 transition-colors hover:bg-red-50 disabled:opacity-60"
-                  >
-                    {deleting ? "삭제 중..." : "삭제"}
-                  </button>
-                </div>
-              ) : null}
-            </div>
-          </footer>
-        ) : null}
-
-        {payload?.admin ? <ClubModeSwitchFab clubId={clubId} mode="user" className="bottom-44" /> : null}
-        <ClubBottomNav clubId={clubId} isAdmin={payload?.admin ?? false} />
-        <AnimatePresence>
-          {showDeleteModal ? (
-            <ScheduleActionConfirmModal
-              title="투표를 삭제할까요?"
-              description="삭제한 투표는 되돌릴 수 없고, 등록된 응답과 연결 공지도 함께 정리됩니다."
-              confirmLabel="투표 삭제"
-              busyLabel="삭제 중..."
-              busy={deleting}
-              onCancel={() => {
-                if (!deleting) {
-                  setShowDeleteModal(false);
-                }
-              }}
-              onConfirm={handleDelete}
-            />
-          ) : null}
-        </AnimatePresence>
+        {!isModal && payload?.admin ? <ClubModeSwitchFab clubId={clubId} mode="user" className="bottom-44" /> : null}
+        {!isModal ? <ClubBottomNav clubId={clubId} isAdmin={payload?.admin ?? false} /> : null}
       </div>
     </div>
   );
