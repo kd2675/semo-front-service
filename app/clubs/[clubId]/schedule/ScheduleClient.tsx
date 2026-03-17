@@ -3,7 +3,6 @@
 import { RouterLink } from "@/app/components/RouterLink";
 import { startTransition, useMemo, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { ClubBottomNav } from "@/app/components/ClubBottomNav";
 import { ClubModeSwitchFab } from "@/app/components/ClubModeSwitchFab";
 import { RouteModal } from "@/app/components/RouteModal";
 import { staggeredFadeUpMotion } from "@/app/lib/motion";
@@ -601,8 +600,6 @@ export function ScheduleClient({
         </div>
 
         {payload.admin ? <ClubModeSwitchFab clubId={clubId} mode="user" /> : null}
-        <ClubBottomNav clubId={clubId} isAdmin={payload.admin} />
-
         <AnimatePresence>
           {showEventCreateModal ? (
             <RouteModal onDismiss={() => setShowEventCreateModal(false)} dismissOnBackdrop={false}>

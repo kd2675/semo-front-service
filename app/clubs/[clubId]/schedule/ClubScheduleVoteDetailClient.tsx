@@ -3,7 +3,6 @@
 import { RouterLink } from "@/app/components/RouterLink";
 import { motion, useReducedMotion } from "motion/react";
 import { useEffect, useEffectEvent, useState } from "react";
-import { ClubBottomNav } from "@/app/components/ClubBottomNav";
 import { ClubModeSwitchFab } from "@/app/components/ClubModeSwitchFab";
 import {
   closeClubScheduleVote,
@@ -319,7 +318,6 @@ export function ClubScheduleVoteDetailClient({
         </main>
 
         {!isModal && payload?.admin ? <ClubModeSwitchFab clubId={clubId} mode="user" className="bottom-44" /> : null}
-        {!isModal ? <ClubBottomNav clubId={clubId} isAdmin={payload?.admin ?? false} /> : null}
       </div>
     </div>
   );

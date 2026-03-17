@@ -3,7 +3,6 @@
 import { RouterLink } from "@/app/components/RouterLink";
 import { startTransition, useDeferredValue, useState } from "react";
 import { motion, useReducedMotion } from "motion/react";
-import { ClubBottomNav } from "@/app/components/ClubBottomNav";
 import { ClubModeSwitchFab } from "@/app/components/ClubModeSwitchFab";
 import { staggeredFadeUpMotion } from "@/app/lib/motion";
 import type { ClubNotice, NoticeBoardCategory } from "@/app/lib/mock-clubs";
@@ -163,7 +162,6 @@ export function NoticeBoardClient({
         </main>
 
         {isAdmin ? <ClubModeSwitchFab clubId={clubId} mode="user" /> : null}
-        <ClubBottomNav clubId={clubId} isAdmin={isAdmin} />
       </div>
     </div>
   );

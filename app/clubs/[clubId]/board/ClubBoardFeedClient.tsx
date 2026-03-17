@@ -10,7 +10,6 @@ import {
   useRef,
   useState,
 } from "react";
-import { ClubBottomNav } from "@/app/components/ClubBottomNav";
 import { ClubModeSwitchFab } from "@/app/components/ClubModeSwitchFab";
 import { RouteModal } from "@/app/components/RouteModal";
 import {
@@ -356,8 +355,6 @@ export function ClubBoardFeedClient({ clubId }: ClubBoardFeedClientProps) {
         </main>
 
         {isAdmin ? <ClubModeSwitchFab clubId={clubId} mode="user" /> : null}
-        <ClubBottomNav clubId={clubId} isAdmin={isAdmin} />
-
         <AnimatePresence>
           {showCreateModal ? (
             <RouteModal onDismiss={() => setShowCreateModal(false)} dismissOnBackdrop={false}>

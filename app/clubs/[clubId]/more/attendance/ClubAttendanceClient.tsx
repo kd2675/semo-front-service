@@ -3,7 +3,6 @@
 import { RouterLink } from "@/app/components/RouterLink";
 import { motion, useReducedMotion } from "motion/react";
 import { useState } from "react";
-import { ClubBottomNav } from "@/app/components/ClubBottomNav";
 import { ClubModeSwitchFab } from "@/app/components/ClubModeSwitchFab";
 import {
   checkInClubAttendance,
@@ -198,7 +197,6 @@ export function ClubAttendanceClient({
         </main>
 
         {isAdmin ? <ClubModeSwitchFab clubId={clubId} mode="user" /> : null}
-        <ClubBottomNav clubId={clubId} isAdmin={isAdmin} />
       </div>
     </div>
   );

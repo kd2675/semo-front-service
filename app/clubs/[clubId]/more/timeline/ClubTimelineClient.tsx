@@ -1,7 +1,6 @@
 "use client";
 
 import { RouterLink } from "@/app/components/RouterLink";
-import { ClubBottomNav } from "@/app/components/ClubBottomNav";
 import { ClubModeSwitchFab } from "@/app/components/ClubModeSwitchFab";
 import {
   getClubTimeline,
@@ -303,7 +302,6 @@ export function ClubTimelineClient({
         </main>
 
         {isAdmin ? <ClubModeSwitchFab clubId={clubId} mode="user" /> : null}
-        <ClubBottomNav clubId={clubId} isAdmin={isAdmin} />
       </div>
     </div>
   );

@@ -3,7 +3,6 @@
 import { RouterLink } from "@/app/components/RouterLink";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { startTransition, useCallback, useEffect, useMemo, useState } from "react";
-import { ClubBottomNav } from "@/app/components/ClubBottomNav";
 import { ClubModeSwitchFab } from "@/app/components/ClubModeSwitchFab";
 import {
   checkInClubAttendance,
@@ -885,7 +884,6 @@ export function ClubDashboardFallbackClient({
         </main>
 
         {club?.admin ? <ClubModeSwitchFab clubId={clubId} mode="user" /> : null}
-        <ClubBottomNav clubId={clubId} isAdmin={club?.admin ?? false} />
       </div>
     </div>
   );

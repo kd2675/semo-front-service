@@ -2,7 +2,6 @@
 
 import { RouterLink } from "@/app/components/RouterLink";
 import { motion, useReducedMotion } from "motion/react";
-import { ClubBottomNav } from "@/app/components/ClubBottomNav";
 import { ClubModeSwitchFab } from "@/app/components/ClubModeSwitchFab";
 import { staggeredFadeUpMotion } from "@/app/lib/motion";
 import type {
@@ -175,7 +174,6 @@ export function ClubProfileClient({ club, profile }: ClubProfileClientProps) {
         </main>
 
         {club.isAdmin ? <ClubModeSwitchFab clubId={club.id} mode="user" /> : null}
-        <ClubBottomNav clubId={club.id} isAdmin={club.isAdmin} />
       </div>
     </div>
   );

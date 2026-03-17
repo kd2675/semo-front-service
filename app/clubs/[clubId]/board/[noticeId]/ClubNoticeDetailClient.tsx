@@ -3,7 +3,6 @@
 import { RouterLink } from "@/app/components/RouterLink";
 import { motion, useReducedMotion } from "motion/react";
 import { useEffect, useEffectEvent, useState } from "react";
-import { ClubBottomNav } from "@/app/components/ClubBottomNav";
 import { ClubModeSwitchFab } from "@/app/components/ClubModeSwitchFab";
 import { getClubNoticeDetail, type ClubNoticeDetailResponse } from "@/app/lib/clubs";
 import { staggeredFadeUpMotion } from "@/app/lib/motion";
@@ -205,7 +204,6 @@ export function ClubNoticeDetailClient({
         </main>
 
         {payload?.admin ? <ClubModeSwitchFab clubId={clubId} mode="user" /> : null}
-        <ClubBottomNav clubId={clubId} isAdmin={payload?.admin ?? false} />
       </div>
     </div>
   );
