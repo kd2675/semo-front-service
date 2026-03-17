@@ -16,6 +16,57 @@ import { initializeProfile } from "@/app/lib/profile";
 
 const GATEWAY_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080";
 
+function normalizeProvider(provider?: string | null): "NAVER" | "KAKAO" | null {
+  if (!provider) {
+    return null;
+  }
+
+  const normalized = provider.trim().toUpperCase();
+  if (normalized === "NAVER" || normalized === "KAKAO") {
+    return normalized;
+  }
+  return null;
+}
+
+function getProviderLabel(provider?: string | null): string | null {
+  const normalized = normalizeProvider(provider);
+  if (normalized === "NAVER") {
+    return "네이버";
+  }
+  if (normalized === "KAKAO") {
+    return "카카오";
+  }
+  return null;
+}
+
+function resolveOAuthErrorMessage(
+  errorCode?: string | null,
+  provider?: string | null,
+  fallback?: string | null,
+): string | null {
+  if (errorCode === "oauth_provider_mismatch") {
+    const providerLabel = getProviderLabel(provider);
+    if (providerLabel) {
+      return `${providerLabel}로 가입된 계정이 있습니다. ${providerLabel}로 로그인해 주세요.`;
+    }
+    return "이미 다른 소셜 계정으로 가입된 이메일입니다. 기존 로그인 수단으로 다시 시도해 주세요.";
+  }
+
+  if (errorCode === "oauth_email_missing") {
+    return "소셜 계정에서 이메일 정보를 가져오지 못했습니다. 이메일 제공 동의 후 다시 시도해 주세요.";
+  }
+
+  if (errorCode === "oauth_provider_unsupported") {
+    return "지원하지 않는 소셜 로그인 방식입니다.";
+  }
+
+  if (!fallback) {
+    return null;
+  }
+
+  return "소셜 로그인 중 문제가 발생했습니다. 다시 시도해 주세요.";
+}
+
 function LoginPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -25,6 +76,9 @@ function LoginPageContent() {
 
   const expired = searchParams.get("expired") === "1";
   const token = searchParams.get("token");
+  const oauthError = searchParams.get("error");
+  const oauthErrorCode = searchParams.get("errorCode");
+  const oauthProvider = searchParams.get("provider");
   const isProcessing = Boolean(token);
 
   const completeLogin = useEffectEvent(async (nextToken: string) => {
@@ -79,6 +133,19 @@ function LoginPageContent() {
         }
 
         if (!cancelled) {
+          const oauthErrorMessage = resolveOAuthErrorMessage(
+            oauthErrorCode,
+            oauthProvider,
+            oauthError,
+          );
+          if (oauthErrorMessage) {
+            clearAccessToken();
+            setError(oauthErrorMessage);
+            return;
+          }
+        }
+
+        if (!cancelled) {
           await restoreSession();
         }
       } catch {
@@ -92,7 +159,7 @@ function LoginPageContent() {
     return () => {
       cancelled = true;
     };
-  }, [token]);
+  }, [oauthError, oauthErrorCode, oauthProvider, token]);
 
   const handleNaverLogin = () => {
     window.location.href = `${GATEWAY_BASE_URL}/oauth2/authorize/naver-semo`;
