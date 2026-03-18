@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { RouterLink } from "@/app/components/RouterLink";
 import { motion, useReducedMotion } from "motion/react";
 import { useEffect, useEffectEvent, useState } from "react";
@@ -12,6 +13,7 @@ type ClubNoticeDetailClientProps = {
   clubId: string;
   noticeId: string;
   presentation?: "page" | "modal";
+  basePath?: string;
   onRequestClose?: () => void;
 };
 
@@ -26,8 +28,8 @@ function getLinkedTargetHref(clubId: string, payload: ClubNoticeDetailResponse) 
   if (payload.linkedTargetType === "SCHEDULE_EVENT" && payload.linkedTargetId != null) {
     return `/clubs/${clubId}/schedule/${payload.linkedTargetId}`;
   }
-  if (payload.linkedTargetType === "SCHEDULE_VOTE" && payload.linkedTargetId != null) {
-    return `/clubs/${clubId}/schedule/votes/${payload.linkedTargetId}`;
+  if (payload.linkedTargetType === "POLL" && payload.linkedTargetId != null) {
+    return `/clubs/${clubId}/more/polls/${payload.linkedTargetId}`;
   }
   return null;
 }
@@ -36,7 +38,7 @@ function getLinkedTargetLabel(payload: ClubNoticeDetailResponse) {
   if (payload.linkedTargetType === "SCHEDULE_EVENT") {
     return "연결된 일정 바로 보기";
   }
-  if (payload.linkedTargetType === "SCHEDULE_VOTE") {
+  if (payload.linkedTargetType === "POLL") {
     return "연결된 투표 바로 보기";
   }
   return null;
@@ -81,8 +83,24 @@ function NoticeDetailBody({ clubId, payload, error, reduceMotion }: NoticeDetail
             </div>
           </motion.section>
 
-          {linkedTargetHref && linkedTargetLabel ? (
+          {payload.imageUrl ? (
             <motion.section className="px-4 pt-5" {...staggeredFadeUpMotion(3, reduceMotion)}>
+              <div className="overflow-hidden rounded-[1.4rem] border border-slate-100 bg-white shadow-sm">
+                <div className="relative h-60 w-full">
+                  <Image
+                    src={payload.imageUrl}
+                    alt={payload.title}
+                    fill
+                    sizes="(max-width: 768px) 100vw, 448px"
+                    className="object-cover"
+                  />
+                </div>
+              </div>
+            </motion.section>
+          ) : null}
+
+          {linkedTargetHref && linkedTargetLabel ? (
+            <motion.section className="px-4 pt-5" {...staggeredFadeUpMotion(4, reduceMotion)}>
               <RouterLink
                 href={linkedTargetHref}
                 className="flex items-center justify-between rounded-2xl border border-[var(--primary)]/10 bg-[var(--primary)]/[0.04] px-4 py-4 transition-colors hover:bg-[var(--primary)]/[0.08]"
@@ -99,7 +117,7 @@ function NoticeDetailBody({ clubId, payload, error, reduceMotion }: NoticeDetail
           ) : null}
 
           {payload.scheduleAtLabel || payload.locationLabel ? (
-            <motion.section className="px-4 pt-5" {...staggeredFadeUpMotion(4, reduceMotion)}>
+            <motion.section className="px-4 pt-5" {...staggeredFadeUpMotion(5, reduceMotion)}>
               <div className="rounded-2xl bg-[var(--primary)]/5 px-4 py-4">
                 <div className="mb-2 flex items-center gap-2 text-sm font-bold text-[var(--primary)]">
                   <span className="material-symbols-outlined text-[18px]">calendar_month</span>
@@ -118,7 +136,7 @@ function NoticeDetailBody({ clubId, payload, error, reduceMotion }: NoticeDetail
             </motion.section>
           ) : null}
 
-          <motion.section className="px-4 py-6" {...staggeredFadeUpMotion(5, reduceMotion)}>
+          <motion.section className="px-4 py-6" {...staggeredFadeUpMotion(6, reduceMotion)}>
             <div className="whitespace-pre-wrap text-[15px] leading-7 text-slate-700">
               {payload.content}
             </div>
@@ -133,6 +151,7 @@ export function ClubNoticeDetailClient({
   clubId,
   noticeId,
   presentation = "page",
+  basePath,
   onRequestClose,
 }: ClubNoticeDetailClientProps) {
   const prefersReducedMotion = useReducedMotion();
@@ -189,7 +208,7 @@ export function ClubNoticeDetailClient({
       <div className="relative mx-auto flex min-h-full max-w-md flex-col bg-white">
         <header className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-200 bg-white p-4">
           <RouterLink
-            href={`/clubs/${clubId}/board`}
+            href={basePath ?? `/clubs/${clubId}/more/notices`}
             className="flex size-10 items-center justify-start text-slate-900"
             aria-label="공지 목록으로 돌아가기"
           >

@@ -1,6 +1,6 @@
 "use client";
 
-import { motion, useReducedMotion } from "motion/react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 
 type ScheduleManageCardProps = {
   label: string;
@@ -10,6 +10,7 @@ type ScheduleManageCardProps = {
   onOpen: () => void;
   onEdit: () => void;
   onDelete: () => void;
+  variant?: "overlay" | "menu";
   children: React.ReactNode;
 };
 
@@ -21,10 +22,81 @@ export function ScheduleManageCard({
   onOpen,
   onEdit,
   onDelete,
+  variant = "overlay",
   children,
 }: ScheduleManageCardProps) {
   const prefersReducedMotion = useReducedMotion();
   const reduceMotion = Boolean(prefersReducedMotion);
+
+  if (variant === "menu") {
+    return (
+      <div className="relative overflow-visible bg-white">
+        <button
+          type="button"
+          onClick={onOpen}
+          aria-label={`${label} 자세히 보기`}
+          className="block w-full bg-white text-left transition-colors hover:bg-slate-50"
+        >
+          {children}
+        </button>
+
+        {manageable ? (
+          <div className="relative border-t border-slate-50 px-2">
+            <div className="flex items-center justify-end">
+              <button
+                type="button"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onOpenChange(!open);
+                }}
+                aria-label={`${label} 관리 메뉴`}
+                className="rounded-full p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+              >
+                <span className="material-symbols-outlined text-[20px]">more_horiz</span>
+              </button>
+            </div>
+
+            <AnimatePresence initial={false}>
+              {open ? (
+                <motion.div
+                  initial={reduceMotion ? false : { opacity: 0, y: 6, scale: 0.98 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 6, scale: 0.98 }}
+                  transition={{ duration: reduceMotion ? 0.1 : 0.16, ease: "easeOut" }}
+                  className="absolute bottom-12 right-4 z-20 w-28 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-[0_12px_32px_rgba(15,23,42,0.14)]"
+                >
+                  <button
+                    type="button"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      onOpenChange(false);
+                      onEdit();
+                    }}
+                    className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm font-semibold text-amber-600 transition hover:bg-amber-50"
+                  >
+                    <span className="material-symbols-outlined text-[18px]">edit</span>
+                    수정
+                  </button>
+                  <button
+                    type="button"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      onOpenChange(false);
+                      onDelete();
+                    }}
+                    className="flex w-full items-center gap-2 border-t border-slate-100 px-3 py-2.5 text-left text-sm font-semibold text-rose-600 transition hover:bg-rose-50"
+                  >
+                    <span className="material-symbols-outlined text-[18px]">delete</span>
+                    삭제
+                  </button>
+                </motion.div>
+              ) : null}
+            </AnimatePresence>
+          </div>
+        ) : null}
+      </div>
+    );
+  }
 
   return (
     <div className="relative overflow-hidden bg-white">

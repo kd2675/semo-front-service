@@ -1,10 +1,12 @@
 "use client";
 
+import Image from "next/image";
 import { AnimatePresence } from "motion/react";
 import { RouterLink } from "@/app/components/RouterLink";
 import { useRouter } from "next/navigation";
 import { useEffect, useEffectEvent, useId, useState } from "react";
 import { getNoticeAccentClasses } from "@/app/lib/notice-category";
+import { uploadTempImage } from "@/app/lib/imageUpload";
 import {
   createClubNotice,
   deleteClubNotice,
@@ -21,6 +23,7 @@ type ClubNoticeEditorClientProps = {
   clubId: string;
   noticeId?: string;
   presentation?: "page" | "modal";
+  basePath?: string;
   initialScheduleAt?: string;
   initialScheduleEndAt?: string;
   onRequestClose?: () => void;
@@ -74,6 +77,7 @@ export function ClubNoticeEditorClient({
   clubId,
   noticeId,
   presentation = "page",
+  basePath,
   initialScheduleAt,
   initialScheduleEndAt,
   onRequestClose,
@@ -87,6 +91,10 @@ export function ClubNoticeEditorClient({
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [categoryKey, setCategoryKey] = useState("ANNOUNCEMENT");
+  const [fileName, setFileName] = useState<string | null>(null);
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
   const [categoryOptions, setCategoryOptions] = useState<NoticeCategoryOption[]>([]);
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [locationLabel, setLocationLabel] = useState("");
@@ -100,7 +108,8 @@ export function ClubNoticeEditorClient({
   const [deleting, setDeleting] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const backHref = isEdit && noticeId ? `/clubs/${clubId}/board/${noticeId}` : `/clubs/${clubId}/board`;
+  const resolvedBasePath = basePath ?? `/clubs/${clubId}/more/notices`;
+  const backHref = isEdit && noticeId ? `${resolvedBasePath}/${noticeId}` : resolvedBasePath;
 
   const loadDetail = useEffectEvent(async () => {
     if (!noticeId) {
@@ -117,6 +126,9 @@ export function ClubNoticeEditorClient({
     setClubName(payload.clubName);
     setTitle(payload.title);
     setContent(payload.content);
+    setFileName(payload.fileName);
+    setImageUrl(payload.imageUrl);
+    setThumbnailUrl(payload.thumbnailUrl);
     setCategoryKey(payload.categoryKey);
     setLocationLabel(payload.locationLabel ?? "");
     setScheduleAt(toDateTimeLocalValue(payload.scheduleAt));
@@ -167,6 +179,7 @@ export function ClubNoticeEditorClient({
       title,
       content,
       categoryKey,
+      fileName,
       locationLabel: locationLabel.trim() || null,
       scheduleAt: postToSchedule ? scheduleAt || null : null,
       scheduleEndAt: postToSchedule ? scheduleEndAt || null : null,
@@ -185,7 +198,29 @@ export function ClubNoticeEditorClient({
       onSaved(result.data.noticeId);
       return;
     }
-    router.replace(`/clubs/${clubId}/board/${result.data.noticeId}`);
+    router.replace(`${resolvedBasePath}/${result.data.noticeId}`);
+  };
+
+  const handleImageChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = event.target.files?.[0];
+    if (!selectedFile) {
+      return;
+    }
+
+    setUploadingImage(true);
+    setError(null);
+    const uploadResult = await uploadTempImage(selectedFile);
+    setUploadingImage(false);
+    event.target.value = "";
+
+    if (!uploadResult.data) {
+      setError(uploadResult.error ?? "이미지 업로드에 실패했습니다.");
+      return;
+    }
+
+    setFileName(uploadResult.data.fileName);
+    setImageUrl(uploadResult.data.imageUrl);
+    setThumbnailUrl(uploadResult.data.thumbnailUrl);
   };
 
   const handleDelete = async () => {
@@ -205,7 +240,7 @@ export function ClubNoticeEditorClient({
       onDeleted();
       return;
     }
-    router.replace(`/clubs/${clubId}/board`);
+    router.replace(resolvedBasePath);
   };
 
   return (
@@ -300,6 +335,50 @@ export function ClubNoticeEditorClient({
                   required
                 />
               </label>
+
+              <div className="block">
+                <span className="mb-1.5 block text-sm font-medium text-slate-700">대표 이미지</span>
+                <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+                  {imageUrl ? (
+                    <div className="relative h-52 w-full">
+                      <Image
+                        src={thumbnailUrl ?? imageUrl}
+                        alt="공지 대표 이미지"
+                        fill
+                        sizes="(max-width: 768px) 100vw, 448px"
+                        className="object-cover"
+                      />
+                    </div>
+                  ) : (
+                    <div className="flex h-44 items-center justify-center bg-slate-100 text-slate-400">
+                      <div className="text-center">
+                        <span className="material-symbols-outlined text-[34px]">image</span>
+                        <p className="mt-2 text-xs font-medium">대표 이미지를 등록하면 공지 카드에 함께 노출됩니다.</p>
+                      </div>
+                    </div>
+                  )}
+                  <div className="flex items-center justify-between gap-3 border-t border-slate-100 px-4 py-3">
+                    <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl bg-[var(--primary)]/10 px-3 py-2 text-xs font-bold text-[var(--primary)]">
+                      <span className="material-symbols-outlined text-[18px]">upload</span>
+                      {uploadingImage ? "업로드 중..." : imageUrl ? "이미지 변경" : "이미지 업로드"}
+                      <input type="file" accept="image/*" className="hidden" onChange={handleImageChange} />
+                    </label>
+                    {imageUrl ? (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setFileName(null);
+                          setImageUrl(null);
+                          setThumbnailUrl(null);
+                        }}
+                        className="text-xs font-semibold text-slate-500"
+                      >
+                        이미지 제거
+                      </button>
+                    ) : null}
+                  </div>
+                </div>
+              </div>
             </section>
 
             <div className="h-2 bg-slate-100" />

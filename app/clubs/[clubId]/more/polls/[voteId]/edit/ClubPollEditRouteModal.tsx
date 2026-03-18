@@ -2,21 +2,22 @@
 
 import { useRouter } from "next/navigation";
 import { RouteModal } from "@/app/components/RouteModal";
-import { ClubScheduleVoteEditorClient } from "../../../ClubScheduleVoteEditorClient";
+import { ClubScheduleVoteEditorClient } from "@/app/clubs/[clubId]/schedule/ClubScheduleVoteEditorClient";
 
-type ClubScheduleVoteEditRouteModalProps = {
+type ClubPollEditRouteModalProps = {
   clubId: string;
   voteId: string;
 };
 
-export function ClubScheduleVoteEditRouteModal({
+export function ClubPollEditRouteModal({
   clubId,
   voteId,
-}: ClubScheduleVoteEditRouteModalProps) {
+}: ClubPollEditRouteModalProps) {
   const router = useRouter();
+  const basePath = `/clubs/${clubId}/more/polls`;
 
   const handleDismiss = () => {
-    router.push(`/clubs/${clubId}/schedule`);
+    router.push(basePath);
   };
 
   return (
@@ -26,6 +27,7 @@ export function ClubScheduleVoteEditRouteModal({
           clubId={clubId}
           voteId={voteId}
           presentation="modal"
+          basePath={basePath}
           onRequestClose={handleDismiss}
         />
       </RouteModal>

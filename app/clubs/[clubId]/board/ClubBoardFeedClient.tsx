@@ -21,7 +21,6 @@ import {
   type NoticeCategoryOption,
   type NoticeFeedCategory,
 } from "@/app/lib/clubs";
-import { toDateTimeLocalString } from "@/app/lib/date-time";
 import { staggeredFadeUpMotion } from "@/app/lib/motion";
 import { ClubNoticeEditorClient } from "./ClubNoticeEditorClient";
 import { NoticeManageCard } from "./NoticeManageCard";
@@ -38,11 +37,6 @@ type ClubBoardFeedClientProps = {
   clubId: string;
 };
 
-type NoticeCreateDefaults = {
-  scheduleAt: string;
-  scheduleEndAt: string;
-};
-
 export function ClubBoardFeedClient({ clubId }: ClubBoardFeedClientProps) {
   const prefersReducedMotion = useReducedMotion();
   const reduceMotion = Boolean(prefersReducedMotion);
@@ -56,14 +50,12 @@ export function ClubBoardFeedClient({ clubId }: ClubBoardFeedClientProps) {
   const [loading, setLoading] = useState(false);
   const [initialLoaded, setInitialLoaded] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [showCreateModal, setShowCreateModal] = useState(false);
   const [detailNoticeId, setDetailNoticeId] = useState<string | null>(null);
   const [editingNoticeId, setEditingNoticeId] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<ClubNoticeListItem | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [activeActionNoticeId, setActiveActionNoticeId] = useState<number | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
-  const [createDefaults, setCreateDefaults] = useState<NoticeCreateDefaults | null>(null);
   const [cursor, setCursor] = useState<CursorState>({ publishedAt: null, noticeId: null });
   const [sentinelNode, setSentinelNode] = useState<HTMLDivElement | null>(null);
   const deferredQuery = useDeferredValue(query);
@@ -156,17 +148,6 @@ export function ClubBoardFeedClient({ clubId }: ClubBoardFeedClientProps) {
     };
   }, [hasNext, loading, sentinelNode]);
 
-  const openCreateModal = () => {
-    const now = new Date();
-    const oneHourLater = new Date(now.getTime() + 60 * 60 * 1000);
-    setCreateDefaults({
-      scheduleAt: toDateTimeLocalString(now),
-      scheduleEndAt: toDateTimeLocalString(oneHourLater),
-    });
-    setActiveActionNoticeId(null);
-    setShowCreateModal(true);
-  };
-
   const handleDeleteNotice = async () => {
     if (!deleteTarget) {
       return;
@@ -185,10 +166,8 @@ export function ClubBoardFeedClient({ clubId }: ClubBoardFeedClientProps) {
   };
 
   const handleModalSaved = () => {
-    setShowCreateModal(false);
     setDetailNoticeId(null);
     setEditingNoticeId(null);
-    setCreateDefaults(null);
     setActiveActionNoticeId(null);
     setReloadKey((current) => current + 1);
   };
@@ -212,24 +191,13 @@ export function ClubBoardFeedClient({ clubId }: ClubBoardFeedClientProps) {
             Notice Board
           </h2>
           <div className="flex w-10 items-center justify-end">
-            {isAdmin ? (
-              <button
-                type="button"
-                onClick={openCreateModal}
-                className="flex h-10 w-10 items-center justify-center rounded-lg bg-[var(--primary)]/10 text-[var(--primary)]"
-                aria-label="공지 작성"
-              >
-                <span className="material-symbols-outlined">edit_square</span>
-              </button>
-            ) : (
-              <button
-                type="button"
-                className="flex h-10 w-10 items-center justify-center rounded-lg bg-transparent text-slate-900"
-                aria-label="검색"
-              >
-                <span className="material-symbols-outlined">search</span>
-              </button>
-            )}
+            <button
+              type="button"
+              className="flex h-10 w-10 items-center justify-center rounded-lg bg-transparent text-slate-900"
+              aria-label="검색"
+            >
+              <span className="material-symbols-outlined">search</span>
+            </button>
           </div>
         </header>
 
@@ -282,7 +250,7 @@ export function ClubBoardFeedClient({ clubId }: ClubBoardFeedClientProps) {
             </div>
           </motion.div>
 
-          <div className="flex flex-col divide-y divide-slate-100">
+          <div className="flex flex-col gap-4 p-4">
             {items.map((notice, index) => (
               <motion.article key={notice.noticeId} {...staggeredFadeUpMotion(index + 2, reduceMotion)}>
                 <NoticeManageCard
@@ -332,21 +300,22 @@ export function ClubBoardFeedClient({ clubId }: ClubBoardFeedClientProps) {
           <div ref={setSentinelNode} className="h-px" aria-hidden="true" />
 
           {loading && initialLoaded ? (
-            <div className="space-y-3 px-4 pb-8">
+            <div className="space-y-4 px-4 pb-8">
               {Array.from({ length: 2 }, (_, index) => (
                 <motion.article
                   key={`append-shell-${index}`}
-                  className="flex gap-4 rounded-2xl border border-slate-100 bg-white px-4 py-5"
+                  className="overflow-hidden rounded-[8px] border border-slate-100 bg-white shadow-sm"
                   {...staggeredFadeUpMotion(index + 6, reduceMotion)}
                 >
-                  <div className="size-12 rounded-xl bg-[var(--primary)]/10" />
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
-                      <div className="h-5 w-10 rounded-full bg-[var(--primary)]/10" />
-                      <div className="h-4 w-24 rounded-full bg-slate-200" />
+                  <div className="h-40 w-full bg-slate-100" />
+                  <div className="space-y-3 p-4">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="h-5 w-20 rounded-full bg-[var(--primary)]/10" />
+                      <div className="h-4 w-20 rounded-full bg-slate-200" />
                     </div>
-                    <div className="mt-3 h-4 w-full rounded-full bg-slate-200" />
-                    <div className="mt-2 h-4 w-2/3 rounded-full bg-slate-100" />
+                    <div className="h-5 w-4/5 rounded-full bg-slate-200" />
+                    <div className="h-4 w-full rounded-full bg-slate-100" />
+                    <div className="h-4 w-2/3 rounded-full bg-slate-100" />
                   </div>
                 </motion.article>
               ))}
@@ -356,18 +325,6 @@ export function ClubBoardFeedClient({ clubId }: ClubBoardFeedClientProps) {
 
         {isAdmin ? <ClubModeSwitchFab clubId={clubId} mode="user" /> : null}
         <AnimatePresence>
-          {showCreateModal ? (
-            <RouteModal onDismiss={() => setShowCreateModal(false)} dismissOnBackdrop={false}>
-              <ClubNoticeEditorClient
-                clubId={clubId}
-                presentation="modal"
-                initialScheduleAt={createDefaults?.scheduleAt}
-                initialScheduleEndAt={createDefaults?.scheduleEndAt}
-                onRequestClose={() => setShowCreateModal(false)}
-                onSaved={handleModalSaved}
-              />
-            </RouteModal>
-          ) : null}
           {detailNoticeId ? (
             <RouteModal
               onDismiss={() => {
@@ -378,6 +335,7 @@ export function ClubBoardFeedClient({ clubId }: ClubBoardFeedClientProps) {
                 clubId={clubId}
                 noticeId={detailNoticeId}
                 presentation="modal"
+                basePath={`/clubs/${clubId}/board`}
                 onRequestClose={() => setDetailNoticeId(null)}
               />
             </RouteModal>
@@ -393,6 +351,7 @@ export function ClubBoardFeedClient({ clubId }: ClubBoardFeedClientProps) {
                 clubId={clubId}
                 noticeId={editingNoticeId}
                 presentation="modal"
+                basePath={`/clubs/${clubId}/board`}
                 onRequestClose={() => setEditingNoticeId(null)}
                 onSaved={handleModalSaved}
                 onDeleted={() => {

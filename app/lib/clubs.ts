@@ -68,6 +68,9 @@ export type ClubNoticeListItem = {
   noticeId: number;
   title: string;
   summary: string;
+  fileName: string | null;
+  imageUrl: string | null;
+  thumbnailUrl: string | null;
   authorDisplayName: string;
   authorRoleCode: string | null;
   categoryKey: string;
@@ -80,7 +83,7 @@ export type ClubNoticeListItem = {
   scheduleAtLabel: string | null;
   locationLabel: string | null;
   canManage: boolean;
-  linkedTargetType: "SCHEDULE_EVENT" | "SCHEDULE_VOTE" | null;
+  linkedTargetType: "SCHEDULE_EVENT" | "POLL" | null;
   linkedTargetId: number | null;
 };
 
@@ -101,6 +104,9 @@ export type ClubNoticeDetailResponse = {
   noticeId: number;
   title: string;
   content: string;
+  fileName: string | null;
+  imageUrl: string | null;
+  thumbnailUrl: string | null;
   categoryKey: string;
   categoryLabel: string;
   categoryIconName: string;
@@ -116,7 +122,7 @@ export type ClubNoticeDetailResponse = {
   scheduleEndAt: string | null;
   scheduleEndAtLabel: string | null;
   canManage: boolean;
-  linkedTargetType: "SCHEDULE_EVENT" | "SCHEDULE_VOTE" | null;
+  linkedTargetType: "SCHEDULE_EVENT" | "POLL" | null;
   linkedTargetId: number | null;
 };
 
@@ -124,6 +130,7 @@ export type UpsertClubNoticeRequest = {
   title: string;
   content: string;
   categoryKey?: string | null;
+  fileName?: string | null;
   locationLabel?: string | null;
   scheduleAt?: string | null;
   scheduleEndAt?: string | null;
@@ -135,9 +142,25 @@ export type ClubNoticeUpsertResponse = {
   noticeId: number;
   title: string;
   categoryKey: string;
+  fileName: string | null;
+  imageUrl: string | null;
+  thumbnailUrl: string | null;
   scheduleAt: string | null;
   scheduleAtLabel: string | null;
   locationLabel: string | null;
+};
+
+export type ClubNoticeHomeResponse = {
+  clubId: number;
+  clubName: string;
+  admin: boolean;
+  canCreate: boolean;
+  totalNoticeCount: number;
+  pinnedNoticeCount: number;
+  scheduledNoticeCount: number;
+  publishedTodayCount: number;
+  manageableNoticeCount: number;
+  notices: ClubNoticeListItem[];
 };
 
 export type ClubScheduleResponse = {
@@ -157,6 +180,17 @@ export type ClubScheduleResponse = {
   };
   monthEvents: ClubScheduleEventSummary[];
   votes: ClubScheduleVoteSummary[];
+};
+
+export type ClubScheduleHomeResponse = {
+  clubId: number;
+  clubName: string;
+  admin: boolean;
+  canCreate: boolean;
+  totalEventCount: number;
+  upcomingEventCount: number;
+  manageableItemCount: number;
+  events: ClubScheduleEventSummary[];
 };
 
 export type ClubScheduleEventSummary = {
@@ -191,6 +225,7 @@ export type ClubScheduleVoteOptionSummary = {
 export type ClubScheduleVoteSummary = {
   voteId: number;
   title: string;
+  voteStatus: "WAITING" | "ONGOING" | "CLOSED";
   voteStartDate: string;
   voteEndDate: string;
   votePeriodLabel: string;
@@ -198,6 +233,7 @@ export type ClubScheduleVoteSummary = {
   optionCount: number;
   totalResponses: number;
   postedToBoard: boolean;
+  sharedToSchedule: boolean;
   linkedNoticeId: number | null;
   mySelectedOptionId: number | null;
   options: ClubScheduleVoteOptionSummary[];
@@ -266,6 +302,7 @@ export type ClubScheduleVoteDetailResponse = {
   admin: boolean;
   voteId: number;
   title: string;
+  voteStatus: "WAITING" | "ONGOING" | "CLOSED";
   voteStartDate: string;
   voteEndDate: string;
   votePeriodLabel: string;
@@ -273,6 +310,7 @@ export type ClubScheduleVoteDetailResponse = {
   voteEndTime: string | null;
   voteTimeLabel: string | null;
   postedToBoard: boolean;
+  sharedToSchedule: boolean;
   linkedNoticeId: number | null;
   mySelectedOptionId: number | null;
   totalResponses: number;
@@ -293,6 +331,7 @@ export type UpsertScheduleVoteRequest = {
   voteEndTime?: string | null;
   optionLabels: string[];
   postToBoard?: boolean;
+  postToSchedule?: boolean;
 };
 
 export type SubmitScheduleVoteSelectionRequest = {
@@ -311,6 +350,7 @@ export type ScheduleVoteUpsertResponse = {
   voteTimeLabel: string | null;
   optionCount: number;
   postedToBoard: boolean;
+  sharedToSchedule: boolean;
 };
 
 export type ClubProfileResponse = {
@@ -400,8 +440,37 @@ export type ClubTimelineEntry = {
   pinned: boolean;
   scheduleAtLabel: string | null;
   locationLabel: string | null;
-  linkedTargetType: "SCHEDULE_EVENT" | "SCHEDULE_VOTE" | null;
+  linkedTargetType: "SCHEDULE_EVENT" | "POLL" | null;
   linkedTargetId: number | null;
+};
+
+export type ClubPollSummary = {
+  voteId: number;
+  title: string;
+  voteStatus: "WAITING" | "ONGOING" | "CLOSED";
+  voteStartDate: string;
+  voteEndDate: string;
+  votePeriodLabel: string;
+  voteTimeLabel: string | null;
+  voteWindowLabel: string;
+  totalResponses: number;
+  optionCount: number;
+  postedToBoard: boolean;
+  sharedToSchedule: boolean;
+  canManage: boolean;
+  mySelectedOptionId: number | null;
+  options: ClubScheduleVoteOptionSummary[];
+};
+
+export type ClubPollHomeResponse = {
+  clubId: number;
+  clubName: string;
+  admin: boolean;
+  canCreate: boolean;
+  waitingCount: number;
+  ongoingCount: number;
+  closedCount: number;
+  polls: ClubPollSummary[];
 };
 
 export type ClubTimelineResponse = {
@@ -544,6 +613,33 @@ export const MOCK_CLUB_FEATURES: ClubFeatureSummary[] = [
     userPath: "/clubs/tennis/more/timeline",
     adminPath: "/clubs/tennis/admin/more/timeline",
   },
+  {
+    featureKey: "NOTICE",
+    displayName: "Notices",
+    description: "Create, manage, and share club notices.",
+    iconName: "campaign",
+    enabled: true,
+    userPath: "/clubs/tennis/more/notices",
+    adminPath: "/clubs/tennis/admin/more/notices",
+  },
+  {
+    featureKey: "POLL",
+    displayName: "Polls",
+    description: "Create, share, and manage club polls.",
+    iconName: "poll",
+    enabled: true,
+    userPath: "/clubs/tennis/more/polls",
+    adminPath: "/clubs/tennis/admin/more/polls",
+  },
+  {
+    featureKey: "SCHEDULE_MANAGE",
+    displayName: "Schedule Management",
+    description: "Create and manage schedules and votes.",
+    iconName: "edit_calendar",
+    enabled: true,
+    userPath: "/clubs/tennis/more/schedules",
+    adminPath: "/clubs/tennis/admin/more/schedules",
+  },
 ];
 
 export function createClub(request: CreateClubRequest) {
@@ -596,14 +692,18 @@ export function getClubNoticeFeed(
 
 export function getClubNoticeDetail(clubId: string | number, noticeId: string | number) {
   return getJson<ClubNoticeDetailResponse>(
-    `/api/semo/v1/clubs/${clubId}/board/notices/${noticeId}`,
+    `/api/semo/v1/clubs/${clubId}/more/notices/${noticeId}`,
   );
 }
 
 export function getNoticeCategoryOptions(clubId: string | number) {
   return getJson<NoticeCategoryOption[]>(
-    `/api/semo/v1/clubs/${clubId}/board/notices/categories`,
+    `/api/semo/v1/clubs/${clubId}/more/notices/categories`,
   );
+}
+
+export function getClubNoticeHome(clubId: string | number) {
+  return getJson<ClubNoticeHomeResponse>(`/api/semo/v1/clubs/${clubId}/more/notices`);
 }
 
 export function createClubNotice(
@@ -611,7 +711,7 @@ export function createClubNotice(
   request: UpsertClubNoticeRequest,
 ) {
   return postJson<ClubNoticeUpsertResponse>(
-    `/api/semo/v1/clubs/${clubId}/board/notices`,
+    `/api/semo/v1/clubs/${clubId}/more/notices`,
     request,
   );
 }
@@ -622,13 +722,13 @@ export function updateClubNotice(
   request: UpsertClubNoticeRequest,
 ) {
   return putJson<ClubNoticeUpsertResponse>(
-    `/api/semo/v1/clubs/${clubId}/board/notices/${noticeId}`,
+    `/api/semo/v1/clubs/${clubId}/more/notices/${noticeId}`,
     request,
   );
 }
 
 export function deleteClubNotice(clubId: string | number, noticeId: string | number) {
-  return deleteJson<void>(`/api/semo/v1/clubs/${clubId}/board/notices/${noticeId}`);
+  return deleteJson<void>(`/api/semo/v1/clubs/${clubId}/more/notices/${noticeId}`);
 }
 
 export function getClubSchedule(
@@ -646,6 +746,10 @@ export function getClubSchedule(
   return getJson<ClubScheduleResponse>(
     `/api/semo/v1/clubs/${clubId}/schedule${queryString ? `?${queryString}` : ""}`,
   );
+}
+
+export function getClubScheduleHome(clubId: string | number) {
+  return getJson<ClubScheduleHomeResponse>(`/api/semo/v1/clubs/${clubId}/more/schedules`);
 }
 
 export function getClubScheduleEventDetail(clubId: string | number, eventId: string | number) {
@@ -692,7 +796,7 @@ export function updateClubScheduleEventParticipation(
 
 export function getClubScheduleVoteDetail(clubId: string | number, voteId: string | number) {
   return getJson<ClubScheduleVoteDetailResponse>(
-    `/api/semo/v1/clubs/${clubId}/schedule/votes/${voteId}`,
+    `/api/semo/v1/clubs/${clubId}/more/polls/${voteId}`,
   );
 }
 
@@ -701,7 +805,7 @@ export function createClubScheduleVote(
   request: UpsertScheduleVoteRequest,
 ) {
   return postJson<ScheduleVoteUpsertResponse>(
-    `/api/semo/v1/clubs/${clubId}/schedule/votes`,
+    `/api/semo/v1/clubs/${clubId}/more/polls`,
     request,
   );
 }
@@ -712,13 +816,13 @@ export function updateClubScheduleVote(
   request: UpsertScheduleVoteRequest,
 ) {
   return putJson<ScheduleVoteUpsertResponse>(
-    `/api/semo/v1/clubs/${clubId}/schedule/votes/${voteId}`,
+    `/api/semo/v1/clubs/${clubId}/more/polls/${voteId}`,
     request,
   );
 }
 
 export function deleteClubScheduleVote(clubId: string | number, voteId: string | number) {
-  return deleteJson<void>(`/api/semo/v1/clubs/${clubId}/schedule/votes/${voteId}`);
+  return deleteJson<void>(`/api/semo/v1/clubs/${clubId}/more/polls/${voteId}`);
 }
 
 export function submitClubScheduleVoteSelection(
@@ -727,15 +831,31 @@ export function submitClubScheduleVoteSelection(
   request: SubmitScheduleVoteSelectionRequest,
 ) {
   return putJson<ClubScheduleVoteDetailResponse>(
-    `/api/semo/v1/clubs/${clubId}/schedule/votes/${voteId}/selection`,
+    `/api/semo/v1/clubs/${clubId}/more/polls/${voteId}/selection`,
     request,
   );
 }
 
 export function closeClubScheduleVote(clubId: string | number, voteId: string | number) {
   return putJson<ClubScheduleVoteDetailResponse>(
-    `/api/semo/v1/clubs/${clubId}/schedule/votes/${voteId}/close`,
+    `/api/semo/v1/clubs/${clubId}/more/polls/${voteId}/close`,
     undefined,
+  );
+}
+
+export function getClubPollHome(
+  clubId: string | number,
+  options: {
+    query?: string;
+  } = {},
+) {
+  const params = new URLSearchParams();
+  if (options.query?.trim()) {
+    params.set("query", options.query.trim());
+  }
+  const queryString = params.toString();
+  return getJson<ClubPollHomeResponse>(
+    `/api/semo/v1/clubs/${clubId}/more/polls${queryString ? `?${queryString}` : ""}`,
   );
 }
 

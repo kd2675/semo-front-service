@@ -33,6 +33,9 @@ const ADMIN_ITEMS: AdminNavItem[] = [
 const FEATURE_ACCENT_CLASS: Record<string, string> = {
   ATTENDANCE: "bg-orange-50 text-orange-500",
   TIMELINE: "bg-orange-50 text-[#ec5b13]",
+  NOTICE: "bg-orange-50 text-[#ec5b13]",
+  POLL: "bg-amber-50 text-[#ec5b13]",
+  SCHEDULE_MANAGE: "bg-cyan-50 text-cyan-600",
 };
 
 function withMockFeaturePaths(clubId: string, feature: ClubFeatureSummary): ClubFeatureSummary {
@@ -41,6 +44,30 @@ function withMockFeaturePaths(clubId: string, feature: ClubFeatureSummary): Club
       ...feature,
       userPath: `/clubs/${clubId}/more/timeline`,
       adminPath: `/clubs/${clubId}/admin/more/timeline`,
+    };
+  }
+
+  if (feature.featureKey === "POLL") {
+    return {
+      ...feature,
+      userPath: `/clubs/${clubId}/more/polls`,
+      adminPath: `/clubs/${clubId}/admin/more/polls`,
+    };
+  }
+
+  if (feature.featureKey === "NOTICE") {
+    return {
+      ...feature,
+      userPath: `/clubs/${clubId}/more/notices`,
+      adminPath: `/clubs/${clubId}/admin/more/notices`,
+    };
+  }
+
+  if (feature.featureKey === "SCHEDULE_MANAGE") {
+    return {
+      ...feature,
+      userPath: `/clubs/${clubId}/more/schedules`,
+      adminPath: `/clubs/${clubId}/admin/more/schedules`,
     };
   }
 
@@ -78,8 +105,9 @@ export function AdminBottomNav({ clubId }: AdminBottomNavProps) {
   const [isDocked, setIsDocked] = useState(() => persistedDockedState);
   const [openMenuPathname, setOpenMenuPathname] = useState<string | null>(null);
   const [enabledFeatures, setEnabledFeatures] = useState<ClubFeatureSummary[]>([]);
+  const menuItems = enabledFeatures;
   const isMoreOpen = openMenuPathname === pathname;
-  const isFeatureRouteActive = enabledFeatures.some((feature) => pathname === feature.adminPath);
+  const isFeatureRouteActive = menuItems.some((feature) => pathname === feature.adminPath);
 
   useEffect(() => {
     let cancelled = false;
@@ -306,7 +334,7 @@ export function AdminBottomNav({ clubId }: AdminBottomNavProps) {
               <div className="pointer-events-auto mx-auto w-full max-w-sm">
                 <div className="relative rounded-[32px] bg-white p-6 shadow-[0_20px_50px_rgba(0,0,0,0.15)]">
                   <div className="grid grid-cols-3 gap-6">
-                    {enabledFeatures.map((item, index) => (
+                    {menuItems.map((item, index) => (
                       <motion.div
                         key={item.featureKey}
                         custom={index}
@@ -335,7 +363,7 @@ export function AdminBottomNav({ clubId }: AdminBottomNavProps) {
                         </RouterLink>
                       </motion.div>
                     ))}
-                    {enabledFeatures.length === 0 ? (
+                    {menuItems.length === 0 ? (
                       <div className="col-span-3 rounded-2xl bg-slate-50 px-4 py-5 text-center text-xs font-medium text-slate-500">
                         활성화된 기능이 없습니다.
                       </div>

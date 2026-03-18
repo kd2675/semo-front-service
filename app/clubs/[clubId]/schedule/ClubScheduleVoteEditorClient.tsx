@@ -16,6 +16,7 @@ type ClubScheduleVoteEditorClientProps = {
   voteId?: string;
   clubName?: string;
   presentation?: "page" | "modal";
+  basePath?: string;
   onRequestClose?: () => void;
   onSaved?: (voteId: number) => void;
 };
@@ -25,6 +26,7 @@ export function ClubScheduleVoteEditorClient({
   voteId,
   clubName: initialClubName,
   presentation = "page",
+  basePath,
   onRequestClose,
   onSaved,
 }: ClubScheduleVoteEditorClientProps) {
@@ -40,10 +42,12 @@ export function ClubScheduleVoteEditorClient({
   const [voteEndTime, setVoteEndTime] = useState("");
   const [options, setOptions] = useState(["", ""]);
   const [postToBoard, setPostToBoard] = useState(false);
+  const [postToSchedule, setPostToSchedule] = useState(false);
   const [loading, setLoading] = useState(isEdit);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const backHref = isEdit && voteId ? `/clubs/${clubId}/schedule/votes/${voteId}` : `/clubs/${clubId}/schedule`;
+  const resolvedBasePath = basePath ?? `/clubs/${clubId}/more/polls`;
+  const backHref = isEdit && voteId ? `${resolvedBasePath}/${voteId}` : resolvedBasePath;
 
   const loadDetail = useEffectEvent(async () => {
     if (!voteId) {
@@ -67,6 +71,7 @@ export function ClubScheduleVoteEditorClient({
     setVoteEndTime(payload.voteEndTime ?? "");
     setOptions(payload.options.map((option) => option.label));
     setPostToBoard(payload.postedToBoard);
+    setPostToSchedule(payload.sharedToSchedule);
   });
 
   useEffect(() => {
@@ -108,6 +113,7 @@ export function ClubScheduleVoteEditorClient({
       voteEndTime: voteEndTime || null,
       optionLabels: options.map((option) => option.trim()).filter(Boolean),
       postToBoard,
+      postToSchedule,
     };
 
     const result = isEdit && voteId
@@ -125,7 +131,7 @@ export function ClubScheduleVoteEditorClient({
       return;
     }
 
-    router.replace(`/clubs/${clubId}/schedule/votes/${result.data.voteId}`);
+    router.replace(`${resolvedBasePath}/${result.data.voteId}`);
   };
 
   const optionCountLabel = `${options.length}/8`;
@@ -281,20 +287,38 @@ export function ClubScheduleVoteEditorClient({
             </section>
 
             <section className="border-t border-gray-100 pt-4">
-              <div className="flex items-center justify-between gap-4">
-                <div>
-                  <h2 className="text-sm font-semibold text-gray-700">Step 4. 게시판 공지 동시 등록</h2>
-                  <p className="text-xs text-gray-400">투표 생성 시 자유게시판 상단에 공지로 노출됩니다.</p>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm">
+                  <div>
+                    <h2 className="text-sm font-semibold text-gray-700">Step 4. 공지에도 공유</h2>
+                    <p className="text-xs text-gray-400">투표를 공지에도 함께 노출합니다.</p>
+                  </div>
+                  <label className="relative inline-flex cursor-pointer items-center">
+                    <input
+                      checked={postToBoard}
+                      className="peer sr-only"
+                      type="checkbox"
+                      onChange={(event) => setPostToBoard(event.target.checked)}
+                    />
+                    <div className="h-6 w-11 rounded-full bg-gray-200 transition peer-checked:bg-[var(--primary)] after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:after:translate-x-full peer-checked:after:border-white" />
+                  </label>
                 </div>
-                <label className="relative inline-flex cursor-pointer items-center">
-                  <input
-                    checked={postToBoard}
-                    className="peer sr-only"
-                    type="checkbox"
-                    onChange={(event) => setPostToBoard(event.target.checked)}
-                  />
-                  <div className="h-6 w-11 rounded-full bg-gray-200 transition peer-checked:bg-[var(--primary)] after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:after:translate-x-full peer-checked:after:border-white" />
-                </label>
+
+                <div className="flex items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm">
+                  <div>
+                    <h2 className="text-sm font-semibold text-gray-700">Step 5. 일정에도 공유</h2>
+                    <p className="text-xs text-gray-400">투표를 일정 화면에도 함께 노출합니다.</p>
+                  </div>
+                  <label className="relative inline-flex cursor-pointer items-center">
+                    <input
+                      checked={postToSchedule}
+                      className="peer sr-only"
+                      type="checkbox"
+                      onChange={(event) => setPostToSchedule(event.target.checked)}
+                    />
+                    <div className="h-6 w-11 rounded-full bg-gray-200 transition peer-checked:bg-[var(--primary)] after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:after:translate-x-full peer-checked:after:border-white" />
+                  </label>
+                </div>
               </div>
             </section>
 

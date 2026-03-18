@@ -1,6 +1,7 @@
 "use client";
 
-import { motion, useReducedMotion } from "motion/react";
+import Image from "next/image";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { getNoticeAccentClasses } from "@/app/lib/notice-category";
 import type { ClubNoticeListItem } from "@/app/lib/clubs";
 
@@ -26,143 +27,106 @@ export function NoticeManageCard({
   const accent = getNoticeAccentClasses(notice.categoryAccentTone);
   const prefersReducedMotion = useReducedMotion();
   const reduceMotion = Boolean(prefersReducedMotion);
+  const metaDateLabel = notice.publishedAtLabel || notice.timeAgo;
 
   return (
-    <div className="relative overflow-hidden bg-white">
+    <div className="relative overflow-visible rounded-[8px] border border-slate-100 bg-white shadow-sm">
       <button
         type="button"
-        onClick={() => {
-          if (manageable) {
-            onOpenChange(!open);
-            return;
-          }
-          onOpen();
-        }}
-        aria-label={manageable ? `${notice.title} 작업 열기` : `${notice.title} 자세히 보기`}
-        className="relative z-10 flex w-full gap-4 bg-white px-4 py-5 pr-7 text-left transition-colors hover:bg-slate-50"
+        onClick={onOpen}
+        aria-label={`${notice.title} 자세히 보기`}
+        className="block w-full text-left transition-colors hover:bg-slate-50"
       >
-        <div className={`flex size-12 shrink-0 items-center justify-center rounded-xl ${accent.icon}`}>
-          <span className="material-symbols-outlined">{notice.categoryIconName}</span>
-        </div>
-        <div className="min-w-0 flex flex-1 flex-col gap-1">
-          <div className="flex items-start justify-between gap-3">
-            <p className="min-w-0 text-base font-bold leading-snug text-slate-900">{notice.title}</p>
-            <span className="whitespace-nowrap text-xs text-slate-400">{notice.timeAgo}</span>
-          </div>
-          <p className="line-clamp-2 text-sm text-slate-600">{notice.summary}</p>
-          <div className="mt-1 flex items-center gap-2">
-            <div className="flex size-5 items-center justify-center overflow-hidden rounded-full bg-[var(--primary)]/20">
-              <span className="material-symbols-outlined text-[12px] text-[var(--primary)]">person</span>
+        <article className="overflow-hidden">
+          {notice.imageUrl ? (
+            <>
+              <div className="relative h-40 w-full bg-slate-100">
+                <Image
+                  src={notice.imageUrl}
+                  alt={notice.title}
+                  fill
+                  sizes="(max-width: 768px) 100vw, 448px"
+                  className="object-cover"
+                />
+              </div>
+              <div className="p-4">
+                <div className="mb-2 flex items-center justify-between gap-3">
+                  <span className={`rounded px-2 py-0.5 text-[11px] font-bold uppercase ${accent.badge}`}>
+                    {notice.categoryLabel}
+                  </span>
+                  <span className="text-xs text-slate-400">{metaDateLabel}</span>
+                </div>
+                <h2 className="mb-2 line-clamp-1 text-base font-bold text-slate-900">{notice.title}</h2>
+                <p className="line-clamp-2 text-sm leading-6 text-slate-500">{notice.summary}</p>
+              </div>
+            </>
+          ) : (
+            <div className="p-4">
+              <div className="mb-2 flex items-center justify-between gap-3">
+                <span className={`rounded px-2 py-0.5 text-[11px] font-bold uppercase ${accent.badge}`}>
+                  {notice.categoryLabel}
+                </span>
+                <span className="shrink-0 text-xs text-slate-400">{metaDateLabel}</span>
+              </div>
+              <h2 className="mb-2 line-clamp-1 text-base font-bold text-slate-900">{notice.title}</h2>
+              <p className="line-clamp-2 text-sm leading-6 text-slate-500">{notice.summary}</p>
             </div>
-            <p className="text-xs font-semibold text-[var(--primary)]">{notice.authorDisplayName}</p>
-          </div>
-        </div>
-        {manageable ? (
-          <div aria-hidden="true" className="pointer-events-none absolute inset-y-0 right-3 w-2">
-            <span aria-hidden="true" className="pointer-events-none absolute inset-y-0 right-1 w-0.5 bg-amber-500/90" />
-            <span aria-hidden="true" className="pointer-events-none absolute inset-y-0 right-0.5 w-0.5 bg-rose-500/90" />
-          </div>
-        ) : null}
+          )}
+        </article>
       </button>
 
       {manageable ? (
-        <div
-          className="absolute inset-y-0 left-4 right-4 z-20 overflow-hidden"
-          onClick={() => onOpenChange(false)}
-          style={{ pointerEvents: open ? "auto" : "none" }}
-        >
-          <motion.div
-            className="absolute inset-0 bg-slate-950/24 backdrop-blur-[2px]"
-            initial={false}
-            animate={open ? { opacity: 1 } : { opacity: 0 }}
-            transition={{ duration: reduceMotion ? 0.12 : 0.28, ease: "easeOut" }}
-          />
-          <div className="absolute inset-0 flex items-stretch">
-          <motion.button
-            type="button"
-            onClick={(event) => {
-              event.stopPropagation();
-              onOpenChange(false);
-            }}
-            aria-label={`${notice.title} 작업 닫기`}
-            className="flex flex-1 flex-col items-center justify-center gap-2 border-r border-white/40 bg-slate-900/40 px-2 text-[11px] font-bold text-white transition hover:bg-slate-900/55"
-            initial={false}
-            animate={
-              open
-                ? { opacity: 1, x: 0 }
-                : reduceMotion
-                  ? { opacity: 0, x: 0 }
-                  : { opacity: 0, x: -14 }
-            }
-            transition={{ duration: reduceMotion ? 0.1 : 0.22, ease: "easeOut" }}
-          >
-            <span className="material-symbols-outlined text-[22px]">close</span>
-            닫기
-          </motion.button>
-          <motion.button
-            type="button"
-            onClick={(event) => {
-              event.stopPropagation();
-              onOpen();
-            }}
-            aria-label={`${notice.title} 자세히 보기`}
-            className="flex min-w-0 flex-[2] flex-col items-center justify-center gap-2 border-r border-white/40 bg-white/78 px-4 text-center text-sm font-bold text-slate-900 transition hover:bg-white/90"
-            initial={false}
-            animate={
-              open
-                ? { opacity: 1, y: 0 }
-                : reduceMotion
-                  ? { opacity: 0, y: 0 }
-                  : { opacity: 0, y: 14 }
-            }
-            transition={{ duration: reduceMotion ? 0.1 : 0.24, ease: "easeOut", delay: open && !reduceMotion ? 0.02 : 0 }}
-          >
-            <span className="material-symbols-outlined text-[24px]">article</span>
-            자세히 보기
-          </motion.button>
-          <motion.button
-            type="button"
-            onClick={(event) => {
-              event.stopPropagation();
-              onEdit();
-            }}
-            aria-label={`${notice.title} 수정`}
-            className="flex flex-1 flex-col items-center justify-center gap-2 border-r border-white/40 bg-amber-500/84 px-2 text-[11px] font-bold text-white transition hover:bg-amber-500/94"
-            initial={false}
-            animate={
-              open
-                ? { opacity: 1, x: 0 }
-                : reduceMotion
-                  ? { opacity: 0, x: 0 }
-                  : { opacity: 0, x: 14 }
-            }
-            transition={{ duration: reduceMotion ? 0.1 : 0.24, ease: "easeOut", delay: open && !reduceMotion ? 0.05 : 0 }}
-          >
-            <span className="material-symbols-outlined text-[22px]">edit</span>
-            수정
-          </motion.button>
-          <motion.button
-            type="button"
-            onClick={(event) => {
-              event.stopPropagation();
-              onDelete();
-            }}
-            aria-label={`${notice.title} 삭제`}
-            className="flex flex-1 flex-col items-center justify-center gap-2 bg-rose-500/84 px-2 text-[11px] font-bold text-white transition hover:bg-rose-500/94"
-            initial={false}
-            animate={
-              open
-                ? { opacity: 1, x: 0 }
-                : reduceMotion
-                  ? { opacity: 0, x: 0 }
-                  : { opacity: 0, x: 18 }
-            }
-            transition={{ duration: reduceMotion ? 0.1 : 0.22, ease: "easeOut", delay: open && !reduceMotion ? 0.08 : 0 }}
-          >
-            <span className="material-symbols-outlined text-[22px]">delete</span>
-            삭제
-          </motion.button>
+        <div className="relative border-t border-slate-50 px-2">
+          <div className="flex items-center justify-end">
+            <button
+              type="button"
+              aria-label={`${notice.title} 관리 메뉴`}
+              onClick={(event) => {
+                event.stopPropagation();
+                onOpenChange(!open);
+              }}
+              className="rounded-full p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+            >
+              <span className="material-symbols-outlined text-[20px]">more_horiz</span>
+            </button>
           </div>
+
+          <AnimatePresence initial={false}>
+            {open ? (
+              <motion.div
+                initial={reduceMotion ? false : { opacity: 0, y: 6, scale: 0.98 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 6, scale: 0.98 }}
+                transition={{ duration: reduceMotion ? 0.1 : 0.16, ease: "easeOut" }}
+                className="absolute bottom-12 right-4 z-20 w-28 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-[0_12px_32px_rgba(15,23,42,0.14)]"
+              >
+                <button
+                  type="button"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    onOpenChange(false);
+                    onEdit();
+                  }}
+                  className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm font-semibold text-amber-600 transition hover:bg-amber-50"
+                >
+                  <span className="material-symbols-outlined text-[18px]">edit</span>
+                  수정
+                </button>
+                <button
+                  type="button"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    onOpenChange(false);
+                    onDelete();
+                  }}
+                  className="flex w-full items-center gap-2 border-t border-slate-100 px-3 py-2.5 text-left text-sm font-semibold text-rose-600 transition hover:bg-rose-50"
+                >
+                  <span className="material-symbols-outlined text-[18px]">delete</span>
+                  삭제
+                </button>
+              </motion.div>
+            ) : null}
+          </AnimatePresence>
         </div>
       ) : null}
     </div>

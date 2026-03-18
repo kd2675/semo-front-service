@@ -17,12 +17,16 @@ type ClubScheduleVoteDetailClientProps = {
   clubId: string;
   voteId: string;
   presentation?: "page" | "modal";
+  basePath?: string;
   onRequestClose?: () => void;
 };
 
 function getVoteStatusLabel(payload: ClubScheduleVoteDetailResponse) {
-  if (!payload.votingOpen) {
+  if (payload.voteStatus === "CLOSED") {
     return "마감";
+  }
+  if (payload.voteStatus === "WAITING") {
+    return "대기";
   }
   if (payload.mySelectedOptionId) {
     return "참여 완료";
@@ -31,8 +35,11 @@ function getVoteStatusLabel(payload: ClubScheduleVoteDetailResponse) {
 }
 
 function getVoteStatusClassName(payload: ClubScheduleVoteDetailResponse) {
-  if (!payload.votingOpen) {
+  if (payload.voteStatus === "CLOSED") {
     return "bg-slate-100 text-slate-500";
+  }
+  if (payload.voteStatus === "WAITING") {
+    return "bg-amber-50 text-amber-600";
   }
   return "bg-blue-50 text-blue-600";
 }
@@ -76,6 +83,7 @@ export function ClubScheduleVoteDetailClient({
   clubId,
   voteId,
   presentation = "page",
+  basePath,
   onRequestClose,
 }: ClubScheduleVoteDetailClientProps) {
   const prefersReducedMotion = useReducedMotion();
@@ -122,7 +130,7 @@ export function ClubScheduleVoteDetailClient({
   };
 
   const handleCloseVote = async () => {
-    if (!payload || !payload.canManage || !payload.votingOpen) {
+    if (!payload || !payload.canManage || payload.voteStatus === "CLOSED") {
       return;
     }
     if (!window.confirm("이 투표를 지금 종료하시겠습니까?")) {
@@ -146,13 +154,13 @@ export function ClubScheduleVoteDetailClient({
   }
 
   const showPrimaryAction = Boolean(payload?.votingOpen);
-  const showAdminCloseAction = Boolean(payload?.canManage && payload?.votingOpen);
+  const showAdminCloseAction = Boolean(payload?.canManage && payload?.voteStatus !== "CLOSED");
   const submitDisabled = !payload?.votingOpen
     || selectedOptionId == null
     || submittingVoteOptionId !== null
     || selectedOptionId === payload?.mySelectedOptionId;
   const isModal = presentation === "modal";
-  const backHref = `/clubs/${clubId}/schedule`;
+  const backHref = basePath ?? `/clubs/${clubId}/more/polls`;
 
   return (
     <div className={isModal ? "flex min-h-0 flex-1 flex-col bg-white font-display text-gray-900 antialiased" : "min-h-full bg-gray-50 font-display text-gray-900 antialiased"}>

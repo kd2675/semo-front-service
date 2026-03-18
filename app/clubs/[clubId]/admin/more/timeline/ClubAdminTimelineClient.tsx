@@ -29,6 +29,28 @@ export function ClubAdminTimelineClient({
     () => categories.filter((category) => category.visibleInTimeline).length,
     [categories],
   );
+  const initialVisibleKeys = useMemo(
+    () =>
+      initialData.categories
+        .filter((category) => category.visibleInTimeline)
+        .map((category) => category.categoryKey)
+        .sort(),
+    [initialData.categories],
+  );
+  const currentVisibleKeys = useMemo(
+    () =>
+      categories
+        .filter((category) => category.visibleInTimeline)
+        .map((category) => category.categoryKey)
+        .sort(),
+    [categories],
+  );
+  const isDirty = useMemo(
+    () =>
+      initialVisibleKeys.length !== currentVisibleKeys.length ||
+      initialVisibleKeys.some((key, index) => key !== currentVisibleKeys[index]),
+    [currentVisibleKeys, initialVisibleKeys],
+  );
 
   const handleSave = async () => {
     setSaving(true);
@@ -132,22 +154,37 @@ export function ClubAdminTimelineClient({
                 );
               })}
             </div>
-            {feedback ? (
-              <p className="mt-4 text-sm font-medium text-slate-500">{feedback}</p>
-            ) : null}
           </motion.section>
         </main>
 
-        <footer className="fixed bottom-0 left-0 right-0 mx-auto max-w-md border-t border-slate-200 bg-white/95 p-4 backdrop-blur-md">
-          <button
-            type="button"
-            onClick={() => void handleSave()}
-            disabled={saving}
-            className="w-full rounded-2xl bg-[#ec5b13] py-4 text-sm font-bold text-white shadow-lg shadow-[#ec5b13]/20 transition hover:bg-[#ec5b13]/90 disabled:opacity-60"
-          >
-            {saving ? "Saving..." : "설정 저장"}
-          </button>
-        </footer>
+        {isDirty ? (
+          <div className="pointer-events-none fixed bottom-[76px] left-0 right-0 z-30 p-4">
+            <div className="pointer-events-auto mx-auto max-w-md">
+              <button
+                type="button"
+                onClick={() => void handleSave()}
+                disabled={saving}
+                className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#ec5b13] py-4 text-base font-bold text-white shadow-lg transition-all hover:scale-[1.01] hover:shadow-[0_18px_36px_rgba(236,91,19,0.22)] disabled:cursor-not-allowed disabled:opacity-70"
+              >
+                <span className="material-symbols-outlined">
+                  {saving ? "progress_activity" : "save"}
+                </span>
+                {saving ? "Saving..." : "Save Changes"}
+              </button>
+              {feedback ? (
+                <p className="mt-3 text-center text-xs font-medium text-slate-500">
+                  {feedback}
+                </p>
+              ) : null}
+            </div>
+          </div>
+        ) : feedback ? (
+          <div className="pointer-events-none fixed bottom-[92px] left-0 right-0 z-30 p-4">
+            <p className="pointer-events-auto mx-auto max-w-md rounded-full bg-white/90 px-4 py-2 text-center text-xs font-medium text-slate-500 shadow-sm backdrop-blur-sm">
+              {feedback}
+            </p>
+          </div>
+        ) : null}
       </div>
     </div>
   );

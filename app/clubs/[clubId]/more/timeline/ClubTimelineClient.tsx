@@ -38,8 +38,8 @@ function getTimelineHref(clubId: string, entry: ClubTimelineEntry) {
   if (entry.linkedTargetType === "SCHEDULE_EVENT" && entry.linkedTargetId != null) {
     return `/clubs/${clubId}/schedule/${entry.linkedTargetId}`;
   }
-  if (entry.linkedTargetType === "SCHEDULE_VOTE" && entry.linkedTargetId != null) {
-    return `/clubs/${clubId}/schedule/votes/${entry.linkedTargetId}`;
+  if (entry.linkedTargetType === "POLL" && entry.linkedTargetId != null) {
+    return `/clubs/${clubId}/more/polls/${entry.linkedTargetId}`;
   }
   return `/clubs/${clubId}/board/${entry.noticeId}`;
 }

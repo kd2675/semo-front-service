@@ -16,7 +16,6 @@ import { ClubScheduleEditorClient } from "./ClubScheduleEditorClient";
 import { ClubScheduleDetailClient } from "./ClubScheduleDetailClient";
 import { ClubScheduleVoteDetailClient } from "./ClubScheduleVoteDetailClient";
 import { ClubScheduleVoteEditorClient } from "./ClubScheduleVoteEditorClient";
-import { ClubScheduleLoadingShell } from "../ClubRouteLoadingShells";
 import { ScheduleActionConfirmModal } from "./ScheduleActionConfirmModal";
 import { ScheduleManageCard } from "./ScheduleManageCard";
 
@@ -40,7 +39,22 @@ type CalendarMonth = {
   daysInMonth: number;
   defaultSelectedDay: number;
   eventsByDay: Record<number, ClubScheduleEventSummary[]>;
+  scheduleItemCountByDay: Record<number, number>;
 };
+
+type SelectedScheduleItem =
+  | {
+      type: "event";
+      key: string;
+      sortValue: string;
+      event: ClubScheduleEventSummary;
+    }
+  | {
+      type: "vote";
+      key: string;
+      sortValue: string;
+      vote: ClubScheduleVoteSummary;
+    };
 
 const WEEKDAY_LABELS = ["일", "월", "화", "수", "목", "금", "토"];
 
@@ -60,7 +74,12 @@ function shiftMonth(year: number, month: number, delta: number) {
   };
 }
 
-function buildCalendarMonth(year: number, month: number, events: ClubScheduleEventSummary[]): CalendarMonth {
+function buildCalendarMonth(
+  year: number,
+  month: number,
+  events: ClubScheduleEventSummary[],
+  votes: ClubScheduleVoteSummary[],
+): CalendarMonth {
   const today = new Date();
   const firstDay = new Date(year, month - 1, 1);
   const daysInMonth = new Date(year, month, 0).getDate();
@@ -78,6 +97,30 @@ function buildCalendarMonth(year: number, month: number, events: ClubScheduleEve
     }
     return acc;
   }, {});
+  const scheduleItemCountByDay = events.reduce<Record<number, number>>((acc, event) => {
+    const startDate = new Date(`${event.startDate}T00:00:00`);
+    const endDate = new Date(`${(event.endDate ?? event.startDate)}T00:00:00`);
+    for (const cursor = new Date(startDate); cursor <= endDate; cursor.setDate(cursor.getDate() + 1)) {
+      if (cursor.getFullYear() !== year || cursor.getMonth() + 1 !== month) {
+        continue;
+      }
+      const day = cursor.getDate();
+      acc[day] = (acc[day] ?? 0) + 1;
+    }
+    return acc;
+  }, {});
+
+  votes.forEach((vote) => {
+    const startDate = new Date(`${vote.voteStartDate}T00:00:00`);
+    const endDate = new Date(`${vote.voteEndDate}T00:00:00`);
+    for (const cursor = new Date(startDate); cursor <= endDate; cursor.setDate(cursor.getDate() + 1)) {
+      if (cursor.getFullYear() !== year || cursor.getMonth() + 1 !== month) {
+        continue;
+      }
+      const day = cursor.getDate();
+      scheduleItemCountByDay[day] = (scheduleItemCountByDay[day] ?? 0) + 1;
+    }
+  });
 
   return {
     id,
@@ -90,6 +133,7 @@ function buildCalendarMonth(year: number, month: number, events: ClubScheduleEve
     defaultSelectedDay:
       year === today.getFullYear() && month === today.getMonth() + 1 ? today.getDate() : 1,
     eventsByDay,
+    scheduleItemCountByDay,
   };
 }
 
@@ -253,7 +297,13 @@ function VoteCard({
         <div className="shrink-0 text-right">
           <p className="text-sm font-bold text-slate-900">{vote.totalResponses}명</p>
           <p className="text-[10px] font-medium uppercase tracking-wider text-slate-400">
-            {!vote.votingOpen ? "CLOSED" : vote.mySelectedOptionId ? "VOTED" : "PENDING"}
+            {vote.voteStatus === "CLOSED"
+              ? "CLOSED"
+              : vote.voteStatus === "WAITING"
+                ? "WAITING"
+                : vote.mySelectedOptionId
+                  ? "VOTED"
+                  : "PENDING"}
           </p>
         </div>
       </div>
@@ -275,12 +325,10 @@ export function ScheduleClient({
   const isRealClub = !Number.isNaN(Number(clubId));
   const canManageSchedule = payload.admin && isRealClub;
   const month = useMemo(
-    () => buildCalendarMonth(activeYear, activeMonth, payload.monthEvents),
-    [activeMonth, activeYear, payload.monthEvents],
+    () => buildCalendarMonth(activeYear, activeMonth, payload.monthEvents, payload.votes),
+    [activeMonth, activeYear, payload.monthEvents, payload.votes],
   );
   const [selectedDay, setSelectedDay] = useState(month.defaultSelectedDay);
-  const [showEventCreateModal, setShowEventCreateModal] = useState(false);
-  const [showVoteCreateModal, setShowVoteCreateModal] = useState(false);
   const [detailEventId, setDetailEventId] = useState<string | null>(null);
   const [editingEventId, setEditingEventId] = useState<string | null>(null);
   const [detailVoteId, setDetailVoteId] = useState<string | null>(null);
@@ -290,14 +338,24 @@ export function ScheduleClient({
   const [deleting, setDeleting] = useState(false);
   const [activeActionKey, setActiveActionKey] = useState<string | null>(null);
 
-  if (!month) {
-    return <ClubScheduleLoadingShell />;
-  }
-
   const events = month.eventsByDay[selectedDay] ?? [];
   const selectedDateValue = getDateValue(month.year, month.month, selectedDay);
   const votes = payload.votes.filter((vote) => isVoteActiveOnDate(vote, selectedDateValue));
-  const maxEventCount = Math.max(0, ...Object.values(month.eventsByDay).map((dayEvents) => dayEvents.length));
+  const selectedItems: SelectedScheduleItem[] = [
+    ...events.map((event) => ({
+      type: "event" as const,
+      key: `event-${event.eventId}`,
+      sortValue: `${event.startDate}T${event.timeLabel ?? "00:00"}`,
+      event,
+    })),
+    ...votes.map((vote) => ({
+      type: "vote" as const,
+      key: `vote-${vote.voteId}`,
+      sortValue: `${vote.voteStartDate}T${vote.voteTimeLabel ?? "00:00"}`,
+      vote,
+    })),
+  ].sort((left, right) => left.sortValue.localeCompare(right.sortValue));
+  const maxEventCount = Math.max(0, ...Object.values(month.scheduleItemCountByDay));
   const nextUpcomingEvent = payload.monthEvents.find((event) => {
     const eventLastDate = event.endDate ?? event.startDate;
     return eventLastDate > selectedDateValue;
@@ -356,28 +414,7 @@ export function ScheduleClient({
             <span className="material-symbols-outlined">arrow_back</span>
           </RouterLink>
           <h2 className="flex-1 text-center text-lg font-bold leading-tight tracking-tight">일정</h2>
-          <div className="flex items-center justify-end gap-2 pl-4">
-            {canManageSchedule ? (
-              <>
-                <button
-                  type="button"
-                  onClick={() => setShowEventCreateModal(true)}
-                  className="flex h-9 w-9 items-center justify-center rounded-lg bg-[var(--primary)]/10 text-[var(--primary)] transition-colors hover:bg-[var(--primary)]/20"
-                  aria-label="일정 추가"
-                >
-                  <span className="material-symbols-outlined text-[22px]">add</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowVoteCreateModal(true)}
-                  className="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-500/10 text-amber-500 transition-colors hover:bg-amber-500/20"
-                  aria-label="투표 추가"
-                >
-                  <span className="material-symbols-outlined text-[22px]">poll</span>
-                </button>
-              </>
-            ) : null}
-          </div>
+          <div className="w-10 shrink-0" />
         </header>
 
         <main className="semo-nav-bottom-space relative flex-1">
@@ -416,7 +453,7 @@ export function ScheduleClient({
               {Array.from({ length: month.daysInMonth }, (_, index) => {
                 const day = index + 1;
                 const isActive = day === selectedDay;
-                const eventCount = (month.eventsByDay[day] ?? []).length;
+                const eventCount = month.scheduleItemCountByDay[day] ?? 0;
                 const hasEvents = eventCount > 0;
                 const eventDotClassName = getEventDotClassName(eventCount, maxEventCount, isActive);
 
@@ -450,6 +487,17 @@ export function ScheduleClient({
                 );
               })}
             </div>
+
+            <div className="mt-3 flex justify-end">
+              <div className="flex items-center gap-2 rounded-full bg-slate-50 px-3 py-1.5 text-[10px] font-medium text-slate-500">
+                <span>적음</span>
+                <span className="size-1.5 rounded-full bg-white ring-1 ring-slate-300" />
+                <span className="size-1.5 rounded-full bg-yellow-400" />
+                <span className="size-1.5 rounded-full bg-orange-500" />
+                <span className="size-1.5 rounded-full bg-red-500" />
+                <span>많음</span>
+              </div>
+            </div>
           </motion.div>
 
           {isMonthLoading ? (
@@ -468,38 +516,61 @@ export function ScheduleClient({
               {month.shortLabel} {selectedDay}일 일정
             </h3>
             <span className="rounded bg-[var(--primary)]/10 px-2 py-1 text-xs font-semibold text-[var(--primary)]">
-              {events.length}건
+              {selectedItems.length}건
             </span>
           </motion.div>
 
           <div className="space-y-3 px-4">
-            {events.length > 0 ? (
-              events.map((event, index) => (
+            {selectedItems.length > 0 ? (
+              selectedItems.map((item, index) => (
                 <motion.article
-                  key={event.eventId}
+                  key={item.key}
                   className="rounded-xl"
                   {...staggeredFadeUpMotion(index + 2, reduceMotion)}
                 >
-                  <EventCard
-                    event={event}
-                    manageable={canManageSchedule}
-                    open={activeActionKey === `event-${event.eventId}`}
-                    onOpenChange={(nextOpen) => {
-                      setActiveActionKey(nextOpen ? `event-${event.eventId}` : null);
-                    }}
-                    onOpen={() => {
-                      setActiveActionKey(null);
-                      setDetailEventId(String(event.eventId));
-                    }}
-                    onEdit={() => {
-                      setActiveActionKey(null);
-                      setEditingEventId(String(event.eventId));
-                    }}
-                    onDelete={() => {
-                      setActiveActionKey(null);
-                      setDeleteEventTarget(event);
-                    }}
-                  />
+                  {item.type === "event" ? (
+                    <EventCard
+                      event={item.event}
+                      manageable={canManageSchedule}
+                      open={activeActionKey === item.key}
+                      onOpenChange={(nextOpen) => {
+                        setActiveActionKey(nextOpen ? item.key : null);
+                      }}
+                      onOpen={() => {
+                        setActiveActionKey(null);
+                        setDetailEventId(String(item.event.eventId));
+                      }}
+                      onEdit={() => {
+                        setActiveActionKey(null);
+                        setEditingEventId(String(item.event.eventId));
+                      }}
+                      onDelete={() => {
+                        setActiveActionKey(null);
+                        setDeleteEventTarget(item.event);
+                      }}
+                    />
+                  ) : (
+                    <VoteCard
+                      vote={item.vote}
+                      manageable={canManageSchedule}
+                      open={activeActionKey === item.key}
+                      onOpenChange={(nextOpen) => {
+                        setActiveActionKey(nextOpen ? item.key : null);
+                      }}
+                      onOpen={() => {
+                        setActiveActionKey(null);
+                        setDetailVoteId(String(item.vote.voteId));
+                      }}
+                      onEdit={() => {
+                        setActiveActionKey(null);
+                        setEditingVoteId(String(item.vote.voteId));
+                      }}
+                      onDelete={() => {
+                        setActiveActionKey(null);
+                        setDeleteVoteTarget(item.vote);
+                      }}
+                    />
+                  )}
                 </motion.article>
               ))
             ) : (
@@ -507,7 +578,7 @@ export function ScheduleClient({
                 className="rounded-xl border border-dashed border-slate-300 bg-white px-4 py-6 text-center text-sm text-slate-500"
                 {...staggeredFadeUpMotion(2, reduceMotion)}
               >
-                선택한 날짜에는 일정이 없습니다.
+                선택한 날짜에는 일정이나 투표가 없습니다.
               </motion.div>
             )}
 
@@ -542,81 +613,10 @@ export function ScheduleClient({
               </motion.div>
             ) : null}
           </div>
-
-          <motion.div
-            className="flex items-center justify-between px-4 pb-2 pt-8"
-            {...staggeredFadeUpMotion(events.length + 4, reduceMotion)}
-          >
-            <div>
-              <h3 className="text-lg font-bold leading-tight tracking-tight text-slate-900">
-                {month.shortLabel} {selectedDay}일 투표
-              </h3>
-              <p className="text-xs text-slate-500">선택한 날짜가 투표 기간에 포함되는 항목만 표시됩니다.</p>
-            </div>
-            <span className="rounded bg-amber-500/10 px-2 py-1 text-xs font-semibold text-amber-500">
-              {votes.length}건
-            </span>
-          </motion.div>
-
-          <div className="space-y-3 px-4">
-            {votes.length > 0 ? (
-              votes.map((vote, index) => (
-                <motion.article
-                  key={vote.voteId}
-                  className="rounded-xl"
-                  {...staggeredFadeUpMotion(events.length + index + 4, reduceMotion)}
-                >
-                  <VoteCard
-                    vote={vote}
-                    manageable={canManageSchedule}
-                    open={activeActionKey === `vote-${vote.voteId}`}
-                    onOpenChange={(nextOpen) => {
-                      setActiveActionKey(nextOpen ? `vote-${vote.voteId}` : null);
-                    }}
-                    onOpen={() => {
-                      setActiveActionKey(null);
-                      setDetailVoteId(String(vote.voteId));
-                    }}
-                    onEdit={() => {
-                      setActiveActionKey(null);
-                      setEditingVoteId(String(vote.voteId));
-                    }}
-                    onDelete={() => {
-                      setActiveActionKey(null);
-                      setDeleteVoteTarget(vote);
-                    }}
-                  />
-                </motion.article>
-              ))
-            ) : (
-              <motion.div
-                className="rounded-xl border border-dashed border-slate-300 bg-white px-4 py-6 text-center text-sm text-slate-500"
-                {...staggeredFadeUpMotion(events.length + 4, reduceMotion)}
-              >
-                선택한 날짜에 해당하는 투표가 없습니다.
-              </motion.div>
-            )}
-          </div>
         </main>
 
         {payload.admin ? <ClubModeSwitchFab clubId={clubId} mode="user" /> : null}
         <AnimatePresence>
-          {showEventCreateModal ? (
-            <RouteModal onDismiss={() => setShowEventCreateModal(false)} dismissOnBackdrop={false}>
-              <ClubScheduleEditorClient
-                clubId={clubId}
-                clubName={payload.clubName}
-                presentation="modal"
-                initialEventDate={selectedDateValue}
-                onRequestClose={() => setShowEventCreateModal(false)}
-                onSaved={(savedEventId) => {
-                  setShowEventCreateModal(false);
-                  onReloadMonth();
-                  setDetailEventId(String(savedEventId));
-                }}
-              />
-            </RouteModal>
-          ) : null}
           {detailEventId ? (
             <RouteModal onDismiss={() => setDetailEventId(null)}>
               <ClubScheduleDetailClient
@@ -647,27 +647,13 @@ export function ScheduleClient({
               />
             </RouteModal>
           ) : null}
-          {showVoteCreateModal ? (
-            <RouteModal onDismiss={() => setShowVoteCreateModal(false)} dismissOnBackdrop={false}>
-              <ClubScheduleVoteEditorClient
-                clubId={clubId}
-                clubName={payload.clubName}
-                presentation="modal"
-                onRequestClose={() => setShowVoteCreateModal(false)}
-                onSaved={(savedVoteId) => {
-                  setShowVoteCreateModal(false);
-                  onReloadMonth();
-                  setDetailVoteId(String(savedVoteId));
-                }}
-              />
-            </RouteModal>
-          ) : null}
           {detailVoteId ? (
             <RouteModal onDismiss={() => setDetailVoteId(null)}>
               <ClubScheduleVoteDetailClient
                 clubId={clubId}
                 voteId={detailVoteId}
                 presentation="modal"
+                basePath={`/clubs/${clubId}/more/polls`}
                 onRequestClose={() => setDetailVoteId(null)}
               />
             </RouteModal>
@@ -679,6 +665,7 @@ export function ScheduleClient({
                 voteId={editingVoteId}
                 clubName={payload.clubName}
                 presentation="modal"
+                basePath={`/clubs/${clubId}/more/polls`}
                 onRequestClose={() => setEditingVoteId(null)}
                 onSaved={(savedVoteId) => {
                   setEditingVoteId(null);
