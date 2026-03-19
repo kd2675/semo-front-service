@@ -1,9 +1,9 @@
 "use client";
 
-import { RouterLink } from "@/app/components/RouterLink";
 import { motion, useReducedMotion } from "motion/react";
 import { useState } from "react";
 import { ClubModeSwitchFab } from "@/app/components/ClubModeSwitchFab";
+import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import {
   checkInClubAttendance,
   type ClubAttendanceResponse,
@@ -72,26 +72,12 @@ export function ClubAttendanceClient({
   return (
     <div className="bg-[var(--background-light)] text-slate-900 antialiased">
       <div className="relative min-h-screen overflow-x-hidden">
-        <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/85 backdrop-blur-md">
-          <div className="mx-auto flex w-full max-w-md items-center justify-between p-4">
-            <div className="flex items-center gap-3">
-              <RouterLink
-                href={`/clubs/${clubId}`}
-                className="flex size-10 items-center justify-center rounded-full text-slate-900 transition hover:bg-slate-100"
-                aria-label="클럽 홈으로 돌아가기"
-              >
-                <span className="material-symbols-outlined">arrow_back</span>
-              </RouterLink>
-              <div>
-                <h1 className="text-lg font-bold tracking-tight">Attendance Check</h1>
-                <p className="text-xs text-slate-500">{attendance.clubName}</p>
-              </div>
-            </div>
-            <span className="material-symbols-outlined text-[var(--primary)]">
-              fact_check
-            </span>
-          </div>
-        </header>
+        <ClubPageHeader
+          title="출석 체크"
+          subtitle={attendance.clubName}
+          icon="fact_check"
+          className="bg-white/85 backdrop-blur-md"
+        />
 
         <main className="semo-nav-bottom-space mx-auto flex w-full max-w-md flex-1 flex-col gap-4 px-4 pt-4">
           <motion.section
@@ -99,7 +85,7 @@ export function ClubAttendanceClient({
             {...staggeredFadeUpMotion(0, reduceMotion)}
           >
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
-              Today
+              오늘
             </p>
             <h2 className="mt-3 text-xl font-bold">
               {currentSession?.title ?? "열린 출석 세션이 없습니다."}
@@ -111,15 +97,15 @@ export function ClubAttendanceClient({
               <div className="mt-5 grid grid-cols-2 gap-3">
                 <div className="rounded-xl bg-slate-50 p-4">
                   <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
-                    Status
+                    상태
                   </p>
                   <p className="mt-2 text-sm font-bold text-slate-900">
-                    {currentSession.checkedIn ? "Checked In" : currentSession.status}
+                    {currentSession.checkedIn ? "출석 완료" : currentSession.status}
                   </p>
                 </div>
                 <div className="rounded-xl bg-slate-50 p-4">
                   <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
-                    Progress
+                    진행률
                   </p>
                   <p className="mt-2 text-sm font-bold text-slate-900">
                     {currentSession.checkedInCount}/{currentSession.memberCount}
@@ -137,10 +123,10 @@ export function ClubAttendanceClient({
                 {isSubmitting ? "progress_activity" : "how_to_reg"}
               </span>
               {currentSession?.checkedIn
-                ? "Already Checked In"
+                ? "이미 출석 완료"
                 : isSubmitting
-                  ? "Checking In..."
-                  : "Check In"}
+                  ? "출석 처리 중..."
+                  : "출석 체크"}
             </button>
             {feedback ? (
               <p className="mt-3 text-center text-xs font-medium text-slate-500">{feedback}</p>
@@ -152,9 +138,9 @@ export function ClubAttendanceClient({
             {...staggeredFadeUpMotion(1, reduceMotion)}
           >
             <div className="mb-4 flex items-center justify-between">
-              <h3 className="text-base font-bold">Recent Sessions</h3>
+              <h3 className="text-base font-bold">최근 세션</h3>
               <span className="text-xs font-medium text-slate-400">
-                {attendance.recentSessions.length} sessions
+                {attendance.recentSessions.length}건
               </span>
             </div>
             <div className="space-y-3">
@@ -183,7 +169,7 @@ export function ClubAttendanceClient({
                             : "bg-slate-200 text-slate-500"
                         }`}
                       >
-                        {session.checkedIn ? "Present" : session.status}
+                        {session.checkedIn ? "출석" : session.status}
                       </span>
                     </div>
                     <p className="mt-3 text-xs text-slate-400">

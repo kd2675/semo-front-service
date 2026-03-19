@@ -1,8 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { RouteModal } from "@/app/components/RouteModal";
-import { ClubScheduleVoteDetailClient } from "@/app/clubs/[clubId]/schedule/ClubScheduleVoteDetailClient";
+import { ClubPollDetailModal } from "@/app/components/ClubDetailModals";
 
 type ClubPollDetailRouteModalProps = {
   clubId: string;
@@ -22,15 +21,12 @@ export function ClubPollDetailRouteModal({
 
   return (
     <div className="min-h-screen bg-[var(--background-light)]">
-      <RouteModal onDismiss={handleDismiss}>
-        <ClubScheduleVoteDetailClient
-          clubId={clubId}
-          voteId={voteId}
-          presentation="modal"
-          basePath={basePath}
-          onRequestClose={handleDismiss}
-        />
-      </RouteModal>
+      <ClubPollDetailModal
+        clubId={clubId}
+        voteId={voteId}
+        mode="user"
+        onRequestClose={handleDismiss}
+      />
     </div>
   );
 }

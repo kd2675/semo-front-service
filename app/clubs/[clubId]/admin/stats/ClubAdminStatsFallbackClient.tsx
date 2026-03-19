@@ -33,10 +33,10 @@ export function ClubAdminStatsFallbackClient({ clubId }: ClubAdminStatsFallbackC
 
   const metrics = useMemo(
     () => [
-      { id: "engagement", label: "Engagement", value: "84%", detail: "Across posts and events", accent: "primary" as const, icon: "favorite" },
-      { id: "attendance", label: "Attendance", value: "78%", detail: "Average weekly attendance", accent: "green" as const, icon: "event_available" },
-      { id: "growth", label: "Growth", value: "+12%", detail: "Compared with last month", accent: "primary" as const, icon: "trending_up" },
-      { id: "dues", label: "Dues Paid", value: "91%", detail: "Current payment completion", icon: "payments" },
+      { id: "engagement", label: "참여도", value: "84%", detail: "게시글/일정 기준", accent: "primary" as const, icon: "favorite" },
+      { id: "attendance", label: "출석률", value: "78%", detail: "주간 평균 출석", accent: "green" as const, icon: "event_available" },
+      { id: "growth", label: "성장률", value: "+12%", detail: "전월 대비", accent: "primary" as const, icon: "trending_up" },
+      { id: "dues", label: "회비 납부", value: "91%", detail: "현재 납부 완료율", icon: "payments" },
     ],
     [],
   );

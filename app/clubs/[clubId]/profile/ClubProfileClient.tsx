@@ -3,6 +3,7 @@
 import { RouterLink } from "@/app/components/RouterLink";
 import { motion, useReducedMotion } from "motion/react";
 import { ClubModeSwitchFab } from "@/app/components/ClubModeSwitchFab";
+import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import { staggeredFadeUpMotion } from "@/app/lib/motion";
 import type {
   ClubDashboard,
@@ -41,23 +42,19 @@ export function ClubProfileClient({ club, profile }: ClubProfileClientProps) {
   return (
     <div className="min-h-full bg-[var(--background-light)] font-display text-slate-900">
       <div className="mx-auto flex min-h-full max-w-md flex-col bg-white shadow-xl">
-        <header className="flex items-center justify-between px-4 pb-2 pt-6">
-          <RouterLink
-            href={`/clubs/${club.id}`}
-            className="flex size-10 items-center justify-center rounded-full transition-colors hover:bg-slate-100"
-            aria-label={`${club.name} 홈으로 이동`}
-          >
-            <span className="material-symbols-outlined">arrow_back</span>
-          </RouterLink>
-          <h1 className="text-lg font-bold tracking-tight">My Profile</h1>
-          <button
-            type="button"
-            className="flex size-10 items-center justify-center rounded-full transition-colors hover:bg-slate-100"
-            aria-label="프로필 설정"
-          >
-            <span className="material-symbols-outlined">settings</span>
-          </button>
-        </header>
+        <ClubPageHeader
+          title="My Profile"
+          subtitle={club.name}
+          rightSlot={
+            <button
+              type="button"
+              className="flex size-10 items-center justify-center rounded-full transition-colors hover:bg-slate-100"
+              aria-label="프로필 설정"
+            >
+              <span className="material-symbols-outlined">settings</span>
+            </button>
+          }
+        />
 
         <main className="semo-nav-bottom-space flex-1">
           <motion.section

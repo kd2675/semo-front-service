@@ -18,35 +18,11 @@ type ClubNoticeDetailClientProps = {
 };
 
 type NoticeDetailBodyProps = {
-  clubId: string;
   payload: ClubNoticeDetailResponse | null;
   error: string | null;
   reduceMotion: boolean;
 };
-
-function getLinkedTargetHref(clubId: string, payload: ClubNoticeDetailResponse) {
-  if (payload.linkedTargetType === "SCHEDULE_EVENT" && payload.linkedTargetId != null) {
-    return `/clubs/${clubId}/schedule/${payload.linkedTargetId}`;
-  }
-  if (payload.linkedTargetType === "POLL" && payload.linkedTargetId != null) {
-    return `/clubs/${clubId}/more/polls/${payload.linkedTargetId}`;
-  }
-  return null;
-}
-
-function getLinkedTargetLabel(payload: ClubNoticeDetailResponse) {
-  if (payload.linkedTargetType === "SCHEDULE_EVENT") {
-    return "연결된 일정 바로 보기";
-  }
-  if (payload.linkedTargetType === "POLL") {
-    return "연결된 투표 바로 보기";
-  }
-  return null;
-}
-
-function NoticeDetailBody({ clubId, payload, error, reduceMotion }: NoticeDetailBodyProps) {
-  const linkedTargetHref = payload ? getLinkedTargetHref(clubId, payload) : null;
-  const linkedTargetLabel = payload ? getLinkedTargetLabel(payload) : null;
+function NoticeDetailBody({ payload, error, reduceMotion }: NoticeDetailBodyProps) {
 
   return (
     <>
@@ -99,25 +75,8 @@ function NoticeDetailBody({ clubId, payload, error, reduceMotion }: NoticeDetail
             </motion.section>
           ) : null}
 
-          {linkedTargetHref && linkedTargetLabel ? (
-            <motion.section className="px-4 pt-5" {...staggeredFadeUpMotion(4, reduceMotion)}>
-              <RouterLink
-                href={linkedTargetHref}
-                className="flex items-center justify-between rounded-2xl border border-[var(--primary)]/10 bg-[var(--primary)]/[0.04] px-4 py-4 transition-colors hover:bg-[var(--primary)]/[0.08]"
-              >
-                <div>
-                  <p className="text-sm font-bold text-slate-900">{linkedTargetLabel}</p>
-                  <p className="mt-1 text-xs text-slate-500">
-                    공지와 연결된 원본 {payload.linkedTargetType === "SCHEDULE_EVENT" ? "일정" : "투표"} 상세로 이동합니다.
-                  </p>
-                </div>
-                <span className="material-symbols-outlined text-slate-400">chevron_right</span>
-              </RouterLink>
-            </motion.section>
-          ) : null}
-
           {payload.scheduleAtLabel || payload.locationLabel ? (
-            <motion.section className="px-4 pt-5" {...staggeredFadeUpMotion(5, reduceMotion)}>
+            <motion.section className="px-4 pt-5" {...staggeredFadeUpMotion(4, reduceMotion)}>
               <div className="rounded-2xl bg-[var(--primary)]/5 px-4 py-4">
                 <div className="mb-2 flex items-center gap-2 text-sm font-bold text-[var(--primary)]">
                   <span className="material-symbols-outlined text-[18px]">calendar_month</span>
@@ -136,7 +95,7 @@ function NoticeDetailBody({ clubId, payload, error, reduceMotion }: NoticeDetail
             </motion.section>
           ) : null}
 
-          <motion.section className="px-4 py-6" {...staggeredFadeUpMotion(6, reduceMotion)}>
+          <motion.section className="px-4 py-6" {...staggeredFadeUpMotion(5, reduceMotion)}>
             <div className="whitespace-pre-wrap text-[15px] leading-7 text-slate-700">
               {payload.content}
             </div>
@@ -192,12 +151,12 @@ export function ClubNoticeDetailClient({
           >
             <span className="material-symbols-outlined">close</span>
           </button>
-          <h2 className="flex-1 text-center text-lg font-bold leading-tight tracking-tight">Notice</h2>
+          <h2 className="flex-1 text-center text-lg font-bold leading-tight tracking-tight">공지</h2>
           <div className="w-10" />
         </header>
 
         <main className="semo-nav-bottom-space flex-1 overflow-y-auto">
-          <NoticeDetailBody clubId={clubId} payload={payload} error={error} reduceMotion={reduceMotion} />
+          <NoticeDetailBody payload={payload} error={error} reduceMotion={reduceMotion} />
         </main>
       </div>
     );
@@ -214,12 +173,12 @@ export function ClubNoticeDetailClient({
           >
             <span className="material-symbols-outlined">arrow_back</span>
           </RouterLink>
-          <h2 className="flex-1 text-center text-lg font-bold leading-tight tracking-tight">Notice</h2>
+          <h2 className="flex-1 text-center text-lg font-bold leading-tight tracking-tight">공지</h2>
           <div className="w-10" />
         </header>
 
         <main className="semo-nav-bottom-space flex-1">
-          <NoticeDetailBody clubId={clubId} payload={payload} error={error} reduceMotion={reduceMotion} />
+          <NoticeDetailBody payload={payload} error={error} reduceMotion={reduceMotion} />
         </main>
 
         {payload?.admin ? <ClubModeSwitchFab clubId={clubId} mode="user" /> : null}

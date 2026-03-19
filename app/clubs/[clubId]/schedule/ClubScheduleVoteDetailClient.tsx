@@ -191,8 +191,8 @@ export function ClubScheduleVoteDetailClient({
         </header>
 
         <main
-          className={`no-scrollbar flex-1 overflow-y-auto p-5 ${
-            isModal ? "pb-8" : "semo-nav-bottom-space"
+          className={`no-scrollbar flex-1 p-5 ${
+            isModal ? "overflow-y-auto pb-8" : "semo-nav-bottom-space"
           }`}
         >
           {error ? (
@@ -284,18 +284,6 @@ export function ClubScheduleVoteDetailClient({
                   );
                 })}
 
-                {payload.linkedNoticeId ? (
-                  <RouterLink
-                    href={`/clubs/${clubId}/board/${payload.linkedNoticeId}`}
-                    className="flex items-center justify-between rounded-2xl border border-slate-100 bg-slate-50 px-4 py-4"
-                  >
-                    <div>
-                      <p className="text-sm font-bold text-slate-900">게시판 공지와 연결됨</p>
-                      <p className="mt-1 text-xs text-slate-500">공지 화면에서도 이 투표를 확인할 수 있습니다.</p>
-                    </div>
-                    <span className="material-symbols-outlined text-slate-400">chevron_right</span>
-                  </RouterLink>
-                ) : null}
               </motion.section>
 
               {showPrimaryAction || showAdminCloseAction ? (

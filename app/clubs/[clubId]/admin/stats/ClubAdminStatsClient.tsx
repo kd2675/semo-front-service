@@ -127,7 +127,7 @@ export function ClubAdminStatsClient({
                 <p className="text-xs text-slate-500">최근 6개월 데이터</p>
               </div>
               <div className="text-right">
-                <p className="text-lg font-bold text-[var(--primary)]">1.2k</p>
+                <p className="text-lg font-bold text-[var(--primary)]">1,200명</p>
                 <p className="text-[10px] font-bold text-green-500">전월 대비 +15%</p>
               </div>
             </div>
@@ -181,7 +181,7 @@ export function ClubAdminStatsClient({
                   />
                   {bar.max ? (
                     <div className="absolute -top-6 left-1/2 -translate-x-1/2 text-[10px] font-bold text-[var(--primary)]">
-                      MAX
+                      최고
                     </div>
                   ) : null}
                 </motion.div>
@@ -199,7 +199,7 @@ export function ClubAdminStatsClient({
             {...staggeredFadeUpMotion(13, reduceMotion)}
           >
             <div className="mb-6 flex items-center justify-between">
-              <h3 className="font-bold text-slate-800">매출 vs 지출 추이</h3>
+              <h3 className="font-bold text-slate-800">매출·지출 추이</h3>
               <div className="flex gap-4">
                 <div className="flex items-center gap-1.5">
                   <div className="h-2.5 w-2.5 rounded-full bg-[var(--primary)]" />
@@ -215,7 +215,7 @@ export function ClubAdminStatsClient({
               <div>
                 <div className="mb-1.5 flex justify-between text-xs">
                   <span className="font-medium">이번 달 매출 목표 (85%)</span>
-                  <span className="font-bold">₩10.2M / 12.0M</span>
+                  <span className="font-bold">₩10,200,000 / 12,000,000</span>
                 </div>
                 <div className="h-2.5 w-full overflow-hidden rounded-full bg-slate-100">
                   <div className="h-full w-[85%] rounded-full bg-[var(--primary)]" />
@@ -224,7 +224,7 @@ export function ClubAdminStatsClient({
               <div>
                 <div className="mb-1.5 flex justify-between text-xs">
                   <span className="font-medium">지출 예산 집행 (62%)</span>
-                  <span className="font-bold">₩4.8M / 7.5M</span>
+                  <span className="font-bold">₩4,800,000 / 7,500,000</span>
                 </div>
                 <div className="h-2.5 w-full overflow-hidden rounded-full bg-slate-100">
                   <div className="h-full w-[62%] rounded-full bg-slate-400" />

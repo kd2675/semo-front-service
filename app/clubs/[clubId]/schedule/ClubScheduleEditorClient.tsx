@@ -109,7 +109,7 @@ export function ClubScheduleEditorClient({
   const [feeAmountUndecided, setFeeAmountUndecided] = useState(false);
   const [feeNWaySplit, setFeeNWaySplit] = useState(false);
   const [postToBoard, setPostToBoard] = useState(false);
-  const [clubName, setClubName] = useState(initialClubName ?? "Schedule Studio");
+  const [clubName, setClubName] = useState(initialClubName ?? "일정 스튜디오");
   const [loading, setLoading] = useState(isEdit);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -270,6 +270,14 @@ export function ClubScheduleEditorClient({
     setProgressWidth((current) => Math.max(current, nextProgressWidth));
   };
 
+  const syncProgressFromWindow = useEffectEvent(() => {
+    updateProgressWidth(
+      window.scrollY ?? window.pageYOffset ?? 0,
+      document.documentElement.scrollHeight,
+      window.innerHeight,
+    );
+  });
+
   const handleMainScroll = (event: UIEvent<HTMLElement>) => {
     updateProgressWidth(
       event.currentTarget.scrollTop,
@@ -279,6 +287,30 @@ export function ClubScheduleEditorClient({
   };
 
   useEffect(() => {
+    if (isModal) {
+      return;
+    }
+
+    const handleWindowScroll = () => {
+      syncProgressFromWindow();
+    };
+
+    syncProgressFromWindow();
+    window.addEventListener("scroll", handleWindowScroll, { passive: true });
+    window.addEventListener("resize", handleWindowScroll);
+
+    return () => {
+      window.removeEventListener("scroll", handleWindowScroll);
+      window.removeEventListener("resize", handleWindowScroll);
+    };
+  }, [isModal]);
+
+  useEffect(() => {
+    if (!isModal) {
+      syncProgressFromWindow();
+      return;
+    }
+
     const mainElement = mainRef.current;
     if (!mainElement) {
       return;
@@ -289,7 +321,7 @@ export function ClubScheduleEditorClient({
       mainElement.scrollHeight,
       mainElement.clientHeight,
     );
-  }, [loading, scheduleDateMode, participationEnabled, feeRequired, error]);
+  }, [isModal, loading, scheduleDateMode, participationEnabled, feeRequired, error]);
 
   if (loading) {
     return <ClubEditorLoadingShell presentation={presentation} />;
@@ -323,8 +355,8 @@ export function ClubScheduleEditorClient({
           </header>
 
           <main
-            className={`flex flex-1 flex-col gap-1 overflow-y-auto ${
-              isModal ? "pb-24" : "semo-nav-bottom-space"
+            className={`flex flex-1 flex-col gap-1 ${
+              isModal ? "overflow-y-auto pb-24" : "semo-nav-bottom-space"
             }`}
           >
             <form id={formId} onSubmit={handleSubmit}>
@@ -639,9 +671,9 @@ export function ClubScheduleEditorClient({
         </header>
 
         <main
-          ref={mainRef}
-          onScroll={handleMainScroll}
-          className={`flex-1 overflow-y-auto ${isModal ? "pb-6" : "semo-nav-bottom-space"}`}
+          ref={isModal ? mainRef : undefined}
+          onScroll={isModal ? handleMainScroll : undefined}
+          className={`flex-1 ${isModal ? "overflow-y-auto pb-6" : "semo-nav-bottom-space"}`}
         >
           <form id={formId} onSubmit={handleSubmit}>
             <section className="space-y-4 p-4">

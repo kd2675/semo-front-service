@@ -1,9 +1,9 @@
 "use client";
 
-import { RouterLink } from "@/app/components/RouterLink";
 import { motion, useReducedMotion } from "motion/react";
 import { useEffect, useState } from "react";
 import { ClubModeSwitchFab } from "@/app/components/ClubModeSwitchFab";
+import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import { getClubProfile, type ClubProfileResponse } from "@/app/lib/clubs";
 import { staggeredFadeUpMotion } from "@/app/lib/motion";
 import { ClubProfileLoadingShell } from "../ClubRouteLoadingShells";
@@ -46,16 +46,7 @@ export function ClubProfileFallbackClient({ clubId }: ClubProfileFallbackClientP
   return (
     <div className="min-h-full bg-[var(--background-light)] font-display text-slate-900">
       <div className="mx-auto flex min-h-full max-w-md flex-col bg-white shadow-xl">
-        <header className="flex items-center justify-between px-4 pb-2 pt-6">
-          <RouterLink
-            href={`/clubs/${clubId}`}
-            className="flex size-10 items-center justify-center rounded-full transition-colors hover:bg-slate-100"
-          >
-            <span className="material-symbols-outlined">arrow_back</span>
-          </RouterLink>
-          <h1 className="text-lg font-bold tracking-tight">Club Profile</h1>
-          <div className="size-10" />
-        </header>
+        <ClubPageHeader title="Club Profile" />
 
         <main className="semo-nav-bottom-space flex-1">
           <motion.section className="px-4 py-6" {...staggeredFadeUpMotion(0, reduceMotion)}>

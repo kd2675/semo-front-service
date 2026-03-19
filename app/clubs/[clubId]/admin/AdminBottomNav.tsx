@@ -10,12 +10,14 @@ import {
   type ClubFeatureSummary,
 } from "@/app/lib/clubs";
 import { overlayFadeMotion, popInMotion } from "@/app/lib/motion";
+import { useBottomNavScrollDocking } from "@/app/components/useBottomNavScrollDocking";
 
 type AdminBottomNavProps = {
   clubId: string;
 };
 
 type AdminNavItem = {
+  key: "HOME" | "MENU" | "MEMBERS" | "MORE" | "STATS";
   label: string;
   icon: string;
   href?: (clubId: string) => string;
@@ -23,11 +25,11 @@ type AdminNavItem = {
 };
 
 const ADMIN_ITEMS: AdminNavItem[] = [
-  { label: "Home", icon: "home", href: (clubId: string) => `/clubs/${clubId}/admin`, exact: true },
-  { label: "Menu", icon: "apps", href: (clubId: string) => `/clubs/${clubId}/admin/menu` },
-  { label: "Members", icon: "groups", href: (clubId: string) => `/clubs/${clubId}/admin/members` },
-  { label: "More", icon: "more_horiz" },
-  { label: "Stats", icon: "insights", href: (clubId: string) => `/clubs/${clubId}/admin/stats` },
+  { key: "HOME", label: "홈", icon: "home", href: (clubId: string) => `/clubs/${clubId}/admin`, exact: true },
+  { key: "MENU", label: "메뉴", icon: "apps", href: (clubId: string) => `/clubs/${clubId}/admin/menu` },
+  { key: "MEMBERS", label: "멤버", icon: "groups", href: (clubId: string) => `/clubs/${clubId}/admin/members` },
+  { key: "MORE", label: "더보기", icon: "more_horiz" },
+  { key: "STATS", label: "통계", icon: "insights", href: (clubId: string) => `/clubs/${clubId}/admin/stats` },
 ];
 
 const FEATURE_ACCENT_CLASS: Record<string, string> = {
@@ -37,6 +39,18 @@ const FEATURE_ACCENT_CLASS: Record<string, string> = {
   POLL: "bg-amber-50 text-[#ec5b13]",
   SCHEDULE_MANAGE: "bg-cyan-50 text-cyan-600",
 };
+
+const FEATURE_NAME_BY_KEY: Record<string, string> = {
+  ATTENDANCE: "출석 체크",
+  TIMELINE: "타임라인",
+  NOTICE: "공지",
+  POLL: "투표",
+  SCHEDULE_MANAGE: "일정 관리",
+};
+
+function getFeatureDisplayName(feature: ClubFeatureSummary) {
+  return FEATURE_NAME_BY_KEY[feature.featureKey] ?? feature.displayName;
+}
 
 function withMockFeaturePaths(clubId: string, feature: ClubFeatureSummary): ClubFeatureSummary {
   if (feature.featureKey === "TIMELINE") {
@@ -92,8 +106,6 @@ const POPOVER_ITEM_VARIANTS = {
   }),
 };
 
-const DOCK_TRIGGER_OFFSET_PX = 120;
-let persistedDockedState = true;
 const ADMIN_ACTIVE_TEXT_CLASS = "text-[#ec5b13]";
 const ADMIN_INACTIVE_TEXT_CLASS = "text-slate-400";
 const ADMIN_ACTIVE_DOT_CLASS = "bg-[#ec5b13]";
@@ -102,7 +114,7 @@ export function AdminBottomNav({ clubId }: AdminBottomNavProps) {
   const pathname = usePathname();
   const prefersReducedMotion = useReducedMotion();
   const reduceMotion = Boolean(prefersReducedMotion);
-  const [isDocked, setIsDocked] = useState(() => persistedDockedState);
+  const isDocked = useBottomNavScrollDocking({ routeKey: pathname });
   const [openMenuPathname, setOpenMenuPathname] = useState<string | null>(null);
   const [enabledFeatures, setEnabledFeatures] = useState<ClubFeatureSummary[]>([]);
   const menuItems = enabledFeatures;
@@ -147,38 +159,6 @@ export function AdminBottomNav({ clubId }: AdminBottomNavProps) {
   }, [clubId]);
 
   useEffect(() => {
-    persistedDockedState = isDocked;
-  }, [isDocked]);
-
-  useEffect(() => {
-    let rafId = 0;
-
-    const recalcDocking = () => {
-      const viewportHeight = window.innerHeight;
-      const scrollTop = window.scrollY ?? 0;
-      const contentHeight = document.documentElement.scrollHeight;
-      const hasScrollableContent = contentHeight > viewportHeight + 2;
-      const atBottom = scrollTop + viewportHeight >= contentHeight - DOCK_TRIGGER_OFFSET_PX;
-      setIsDocked(!hasScrollableContent || atBottom);
-    };
-
-    const onScroll = () => {
-      cancelAnimationFrame(rafId);
-      rafId = window.requestAnimationFrame(recalcDocking);
-    };
-
-    recalcDocking();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    window.addEventListener("resize", onScroll);
-
-    return () => {
-      cancelAnimationFrame(rafId);
-      window.removeEventListener("scroll", onScroll);
-      window.removeEventListener("resize", onScroll);
-    };
-  }, [pathname]);
-
-  useEffect(() => {
     if (!isMoreOpen) {
       return;
     }
@@ -216,7 +196,7 @@ export function AdminBottomNav({ clubId }: AdminBottomNavProps) {
   const renderButtons = () =>
     ADMIN_ITEMS.map((item) => {
       const href = item.href?.(clubId);
-      const isMoreItem = item.label === "More";
+      const isMoreItem = item.key === "MORE";
       const isActive = Boolean(
         isMoreItem
           ? isMoreOpen || isFeatureRouteActive
@@ -358,7 +338,7 @@ export function AdminBottomNav({ clubId }: AdminBottomNavProps) {
                             </span>
                           </div>
                           <span className="text-center text-[11px] font-semibold leading-4">
-                            {item.displayName}
+                            {getFeatureDisplayName(item)}
                           </span>
                         </RouterLink>
                       </motion.div>

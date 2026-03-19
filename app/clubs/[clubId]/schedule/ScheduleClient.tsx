@@ -1,9 +1,10 @@
 "use client";
 
-import { RouterLink } from "@/app/components/RouterLink";
 import { startTransition, useMemo, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { ClubModeSwitchFab } from "@/app/components/ClubModeSwitchFab";
+import { ClubPageHeader } from "@/app/components/ClubPageHeader";
+import { ClubPollDetailModal, ClubScheduleEventDetailModal } from "@/app/components/ClubDetailModals";
 import { RouteModal } from "@/app/components/RouteModal";
 import { staggeredFadeUpMotion } from "@/app/lib/motion";
 import type {
@@ -13,8 +14,6 @@ import type {
 } from "@/app/lib/clubs";
 import { deleteClubScheduleEvent, deleteClubScheduleVote } from "@/app/lib/clubs";
 import { ClubScheduleEditorClient } from "./ClubScheduleEditorClient";
-import { ClubScheduleDetailClient } from "./ClubScheduleDetailClient";
-import { ClubScheduleVoteDetailClient } from "./ClubScheduleVoteDetailClient";
 import { ClubScheduleVoteEditorClient } from "./ClubScheduleVoteEditorClient";
 import { ScheduleActionConfirmModal } from "./ScheduleActionConfirmModal";
 import { ScheduleManageCard } from "./ScheduleManageCard";
@@ -322,8 +321,7 @@ export function ScheduleClient({
 }: ScheduleClientProps) {
   const prefersReducedMotion = useReducedMotion();
   const reduceMotion = Boolean(prefersReducedMotion);
-  const isRealClub = !Number.isNaN(Number(clubId));
-  const canManageSchedule = payload.admin && isRealClub;
+  const canManageSchedule = false;
   const month = useMemo(
     () => buildCalendarMonth(activeYear, activeMonth, payload.monthEvents, payload.votes),
     [activeMonth, activeYear, payload.monthEvents, payload.votes],
@@ -405,17 +403,7 @@ export function ScheduleClient({
   return (
     <div className="bg-[var(--background-light)] font-display text-slate-900">
       <div className="relative mx-auto flex min-h-full w-full max-w-md flex-col bg-[var(--background-light)]">
-        <header className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-200 bg-white p-4">
-          <RouterLink
-            href={`/clubs/${clubId}`}
-            className="flex size-10 shrink-0 items-center justify-center text-slate-900"
-            aria-label={`${payload.clubName} 홈으로 돌아가기`}
-          >
-            <span className="material-symbols-outlined">arrow_back</span>
-          </RouterLink>
-          <h2 className="flex-1 text-center text-lg font-bold leading-tight tracking-tight">일정</h2>
-          <div className="w-10 shrink-0" />
-        </header>
+        <ClubPageHeader title="일정" subtitle={payload.clubName} />
 
         <main className="semo-nav-bottom-space relative flex-1">
           <motion.div className="bg-white p-4 shadow-sm" {...staggeredFadeUpMotion(0, reduceMotion)}>
@@ -618,14 +606,11 @@ export function ScheduleClient({
         {payload.admin ? <ClubModeSwitchFab clubId={clubId} mode="user" /> : null}
         <AnimatePresence>
           {detailEventId ? (
-            <RouteModal onDismiss={() => setDetailEventId(null)}>
-              <ClubScheduleDetailClient
-                clubId={clubId}
-                eventId={detailEventId}
-                presentation="modal"
-                onRequestClose={() => setDetailEventId(null)}
-              />
-            </RouteModal>
+            <ClubScheduleEventDetailModal
+              clubId={clubId}
+              eventId={detailEventId}
+              onRequestClose={() => setDetailEventId(null)}
+            />
           ) : null}
           {editingEventId ? (
             <RouteModal onDismiss={() => setEditingEventId(null)} dismissOnBackdrop={false}>
@@ -648,15 +633,11 @@ export function ScheduleClient({
             </RouteModal>
           ) : null}
           {detailVoteId ? (
-            <RouteModal onDismiss={() => setDetailVoteId(null)}>
-              <ClubScheduleVoteDetailClient
-                clubId={clubId}
-                voteId={detailVoteId}
-                presentation="modal"
-                basePath={`/clubs/${clubId}/more/polls`}
-                onRequestClose={() => setDetailVoteId(null)}
-              />
-            </RouteModal>
+            <ClubPollDetailModal
+              clubId={clubId}
+              voteId={detailVoteId}
+              onRequestClose={() => setDetailVoteId(null)}
+            />
           ) : null}
           {editingVoteId ? (
             <RouteModal onDismiss={() => setEditingVoteId(null)} dismissOnBackdrop={false}>

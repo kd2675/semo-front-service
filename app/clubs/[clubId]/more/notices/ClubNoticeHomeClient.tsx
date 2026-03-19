@@ -3,15 +3,22 @@
 import { RouteModal } from "@/app/components/RouteModal";
 import { RouterLink } from "@/app/components/RouterLink";
 import { ClubModeSwitchFab } from "@/app/components/ClubModeSwitchFab";
+import { ClubPageHeader } from "@/app/components/ClubPageHeader";
+import { ClubNoticeDetailModal, ClubPollDetailModal, ClubScheduleEventDetailModal } from "@/app/components/ClubDetailModals";
 import { ScheduleActionConfirmModal } from "@/app/clubs/[clubId]/schedule/ScheduleActionConfirmModal";
 import { getNoticeAccentClasses } from "@/app/lib/notice-category";
-import { deleteClubNotice, type ClubNoticeHomeResponse, type ClubNoticeListItem } from "@/app/lib/clubs";
+import {
+  deleteClubNotice,
+  type ClubNoticeHomeResponse,
+  type ClubNoticeListItem,
+  type ClubScheduleEventSummary,
+  type ClubScheduleVoteSummary,
+} from "@/app/lib/clubs";
 import { staggeredFadeUpMotion } from "@/app/lib/motion";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import Image from "next/image";
 import { startTransition, useDeferredValue, useMemo, useState, type CSSProperties } from "react";
 import { ClubNoticeEditorClient } from "../../board/ClubNoticeEditorClient";
-import { ClubNoticeDetailClient } from "../../board/[noticeId]/ClubNoticeDetailClient";
 
 type ClubNoticeHomeClientProps = {
   clubId: string;
@@ -190,6 +197,21 @@ function UserNoticeCard({
   );
 }
 
+function getSharedEventSecondaryText(event: ClubScheduleEventSummary) {
+  const parts = [event.dateLabel, event.timeLabel, event.locationLabel].filter(Boolean);
+  return parts.length > 0 ? parts.join(" • ") : "세부 안내 없음";
+}
+
+function getSharedVoteStatusLabel(vote: ClubScheduleVoteSummary) {
+  if (vote.voteStatus === "CLOSED") {
+    return "종료";
+  }
+  if (vote.voteStatus === "WAITING") {
+    return "예정";
+  }
+  return vote.mySelectedOptionId ? "참여 완료" : "진행 중";
+}
+
 export function ClubNoticeHomeClient({
   clubId,
   payload,
@@ -202,6 +224,8 @@ export function ClubNoticeHomeClient({
   const deferredQuery = useDeferredValue(query);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [detailNoticeId, setDetailNoticeId] = useState<string | null>(null);
+  const [sharedEventDetailId, setSharedEventDetailId] = useState<string | null>(null);
+  const [sharedVoteDetailId, setSharedVoteDetailId] = useState<string | null>(null);
   const [editingNoticeId, setEditingNoticeId] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<ClubNoticeListItem | null>(null);
   const [activeMenuNoticeId, setActiveMenuNoticeId] = useState<number | null>(null);
@@ -210,6 +234,8 @@ export function ClubNoticeHomeClient({
   const accent = mode === "admin" ? "#f97316" : "#135bec";
   const background = mode === "admin" ? "#f6f6f8" : "#f6f6f8";
   const basePath = mode === "admin" ? `/clubs/${clubId}/admin/more/notices` : `/clubs/${clubId}/more/notices`;
+  const sharedEvents = payload.sharedEvents ?? [];
+  const sharedVotes = payload.sharedVotes ?? [];
 
   const filteredNotices = useMemo(() => {
     const normalizedQuery = deferredQuery.trim().toLowerCase();
@@ -245,71 +271,64 @@ export function ClubNoticeHomeClient({
       style={{ "--primary": accent, "--background-light": background } as CSSProperties}
     >
       <div className="relative mx-auto flex min-h-full max-w-md flex-col bg-[var(--background-light)]">
-        <header
-          className={`sticky top-0 z-20 border-b ${
-            mode === "admin"
-              ? "border-orange-100 bg-white/85 text-slate-900 backdrop-blur-md"
-              : "border-slate-200 bg-white text-slate-900"
-          }`}
-        >
-          <div className="mx-auto flex max-w-md items-center justify-between gap-3 px-4 py-4">
-            <div className="flex items-center gap-3">
-              <RouterLink
-                href={mode === "admin" ? `/clubs/${clubId}/admin` : `/clubs/${clubId}`}
-                className={`flex size-10 items-center justify-center rounded-full transition ${
-                  mode === "admin"
-                    ? "text-[var(--primary)] hover:bg-[var(--primary)]/10"
-                    : "hover:bg-white/10"
-                }`}
-                aria-label="뒤로 가기"
-              >
-                <span className="material-symbols-outlined text-[22px]">arrow_back</span>
-              </RouterLink>
-              <div className="flex items-center gap-3">
-                <div
-                  className={`flex h-11 w-11 items-center justify-center rounded-2xl ${
-                    mode === "admin" ? "bg-[var(--primary)]/10" : "bg-[var(--primary)]/10"
-                  }`}
-                >
-                  <span className="material-symbols-outlined text-[24px] text-[var(--primary)]">
-                    campaign
-                  </span>
-                </div>
-                <div>
-                  {mode === "admin" ? (
-                    <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--primary)]/70">
-                      Admin More
-                    </p>
-                  ) : null}
-                  <h1 className={`${mode === "admin" ? "text-xl" : "text-lg"} font-bold tracking-tight`}>
-                    {mode === "admin" ? "공지 관리" : "공지 작성"}
-                  </h1>
-                  <p className="text-xs text-slate-500">{payload.clubName}</p>
-                </div>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              {mode === "admin" ? (
-                <span className="rounded-full bg-[var(--primary)]/10 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--primary)]">
-                  Board
-                </span>
-              ) : null}
+        {mode === "user" ? (
+          <ClubPageHeader
+            title="공지 관리"
+            subtitle={payload.clubName}
+            icon="campaign"
+            rightSlot={
               <RouterLink
                 href={`/clubs/${clubId}/board`}
-                className={`inline-flex items-center gap-1 rounded-full px-3 py-2 text-xs font-semibold ${
-                  mode === "admin"
-                    ? "bg-[var(--primary)]/10 text-[var(--primary)] hover:bg-[var(--primary)]/15"
-                    : "bg-[var(--primary)]/10 text-[var(--primary)] hover:bg-[var(--primary)]/15"
-                }`}
+                className="inline-flex items-center gap-1 rounded-full bg-[var(--primary)]/10 px-3 py-2 text-xs font-semibold text-[var(--primary)] hover:bg-[var(--primary)]/15"
               >
                 게시판 보기
                 <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
               </RouterLink>
+            }
+          />
+        ) : (
+          <header className="sticky top-0 z-20 border-b border-orange-100 bg-white/85 text-slate-900 backdrop-blur-md">
+            <div className="mx-auto flex max-w-md items-center justify-between gap-3 px-4 py-4">
+              <div className="flex items-center gap-3">
+                <RouterLink
+                  href={`/clubs/${clubId}/admin`}
+                  className="flex size-10 items-center justify-center rounded-full text-[var(--primary)] transition hover:bg-[var(--primary)]/10"
+                  aria-label="뒤로 가기"
+                >
+                  <span className="material-symbols-outlined text-[22px]">arrow_back</span>
+                </RouterLink>
+                <div className="flex items-center gap-3">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[var(--primary)]/10">
+                    <span className="material-symbols-outlined text-[24px] text-[var(--primary)]">
+                      campaign
+                    </span>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--primary)]/70">
+                      관리자 더보기
+                    </p>
+                    <h1 className="text-xl font-bold tracking-tight">공지 관리</h1>
+                    <p className="text-xs text-slate-500">{payload.clubName}</p>
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="rounded-full bg-[var(--primary)]/10 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--primary)]">
+                  공지
+                </span>
+                <RouterLink
+                  href={`/clubs/${clubId}/board`}
+                  className="inline-flex items-center gap-1 rounded-full bg-[var(--primary)]/10 px-3 py-2 text-xs font-semibold text-[var(--primary)] hover:bg-[var(--primary)]/15"
+                >
+                  게시판 보기
+                  <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
+                </RouterLink>
+              </div>
             </div>
-          </div>
-        </header>
+          </header>
+        )}
 
-        <main className="semo-nav-bottom-space flex-1 overflow-y-auto">
+        <main className="semo-nav-bottom-space flex-1">
           {mode === "admin" ? (
             <>
               <section className="px-4 py-6">
@@ -318,7 +337,7 @@ export function ClubNoticeHomeClient({
                     <h2 className="text-lg font-bold">공지 현황</h2>
                     <p className="mt-1 text-sm text-slate-500">최근 등록된 공지와 핵심 지표를 한 번에 봅니다.</p>
                   </div>
-                  <span className="text-sm font-medium text-[var(--primary)]">Live</span>
+                  <span className="text-sm font-medium text-[var(--primary)]">실시간</span>
                 </motion.div>
                 <div className="grid grid-cols-2 gap-4">
                   <motion.div {...staggeredFadeUpMotion(1, reduceMotion)}>
@@ -416,6 +435,14 @@ export function ClubNoticeHomeClient({
                           onMenuChange={(open) => setActiveMenuNoticeId(open ? notice.noticeId : null)}
                           onOpen={() => {
                             setActiveMenuNoticeId(null);
+                            if (notice.linkedTargetType === "POLL" && notice.linkedTargetId != null) {
+                              setSharedVoteDetailId(String(notice.linkedTargetId));
+                              return;
+                            }
+                            if (notice.linkedTargetType === "SCHEDULE_EVENT" && notice.linkedTargetId != null) {
+                              setSharedEventDetailId(String(notice.linkedTargetId));
+                              return;
+                            }
                             setDetailNoticeId(String(notice.noticeId));
                           }}
                           onEdit={() => {
@@ -434,6 +461,70 @@ export function ClubNoticeHomeClient({
               </section>
             </>
           )}
+
+          {sharedEvents.length > 0 || sharedVotes.length > 0 ? (
+            <section className="px-4 pb-8">
+              <motion.div className="mb-4 flex items-center justify-between" {...staggeredFadeUpMotion(28, reduceMotion)}>
+                <div>
+                  <h3 className="text-lg font-bold">일정/투표 공유 항목</h3>
+                  <p className="mt-1 text-sm text-slate-500">공지 화면에서 함께 보여줄 공유 데이터를 확인합니다.</p>
+                </div>
+                <span className="rounded-full bg-[var(--primary)]/10 px-3 py-1 text-xs font-bold text-[var(--primary)]">
+                  {sharedEvents.length + sharedVotes.length}건
+                </span>
+              </motion.div>
+
+              {sharedEvents.length > 0 ? (
+                <motion.div className="mb-6 space-y-3" {...staggeredFadeUpMotion(29, reduceMotion)}>
+                  <h4 className="text-sm font-bold text-slate-700">공유 일정</h4>
+                  {sharedEvents.map((event) => (
+                    <button
+                      type="button"
+                      key={`shared-event-${event.eventId}`}
+                      onClick={() => setSharedEventDetailId(String(event.eventId))}
+                      className="block w-full rounded-xl border border-slate-200 bg-white p-4 text-left shadow-sm transition hover:border-[var(--primary)]/50"
+                    >
+                      <div className="mb-2 flex items-center justify-between gap-3">
+                        <span className="rounded bg-[var(--primary)]/10 px-2 py-0.5 text-[11px] font-bold uppercase text-[var(--primary)]">
+                          일정
+                        </span>
+                        <span className="text-xs text-slate-400">{event.timeLabel ?? event.dateLabel}</span>
+                      </div>
+                      <p className="line-clamp-1 text-sm font-bold text-slate-900">{event.title}</p>
+                      <p className="mt-1 line-clamp-2 text-xs leading-5 text-slate-500">{getSharedEventSecondaryText(event)}</p>
+                    </button>
+                  ))}
+                </motion.div>
+              ) : null}
+
+              {sharedVotes.length > 0 ? (
+                <motion.div className="space-y-3" {...staggeredFadeUpMotion(30, reduceMotion)}>
+                  <h4 className="text-sm font-bold text-slate-700">공유 투표</h4>
+                  {sharedVotes.map((vote) => (
+                    <button
+                      type="button"
+                      key={`shared-vote-${vote.voteId}`}
+                      onClick={() => setSharedVoteDetailId(String(vote.voteId))}
+                      className="block w-full rounded-xl border border-amber-200 bg-white p-4 text-left shadow-sm transition hover:border-amber-400/70"
+                    >
+                      <div className="mb-2 flex items-center justify-between gap-3">
+                        <span className="rounded bg-amber-500/10 px-2 py-0.5 text-[11px] font-bold uppercase text-amber-600">
+                          투표
+                        </span>
+                        <span className="text-xs text-slate-400">{getSharedVoteStatusLabel(vote)}</span>
+                      </div>
+                      <p className="line-clamp-1 text-sm font-bold text-slate-900">{vote.title}</p>
+                      <p className="mt-1 line-clamp-2 text-xs leading-5 text-slate-500">
+                        {vote.votePeriodLabel}
+                        {vote.voteTimeLabel ? ` • ${vote.voteTimeLabel}` : ""}
+                        {` • ${vote.optionCount}개 항목`}
+                      </p>
+                    </button>
+                  ))}
+                </motion.div>
+              ) : null}
+            </section>
+          ) : null}
         </main>
 
         {payload.canCreate ? (
@@ -465,24 +556,39 @@ export function ClubNoticeHomeClient({
                 presentation="modal"
                 basePath={basePath}
                 onRequestClose={() => setShowCreateModal(false)}
-                onSaved={() => {
+                onSaved={(savedNoticeId) => {
                   setShowCreateModal(false);
                   onReload();
+                  setDetailNoticeId(String(savedNoticeId));
                 }}
               />
             </RouteModal>
           ) : null}
 
           {detailNoticeId ? (
-            <RouteModal onDismiss={() => setDetailNoticeId(null)}>
-              <ClubNoticeDetailClient
-                clubId={clubId}
-                noticeId={detailNoticeId}
-                presentation="modal"
-                basePath={basePath}
-                onRequestClose={() => setDetailNoticeId(null)}
-              />
-            </RouteModal>
+            <ClubNoticeDetailModal
+              clubId={clubId}
+              noticeId={detailNoticeId}
+              mode={mode}
+              onRequestClose={() => setDetailNoticeId(null)}
+            />
+          ) : null}
+
+          {sharedEventDetailId ? (
+            <ClubScheduleEventDetailModal
+              clubId={clubId}
+              eventId={sharedEventDetailId}
+              onRequestClose={() => setSharedEventDetailId(null)}
+            />
+          ) : null}
+
+          {sharedVoteDetailId ? (
+            <ClubPollDetailModal
+              clubId={clubId}
+              voteId={sharedVoteDetailId}
+              mode={mode}
+              onRequestClose={() => setSharedVoteDetailId(null)}
+            />
           ) : null}
 
           {editingNoticeId ? (
@@ -493,9 +599,10 @@ export function ClubNoticeHomeClient({
                 presentation="modal"
                 basePath={basePath}
                 onRequestClose={() => setEditingNoticeId(null)}
-                onSaved={() => {
+                onSaved={(savedNoticeId) => {
                   setEditingNoticeId(null);
                   onReload();
+                  setDetailNoticeId(String(savedNoticeId));
                 }}
                 onDeleted={() => {
                   setEditingNoticeId(null);

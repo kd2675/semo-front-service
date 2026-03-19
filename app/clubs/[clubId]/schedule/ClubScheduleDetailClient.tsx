@@ -180,11 +180,13 @@ export function ClubScheduleDetailClient({
               <span className="material-symbols-outlined text-[24px]">arrow_back</span>
             </RouterLink>
           )}
-          <h1 className="text-lg font-bold">Event Details</h1>
+          <h1 className="text-lg font-bold">일정 상세</h1>
           <div className="w-10" />
         </header>
 
-        <main className={`${isModal ? "" : "semo-nav-bottom-space "}flex-1 overflow-y-auto`}>
+        <main
+          className={`flex-1 ${isModal ? "overflow-y-auto" : "semo-nav-bottom-space"}`}
+        >
           {error ? (
             <motion.div
               className="mx-4 mt-4 rounded-2xl bg-rose-50 px-4 py-3 text-sm font-medium text-rose-600"
@@ -199,11 +201,11 @@ export function ClubScheduleDetailClient({
               <motion.section className="bg-white p-6" {...staggeredFadeUpMotion(2, reduceMotion)}>
                 <div className="mb-3 flex flex-wrap items-center gap-2">
                   <span className="rounded-md bg-[#e7effd] px-2 py-1 text-xs font-bold uppercase text-[#135bec]">
-                    Schedule
+                    일정
                   </span>
                   {payload.postedToBoard ? (
                     <span className="rounded-md bg-slate-100 px-2 py-1 text-xs font-bold uppercase text-slate-500">
-                      Notice
+                      공지
                     </span>
                   ) : null}
                   <span className="text-sm text-slate-400">#{toAttendanceLabel(payload.myParticipationStatus)}</span>
@@ -232,7 +234,7 @@ export function ClubScheduleDetailClient({
                 {payload.locationLabel ? (
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
-                      <h3 className="text-sm font-bold uppercase tracking-wider text-slate-500">Location</h3>
+                      <h3 className="text-sm font-bold tracking-wider text-slate-500">장소</h3>
                       {mapHref ? (
                         <a
                           href={mapHref}
@@ -240,7 +242,7 @@ export function ClubScheduleDetailClient({
                           rel="noreferrer"
                           className="text-sm font-semibold text-[#135bec]"
                         >
-                          Open Maps
+                          지도 열기
                         </a>
                       ) : null}
                     </div>
@@ -256,7 +258,7 @@ export function ClubScheduleDetailClient({
                     <div className="relative flex h-32 w-full items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-[linear-gradient(135deg,#f3f4f6_25%,#e5e7eb_100%)]">
                       <div className="flex flex-col items-center text-slate-400">
                         <span className="material-symbols-outlined mb-1 text-[32px]">map</span>
-                        <span className="text-[10px] font-bold uppercase tracking-[0.24em]">Map Preview</span>
+                        <span className="text-[10px] font-bold uppercase tracking-[0.24em]">지도 미리보기</span>
                       </div>
                     </div>
                   </div>
@@ -264,21 +266,21 @@ export function ClubScheduleDetailClient({
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="rounded-xl border border-[#f3f4f6] bg-[#f9fafb] p-4">
-                    <p className="mb-1 text-[11px] font-bold uppercase text-slate-400">Participants</p>
+                    <p className="mb-1 text-[11px] font-bold text-slate-400">참석 인원</p>
                     <p className="font-bold">
                       {payload.goingCount}
                       {payload.attendeeLimit ? ` / ${payload.attendeeLimit}` : ""}{" "}
-                      <span className="text-xs font-normal text-slate-400">Joined</span>
+                      <span className="text-xs font-normal text-slate-400">참석</span>
                     </p>
                   </div>
                   <div className="rounded-xl border border-[#f3f4f6] bg-[#f9fafb] p-4">
-                    <p className="mb-1 text-[11px] font-bold uppercase text-slate-400">Condition</p>
+                    <p className="mb-1 text-[11px] font-bold text-slate-400">참석 조건</p>
                     <p className="font-bold">{payload.participationConditionText ?? "조건 없음"}</p>
                   </div>
                 </div>
 
                 <div className="space-y-3">
-                  <h3 className="text-sm font-bold uppercase tracking-wider text-slate-500">Fees & Settlement</h3>
+                  <h3 className="text-sm font-bold uppercase tracking-wider text-slate-500">참가비 및 정산</h3>
                   <div className="flex items-center justify-between rounded-xl border border-[#e7effd] bg-[#e7effd]/40 p-4">
                     <div className="flex items-center gap-3">
                       <div className="rounded-lg bg-[#135bec] p-2 text-white">
@@ -286,7 +288,7 @@ export function ClubScheduleDetailClient({
                       </div>
                       <div>
                         <p className="text-sm font-bold text-[#135bec]">
-                          {payload.feeRequired ? (payload.feeNWaySplit ? "1/n 정산" : "참가비 있음") : "No Fee"}
+                          {payload.feeRequired ? (payload.feeNWaySplit ? "1/n 정산" : "참가비 있음") : "무료"}
                         </p>
                         <p className="text-[11px] font-medium text-[#135bec]/70">
                           {buildFeeDescription(payload)}
@@ -298,24 +300,12 @@ export function ClubScheduleDetailClient({
                 </div>
 
                 <div className="space-y-3">
-                  <h3 className="text-sm font-bold uppercase tracking-wider text-slate-500">Memo</h3>
+                  <h3 className="text-sm font-bold uppercase tracking-wider text-slate-500">메모</h3>
                   <div className="rounded-xl bg-slate-50 p-4 text-[15px] leading-relaxed text-slate-700">
                     {payload.participationConditionText ?? "추가 메모가 없습니다."}
                   </div>
                 </div>
 
-                {payload.linkedNoticeId ? (
-                  <RouterLink
-                    href={`/clubs/${clubId}/board/${payload.linkedNoticeId}`}
-                    className="flex items-center justify-between rounded-2xl border border-slate-100 bg-slate-50 px-5 py-4"
-                  >
-                    <div>
-                      <p className="text-sm font-bold text-slate-900">게시판 공지와 연결됨</p>
-                      <p className="mt-1 text-xs text-slate-500">공지 화면에서도 이 일정을 함께 확인할 수 있습니다.</p>
-                    </div>
-                    <span className="material-symbols-outlined text-slate-500">chevron_right</span>
-                  </RouterLink>
-                ) : null}
               </motion.section>
 
               <div className={showFooter ? "h-48" : "h-24"} />

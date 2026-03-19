@@ -83,7 +83,7 @@ export function ClubAdminTimelineClient({
             >
               <span className="material-symbols-outlined">arrow_back</span>
             </RouterLink>
-            <h1 className="flex-1 text-center text-lg font-bold tracking-tight">Timeline Settings</h1>
+            <h1 className="flex-1 text-center text-lg font-bold tracking-tight">타임라인 설정</h1>
             <div className="w-10" />
           </div>
         </header>
@@ -94,9 +94,9 @@ export function ClubAdminTimelineClient({
             {...staggeredFadeUpMotion(0, reduceMotion)}
           >
             <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">
-              Visible Categories
+              노출 카테고리
             </p>
-            <h2 className="mt-3 text-2xl font-bold">{visibleCount} categories</h2>
+            <h2 className="mt-3 text-2xl font-bold">{visibleCount}개</h2>
             <p className="mt-2 text-sm leading-relaxed text-slate-500">
               타임라인 피드는 공지 데이터를 그대로 사용합니다. 여기서는 어떤 공지 카테고리를
               타임라인에서 보여줄지만 정합니다.
@@ -169,7 +169,7 @@ export function ClubAdminTimelineClient({
                 <span className="material-symbols-outlined">
                   {saving ? "progress_activity" : "save"}
                 </span>
-                {saving ? "Saving..." : "Save Changes"}
+                {saving ? "저장 중..." : "변경사항 저장"}
               </button>
               {feedback ? (
                 <p className="mt-3 text-center text-xs font-medium text-slate-500">

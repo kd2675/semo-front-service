@@ -23,6 +23,29 @@ type ClubAdminAttendanceClientProps = {
   canPersist?: boolean;
 };
 
+function getSessionStatusLabel(status: string | null | undefined) {
+  if (status === "OPEN") {
+    return "진행 중";
+  }
+  if (status === "CLOSED") {
+    return "종료";
+  }
+  return "대기";
+}
+
+function getRoleLabel(roleCode: string) {
+  if (roleCode === "OWNER") {
+    return "오너";
+  }
+  if (roleCode === "ADMIN") {
+    return "어드민";
+  }
+  if (roleCode === "MEMBER") {
+    return "회원";
+  }
+  return roleCode;
+}
+
 export function ClubAdminAttendanceClient({
   clubId,
   initialData,
@@ -38,7 +61,7 @@ export function ClubAdminAttendanceClient({
 
   const handleCreateSession = async () => {
     if (!canPersist) {
-      setFeedback("Mock mode에서는 세션이 저장되지 않습니다.");
+      setFeedback("모의 모드에서는 세션이 저장되지 않습니다.");
       return;
     }
 
@@ -77,7 +100,7 @@ export function ClubAdminAttendanceClient({
       return;
     }
     if (!canPersist) {
-      setFeedback("Mock mode에서는 세션 상태가 저장되지 않습니다.");
+      setFeedback("모의 모드에서는 세션 상태가 저장되지 않습니다.");
       return;
     }
 
@@ -130,7 +153,7 @@ export function ClubAdminAttendanceClient({
                 <span className="material-symbols-outlined">arrow_back</span>
               </RouterLink>
               <div>
-                <h1 className="text-lg font-bold tracking-tight">Attendance Admin</h1>
+                <h1 className="text-lg font-bold tracking-tight">출석 관리</h1>
                 <p className="text-xs text-slate-500">{attendance.clubName}</p>
               </div>
             </div>
@@ -146,7 +169,7 @@ export function ClubAdminAttendanceClient({
             <div className="flex items-start justify-between gap-3">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
-                  Current Session
+                  현재 세션
                 </p>
                 <h2 className="mt-3 text-xl font-bold">
                   {currentSession?.title ?? "아직 열린 세션이 없습니다."}
@@ -156,14 +179,14 @@ export function ClubAdminAttendanceClient({
                 </p>
               </div>
               <div className="rounded-full bg-orange-50 px-3 py-1 text-xs font-bold text-[var(--primary)]">
-                {currentSession?.status ?? "IDLE"}
+                {getSessionStatusLabel(currentSession?.status)}
               </div>
             </div>
             {currentSession ? (
               <div className="mt-5 grid grid-cols-2 gap-3">
                 <div className="rounded-xl bg-slate-50 p-4">
                   <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
-                    Checked In
+                    출석 완료
                   </p>
                   <p className="mt-2 text-sm font-bold">
                     {currentSession.checkedInCount}/{currentSession.memberCount}
@@ -171,7 +194,7 @@ export function ClubAdminAttendanceClient({
                 </div>
                 <div className="rounded-xl bg-slate-50 p-4">
                   <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
-                    Opened At
+                    시작 시각
                   </p>
                   <p className="mt-2 text-sm font-bold">
                     {currentSession.openAtLabel ?? "-"}
@@ -186,7 +209,7 @@ export function ClubAdminAttendanceClient({
                 disabled={Boolean(currentSession && currentSession.status === "OPEN") || isProcessing}
                 className="flex-1 rounded-xl bg-[var(--primary)] py-3 text-sm font-bold text-white transition hover:bg-[var(--primary)]/90 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500"
               >
-                {isProcessing ? "Processing..." : "Open Today"}
+                {isProcessing ? "처리 중..." : "오늘 세션 열기"}
               </button>
               <button
                 type="button"
@@ -194,7 +217,7 @@ export function ClubAdminAttendanceClient({
                 disabled={!currentSession || currentSession.status !== "OPEN" || isProcessing}
                 className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:border-slate-100 disabled:text-slate-300"
               >
-                Close
+                종료
               </button>
             </div>
             {feedback ? (
@@ -207,9 +230,9 @@ export function ClubAdminAttendanceClient({
             {...staggeredFadeUpMotion(1, reduceMotion)}
           >
             <div className="mb-4 flex items-center justify-between">
-              <h3 className="text-base font-bold">Member Status</h3>
+              <h3 className="text-base font-bold">멤버 상태</h3>
               <span className="text-xs font-medium text-slate-400">
-                {attendance.members.length} members
+                {attendance.members.length}명
               </span>
             </div>
             <div className="space-y-3">
@@ -221,7 +244,7 @@ export function ClubAdminAttendanceClient({
                 >
                   <div>
                     <p className="text-sm font-bold">{member.displayName}</p>
-                    <p className="mt-1 text-xs text-slate-500">{member.roleCode}</p>
+                    <p className="mt-1 text-xs text-slate-500">{getRoleLabel(member.roleCode)}</p>
                   </div>
                   <div className="text-right">
                     <span
@@ -231,10 +254,10 @@ export function ClubAdminAttendanceClient({
                           : "bg-slate-200 text-slate-500"
                       }`}
                     >
-                      {member.checkedIn ? "Present" : "Pending"}
+                      {member.checkedIn ? "출석" : "대기"}
                     </span>
                     <p className="mt-2 text-[11px] text-slate-400">
-                      {member.checkedInAtLabel ?? "Not checked in"}
+                      {member.checkedInAtLabel ?? "체크인 기록 없음"}
                     </p>
                   </div>
                 </motion.article>

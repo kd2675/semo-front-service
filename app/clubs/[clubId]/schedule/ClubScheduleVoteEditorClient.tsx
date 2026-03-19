@@ -183,7 +183,7 @@ export function ClubScheduleVoteEditorClient({
 
             <section>
               <label className="mb-2 block text-sm font-semibold text-gray-700" htmlFor={`${formId}-vote-title`}>
-                Step 1. 투표 제목
+                1단계. 투표 제목
               </label>
               <input
                 id={`${formId}-vote-title`}
@@ -196,7 +196,7 @@ export function ClubScheduleVoteEditorClient({
             </section>
 
             <section>
-              <h2 className="mb-2 block text-sm font-semibold text-gray-700">Step 2. 투표 기간 설정</h2>
+              <h2 className="mb-2 block text-sm font-semibold text-gray-700">2단계. 투표 기간 설정</h2>
               <div className="grid grid-cols-2 gap-4">
                 <label>
                   <span className="mb-1 block text-xs text-gray-500">시작일</span>
@@ -248,7 +248,7 @@ export function ClubScheduleVoteEditorClient({
 
             <section>
               <div className="mb-2 flex items-center justify-between">
-                <h2 className="text-sm font-semibold text-gray-700">Step 3. 투표 항목</h2>
+                <h2 className="text-sm font-semibold text-gray-700">3단계. 투표 항목</h2>
                 <span className="text-xs text-gray-400">{optionCountLabel}</span>
               </div>
 
@@ -290,7 +290,7 @@ export function ClubScheduleVoteEditorClient({
               <div className="space-y-3">
                 <div className="flex items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm">
                   <div>
-                    <h2 className="text-sm font-semibold text-gray-700">Step 4. 공지에도 공유</h2>
+                    <h2 className="text-sm font-semibold text-gray-700">4단계. 공지에도 공유</h2>
                     <p className="text-xs text-gray-400">투표를 공지에도 함께 노출합니다.</p>
                   </div>
                   <label className="relative inline-flex cursor-pointer items-center">
@@ -306,7 +306,7 @@ export function ClubScheduleVoteEditorClient({
 
                 <div className="flex items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm">
                   <div>
-                    <h2 className="text-sm font-semibold text-gray-700">Step 5. 일정에도 공유</h2>
+                    <h2 className="text-sm font-semibold text-gray-700">5단계. 일정에도 공유</h2>
                     <p className="text-xs text-gray-400">투표를 일정 화면에도 함께 노출합니다.</p>
                   </div>
                   <label className="relative inline-flex cursor-pointer items-center">

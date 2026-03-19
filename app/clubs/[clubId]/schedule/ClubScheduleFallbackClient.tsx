@@ -65,7 +65,7 @@ export function ClubScheduleFallbackClient({ clubId }: ClubScheduleFallbackClien
       payload={
         payload ?? {
           clubId: Number(clubId),
-          clubName: "Schedule Studio",
+          clubName: "일정 스튜디오",
           admin: false,
           calendarYear: activeYear,
           calendarMonth: activeMonth,
@@ -80,6 +80,7 @@ export function ClubScheduleFallbackClient({ clubId }: ClubScheduleFallbackClien
           },
           monthEvents: [],
           votes: [],
+          sharedNotices: [],
         }
       }
       activeYear={payload?.calendarYear ?? activeYear}

@@ -1,8 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { RouteModal } from "@/app/components/RouteModal";
-import { ClubScheduleDetailClient } from "../ClubScheduleDetailClient";
+import { ClubScheduleEventDetailModal } from "@/app/components/ClubDetailModals";
 
 type ClubScheduleDetailRouteModalProps = {
   clubId: string;
@@ -21,14 +20,11 @@ export function ClubScheduleDetailRouteModal({
 
   return (
     <div className="min-h-screen bg-[var(--background-light)]">
-      <RouteModal onDismiss={handleDismiss}>
-        <ClubScheduleDetailClient
-          clubId={clubId}
-          eventId={eventId}
-          presentation="modal"
-          onRequestClose={handleDismiss}
-        />
-      </RouteModal>
+      <ClubScheduleEventDetailModal
+        clubId={clubId}
+        eventId={eventId}
+        onRequestClose={handleDismiss}
+      />
     </div>
   );
 }

@@ -8,6 +8,7 @@ import {
   type ClubAttendanceResponse,
   type MyClubSummary,
 } from "@/app/lib/clubs";
+import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import { ClubAttendanceClient } from "./ClubAttendanceClient";
 
 type ClubAttendanceFallbackClientProps = {
@@ -52,18 +53,11 @@ export function ClubAttendanceFallbackClient({
     return (
       <div className="bg-[var(--background-light)] text-slate-900 antialiased">
         <div className="relative min-h-screen overflow-x-hidden">
-          <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/85 backdrop-blur-md">
-            <div className="mx-auto flex w-full max-w-md items-center justify-between p-4">
-              <div className="flex items-center gap-3">
-                <div className="size-10 rounded-full bg-slate-200" />
-                <div className="space-y-2">
-                  <div className="h-4 w-32 rounded-full bg-slate-200" />
-                  <div className="h-3 w-20 rounded-full bg-slate-100" />
-                </div>
-              </div>
-              <div className="size-6 rounded-full bg-slate-200" />
-            </div>
-          </header>
+          <ClubPageHeader
+            title="출석 체크"
+            icon="fact_check"
+            className="bg-white/85 backdrop-blur-md"
+          />
 
           <main className="semo-nav-bottom-space mx-auto flex w-full max-w-md flex-1 flex-col gap-4 px-4 pt-4">
             <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">

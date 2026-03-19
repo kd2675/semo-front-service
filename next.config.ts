@@ -5,7 +5,13 @@ const nextConfig: NextConfig = {
   reactStrictMode: false,
   reactCompiler: true,
   images: {
+    dangerouslyAllowLocalIP: true,
     remotePatterns: [
+      {
+        protocol: "http",
+        hostname: "localhost",
+        port: "8081",
+      },
       {
         protocol: "http",
         hostname: "**",

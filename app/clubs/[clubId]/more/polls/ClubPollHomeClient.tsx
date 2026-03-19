@@ -3,7 +3,8 @@
 import { RouteModal } from "@/app/components/RouteModal";
 import { RouterLink } from "@/app/components/RouterLink";
 import { ClubModeSwitchFab } from "@/app/components/ClubModeSwitchFab";
-import { ClubScheduleVoteDetailClient } from "@/app/clubs/[clubId]/schedule/ClubScheduleVoteDetailClient";
+import { ClubPageHeader } from "@/app/components/ClubPageHeader";
+import { ClubPollDetailModal } from "@/app/components/ClubDetailModals";
 import { ClubScheduleVoteEditorClient } from "@/app/clubs/[clubId]/schedule/ClubScheduleVoteEditorClient";
 import { ScheduleActionConfirmModal } from "@/app/clubs/[clubId]/schedule/ScheduleActionConfirmModal";
 import { ScheduleManageCard } from "@/app/clubs/[clubId]/schedule/ScheduleManageCard";
@@ -140,7 +141,7 @@ function PollCard({
           <div className="flex gap-2">
             {previewOptions.map((option, index) => (
               <div key={option.voteOptionId} className="flex-1 rounded-lg border border-gray-100 bg-gray-50 p-2 text-center">
-                <span className="block text-[10px] uppercase text-gray-400">Top {index + 1}</span>
+                <span className="block text-[10px] uppercase text-gray-400">상위 {index + 1}</span>
                 <span className="block text-xs font-bold text-gray-800">{option.label}</span>
               </div>
             ))}
@@ -215,23 +216,27 @@ export function ClubPollHomeClient({
       style={{ "--primary": accent, "--background-light": background } as CSSProperties}
     >
       <div className="relative mx-auto flex min-h-full max-w-md flex-col bg-[var(--background-light)]">
-        <header className="sticky top-0 z-20 flex items-center justify-between border-b border-gray-100 bg-white px-4 py-3">
-          <div className="flex items-center gap-4">
-            <RouterLink
-              href={mode === "admin" ? `/clubs/${clubId}/admin` : `/clubs/${clubId}`}
-              className="p-1"
-              aria-label="뒤로 가기"
-            >
-              <span className="material-symbols-outlined text-[24px] text-gray-800">arrow_back</span>
-            </RouterLink>
-            <h1 className="text-xl font-bold text-gray-900">Club Polls</h1>
-          </div>
-          <button type="button" className="p-2 text-gray-500" aria-label="검색">
-            <span className="material-symbols-outlined text-[20px]">search</span>
-          </button>
-        </header>
+        {mode === "user" ? (
+          <ClubPageHeader title="투표 관리" subtitle={payload.clubName} />
+        ) : (
+          <header className="sticky top-0 z-20 flex items-center justify-between border-b border-gray-100 bg-white px-4 py-3">
+            <div className="flex items-center gap-4">
+              <RouterLink
+                href={`/clubs/${clubId}/admin`}
+                className="p-1"
+                aria-label="뒤로 가기"
+              >
+                <span className="material-symbols-outlined text-[24px] text-gray-800">arrow_back</span>
+              </RouterLink>
+              <h1 className="text-xl font-bold text-gray-900">투표 관리</h1>
+            </div>
+            <button type="button" className="p-2 text-gray-500" aria-label="검색">
+              <span className="material-symbols-outlined text-[20px]">search</span>
+            </button>
+          </header>
+        )}
 
-        <main className="semo-nav-bottom-space flex-1 overflow-y-auto pb-24">
+        <main className="semo-nav-bottom-space flex-1 pb-24">
           <nav className="flex border-b border-gray-200 bg-white">
             {POLL_TABS.map((tab) => {
               const active = activeTab === tab.key;
@@ -342,24 +347,22 @@ export function ClubPollHomeClient({
                 presentation="modal"
                 basePath={basePath}
                 onRequestClose={() => setShowCreateModal(false)}
-                onSaved={() => {
+                onSaved={(savedVoteId) => {
                   setShowCreateModal(false);
                   onReload();
+                  setDetailVoteId(String(savedVoteId));
                 }}
               />
             </RouteModal>
           ) : null}
 
           {detailVoteId ? (
-            <RouteModal onDismiss={() => setDetailVoteId(null)}>
-              <ClubScheduleVoteDetailClient
-                clubId={clubId}
-                voteId={detailVoteId}
-                presentation="modal"
-                basePath={basePath}
-                onRequestClose={() => setDetailVoteId(null)}
-              />
-            </RouteModal>
+            <ClubPollDetailModal
+              clubId={clubId}
+              voteId={detailVoteId}
+              mode={mode}
+              onRequestClose={() => setDetailVoteId(null)}
+            />
           ) : null}
 
           {editingVoteId ? (
@@ -371,9 +374,10 @@ export function ClubPollHomeClient({
                 presentation="modal"
                 basePath={basePath}
                 onRequestClose={() => setEditingVoteId(null)}
-                onSaved={() => {
+                onSaved={(savedVoteId) => {
                   setEditingVoteId(null);
                   onReload();
+                  setDetailVoteId(String(savedVoteId));
                 }}
               />
             </RouteModal>

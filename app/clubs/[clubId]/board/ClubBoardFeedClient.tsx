@@ -1,6 +1,5 @@
 "use client";
 
-import { RouterLink } from "@/app/components/RouterLink";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import {
   startTransition,
@@ -12,6 +11,7 @@ import {
 } from "react";
 import { ClubModeSwitchFab } from "@/app/components/ClubModeSwitchFab";
 import { RouteModal } from "@/app/components/RouteModal";
+import { ClubNoticeDetailModal, ClubPollDetailModal, ClubScheduleEventDetailModal } from "@/app/components/ClubDetailModals";
 import {
   deleteClubNotice,
   getClubNoticeFeed,
@@ -26,7 +26,7 @@ import { ClubNoticeEditorClient } from "./ClubNoticeEditorClient";
 import { NoticeManageCard } from "./NoticeManageCard";
 import { ClubBoardFeedLoadingShell } from "../ClubRouteLoadingShells";
 import { ScheduleActionConfirmModal } from "../schedule/ScheduleActionConfirmModal";
-import { ClubNoticeDetailClient } from "./[noticeId]/ClubNoticeDetailClient";
+import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 
 type CursorState = {
   publishedAt: string | null;
@@ -51,6 +51,8 @@ export function ClubBoardFeedClient({ clubId }: ClubBoardFeedClientProps) {
   const [initialLoaded, setInitialLoaded] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [detailNoticeId, setDetailNoticeId] = useState<string | null>(null);
+  const [sharedEventDetailId, setSharedEventDetailId] = useState<string | null>(null);
+  const [sharedVoteDetailId, setSharedVoteDetailId] = useState<string | null>(null);
   const [editingNoticeId, setEditingNoticeId] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<ClubNoticeListItem | null>(null);
   const [deleting, setDeleting] = useState(false);
@@ -73,6 +75,8 @@ export function ClubBoardFeedClient({ clubId }: ClubBoardFeedClientProps) {
       setInitialLoaded(false);
       setActiveActionNoticeId(null);
       setDetailNoticeId(null);
+      setSharedEventDetailId(null);
+      setSharedVoteDetailId(null);
     }
 
     loadingRef.current = true;
@@ -165,11 +169,11 @@ export function ClubBoardFeedClient({ clubId }: ClubBoardFeedClientProps) {
     setReloadKey((current) => current + 1);
   };
 
-  const handleModalSaved = () => {
-    setDetailNoticeId(null);
+  const handleModalSaved = (savedNoticeId: number) => {
     setEditingNoticeId(null);
     setActiveActionNoticeId(null);
     setReloadKey((current) => current + 1);
+    setDetailNoticeId(String(savedNoticeId));
   };
 
   if (!initialLoaded && !error) {
@@ -179,27 +183,7 @@ export function ClubBoardFeedClient({ clubId }: ClubBoardFeedClientProps) {
   return (
     <div className="bg-[var(--background-light)] font-display text-slate-900">
       <div className="relative mx-auto flex min-h-full max-w-md flex-col overflow-x-hidden bg-white">
-        <header className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-200 bg-white p-4">
-          <RouterLink
-            href={`/clubs/${clubId}`}
-            className="flex size-10 items-center justify-start text-slate-900"
-            aria-label={`${clubName} 홈으로 돌아가기`}
-          >
-            <span className="material-symbols-outlined">arrow_back</span>
-          </RouterLink>
-          <h2 className="flex-1 text-center text-lg font-bold leading-tight tracking-tight">
-            Notice Board
-          </h2>
-          <div className="flex w-10 items-center justify-end">
-            <button
-              type="button"
-              className="flex h-10 w-10 items-center justify-center rounded-lg bg-transparent text-slate-900"
-              aria-label="검색"
-            >
-              <span className="material-symbols-outlined">search</span>
-            </button>
-          </div>
-        </header>
+        <ClubPageHeader title="Notice Board" subtitle={clubName} />
 
         <main className="semo-nav-bottom-space flex-1">
           <motion.div className="px-4 py-4" {...staggeredFadeUpMotion(0, reduceMotion)}>
@@ -262,6 +246,14 @@ export function ClubBoardFeedClient({ clubId }: ClubBoardFeedClientProps) {
                   }}
                   onOpen={() => {
                     setActiveActionNoticeId(null);
+                    if (notice.linkedTargetType === "POLL" && notice.linkedTargetId != null) {
+                      setSharedVoteDetailId(String(notice.linkedTargetId));
+                      return;
+                    }
+                    if (notice.linkedTargetType === "SCHEDULE_EVENT" && notice.linkedTargetId != null) {
+                      setSharedEventDetailId(String(notice.linkedTargetId));
+                      return;
+                    }
                     setDetailNoticeId(String(notice.noticeId));
                   }}
                   onEdit={() => {
@@ -326,19 +318,25 @@ export function ClubBoardFeedClient({ clubId }: ClubBoardFeedClientProps) {
         {isAdmin ? <ClubModeSwitchFab clubId={clubId} mode="user" /> : null}
         <AnimatePresence>
           {detailNoticeId ? (
-            <RouteModal
-              onDismiss={() => {
-                setDetailNoticeId(null);
-              }}
-            >
-              <ClubNoticeDetailClient
-                clubId={clubId}
-                noticeId={detailNoticeId}
-                presentation="modal"
-                basePath={`/clubs/${clubId}/board`}
-                onRequestClose={() => setDetailNoticeId(null)}
-              />
-            </RouteModal>
+            <ClubNoticeDetailModal
+              clubId={clubId}
+              noticeId={detailNoticeId}
+              onRequestClose={() => setDetailNoticeId(null)}
+            />
+          ) : null}
+          {sharedEventDetailId ? (
+            <ClubScheduleEventDetailModal
+              clubId={clubId}
+              eventId={sharedEventDetailId}
+              onRequestClose={() => setSharedEventDetailId(null)}
+            />
+          ) : null}
+          {sharedVoteDetailId ? (
+            <ClubPollDetailModal
+              clubId={clubId}
+              voteId={sharedVoteDetailId}
+              onRequestClose={() => setSharedVoteDetailId(null)}
+            />
           ) : null}
           {editingNoticeId ? (
             <RouteModal

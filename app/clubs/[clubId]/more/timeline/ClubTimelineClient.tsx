@@ -1,6 +1,6 @@
 "use client";
 
-import { RouterLink } from "@/app/components/RouterLink";
+import { ClubNoticeDetailModal, ClubPollDetailModal, ClubScheduleEventDetailModal } from "@/app/components/ClubDetailModals";
 import { ClubModeSwitchFab } from "@/app/components/ClubModeSwitchFab";
 import {
   getClubTimeline,
@@ -8,7 +8,7 @@ import {
   type ClubTimelineResponse,
 } from "@/app/lib/clubs";
 import { getNoticeAccentClasses } from "@/app/lib/notice-category";
-import { motion, useReducedMotion } from "motion/react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import {
   startTransition,
   useEffect,
@@ -18,6 +18,7 @@ import {
   useState,
 } from "react";
 import { staggeredFadeUpMotion } from "@/app/lib/motion";
+import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 
 type ClubTimelineClientProps = {
   clubId: string;
@@ -33,16 +34,6 @@ type CursorState = {
 type TimelineListItem =
   | { type: "separator"; key: string; label: string }
   | { type: "entry"; key: string; entry: ClubTimelineEntry };
-
-function getTimelineHref(clubId: string, entry: ClubTimelineEntry) {
-  if (entry.linkedTargetType === "SCHEDULE_EVENT" && entry.linkedTargetId != null) {
-    return `/clubs/${clubId}/schedule/${entry.linkedTargetId}`;
-  }
-  if (entry.linkedTargetType === "POLL" && entry.linkedTargetId != null) {
-    return `/clubs/${clubId}/more/polls/${entry.linkedTargetId}`;
-  }
-  return `/clubs/${clubId}/board/${entry.noticeId}`;
-}
 
 function startOfDay(date: Date) {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate());
@@ -79,6 +70,9 @@ export function ClubTimelineClient({
   const [activeCategory, setActiveCategory] = useState(initialData.selectedCategoryKey ?? "all");
   const [loading, setLoading] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
+  const [detailNoticeId, setDetailNoticeId] = useState<string | null>(null);
+  const [detailEventId, setDetailEventId] = useState<string | null>(null);
+  const [detailVoteId, setDetailVoteId] = useState<string | null>(null);
   const [sentinelNode, setSentinelNode] = useState<HTMLDivElement | null>(null);
   const loadingRef = useRef(false);
   const didMountRef = useRef(false);
@@ -169,46 +163,37 @@ export function ClubTimelineClient({
   return (
     <div className="min-h-full bg-[var(--background-light)] text-slate-900">
       <div className="mx-auto flex min-h-full max-w-md flex-col bg-[var(--background-light)]">
-        <header className="sticky top-0 z-20 border-b border-[#135bec]/10 bg-white/85 backdrop-blur-md">
-          <div className="flex items-center justify-between p-4">
-            <RouterLink
-              href={`/clubs/${clubId}`}
-              className="flex size-10 items-center justify-center rounded-lg text-slate-900 transition hover:bg-[#135bec]/10"
-              aria-label="클럽 홈으로 돌아가기"
-            >
-              <span className="material-symbols-outlined">arrow_back</span>
-            </RouterLink>
-            <h1 className="flex-1 text-center text-lg font-bold tracking-tight">Activity Timeline</h1>
-            <div className="w-10" />
-          </div>
-          <div className="hide-scrollbar flex gap-3 overflow-x-auto px-4 pb-4">
-            {[{ categoryKey: "all", displayName: "All", iconName: "apps", accentTone: "blue" }, ...timeline.categories].map((category) => {
-              const accent = getNoticeAccentClasses(category.accentTone);
-              const isActive = activeCategory === category.categoryKey;
-              return (
-                <button
-                  key={category.categoryKey}
-                  type="button"
-                  onClick={() => {
-                    startTransition(() => {
-                      setActiveCategory(category.categoryKey);
-                    });
-                  }}
-                  className={`flex h-9 shrink-0 items-center justify-center gap-2 rounded-full border px-4 text-sm font-semibold transition ${
-                    isActive
-                      ? `${accent.progress} border-transparent text-white`
-                      : "border-[#135bec]/10 bg-white text-slate-700"
-                  }`}
-                >
-                  <span className="material-symbols-outlined text-[18px]">{category.iconName}</span>
-                  <span>{category.displayName}</span>
-                </button>
-              );
-            })}
-          </div>
-        </header>
+        <ClubPageHeader
+          title="타임라인"
+          className="border-[#135bec]/10 bg-white/85 backdrop-blur-md"
+        />
+        <div className="hide-scrollbar flex gap-3 overflow-x-auto border-b border-[#135bec]/10 bg-white/85 px-4 pb-4">
+          {[{ categoryKey: "all", displayName: "전체", iconName: "apps", accentTone: "blue" }, ...timeline.categories].map((category) => {
+            const accent = getNoticeAccentClasses(category.accentTone);
+            const isActive = activeCategory === category.categoryKey;
+            return (
+              <button
+                key={category.categoryKey}
+                type="button"
+                onClick={() => {
+                  startTransition(() => {
+                    setActiveCategory(category.categoryKey);
+                  });
+                }}
+                className={`flex h-9 shrink-0 items-center justify-center gap-2 rounded-full border px-4 text-sm font-semibold transition ${
+                  isActive
+                    ? `${accent.progress} border-transparent text-white`
+                    : "border-[#135bec]/10 bg-white text-slate-700"
+                }`}
+              >
+                <span className="material-symbols-outlined text-[18px]">{category.iconName}</span>
+                <span>{category.displayName}</span>
+              </button>
+            );
+          })}
+        </div>
 
-        <main className="semo-nav-bottom-space flex-1 overflow-y-auto px-4 pt-4">
+        <main className="semo-nav-bottom-space flex-1 px-4 pt-4">
           <div className="relative">
             <div className="absolute left-[19px] top-4 bottom-4 w-0.5 bg-[#135bec]/10" />
             <div className="space-y-6">
@@ -236,16 +221,27 @@ export function ClubTimelineClient({
                         {item.entry.categoryIconName}
                       </span>
                     </div>
-                    <RouterLink
-                      href={getTimelineHref(clubId, item.entry)}
-                      className="rounded-2xl border border-[#135bec]/5 bg-white p-4 shadow-sm transition-transform hover:scale-[1.01]"
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (item.entry.linkedTargetType === "SCHEDULE_EVENT" && item.entry.linkedTargetId != null) {
+                          setDetailEventId(String(item.entry.linkedTargetId));
+                          return;
+                        }
+                        if (item.entry.linkedTargetType === "POLL" && item.entry.linkedTargetId != null) {
+                          setDetailVoteId(String(item.entry.linkedTargetId));
+                          return;
+                        }
+                        setDetailNoticeId(String(item.entry.noticeId));
+                      }}
+                      className="rounded-2xl border border-[#135bec]/5 bg-white p-4 text-left shadow-sm transition-transform hover:scale-[1.01]"
                     >
                       <div className="flex items-center gap-2">
                         <span className={`rounded-md px-2 py-1 text-[11px] font-bold ${accent.badge}`}>
                           {item.entry.categoryLabel}
                         </span>
                         {item.entry.pinned ? (
-                          <span className="text-[11px] font-bold text-slate-400">PINNED</span>
+                          <span className="text-[11px] font-bold text-slate-400">고정</span>
                         ) : null}
                       </div>
                       <p className="mt-3 text-base font-semibold leading-snug text-slate-900">
@@ -273,7 +269,7 @@ export function ClubTimelineClient({
                           <span>{item.entry.locationLabel}</span>
                         </div>
                       ) : null}
-                    </RouterLink>
+                    </button>
                   </motion.div>
                 );
               })}
@@ -302,6 +298,29 @@ export function ClubTimelineClient({
         </main>
 
         {isAdmin ? <ClubModeSwitchFab clubId={clubId} mode="user" /> : null}
+        <AnimatePresence>
+          {detailNoticeId ? (
+            <ClubNoticeDetailModal
+              clubId={clubId}
+              noticeId={detailNoticeId}
+              onRequestClose={() => setDetailNoticeId(null)}
+            />
+          ) : null}
+          {detailEventId ? (
+            <ClubScheduleEventDetailModal
+              clubId={clubId}
+              eventId={detailEventId}
+              onRequestClose={() => setDetailEventId(null)}
+            />
+          ) : null}
+          {detailVoteId ? (
+            <ClubPollDetailModal
+              clubId={clubId}
+              voteId={detailVoteId}
+              onRequestClose={() => setDetailVoteId(null)}
+            />
+          ) : null}
+        </AnimatePresence>
       </div>
     </div>
   );

@@ -161,6 +161,8 @@ export type ClubNoticeHomeResponse = {
   publishedTodayCount: number;
   manageableNoticeCount: number;
   notices: ClubNoticeListItem[];
+  sharedEvents: ClubScheduleEventSummary[];
+  sharedVotes: ClubScheduleVoteSummary[];
 };
 
 export type ClubScheduleResponse = {
@@ -180,6 +182,7 @@ export type ClubScheduleResponse = {
   };
   monthEvents: ClubScheduleEventSummary[];
   votes: ClubScheduleVoteSummary[];
+  sharedNotices: ClubNoticeListItem[];
 };
 
 export type ClubScheduleHomeResponse = {
@@ -191,6 +194,8 @@ export type ClubScheduleHomeResponse = {
   upcomingEventCount: number;
   manageableItemCount: number;
   events: ClubScheduleEventSummary[];
+  sharedNotices: ClubNoticeListItem[];
+  sharedVotes: ClubScheduleVoteSummary[];
 };
 
 export type ClubScheduleEventSummary = {
@@ -597,8 +602,8 @@ export type AttendanceCheckInRequest = {
 export const MOCK_CLUB_FEATURES: ClubFeatureSummary[] = [
   {
     featureKey: "ATTENDANCE",
-    displayName: "Attendance Check",
-    description: "Check in members and manage attendance sessions.",
+    displayName: "출석 체크",
+    description: "멤버 출석을 체크하고 출석 세션을 관리합니다.",
     iconName: "fact_check",
     enabled: true,
     userPath: "/clubs/tennis/more/attendance",
@@ -606,8 +611,8 @@ export const MOCK_CLUB_FEATURES: ClubFeatureSummary[] = [
   },
   {
     featureKey: "TIMELINE",
-    displayName: "Timeline",
-    description: "Browse club activity through notice-based timeline cards.",
+    displayName: "타임라인",
+    description: "공지 기반 타임라인 카드로 모임 활동을 확인합니다.",
     iconName: "timeline",
     enabled: true,
     userPath: "/clubs/tennis/more/timeline",
@@ -615,8 +620,8 @@ export const MOCK_CLUB_FEATURES: ClubFeatureSummary[] = [
   },
   {
     featureKey: "NOTICE",
-    displayName: "Notices",
-    description: "Create, manage, and share club notices.",
+    displayName: "공지",
+    description: "모임 공지를 작성, 관리, 공유합니다.",
     iconName: "campaign",
     enabled: true,
     userPath: "/clubs/tennis/more/notices",
@@ -624,8 +629,8 @@ export const MOCK_CLUB_FEATURES: ClubFeatureSummary[] = [
   },
   {
     featureKey: "POLL",
-    displayName: "Polls",
-    description: "Create, share, and manage club polls.",
+    displayName: "투표",
+    description: "모임 투표를 작성, 공유, 관리합니다.",
     iconName: "poll",
     enabled: true,
     userPath: "/clubs/tennis/more/polls",
@@ -633,8 +638,8 @@ export const MOCK_CLUB_FEATURES: ClubFeatureSummary[] = [
   },
   {
     featureKey: "SCHEDULE_MANAGE",
-    displayName: "Schedule Management",
-    description: "Create and manage schedules and votes.",
+    displayName: "일정 관리",
+    description: "일정과 투표를 작성하고 관리합니다.",
     iconName: "edit_calendar",
     enabled: true,
     userPath: "/clubs/tennis/more/schedules",

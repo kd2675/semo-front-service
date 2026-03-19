@@ -78,7 +78,7 @@ export function ClubAdminHomeClient({
                 <span className="material-symbols-outlined">admin_panel_settings</span>
               </div>
               <div>
-                <h1 className="text-lg font-bold tracking-tight">Admin</h1>
+                <h1 className="text-lg font-bold tracking-tight">관리자</h1>
                 <p className="text-xs text-slate-500">{clubName}</p>
               </div>
             </div>
@@ -136,7 +136,7 @@ export function ClubAdminHomeClient({
           <motion.section {...staggeredFadeUpMotion(4, reduceMotion)}>
             <div className="mb-4 flex items-center gap-2">
               <span className="material-symbols-outlined text-[var(--primary)]">dashboard</span>
-              <h2 className="text-lg font-bold">Dashboard Overview</h2>
+              <h2 className="text-lg font-bold">대시보드 개요</h2>
             </div>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               {actions.map((action, index) => (
@@ -178,10 +178,10 @@ export function ClubAdminHomeClient({
             <div className="mb-4 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <span className="material-symbols-outlined text-[var(--primary)]">history</span>
-                <h2 className="text-lg font-bold">Recent Activity</h2>
+                <h2 className="text-lg font-bold">최근 활동</h2>
               </div>
               <button type="button" className="text-xs font-bold text-[var(--primary)] hover:underline">
-                View All Log
+                전체 로그 보기
               </button>
             </div>
             <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
