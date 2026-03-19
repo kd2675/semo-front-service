@@ -1,6 +1,7 @@
 "use client";
 
 import { RouterLink } from "@/app/components/RouterLink";
+import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import { useRouter } from "next/navigation";
 import { useEffect, useEffectEvent, useId, useState } from "react";
 import {
@@ -141,7 +142,7 @@ export function ClubScheduleVoteEditorClient({
     : "bg-[var(--background-light)] font-display text-slate-900";
   const shellClassName = isModal
     ? "flex min-h-0 flex-1 flex-col bg-white"
-    : "relative mx-auto flex min-h-screen max-w-md flex-col overflow-hidden bg-white shadow-xl";
+    : "relative mx-auto flex min-h-screen max-w-md flex-col bg-white shadow-xl";
   const bottomBarClassName = isModal
     ? "sticky bottom-0 border-t border-slate-200 bg-white p-4 shadow-[0_-4px_10px_rgba(0,0,0,0.05)]"
     : "fixed bottom-0 left-0 right-0 z-20 mx-auto max-w-md bg-white p-4 shadow-[0_-4px_10px_rgba(0,0,0,0.05)]";
@@ -151,29 +152,33 @@ export function ClubScheduleVoteEditorClient({
   return (
     <div className={pageClassName}>
       <div className={shellClassName}>
-        <header className="sticky top-0 z-50 flex items-center justify-between border-b border-gray-200 bg-white px-4 py-3">
-          {isModal && onRequestClose ? (
-            <button
-              type="button"
-              onClick={onRequestClose}
-              className="p-1 text-gray-600"
-              aria-label="투표 작성 닫기"
-            >
-              <span className="material-symbols-outlined">arrow_back</span>
-            </button>
-          ) : (
-            <RouterLink
-              href={backHref}
-              replace={isModal}
-              className="p-1 text-gray-600"
-              aria-label="투표로 돌아가기"
-            >
-              <span className="material-symbols-outlined">arrow_back</span>
-            </RouterLink>
-          )}
-          <h1 className="text-lg font-bold">{isEdit ? "투표 수정" : "투표 생성"}</h1>
-          <div className="w-8" />
-        </header>
+        <ClubPageHeader
+          title={isEdit ? "투표 수정" : "투표 생성"}
+          subtitle={helperClubName}
+          icon={isEdit ? "edit_note" : "ballot"}
+          containerClassName="max-w-md"
+          leftSlot={
+            isModal && onRequestClose ? (
+              <button
+                type="button"
+                onClick={onRequestClose}
+                className="p-1 text-gray-600"
+                aria-label="투표 작성 닫기"
+              >
+                <span className="material-symbols-outlined">arrow_back</span>
+              </button>
+            ) : (
+              <RouterLink
+                href={backHref}
+                replace={isModal}
+                className="p-1 text-gray-600"
+                aria-label="투표로 돌아가기"
+              >
+                <span className="material-symbols-outlined">arrow_back</span>
+              </RouterLink>
+            )
+          }
+        />
 
         <main
           className={`bg-white p-4 ${isModal ? "flex-1 overflow-y-auto pb-24" : "semo-nav-bottom-space"}`}

@@ -52,7 +52,7 @@ export function ClubAttendanceFallbackClient({
   if (!club || !attendance) {
     return (
       <div className="bg-[var(--background-light)] text-slate-900 antialiased">
-        <div className="relative min-h-screen overflow-x-hidden">
+        <div className="relative min-h-screen">
           <ClubPageHeader
             title="출석 체크"
             icon="fact_check"

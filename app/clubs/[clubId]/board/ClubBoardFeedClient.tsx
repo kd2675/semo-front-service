@@ -182,8 +182,8 @@ export function ClubBoardFeedClient({ clubId }: ClubBoardFeedClientProps) {
 
   return (
     <div className="bg-[var(--background-light)] font-display text-slate-900">
-      <div className="relative mx-auto flex min-h-full max-w-md flex-col overflow-x-hidden bg-white">
-        <ClubPageHeader title="Notice Board" subtitle={clubName} />
+      <div className="relative mx-auto flex min-h-full max-w-md flex-col bg-white">
+        <ClubPageHeader title="공지 게시판" subtitle={clubName} icon="campaign" />
 
         <main className="semo-nav-bottom-space flex-1">
           <motion.div className="px-4 py-4" {...staggeredFadeUpMotion(0, reduceMotion)}>

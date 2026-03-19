@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { RouterLink } from "@/app/components/RouterLink";
+import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import { motion, useReducedMotion } from "motion/react";
 import { useEffect, useEffectEvent, useState } from "react";
 import { ClubModeSwitchFab } from "@/app/components/ClubModeSwitchFab";
@@ -142,18 +143,22 @@ export function ClubNoticeDetailClient({
   if (presentation === "modal") {
     return (
       <div className="flex min-h-0 flex-1 flex-col bg-white">
-        <header className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-200 bg-white p-4">
-          <button
-            type="button"
-            onClick={onRequestClose}
-            className="flex size-10 items-center justify-start text-slate-900"
-            aria-label="공지 상세 닫기"
-          >
-            <span className="material-symbols-outlined">close</span>
-          </button>
-          <h2 className="flex-1 text-center text-lg font-bold leading-tight tracking-tight">공지</h2>
-          <div className="w-10" />
-        </header>
+        <ClubPageHeader
+          title="공지 상세"
+          subtitle={payload?.clubName}
+          icon="campaign"
+          containerClassName="max-w-md"
+          leftSlot={
+            <button
+              type="button"
+              onClick={onRequestClose}
+              className="flex size-10 items-center justify-start text-slate-900"
+              aria-label="공지 상세 닫기"
+            >
+              <span className="material-symbols-outlined">close</span>
+            </button>
+          }
+        />
 
         <main className="semo-nav-bottom-space flex-1 overflow-y-auto">
           <NoticeDetailBody payload={payload} error={error} reduceMotion={reduceMotion} />
@@ -165,17 +170,21 @@ export function ClubNoticeDetailClient({
   return (
     <div className="bg-[var(--background-light)] font-display text-slate-900">
       <div className="relative mx-auto flex min-h-full max-w-md flex-col bg-white">
-        <header className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-200 bg-white p-4">
-          <RouterLink
-            href={basePath ?? `/clubs/${clubId}/more/notices`}
-            className="flex size-10 items-center justify-start text-slate-900"
-            aria-label="공지 목록으로 돌아가기"
-          >
-            <span className="material-symbols-outlined">arrow_back</span>
-          </RouterLink>
-          <h2 className="flex-1 text-center text-lg font-bold leading-tight tracking-tight">공지</h2>
-          <div className="w-10" />
-        </header>
+        <ClubPageHeader
+          title="공지 상세"
+          subtitle={payload?.clubName}
+          icon="campaign"
+          containerClassName="max-w-md"
+          leftSlot={
+            <RouterLink
+              href={basePath ?? `/clubs/${clubId}/more/notices`}
+              className="flex size-10 items-center justify-start text-slate-900"
+              aria-label="공지 목록으로 돌아가기"
+            >
+              <span className="material-symbols-outlined">arrow_back</span>
+            </RouterLink>
+          }
+        />
 
         <main className="semo-nav-bottom-space flex-1">
           <NoticeDetailBody payload={payload} error={error} reduceMotion={reduceMotion} />

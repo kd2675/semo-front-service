@@ -1,6 +1,6 @@
 "use client";
 
-import { RouterLink } from "@/app/components/RouterLink";
+import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import {
@@ -373,31 +373,16 @@ export function ClubAdminMembersClient({
       }
     >
       <div className="min-h-screen bg-[#f6f6f8]">
-        <header className="sticky top-0 z-20 border-b border-slate-200 bg-white">
-          <div className="flex items-center justify-between p-4">
-            <div className="flex items-center gap-4">
-              <RouterLink
-                href={`/clubs/${clubId}/admin`}
-                className="rounded-full p-2 text-slate-600 transition-colors hover:bg-slate-100"
-                aria-label="관리자 홈으로 돌아가기"
-              >
-                <span className="material-symbols-outlined block">arrow_back</span>
-              </RouterLink>
-              <div>
-                <h1 className="text-lg font-bold tracking-tight">회원 관리</h1>
-                <p className="text-xs text-slate-500">{clubName}</p>
-              </div>
-            </div>
-            <button
-              type="button"
-              className="rounded-full p-2 text-[var(--primary)] transition-colors hover:bg-[var(--primary)]/10"
-              aria-label="회원 관리 설정"
-            >
-              <span className="material-symbols-outlined block">settings</span>
-            </button>
-          </div>
+        <ClubPageHeader
+          title="회원 관리"
+          subtitle={clubName}
+          icon="groups"
+          theme="admin"
+          containerClassName="max-w-5xl"
+        />
 
-          <div className="px-4 pb-4">
+        <section className="border-b border-slate-200 bg-white">
+          <div className="mx-auto w-full max-w-5xl px-4 pb-4">
             <label className="relative flex items-center">
               <span className="material-symbols-outlined absolute left-3 text-slate-400">search</span>
               <input
@@ -413,7 +398,7 @@ export function ClubAdminMembersClient({
             </label>
           </div>
 
-          <div className="overflow-x-auto px-4 pb-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div className="mx-auto w-full max-w-5xl overflow-x-auto px-4 pb-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             <div className="flex gap-2">
               {STATUS_FILTERS.map((filter) => {
                 const isActive = statusFilter === filter;
@@ -434,9 +419,9 @@ export function ClubAdminMembersClient({
               })}
             </div>
           </div>
-        </header>
+        </section>
 
-        <main className="semo-nav-bottom-space space-y-3 px-4 py-3">
+        <main className="semo-nav-bottom-space mx-auto w-full max-w-5xl space-y-3 px-4 py-3">
           <motion.div
             className="flex items-center justify-between px-1"
             {...staggeredFadeUpMotion(0, reduceMotion)}

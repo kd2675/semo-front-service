@@ -1,7 +1,6 @@
 "use client";
 
 import { RouteModal } from "@/app/components/RouteModal";
-import { RouterLink } from "@/app/components/RouterLink";
 import { ClubModeSwitchFab } from "@/app/components/ClubModeSwitchFab";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import { ClubNoticeDetailModal, ClubPollDetailModal, ClubScheduleEventDetailModal } from "@/app/components/ClubDetailModals";
@@ -237,60 +236,14 @@ export function ClubScheduleHomeClient({
       style={{ "--primary": accent, "--background-light": background } as CSSProperties}
     >
       <div className="relative mx-auto flex min-h-full max-w-md flex-col bg-[var(--background-light)]">
-        {mode === "user" ? (
-          <ClubPageHeader
-            title="일정 관리"
-            subtitle={payload.clubName}
-            icon="edit_calendar"
-            rightSlot={
-              <RouterLink
-                href={`/clubs/${clubId}/schedule`}
-                className="inline-flex items-center gap-1 rounded-full bg-[var(--primary)]/10 px-3 py-2 text-xs font-semibold text-[var(--primary)] hover:bg-[var(--primary)]/15"
-              >
-                일정 보기
-                <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
-              </RouterLink>
-            }
-          />
-        ) : (
-          <header className="sticky top-0 z-20 border-b border-orange-100 bg-white/85 text-slate-900 backdrop-blur-md">
-            <div className="mx-auto flex max-w-md items-center justify-between gap-3 px-4 py-4">
-              <div className="flex items-center gap-3">
-                <RouterLink
-                  href={`/clubs/${clubId}/admin`}
-                  className="flex size-10 items-center justify-center rounded-full text-[var(--primary)] transition hover:bg-[var(--primary)]/10"
-                  aria-label="뒤로 가기"
-                >
-                  <span className="material-symbols-outlined text-[22px]">arrow_back</span>
-                </RouterLink>
-                <div className="flex items-center gap-3">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[var(--primary)]/10">
-                    <span className="material-symbols-outlined text-[24px] text-[var(--primary)]">edit_calendar</span>
-                  </div>
-                  <div>
-                    <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--primary)]/70">
-                      관리자 더보기
-                    </p>
-                    <h1 className="text-xl font-bold tracking-tight">일정 관리</h1>
-                    <p className="text-xs text-slate-500">{payload.clubName}</p>
-                  </div>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="rounded-full bg-[var(--primary)]/10 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--primary)]">
-                  일정
-                </span>
-                <RouterLink
-                  href={`/clubs/${clubId}/schedule`}
-                  className="inline-flex items-center gap-1 rounded-full bg-[var(--primary)]/10 px-3 py-2 text-xs font-semibold text-[var(--primary)] hover:bg-[var(--primary)]/15"
-                >
-                  일정 보기
-                  <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
-                </RouterLink>
-              </div>
-            </div>
-          </header>
-        )}
+        <ClubPageHeader
+          title="일정 관리"
+          subtitle={payload.clubName}
+          icon="edit_calendar"
+          theme={mode === "admin" ? "admin" : "user"}
+          containerClassName="max-w-md"
+          className={mode === "admin" ? "border-orange-100" : undefined}
+        />
 
         <main className="semo-nav-bottom-space flex-1">
           {mode === "admin" ? (

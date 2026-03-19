@@ -2,6 +2,7 @@
 
 import { Public_Sans } from "next/font/google";
 import { RouterLink } from "@/app/components/RouterLink";
+import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import { motion, useReducedMotion } from "motion/react";
 import type { CSSProperties } from "react";
 import { staggeredFadeUpMotion } from "@/app/lib/motion";
@@ -71,35 +72,13 @@ export function ClubAdminHomeClient({
       }
     >
       <div className="min-h-screen bg-[#f8f6f6]">
-        <header className="sticky top-0 z-50 border-b border-slate-200 bg-[#f8f6f6]/85 backdrop-blur-md">
-          <div className="mx-auto flex w-full max-w-5xl items-center justify-between p-4">
-            <div className="flex items-center gap-3">
-              <div className="rounded-xl bg-[var(--primary)]/10 p-2 text-[var(--primary)]">
-                <span className="material-symbols-outlined">admin_panel_settings</span>
-              </div>
-              <div>
-                <h1 className="text-lg font-bold tracking-tight">관리자</h1>
-                <p className="text-xs text-slate-500">{clubName}</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                className="flex size-10 items-center justify-center rounded-full bg-white text-slate-600 shadow-sm transition hover:bg-[var(--primary)]/10 hover:text-[var(--primary)]"
-                aria-label="알림"
-              >
-                <span className="material-symbols-outlined">notifications</span>
-              </button>
-              <button
-                type="button"
-                className="flex size-10 items-center justify-center rounded-full bg-white text-slate-600 shadow-sm transition hover:bg-[var(--primary)]/10 hover:text-[var(--primary)]"
-                aria-label="검색"
-              >
-                <span className="material-symbols-outlined">search</span>
-              </button>
-            </div>
-          </div>
-        </header>
+        <ClubPageHeader
+          title="관리자"
+          subtitle={clubName}
+          icon="admin_panel_settings"
+          theme="admin"
+          containerClassName="max-w-5xl"
+        />
 
         <main className="semo-nav-bottom-space mx-auto w-full max-w-5xl space-y-6 px-4 pt-4">
           <section className="grid grid-cols-2 gap-4 md:grid-cols-4">

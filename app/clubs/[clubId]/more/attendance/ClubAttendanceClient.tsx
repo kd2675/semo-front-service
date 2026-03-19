@@ -71,7 +71,7 @@ export function ClubAttendanceClient({
 
   return (
     <div className="bg-[var(--background-light)] text-slate-900 antialiased">
-      <div className="relative min-h-screen overflow-x-hidden">
+      <div className="relative min-h-screen">
         <ClubPageHeader
           title="출석 체크"
           subtitle={attendance.clubName}

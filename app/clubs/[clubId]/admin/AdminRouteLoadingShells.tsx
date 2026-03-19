@@ -21,17 +21,13 @@ function AdminShellFrame({
     <div className="min-h-screen bg-[#f8f6f6] text-slate-900">
       <div className="min-h-screen bg-[#f8f6f6]">
         <header className="sticky top-0 z-20 border-b border-slate-200 bg-[#f8f6f6]/85 backdrop-blur-md">
-          <div className="mx-auto flex w-full max-w-5xl items-center justify-between p-4">
+          <div className="mx-auto flex w-full max-w-5xl items-center p-4">
             <div className="flex items-center gap-3">
-              <div className="size-10 rounded-xl bg-slate-200" />
+              <div className="size-10 rounded-xl bg-[var(--primary)]/10" />
               <div className="space-y-2">
                 <ShellLine className={`h-4 ${titleWidthClassName}`} />
                 <ShellLine className={`h-3 ${subtitleWidthClassName}`} />
               </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="size-10 rounded-full bg-white" />
-              <div className="size-10 rounded-full bg-white" />
             </div>
           </div>
         </header>
@@ -270,15 +266,14 @@ export function AdminAttendanceLoadingShell() {
     <div className="min-h-screen bg-[#f8f6f6] text-slate-900">
       <div className="min-h-screen bg-[#f8f6f6]">
         <header className="sticky top-0 z-20 border-b border-slate-200 bg-[#f8f6f6]/85 backdrop-blur-md">
-          <div className="mx-auto flex w-full max-w-md items-center justify-between p-4">
+          <div className="mx-auto flex w-full max-w-md items-center p-4">
             <div className="flex items-center gap-3">
-              <div className="size-10 rounded-full bg-slate-100" />
+              <div className="size-10 rounded-xl bg-[var(--primary)]/10" />
               <div className="space-y-2">
                 <ShellLine className="h-4 w-36" />
                 <ShellLine className="h-3 w-24" />
               </div>
             </div>
-            <div className="size-6 rounded-full bg-[var(--primary)]/10" />
           </div>
         </header>
 

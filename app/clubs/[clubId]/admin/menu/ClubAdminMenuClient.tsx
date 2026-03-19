@@ -21,7 +21,7 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { RouterLink } from "@/app/components/RouterLink";
+import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import { Public_Sans } from "next/font/google";
 import { motion, useReducedMotion } from "motion/react";
 import { startTransition, useEffect, useMemo, useState } from "react";
@@ -331,29 +331,19 @@ export function ClubAdminMenuClient({
         } as CSSProperties
       }
     >
-      <div className="relative min-h-screen overflow-x-hidden bg-[#f8f6f6]">
-        <header className="sticky top-0 z-20 border-b border-slate-200 bg-[#f8f6f6]/85 backdrop-blur-md">
-          <div className="mx-auto flex w-full max-w-5xl items-center justify-between p-4">
-            <div className="flex items-center gap-3">
-              <RouterLink
-                href={`/clubs/${clubId}/admin`}
-                className="flex size-10 items-center justify-center rounded-full text-slate-900 transition hover:bg-white"
-                aria-label="관리자 홈으로 돌아가기"
-              >
-                <span className="material-symbols-outlined">arrow_back</span>
-              </RouterLink>
-              <div>
-                <h1 className="text-lg font-bold tracking-tight">기능 설정</h1>
-                <p className="text-[10px] text-slate-500">
-                  모임 기능 • {clubName}
-                </p>
-              </div>
-            </div>
+      <div className="relative min-h-screen bg-[#f8f6f6]">
+        <ClubPageHeader
+          title="기능 설정"
+          subtitle={`모임 기능 • ${clubName}`}
+          icon="tune"
+          theme="admin"
+          containerClassName="max-w-5xl"
+          rightSlot={
             <div className="rounded-full bg-white px-3 py-1.5 text-xs font-bold text-[var(--primary)] shadow-sm">
               {enabledFeatures.length}개 활성화
             </div>
-          </div>
-        </header>
+          }
+        />
 
         <main className="semo-nav-bottom-space mx-auto w-full max-w-5xl">
           <motion.section className="p-4" {...staggeredFadeUpMotion(0, reduceMotion)}>

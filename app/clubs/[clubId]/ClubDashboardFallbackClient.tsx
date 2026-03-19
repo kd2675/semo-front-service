@@ -4,6 +4,7 @@ import { RouterLink } from "@/app/components/RouterLink";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { startTransition, useCallback, useEffect, useMemo, useState } from "react";
 import { ClubModeSwitchFab } from "@/app/components/ClubModeSwitchFab";
+import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import {
   checkInClubAttendance,
   getClubAttendance,
@@ -697,21 +698,13 @@ export function ClubDashboardFallbackClient({
 
   return (
     <div className="bg-[var(--background-light)] text-slate-900 antialiased">
-      <div className="relative flex min-h-full w-full flex-col overflow-x-hidden">
-        <header className="sticky top-0 z-50 border-b border-slate-200 bg-white/80 backdrop-blur-md">
-          <div className="flex items-center justify-between p-4">
-            <div className="flex items-center gap-3">
-              <RouterLink
-                href="/"
-                className="flex size-10 items-center justify-center rounded-full bg-[var(--primary)]/10 text-[var(--primary)]"
-              >
-                <span className="material-symbols-outlined">menu</span>
-              </RouterLink>
-              <h1 className="text-xl font-bold tracking-tight">
-                {club?.name ?? "Club Home"}
-              </h1>
-            </div>
-            {club?.admin ? (
+      <div className="relative flex min-h-full w-full flex-col">
+        <ClubPageHeader
+          title={club?.name ?? "모임 홈"}
+          subtitle={club?.admin ? "운영자 모드" : "사용자 모드"}
+          icon="home"
+          rightSlot={
+            club?.admin ? (
               <button
                 type="button"
                 onClick={() => {
@@ -721,16 +714,13 @@ export function ClubDashboardFallbackClient({
                   setTouchDragOverWidgetKey(null);
                   setEditMode((current) => !current);
                 }}
-                className="flex items-center gap-1.5 rounded-full bg-[var(--primary)]/10 px-3 py-1.5 text-xs font-bold text-[var(--primary)] transition-colors hover:bg-[var(--primary)]/20"
+                className="rounded-full bg-[var(--primary)]/10 px-3 py-1.5 text-xs font-bold text-[var(--primary)] transition-colors hover:bg-[var(--primary)]/20"
               >
-                <span className="material-symbols-outlined text-sm">dashboard_customize</span>
-                {editMode ? "Done" : "Edit"}
+                {editMode ? "완료" : "편집"}
               </button>
-            ) : (
-              <div className="size-10" />
-            )}
-          </div>
-        </header>
+            ) : null
+          }
+        />
 
         <main className="semo-nav-bottom-space flex-1 space-y-6 p-4 md:p-6">
           <motion.section {...staggeredFadeUpMotion(0, reduceMotion)}>

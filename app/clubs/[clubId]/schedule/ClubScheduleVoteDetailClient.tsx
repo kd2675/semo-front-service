@@ -1,6 +1,7 @@
 "use client";
 
 import { RouterLink } from "@/app/components/RouterLink";
+import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import { motion, useReducedMotion } from "motion/react";
 import { useEffect, useEffectEvent, useState } from "react";
 import { ClubModeSwitchFab } from "@/app/components/ClubModeSwitchFab";
@@ -165,9 +166,13 @@ export function ClubScheduleVoteDetailClient({
   return (
     <div className={isModal ? "flex min-h-0 flex-1 flex-col bg-white font-display text-gray-900 antialiased" : "min-h-full bg-gray-50 font-display text-gray-900 antialiased"}>
       <div className={`relative flex flex-col bg-white ${isModal ? "min-h-0 flex-1" : "mx-auto min-h-full max-w-md shadow-lg"}`}>
-        <header className="sticky top-0 z-10 flex items-center justify-between border-b border-gray-100 bg-white px-4 py-4">
-          <div className="flex items-center gap-3">
-            {isModal && onRequestClose ? (
+        <ClubPageHeader
+          title="투표 상세"
+          subtitle={payload?.clubName}
+          icon="how_to_vote"
+          containerClassName="max-w-md"
+          leftSlot={
+            isModal && onRequestClose ? (
               <button
                 type="button"
                 onClick={onRequestClose}
@@ -184,11 +189,9 @@ export function ClubScheduleVoteDetailClient({
               >
                 <span className="material-symbols-outlined text-[24px] text-gray-700">arrow_back</span>
               </RouterLink>
-            )}
-            <h1 className="text-lg font-bold">투표 상세</h1>
-          </div>
-          <div className="w-8" />
-        </header>
+            )
+          }
+        />
 
         <main
           className={`no-scrollbar flex-1 p-5 ${

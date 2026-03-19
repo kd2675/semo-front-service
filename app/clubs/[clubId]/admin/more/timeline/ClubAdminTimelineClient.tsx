@@ -1,6 +1,6 @@
 "use client";
 
-import { RouterLink } from "@/app/components/RouterLink";
+import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import {
   updateClubAdminTimeline,
   type ClubAdminTimelineResponse,
@@ -74,19 +74,14 @@ export function ClubAdminTimelineClient({
   return (
     <div className="min-h-screen bg-[#f8f6f6] text-slate-900">
       <div className="mx-auto min-h-screen max-w-md bg-[#f8f6f6] pb-28">
-        <header className="sticky top-0 z-20 border-b border-slate-200 bg-[#f8f6f6]/90 backdrop-blur-md">
-          <div className="flex items-center justify-between p-4">
-            <RouterLink
-              href={`/clubs/${clubId}/admin`}
-              className="flex size-10 items-center justify-center rounded-full text-slate-900 transition hover:bg-white"
-              aria-label="관리자 홈으로 돌아가기"
-            >
-              <span className="material-symbols-outlined">arrow_back</span>
-            </RouterLink>
-            <h1 className="flex-1 text-center text-lg font-bold tracking-tight">타임라인 설정</h1>
-            <div className="w-10" />
-          </div>
-        </header>
+        <ClubPageHeader
+          title="타임라인 설정"
+          subtitle={initialData.clubName}
+          icon="timeline"
+          theme="admin"
+          containerClassName="max-w-md"
+          className="bg-[#f8f6f6]/90"
+        />
 
         <main className="semo-nav-bottom-space space-y-4 px-4 pt-4">
           <motion.section

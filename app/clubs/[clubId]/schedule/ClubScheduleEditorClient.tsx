@@ -1,6 +1,7 @@
 "use client";
 
 import { RouterLink } from "@/app/components/RouterLink";
+import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import { AnimatePresence } from "motion/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useEffectEvent, useId, useRef, useState, type ReactNode, type UIEvent } from "react";
@@ -330,29 +331,34 @@ export function ClubScheduleEditorClient({
   if (isEdit) {
     return (
       <div className="bg-[var(--background-light)] font-display text-slate-900">
-        <div className="relative mx-auto flex min-h-screen w-full max-w-[480px] flex-col overflow-hidden bg-white shadow-xl">
-          <header className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-100 bg-white p-4 pb-2">
-            {isModal && onRequestClose ? (
-              <button
-                type="button"
-                onClick={onRequestClose}
-                className="flex size-12 shrink-0 items-center text-slate-900"
-                aria-label="일정 수정 닫기"
-              >
-                <span className="material-symbols-outlined">close</span>
-              </button>
-            ) : (
-              <RouterLink
-                href={backHref}
-                replace={isModal}
-                className="flex size-12 shrink-0 items-center text-slate-900"
-                aria-label="일정으로 돌아가기"
-              >
-                <span className="material-symbols-outlined">arrow_back</span>
-              </RouterLink>
-            )}
-            <h2 className="flex-1 text-lg font-bold leading-tight tracking-tight text-slate-900">일정 수정</h2>
-          </header>
+        <div className="relative mx-auto flex min-h-screen w-full max-w-[480px] flex-col bg-white shadow-xl">
+          <ClubPageHeader
+            title="일정 수정"
+            subtitle={clubName}
+            icon="edit_calendar"
+            containerClassName="max-w-[480px]"
+            leftSlot={
+              isModal && onRequestClose ? (
+                <button
+                  type="button"
+                  onClick={onRequestClose}
+                  className="flex size-12 shrink-0 items-center text-slate-900"
+                  aria-label="일정 수정 닫기"
+                >
+                  <span className="material-symbols-outlined">close</span>
+                </button>
+              ) : (
+                <RouterLink
+                  href={backHref}
+                  replace={isModal}
+                  className="flex size-12 shrink-0 items-center text-slate-900"
+                  aria-label="일정으로 돌아가기"
+                >
+                  <span className="material-symbols-outlined">arrow_back</span>
+                </RouterLink>
+              )
+            }
+          />
 
           <main
             className={`flex flex-1 flex-col gap-1 ${
@@ -622,17 +628,23 @@ export function ClubScheduleEditorClient({
         className={
           isModal
             ? "flex min-h-0 flex-1 flex-col bg-[var(--background-light)]"
-            : "relative mx-auto flex min-h-screen max-w-md flex-col overflow-hidden bg-[var(--background-light)] shadow-[0_18px_50px_rgba(15,23,42,0.12)]"
+            : "relative mx-auto flex min-h-screen max-w-md flex-col bg-[var(--background-light)] shadow-[0_18px_50px_rgba(15,23,42,0.12)]"
         }
       >
-        <header
-          className={`sticky top-0 z-10 ${
-            isModal ? "bg-[var(--background-light)]/92 px-4 pt-4 backdrop-blur" : "bg-[var(--background-light)]/92 backdrop-blur"
+        <div
+          className={`sticky top-0 z-10 bg-[var(--background-light)]/92 backdrop-blur ${
+            isModal ? "px-4 pt-4" : ""
           }`}
         >
-          <div className={`border-b border-[var(--primary)]/10 ${isModal ? "" : "px-4 pt-4"}`}>
-            <div className="flex items-center justify-between pb-4">
-              {isModal && onRequestClose ? (
+          <ClubPageHeader
+            title={isEdit ? "일정 수정" : "일정 생성"}
+            subtitle={clubName}
+            icon="edit_calendar"
+            sticky={false}
+            className="border-[var(--primary)]/10"
+            containerClassName={isModal ? "max-w-none px-0" : "max-w-md"}
+            leftSlot={
+              isModal && onRequestClose ? (
                 <button
                   type="button"
                   onClick={onRequestClose}
@@ -650,15 +662,11 @@ export function ClubScheduleEditorClient({
                 >
                   <span className="material-symbols-outlined">arrow_back</span>
                 </RouterLink>
-              )}
-              <h2 className="flex-1 text-center text-lg font-bold leading-tight tracking-tight text-slate-900">
-                {isEdit ? "일정 수정" : "일정 생성"}
-              </h2>
-              <div className="size-10 shrink-0" />
-            </div>
-          </div>
+              )
+            }
+          />
 
-          <div className={`flex flex-col gap-2 p-4 ${isModal ? "px-0" : ""}`}>
+          <div className={`mx-auto flex w-full max-w-md flex-col gap-2 px-4 pb-4 ${isModal ? "max-w-none px-0" : ""}`}>
             <p className="text-sm font-medium text-slate-700">일정 정보 입력</p>
             <p className="text-xs text-slate-500">{clubName}</p>
             <div className="h-1.5 overflow-hidden rounded-full bg-[var(--primary)]/10">
@@ -668,7 +676,7 @@ export function ClubScheduleEditorClient({
               />
             </div>
           </div>
-        </header>
+        </div>
 
         <main
           ref={isModal ? mainRef : undefined}

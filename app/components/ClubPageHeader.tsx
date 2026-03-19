@@ -2,32 +2,45 @@
 
 import type { ReactNode } from "react";
 
+type ClubPageHeaderTheme = "user" | "admin";
+
 type ClubPageHeaderProps = {
   title: string;
   subtitle?: string;
   icon?: string;
+  theme?: ClubPageHeaderTheme;
+  leftSlot?: ReactNode;
   rightSlot?: ReactNode;
   className?: string;
+  containerClassName?: string;
+  sticky?: boolean;
 };
 
 export function ClubPageHeader({
   title,
   subtitle,
-  icon,
+  icon = "dashboard",
+  theme = "user",
+  leftSlot,
   rightSlot,
   className,
+  containerClassName,
+  sticky = true,
 }: ClubPageHeaderProps) {
+  const headerClassName = `${sticky ? "sticky top-0 z-50" : ""} border-b border-slate-200 backdrop-blur-md ${
+    theme === "admin" ? "bg-[#f8f6f6]/85" : "bg-[var(--background-light)]/85"
+  } ${className ?? ""}`;
+  const resolvedContainerClassName =
+    containerClassName ?? (theme === "admin" ? "max-w-5xl" : "max-w-md");
+
   return (
-    <header className={`border-b border-slate-200 bg-white ${className ?? ""}`}>
-      <div className="mx-auto flex w-full max-w-md items-center justify-between gap-3 px-4 py-4">
+    <header className={headerClassName}>
+      <div className={`mx-auto flex w-full items-center justify-between gap-3 p-4 ${resolvedContainerClassName}`}>
         <div className="min-w-0 flex items-center gap-3">
-          {icon ? (
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[var(--primary)]/10">
-              <span className="material-symbols-outlined text-[24px] text-[var(--primary)]">
-                {icon}
-              </span>
-            </div>
-          ) : null}
+          {leftSlot ? <div className="shrink-0">{leftSlot}</div> : null}
+          <div className="shrink-0 rounded-xl bg-[var(--primary)]/10 p-2 text-[var(--primary)]">
+            <span className="material-symbols-outlined">{icon}</span>
+          </div>
           <div className="min-w-0">
             <h1 className="truncate text-lg font-bold tracking-tight text-slate-900">{title}</h1>
             {subtitle ? <p className="truncate text-xs text-slate-500">{subtitle}</p> : null}

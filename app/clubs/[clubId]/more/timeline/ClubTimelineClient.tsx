@@ -165,6 +165,7 @@ export function ClubTimelineClient({
       <div className="mx-auto flex min-h-full max-w-md flex-col bg-[var(--background-light)]">
         <ClubPageHeader
           title="타임라인"
+          icon="timeline"
           className="border-[#135bec]/10 bg-white/85 backdrop-blur-md"
         />
         <div className="hide-scrollbar flex gap-3 overflow-x-auto border-b border-[#135bec]/10 bg-white/85 px-4 pb-4">

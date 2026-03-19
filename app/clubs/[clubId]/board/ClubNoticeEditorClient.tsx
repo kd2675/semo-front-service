@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { AnimatePresence } from "motion/react";
 import { RouterLink } from "@/app/components/RouterLink";
+import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import { useRouter } from "next/navigation";
 import { useEffect, useEffectEvent, useId, useState } from "react";
 import { getNoticeAccentClasses } from "@/app/lib/notice-category";
@@ -252,35 +253,33 @@ export function ClubNoticeEditorClient({
       }
     >
       <div className={isModal ? "flex min-h-0 flex-1 flex-col" : "mx-auto flex min-h-screen max-w-md flex-col bg-white"}>
-        <header
-          className={`sticky top-0 z-10 flex items-center justify-between border-b border-slate-200 ${
-            isModal ? "bg-white/92 px-5 py-4 backdrop-blur" : "bg-white p-4"
-          }`}
-        >
-          {isModal && onRequestClose ? (
-            <button
-              type="button"
-              onClick={onRequestClose}
-              className="flex size-10 items-center justify-start text-slate-900"
-              aria-label="공지 작성 닫기"
-            >
-              <span className="material-symbols-outlined">close</span>
-            </button>
-          ) : (
-            <RouterLink
-              href={backHref}
-              replace={isModal}
-              className="flex size-10 items-center justify-start text-slate-900"
-              aria-label="공지 목록으로 돌아가기"
-            >
-              <span className="material-symbols-outlined">{isModal ? "close" : "arrow_back"}</span>
-            </RouterLink>
-          )}
-          <h2 className="flex-1 text-center text-lg font-bold leading-tight tracking-tight">
-            {isEdit ? "공지 수정" : "공지 작성"}
-          </h2>
-          <div className="w-10" />
-        </header>
+        <ClubPageHeader
+          title={isEdit ? "공지 수정" : "공지 작성"}
+          subtitle={clubName}
+          icon="edit_square"
+          containerClassName="max-w-md"
+          leftSlot={
+            isModal && onRequestClose ? (
+              <button
+                type="button"
+                onClick={onRequestClose}
+                className="flex size-10 items-center justify-start text-slate-900"
+                aria-label="공지 작성 닫기"
+              >
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            ) : (
+              <RouterLink
+                href={backHref}
+                replace={isModal}
+                className="flex size-10 items-center justify-start text-slate-900"
+                aria-label="공지 목록으로 돌아가기"
+              >
+                <span className="material-symbols-outlined">{isModal ? "close" : "arrow_back"}</span>
+              </RouterLink>
+            )
+          }
+        />
 
         <main
           className={`flex-1 ${isModal ? "overflow-y-auto pb-24" : "semo-nav-bottom-space"}`}

@@ -46,7 +46,7 @@ export function ClubProfileFallbackClient({ clubId }: ClubProfileFallbackClientP
   return (
     <div className="min-h-full bg-[var(--background-light)] font-display text-slate-900">
       <div className="mx-auto flex min-h-full max-w-md flex-col bg-white shadow-xl">
-        <ClubPageHeader title="Club Profile" />
+        <ClubPageHeader title="내 프로필" icon="person" />
 
         <main className="semo-nav-bottom-space flex-1">
           <motion.section className="px-4 py-6" {...staggeredFadeUpMotion(0, reduceMotion)}>

@@ -26,13 +26,11 @@ function MobileBottomNavShell() {
 
 function MobilePageShell({
   titleWidthClassName,
-  actionWidthClassName = "size-10",
   mainClassName = "semo-nav-bottom-space space-y-4 px-4 pt-4",
   children,
   showBottomNav = true,
 }: {
   titleWidthClassName: string;
-  actionWidthClassName?: string;
   mainClassName?: string;
   children: ReactNode;
   showBottomNav?: boolean;
@@ -40,10 +38,14 @@ function MobilePageShell({
   return (
     <div className="bg-[var(--background-light)] font-display text-slate-900">
       <div className="relative mx-auto flex min-h-full max-w-md flex-col bg-white">
-        <header className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-200 bg-white p-4">
-          <div className="size-10 rounded-full bg-slate-100" />
-          <ShellLine className={`h-5 ${titleWidthClassName}`} />
-          <div className={`${actionWidthClassName} rounded-xl bg-slate-100`} />
+        <header className="sticky top-0 z-50 border-b border-slate-200 bg-[var(--background-light)]/85 backdrop-blur-md">
+          <div className="mx-auto flex w-full max-w-md items-center gap-3 p-4">
+            <div className="size-10 rounded-xl bg-[var(--primary)]/10" />
+            <div className="space-y-2">
+              <ShellLine className={`h-5 ${titleWidthClassName}`} />
+              <ShellLine className="h-3 w-20" />
+            </div>
+          </div>
         </header>
 
         <main className={`flex-1 ${mainClassName}`}>{children}</main>
@@ -56,14 +58,14 @@ function MobilePageShell({
 export function ClubDashboardLoadingShell() {
   return (
     <div className="bg-[var(--background-light)] text-slate-900 antialiased">
-      <div className="relative flex min-h-full w-full flex-col overflow-x-hidden">
-        <header className="sticky top-0 z-50 border-b border-slate-200 bg-white/80 backdrop-blur-md">
-          <div className="flex items-center justify-between p-4">
-            <div className="flex items-center gap-3">
-              <div className="size-10 rounded-full bg-[var(--primary)]/10" />
+      <div className="relative flex min-h-full w-full flex-col">
+        <header className="sticky top-0 z-50 border-b border-slate-200 bg-[var(--background-light)]/85 backdrop-blur-md">
+          <div className="mx-auto flex w-full items-center gap-3 p-4">
+            <div className="size-10 rounded-xl bg-[var(--primary)]/10" />
+            <div className="space-y-2">
               <ShellLine className="h-6 w-28" />
+              <ShellLine className="h-3 w-20" />
             </div>
-            <div className="h-8 w-16 rounded-full bg-slate-100" />
           </div>
         </header>
 
@@ -162,7 +164,7 @@ export function ClubBoardFeedLoadingShell() {
 
 export function ClubProfileLoadingShell() {
   return (
-    <MobilePageShell titleWidthClassName="w-28" actionWidthClassName="size-10 rounded-full bg-transparent">
+    <MobilePageShell titleWidthClassName="w-28">
       <section className="px-4 py-6">
         <div className="rounded-2xl border border-slate-100 bg-slate-50 p-5">
           <ShellLine className="h-3 w-24" />
@@ -295,14 +297,14 @@ export function ClubEditorLoadingShell({
       }
     >
       <div className={isModal ? "flex min-h-0 flex-1 flex-col" : "mx-auto flex min-h-screen max-w-md flex-col bg-white"}>
-        <header
-          className={`sticky top-0 z-10 flex items-center justify-between border-b border-slate-200 ${
-            isModal ? "bg-white/92 px-5 py-4 backdrop-blur" : "bg-white p-4"
-          }`}
-        >
-          <div className="size-10 rounded-full bg-slate-100" />
-          <ShellLine className="h-5 w-28" />
-          <div className="size-10" />
+        <header className="sticky top-0 z-50 border-b border-slate-200 bg-[var(--background-light)]/85 backdrop-blur-md">
+          <div className={`mx-auto flex w-full max-w-md items-center gap-3 p-4 ${isModal ? "max-w-none px-5" : ""}`}>
+            <div className="size-10 rounded-xl bg-[var(--primary)]/10" />
+            <div className="space-y-2">
+              <ShellLine className="h-5 w-28" />
+              <ShellLine className="h-3 w-20" />
+            </div>
+          </div>
         </header>
 
         <main

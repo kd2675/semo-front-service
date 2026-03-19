@@ -1,9 +1,9 @@
 "use client";
 
-import { RouterLink } from "@/app/components/RouterLink";
 import { startTransition, useDeferredValue, useState } from "react";
 import { motion, useReducedMotion } from "motion/react";
 import { ClubModeSwitchFab } from "@/app/components/ClubModeSwitchFab";
+import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import { staggeredFadeUpMotion } from "@/app/lib/motion";
 import type { ClubNotice, NoticeBoardCategory } from "@/app/lib/mock-clubs";
 
@@ -48,27 +48,7 @@ export function NoticeBoardClient({
   return (
     <div className="bg-[var(--background-light)] font-display text-slate-900">
       <div className="relative mx-auto flex min-h-full max-w-md flex-col bg-white">
-        <header className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-200 bg-white p-4">
-          <RouterLink
-            href={`/clubs/${clubId}`}
-            className="flex size-10 items-center justify-start text-slate-900"
-            aria-label={`${clubName} 홈으로 돌아가기`}
-          >
-            <span className="material-symbols-outlined">arrow_back</span>
-          </RouterLink>
-          <h2 className="flex-1 text-center text-lg font-bold leading-tight tracking-tight">
-            Notice Board
-          </h2>
-          <div className="flex w-10 items-center justify-end">
-            <button
-              type="button"
-              className="flex h-10 w-10 items-center justify-center rounded-lg bg-transparent text-slate-900"
-              aria-label="검색"
-            >
-              <span className="material-symbols-outlined">search</span>
-            </button>
-          </div>
-        </header>
+        <ClubPageHeader title="공지 게시판" subtitle={clubName} icon="campaign" containerClassName="max-w-md" />
 
         <main className="semo-nav-bottom-space flex-1">
           <motion.div className="px-4 py-4" {...staggeredFadeUpMotion(0, reduceMotion)}>

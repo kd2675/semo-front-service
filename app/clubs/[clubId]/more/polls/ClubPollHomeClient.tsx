@@ -1,7 +1,6 @@
 "use client";
 
 import { RouteModal } from "@/app/components/RouteModal";
-import { RouterLink } from "@/app/components/RouterLink";
 import { ClubModeSwitchFab } from "@/app/components/ClubModeSwitchFab";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import { ClubPollDetailModal } from "@/app/components/ClubDetailModals";
@@ -216,25 +215,13 @@ export function ClubPollHomeClient({
       style={{ "--primary": accent, "--background-light": background } as CSSProperties}
     >
       <div className="relative mx-auto flex min-h-full max-w-md flex-col bg-[var(--background-light)]">
-        {mode === "user" ? (
-          <ClubPageHeader title="투표 관리" subtitle={payload.clubName} />
-        ) : (
-          <header className="sticky top-0 z-20 flex items-center justify-between border-b border-gray-100 bg-white px-4 py-3">
-            <div className="flex items-center gap-4">
-              <RouterLink
-                href={`/clubs/${clubId}/admin`}
-                className="p-1"
-                aria-label="뒤로 가기"
-              >
-                <span className="material-symbols-outlined text-[24px] text-gray-800">arrow_back</span>
-              </RouterLink>
-              <h1 className="text-xl font-bold text-gray-900">투표 관리</h1>
-            </div>
-            <button type="button" className="p-2 text-gray-500" aria-label="검색">
-              <span className="material-symbols-outlined text-[20px]">search</span>
-            </button>
-          </header>
-        )}
+        <ClubPageHeader
+          title="투표 관리"
+          subtitle={payload.clubName}
+          icon="how_to_vote"
+          theme={mode === "admin" ? "admin" : "user"}
+          containerClassName="max-w-md"
+        />
 
         <main className="semo-nav-bottom-space flex-1 pb-24">
           <nav className="flex border-b border-gray-200 bg-white">

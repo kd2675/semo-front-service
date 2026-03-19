@@ -43,17 +43,9 @@ export function ClubProfileClient({ club, profile }: ClubProfileClientProps) {
     <div className="min-h-full bg-[var(--background-light)] font-display text-slate-900">
       <div className="mx-auto flex min-h-full max-w-md flex-col bg-white shadow-xl">
         <ClubPageHeader
-          title="My Profile"
+          title="내 프로필"
           subtitle={club.name}
-          rightSlot={
-            <button
-              type="button"
-              className="flex size-10 items-center justify-center rounded-full transition-colors hover:bg-slate-100"
-              aria-label="프로필 설정"
-            >
-              <span className="material-symbols-outlined">settings</span>
-            </button>
-          }
+          icon="person"
         />
 
         <main className="semo-nav-bottom-space flex-1">

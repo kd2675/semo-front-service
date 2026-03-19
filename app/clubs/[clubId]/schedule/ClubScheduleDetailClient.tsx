@@ -1,6 +1,7 @@
 "use client";
 
 import { RouterLink } from "@/app/components/RouterLink";
+import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import { motion, useReducedMotion } from "motion/react";
 import { useEffect, useEffectEvent, useState } from "react";
 import { ClubModeSwitchFab } from "@/app/components/ClubModeSwitchFab";
@@ -161,28 +162,32 @@ export function ClubScheduleDetailClient({
   return (
     <div className={isModal ? "flex min-h-0 flex-1 flex-col bg-white font-display text-slate-900" : "min-h-full bg-white font-display text-slate-900"}>
       <div className={`relative flex flex-col bg-white ${isModal ? "min-h-0 flex-1" : "mx-auto min-h-full max-w-md"}`}>
-        <header className="sticky top-0 z-50 flex h-14 items-center justify-between border-b border-slate-100 bg-white px-4">
-          {isModal && onRequestClose ? (
-            <button
-              type="button"
-              onClick={onRequestClose}
-              className="rounded-full p-2 transition-colors hover:bg-slate-100"
-              aria-label="일정 상세 닫기"
-            >
-              <span className="material-symbols-outlined text-[24px]">close</span>
-            </button>
-          ) : (
-            <RouterLink
-              href={backHref}
-              className="rounded-full p-2 transition-colors hover:bg-slate-100"
-              aria-label="일정 목록으로 돌아가기"
-            >
-              <span className="material-symbols-outlined text-[24px]">arrow_back</span>
-            </RouterLink>
-          )}
-          <h1 className="text-lg font-bold">일정 상세</h1>
-          <div className="w-10" />
-        </header>
+        <ClubPageHeader
+          title="일정 상세"
+          subtitle={payload?.clubName}
+          icon="calendar_month"
+          containerClassName="max-w-md"
+          leftSlot={
+            isModal && onRequestClose ? (
+              <button
+                type="button"
+                onClick={onRequestClose}
+                className="rounded-full p-2 transition-colors hover:bg-slate-100"
+                aria-label="일정 상세 닫기"
+              >
+                <span className="material-symbols-outlined text-[24px]">close</span>
+              </button>
+            ) : (
+              <RouterLink
+                href={backHref}
+                className="rounded-full p-2 transition-colors hover:bg-slate-100"
+                aria-label="일정 목록으로 돌아가기"
+              >
+                <span className="material-symbols-outlined text-[24px]">arrow_back</span>
+              </RouterLink>
+            )
+          }
+        />
 
         <main
           className={`flex-1 ${isModal ? "overflow-y-auto" : "semo-nav-bottom-space"}`}
