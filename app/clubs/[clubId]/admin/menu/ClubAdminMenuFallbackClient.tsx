@@ -23,7 +23,7 @@ export function ClubAdminMenuFallbackClient({ clubId }: ClubAdminMenuFallbackCli
   useEffect(() => {
     let cancelled = false;
 
-    void (async () => {
+    const loadInitial = async () => {
       const [clubResult, featureResult] = await Promise.all([
         getMyClub(clubId),
         getClubFeatures(clubId),
@@ -34,10 +34,26 @@ export function ClubAdminMenuFallbackClient({ clubId }: ClubAdminMenuFallbackCli
       }
       setClub(clubResult.data);
       setFeatures(featureResult.ok && featureResult.data ? featureResult.data : []);
-    })();
+    };
+
+    const reloadFeatures = async () => {
+      const featureResult = await getClubFeatures(clubId);
+      if (cancelled || !featureResult.ok || !featureResult.data) {
+        return;
+      }
+      setFeatures(featureResult.data);
+    };
+
+    void loadInitial();
+
+    const onFeatureUpdate = () => {
+      void reloadFeatures();
+    };
+    window.addEventListener("semo:club-features-updated", onFeatureUpdate);
 
     return () => {
       cancelled = true;
+      window.removeEventListener("semo:club-features-updated", onFeatureUpdate);
     };
   }, [clubId, router]);
 

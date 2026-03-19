@@ -80,19 +80,13 @@ type ClubAdminMenuClientProps = {
 
 type EnabledFeatureCardProps = {
   feature: ClubFeatureSummary;
-  index: number;
-  reduceMotion: boolean;
   activeFeatureKey: string | null;
-  showInsertLine: boolean;
   onToggle: (featureKey: string) => void;
 };
 
 function EnabledFeatureCard({
   feature,
-  index,
-  reduceMotion,
   activeFeatureKey,
-  showInsertLine,
   onToggle,
 }: EnabledFeatureCardProps) {
   const {
@@ -106,7 +100,7 @@ function EnabledFeatureCard({
   } = useSortable({ id: feature.featureKey });
 
   return (
-    <motion.article
+    <article
       ref={setNodeRef}
       style={{
         transform: CSS.Transform.toString(transform),
@@ -117,11 +111,7 @@ function EnabledFeatureCard({
           ? "border-[var(--primary)]/35"
           : "border-slate-200"
       } ${isDragging ? "z-20 opacity-0" : ""}`}
-      {...staggeredFadeUpMotion(index + 2, reduceMotion)}
     >
-      {showInsertLine ? (
-        <div className="pointer-events-none absolute -top-2 left-4 right-4 h-[3px] rounded-full bg-[var(--primary)] shadow-[0_0_0_1px_rgba(255,255,255,0.75)]" />
-      ) : null}
       <button
         ref={setActivatorNodeRef}
         type="button"
@@ -147,7 +137,7 @@ function EnabledFeatureCard({
       >
         비활성화
       </button>
-    </motion.article>
+    </article>
   );
 }
 
@@ -188,8 +178,8 @@ export function ClubAdminMenuClient({
   );
   const [isSaving, setIsSaving] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
+  const [alertMessage, setAlertMessage] = useState<string | null>(null);
   const [activeFeatureKey, setActiveFeatureKey] = useState<string | null>(null);
-  const [overFeatureKey, setOverFeatureKey] = useState<string | null>(null);
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
@@ -212,6 +202,16 @@ export function ClubAdminMenuClient({
     setSavedFeatures(cloneFeatures(initialFeatures));
     setSavedEnabledFeatureKeys(extractEnabledFeatureKeys(initialFeatures));
   }, [initialFeatures]);
+
+  useEffect(() => {
+    if (!alertMessage) {
+      return;
+    }
+    const timeoutId = window.setTimeout(() => {
+      setAlertMessage(null);
+    }, 2000);
+    return () => window.clearTimeout(timeoutId);
+  }, [alertMessage]);
 
   const enabledFeatures = useMemo(
     () => features.filter((feature) => feature.enabled),
@@ -253,16 +253,9 @@ export function ClubAdminMenuClient({
 
   const handleDragStart = (event: DragStartEvent) => {
     setActiveFeatureKey(String(event.active.id));
-    setOverFeatureKey(String(event.active.id));
   };
 
   const handleDragOver = (event: DragOverEvent) => {
-    setOverFeatureKey(event.over?.id == null ? null : String(event.over.id));
-  };
-
-  const handleDragEnd = (event: DragEndEvent) => {
-    setActiveFeatureKey(null);
-    setOverFeatureKey(null);
     const activeId = String(event.active.id);
     const overId = event.over?.id == null ? null : String(event.over.id);
     if (overId == null || activeId === overId) {
@@ -275,13 +268,22 @@ export function ClubAdminMenuClient({
         const currentDisabled = current.filter((feature) => !feature.enabled);
         const fromIndex = currentEnabled.findIndex((feature) => feature.featureKey === activeId);
         const toIndex = currentEnabled.findIndex((feature) => feature.featureKey === overId);
-        if (fromIndex < 0 || toIndex < 0) {
+        if (fromIndex < 0 || toIndex < 0 || fromIndex === toIndex) {
           return current;
         }
 
         return [...arrayMove(currentEnabled, fromIndex, toIndex), ...currentDisabled];
       });
     });
+  };
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    setActiveFeatureKey(null);
+    const activeId = String(event.active.id);
+    const overId = event.over?.id == null ? null : String(event.over.id);
+    if (overId == null || activeId === overId) {
+      return;
+    }
   };
 
   const handleSave = async () => {
@@ -292,6 +294,7 @@ export function ClubAdminMenuClient({
 
     setIsSaving(true);
     setFeedback(null);
+    setAlertMessage(null);
     const result = await updateClubFeatures(clubId, {
       enabledFeatureKeys: features
         .filter((feature) => feature.enabled)
@@ -307,13 +310,13 @@ export function ClubAdminMenuClient({
     setFeatures(cloneFeatures(result.data));
     setSavedFeatures(cloneFeatures(result.data));
     setSavedEnabledFeatureKeys(extractEnabledFeatureKeys(result.data));
-    setFeedback("기능 설정이 저장되었습니다.");
+    setFeedback(null);
+    setAlertMessage("기능 설정이 저장되었습니다.");
     window.dispatchEvent(new Event("semo:club-features-updated"));
   };
 
   const handleReset = () => {
     setActiveFeatureKey(null);
-    setOverFeatureKey(null);
     setFeatures(cloneFeatures(savedFeatures));
     setFeedback("변경 사항을 되돌렸습니다.");
   };
@@ -417,7 +420,6 @@ export function ClubAdminMenuClient({
                   onDragEnd={handleDragEnd}
                   onDragCancel={() => {
                     setActiveFeatureKey(null);
-                    setOverFeatureKey(null);
                   }}
                 >
                   <SortableContext
@@ -425,18 +427,11 @@ export function ClubAdminMenuClient({
                     strategy={verticalListSortingStrategy}
                   >
                     <div className="flex flex-col gap-3">
-                      {enabledFeatures.map((feature, index) => (
+                      {enabledFeatures.map((feature) => (
                         <EnabledFeatureCard
                           key={feature.featureKey}
                           feature={feature}
-                          index={index}
-                          reduceMotion={reduceMotion}
                           activeFeatureKey={activeFeatureKey}
-                          showInsertLine={
-                            overFeatureKey === feature.featureKey &&
-                            activeFeatureKey != null &&
-                            activeFeatureKey !== feature.featureKey
-                          }
                           onToggle={handleToggle}
                         />
                       ))}
@@ -532,6 +527,13 @@ export function ClubAdminMenuClient({
           </div>
         ) : null}
       </div>
+      {alertMessage ? (
+        <div className="pointer-events-none fixed inset-x-0 top-5 z-[70] flex justify-center px-4">
+          <div className="rounded-full bg-emerald-500 px-4 py-2 text-sm font-semibold text-white shadow-lg">
+            {alertMessage}
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
