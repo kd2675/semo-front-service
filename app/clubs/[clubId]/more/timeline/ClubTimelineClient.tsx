@@ -7,10 +7,9 @@ import {
   type ClubTimelineEntry,
   type ClubTimelineResponse,
 } from "@/app/lib/clubs";
-import { getNoticeAccentClasses } from "@/app/lib/notice-category";
+import { getLinkedContentBadge } from "@/app/lib/content-badge";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import {
-  startTransition,
   useEffect,
   useEffectEvent,
   useMemo,
@@ -67,7 +66,6 @@ export function ClubTimelineClient({
   const prefersReducedMotion = useReducedMotion();
   const reduceMotion = Boolean(prefersReducedMotion);
   const [timeline, setTimeline] = useState(initialData);
-  const [activeCategory, setActiveCategory] = useState(initialData.selectedCategoryKey ?? "all");
   const [loading, setLoading] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [detailNoticeId, setDetailNoticeId] = useState<string | null>(null);
@@ -75,7 +73,6 @@ export function ClubTimelineClient({
   const [detailVoteId, setDetailVoteId] = useState<string | null>(null);
   const [sentinelNode, setSentinelNode] = useState<HTMLDivElement | null>(null);
   const loadingRef = useRef(false);
-  const didMountRef = useRef(false);
 
   const cursor: CursorState = {
     publishedAt: timeline.nextCursorPublishedAt,
@@ -92,7 +89,6 @@ export function ClubTimelineClient({
     setFeedback(null);
 
     const result = await getClubTimeline(clubId, {
-      category: activeCategory,
       cursorPublishedAt: mode === "append" ? cursor.publishedAt : null,
       cursorNoticeId: mode === "append" ? cursor.noticeId : null,
       size: 12,
@@ -114,14 +110,6 @@ export function ClubTimelineClient({
         mode === "append" ? [...current.entries, ...nextTimeline.entries] : nextTimeline.entries,
     }));
   });
-
-  useEffect(() => {
-    if (!didMountRef.current) {
-      didMountRef.current = true;
-      return;
-    }
-    void loadTimeline("reset");
-  }, [activeCategory]);
 
   useEffect(() => {
     if (!sentinelNode || !timeline.hasNext || loading) {
@@ -168,31 +156,6 @@ export function ClubTimelineClient({
           icon="timeline"
           className="border-[#135bec]/10 bg-white/85 backdrop-blur-md"
         />
-        <div className="hide-scrollbar flex gap-3 overflow-x-auto border-b border-[#135bec]/10 bg-white/85 px-4 pb-4">
-          {[{ categoryKey: "all", displayName: "전체", iconName: "apps", accentTone: "blue" }, ...timeline.categories].map((category) => {
-            const accent = getNoticeAccentClasses(category.accentTone);
-            const isActive = activeCategory === category.categoryKey;
-            return (
-              <button
-                key={category.categoryKey}
-                type="button"
-                onClick={() => {
-                  startTransition(() => {
-                    setActiveCategory(category.categoryKey);
-                  });
-                }}
-                className={`flex h-9 shrink-0 items-center justify-center gap-2 rounded-full border px-4 text-sm font-semibold transition ${
-                  isActive
-                    ? `${accent.progress} border-transparent text-white`
-                    : "border-[#135bec]/10 bg-white text-slate-700"
-                }`}
-              >
-                <span className="material-symbols-outlined text-[18px]">{category.iconName}</span>
-                <span>{category.displayName}</span>
-              </button>
-            );
-          })}
-        </div>
 
         <main className="semo-nav-bottom-space flex-1 px-4 pt-4">
           <div className="relative">
@@ -210,16 +173,16 @@ export function ClubTimelineClient({
                   );
                 }
 
-                const accent = getNoticeAccentClasses(item.entry.categoryAccentTone);
+                const badge = getLinkedContentBadge(item.entry.linkedTargetType);
                 return (
                   <motion.div
                     key={item.key}
                     className="relative grid grid-cols-[40px_1fr] gap-x-4 items-start"
                     {...staggeredFadeUpMotion(index, reduceMotion)}
                   >
-                    <div className={`z-10 flex h-10 w-10 items-center justify-center rounded-full border-2 border-white ${accent.icon} ring-2 ${accent.iconRing}`}>
+                    <div className="z-10 flex h-10 w-10 items-center justify-center rounded-full border-2 border-white bg-blue-100 text-[#135bec] ring-2 ring-[#135bec]/20">
                       <span className="material-symbols-outlined text-[20px]">
-                        {item.entry.categoryIconName}
+                        campaign
                       </span>
                     </div>
                     <button
@@ -238,11 +201,11 @@ export function ClubTimelineClient({
                       className="rounded-2xl border border-[#135bec]/5 bg-white p-4 text-left shadow-sm transition-transform hover:scale-[1.01]"
                     >
                       <div className="flex items-center gap-2">
-                        <span className={`rounded-md px-2 py-1 text-[11px] font-bold ${accent.badge}`}>
-                          {item.entry.categoryLabel}
+                        <span className={`rounded-md px-2 py-1 text-[11px] font-bold ${badge.className}`}>
+                          {badge.label}
                         </span>
                         {item.entry.pinned ? (
-                          <span className="text-[11px] font-bold text-slate-400">고정</span>
+                          <span className="text-[11px] font-bold text-slate-400">핀 고정</span>
                         ) : null}
                       </div>
                       <p className="mt-3 text-base font-semibold leading-snug text-slate-900">
@@ -282,7 +245,7 @@ export function ClubTimelineClient({
               className="rounded-2xl border border-dashed border-slate-300 bg-white px-5 py-10 text-center text-sm text-slate-500"
               {...staggeredFadeUpMotion(2, reduceMotion)}
             >
-              선택한 카테고리에 해당하는 타임라인 기록이 없습니다.
+              등록된 타임라인 기록이 없습니다.
             </motion.div>
           ) : null}
 

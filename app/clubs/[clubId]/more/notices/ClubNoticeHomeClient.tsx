@@ -5,7 +5,7 @@ import { ClubModeSwitchFab } from "@/app/components/ClubModeSwitchFab";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import { ClubNoticeDetailModal, ClubPollDetailModal, ClubScheduleEventDetailModal } from "@/app/components/ClubDetailModals";
 import { ScheduleActionConfirmModal } from "@/app/clubs/[clubId]/schedule/ScheduleActionConfirmModal";
-import { getNoticeAccentClasses } from "@/app/lib/notice-category";
+import { getLinkedContentBadge } from "@/app/lib/content-badge";
 import {
   deleteClubNotice,
   type ClubNoticeHomeResponse,
@@ -16,13 +16,15 @@ import {
 import { staggeredFadeUpMotion } from "@/app/lib/motion";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import Image from "next/image";
-import { startTransition, useDeferredValue, useMemo, useState, type CSSProperties } from "react";
+import { useState, type CSSProperties } from "react";
 import { ClubNoticeEditorClient } from "../../board/ClubNoticeEditorClient";
 
 type ClubNoticeHomeClientProps = {
   clubId: string;
   payload: ClubNoticeHomeResponse;
   mode?: "user" | "admin";
+  pinnedOnly: boolean;
+  onPinnedOnlyChange: (next: boolean) => void;
   onReload: () => void;
 };
 
@@ -96,8 +98,8 @@ function UserNoticeCard({
   onEdit: () => void;
   onDelete: () => void;
 }) {
-  const accent = getNoticeAccentClasses(notice.categoryAccentTone);
   const metaDateLabel = notice.publishedAtLabel || notice.timeAgo;
+  const badge = getLinkedContentBadge(notice.linkedTargetType);
 
   return (
     <article className="relative overflow-visible rounded-[8px] border border-slate-100 bg-white shadow-sm">
@@ -115,8 +117,8 @@ function UserNoticeCard({
             </div>
             <div className="p-4">
               <div className="mb-2 flex items-center justify-between gap-3">
-                <span className={`rounded px-2 py-0.5 text-[11px] font-bold uppercase ${accent.badge}`}>
-                  {notice.categoryLabel}
+                <span className={`rounded px-2 py-0.5 text-[11px] font-bold uppercase ${badge.className}`}>
+                  {badge.label}
                 </span>
                 <span className="text-xs text-slate-400">{metaDateLabel}</span>
               </div>
@@ -127,8 +129,8 @@ function UserNoticeCard({
         ) : (
           <div className="p-4">
             <div className="mb-2 flex items-center justify-between gap-3">
-              <span className={`rounded px-2 py-0.5 text-[11px] font-bold uppercase ${accent.badge}`}>
-                {notice.categoryLabel}
+              <span className={`rounded px-2 py-0.5 text-[11px] font-bold uppercase ${badge.className}`}>
+                {badge.label}
               </span>
               <span className="text-xs text-slate-400">{metaDateLabel}</span>
             </div>
@@ -215,12 +217,12 @@ export function ClubNoticeHomeClient({
   clubId,
   payload,
   mode = "user",
+  pinnedOnly,
+  onPinnedOnlyChange,
   onReload,
 }: ClubNoticeHomeClientProps) {
   const prefersReducedMotion = useReducedMotion();
   const reduceMotion = Boolean(prefersReducedMotion);
-  const [query, setQuery] = useState("");
-  const deferredQuery = useDeferredValue(query);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [detailNoticeId, setDetailNoticeId] = useState<string | null>(null);
   const [sharedEventDetailId, setSharedEventDetailId] = useState<string | null>(null);
@@ -235,18 +237,6 @@ export function ClubNoticeHomeClient({
   const basePath = mode === "admin" ? `/clubs/${clubId}/admin/more/notices` : `/clubs/${clubId}/more/notices`;
   const sharedEvents = payload.sharedEvents ?? [];
   const sharedVotes = payload.sharedVotes ?? [];
-
-  const filteredNotices = useMemo(() => {
-    const normalizedQuery = deferredQuery.trim().toLowerCase();
-    if (!normalizedQuery) {
-      return payload.notices;
-    }
-    return payload.notices.filter((notice) =>
-      `${notice.title} ${notice.summary} ${notice.categoryLabel} ${notice.authorDisplayName}`
-        .toLowerCase()
-        .includes(normalizedQuery),
-    );
-  }, [deferredQuery, payload.notices]);
 
   const handleDelete = async () => {
     if (!deleteTarget) {
@@ -298,7 +288,7 @@ export function ClubNoticeHomeClient({
                     <AdminMetricsCard label="오늘 게시" value={payload.publishedTodayCount} icon="today" accent={accent} />
                   </motion.div>
                   <motion.div {...staggeredFadeUpMotion(3, reduceMotion)}>
-                    <AdminMetricsCard label="상단 고정" value={payload.pinnedNoticeCount} icon="keep" accent={accent} />
+                    <AdminMetricsCard label="핀 고정" value={payload.pinnedNoticeCount} icon="keep" accent={accent} />
                   </motion.div>
                   <motion.div {...staggeredFadeUpMotion(4, reduceMotion)}>
                     <AdminMetricsCard label="일정 연결" value={payload.scheduledNoticeCount} icon="calendar_month" accent={accent} />
@@ -324,7 +314,7 @@ export function ClubNoticeHomeClient({
               >
                 <MetricsCard label="전체" value={payload.totalNoticeCount} accent={accent} />
                 <MetricsCard label="오늘 게시" value={payload.publishedTodayCount} accent={accent} highlighted />
-                <MetricsCard label="상단 고정" value={payload.pinnedNoticeCount} accent={accent} />
+                <MetricsCard label="핀 고정" value={payload.pinnedNoticeCount} accent={accent} />
                 <MetricsCard label="일정 연결" value={payload.scheduledNoticeCount} accent={accent} />
               </motion.section>
 
@@ -340,44 +330,40 @@ export function ClubNoticeHomeClient({
                 </motion.div>
 
                 <motion.div className="mb-4" {...staggeredFadeUpMotion(4, reduceMotion)}>
-                  <div className="flex gap-2">
-                    <label className="block flex-1">
-                      <div className="flex h-12 items-center rounded-[8px] border border-slate-200 bg-white px-4 shadow-sm">
-                        <span className="material-symbols-outlined text-[20px] text-slate-400">search</span>
-                        <input
-                          value={query}
-                          onChange={(event) => {
-                            const nextValue = event.target.value;
-                            startTransition(() => {
-                              setQuery(nextValue);
-                            });
-                          }}
-                          className="ml-3 w-full border-none bg-transparent text-sm text-slate-900 outline-none placeholder:text-slate-400 focus:ring-0"
-                          placeholder="제목 또는 내용 검색"
-                          type="text"
-                        />
-                      </div>
-                    </label>
+                  <div className="inline-flex rounded-full border border-slate-200 bg-white p-1 shadow-sm">
                     <button
                       type="button"
-                      aria-label="필터"
-                      className="flex h-12 w-12 items-center justify-center rounded-[8px] border border-slate-200 bg-white text-slate-600 shadow-sm"
+                      aria-pressed={!pinnedOnly}
+                      onClick={() => onPinnedOnlyChange(false)}
+                      className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${
+                        pinnedOnly ? "text-slate-500 hover:text-slate-700" : "bg-[var(--primary)] text-white"
+                      }`}
                     >
-                      <span className="material-symbols-outlined text-[20px]">tune</span>
+                      전체
+                    </button>
+                    <button
+                      type="button"
+                      aria-pressed={pinnedOnly}
+                      onClick={() => onPinnedOnlyChange(true)}
+                      className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${
+                        pinnedOnly ? "bg-[var(--primary)] text-white" : "text-slate-500 hover:text-slate-700"
+                      }`}
+                    >
+                      핀 고정
                     </button>
                   </div>
                 </motion.div>
 
                 <div className="space-y-5 pb-4">
-                  {filteredNotices.length === 0 ? (
+                  {payload.notices.length === 0 ? (
                     <motion.div
                       className="rounded-2xl border border-dashed border-slate-300 bg-white px-5 py-10 text-center text-sm text-slate-500"
                       {...staggeredFadeUpMotion(5, reduceMotion)}
                     >
-                      관리 가능한 공지가 없습니다.
+                      {pinnedOnly ? "핀 고정 공지가 없습니다." : "관리 가능한 공지가 없습니다."}
                     </motion.div>
                   ) : (
-                    filteredNotices.map((notice, index) => (
+                    payload.notices.map((notice, index) => (
                       <motion.div key={notice.noticeId} {...staggeredFadeUpMotion(index + 5, reduceMotion)}>
                         <UserNoticeCard
                           notice={notice}

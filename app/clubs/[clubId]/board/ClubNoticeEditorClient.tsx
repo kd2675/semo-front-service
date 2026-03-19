@@ -6,16 +6,13 @@ import { RouterLink } from "@/app/components/RouterLink";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import { useRouter } from "next/navigation";
 import { useEffect, useEffectEvent, useId, useState } from "react";
-import { getNoticeAccentClasses } from "@/app/lib/notice-category";
 import { uploadTempImage } from "@/app/lib/imageUpload";
 import {
   createClubNotice,
   deleteClubNotice,
   getClubNoticeDetail,
-  getNoticeCategoryOptions,
   updateClubNotice,
   type ClubNoticeDetailResponse,
-  type NoticeCategoryOption,
 } from "@/app/lib/clubs";
 import { ClubEditorLoadingShell } from "../ClubRouteLoadingShells";
 import { ScheduleActionConfirmModal } from "../schedule/ScheduleActionConfirmModal";
@@ -38,13 +35,6 @@ function toDateTimeLocalValue(value: string | null | undefined) {
   }
   return value.slice(0, 16);
 }
-
-const DEFAULT_NOTICE_CATEGORY: NoticeCategoryOption = {
-  categoryKey: "ANNOUNCEMENT",
-  displayName: "Announcement",
-  iconName: "campaign",
-  accentTone: "blue",
-};
 
 function SettingSwitch({
   checked,
@@ -91,13 +81,10 @@ export function ClubNoticeEditorClient({
   const isModal = presentation === "modal";
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
-  const [categoryKey, setCategoryKey] = useState("ANNOUNCEMENT");
   const [fileName, setFileName] = useState<string | null>(null);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
-  const [categoryOptions, setCategoryOptions] = useState<NoticeCategoryOption[]>([]);
-  const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [locationLabel, setLocationLabel] = useState("");
   const [scheduleAt, setScheduleAt] = useState(initialScheduleAt ?? "");
   const [scheduleEndAt, setScheduleEndAt] = useState(initialScheduleEndAt ?? "");
@@ -130,31 +117,12 @@ export function ClubNoticeEditorClient({
     setFileName(payload.fileName);
     setImageUrl(payload.imageUrl);
     setThumbnailUrl(payload.thumbnailUrl);
-    setCategoryKey(payload.categoryKey);
     setLocationLabel(payload.locationLabel ?? "");
     setScheduleAt(toDateTimeLocalValue(payload.scheduleAt));
     setScheduleEndAt(toDateTimeLocalValue(payload.scheduleEndAt));
     setPostToSchedule(Boolean(payload.scheduleAt));
     setPinned(payload.pinned);
   });
-
-  useEffect(() => {
-    let cancelled = false;
-
-    void (async () => {
-      const result = await getNoticeCategoryOptions(clubId);
-      if (cancelled || !result.ok || !result.data) {
-        return;
-      }
-      const options = result.data;
-      setCategoryOptions(options);
-      setCategoryKey((current) => current || options[0]?.categoryKey || "ANNOUNCEMENT");
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [clubId]);
 
   useEffect(() => {
     if (!isEdit) {
@@ -167,11 +135,6 @@ export function ClubNoticeEditorClient({
     return <ClubEditorLoadingShell presentation={presentation} />;
   }
 
-  const availableCategoryOptions = categoryOptions.length > 0 ? categoryOptions : [DEFAULT_NOTICE_CATEGORY];
-  const selectedCategory =
-    availableCategoryOptions.find((option) => option.categoryKey === categoryKey) ?? availableCategoryOptions[0];
-  const selectedCategoryAccent = getNoticeAccentClasses(selectedCategory.accentTone);
-
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setSaving(true);
@@ -179,7 +142,6 @@ export function ClubNoticeEditorClient({
     const request = {
       title,
       content,
-      categoryKey,
       fileName,
       locationLabel: locationLabel.trim() || null,
       scheduleAt: postToSchedule ? scheduleAt || null : null,
@@ -305,26 +267,6 @@ export function ClubNoticeEditorClient({
               </label>
 
               <label className="block">
-                <span className="mb-1.5 block text-sm font-medium text-slate-700">공지 카테고리</span>
-                <button
-                  type="button"
-                  onClick={() => setShowCategoryModal(true)}
-                  className="flex w-full items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3 text-left shadow-sm transition hover:border-[var(--primary)]/30 hover:bg-slate-50"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className={`flex size-11 items-center justify-center rounded-2xl ${selectedCategoryAccent.icon}`}>
-                      <span className="material-symbols-outlined">{selectedCategory.iconName}</span>
-                    </div>
-                    <div>
-                      <span className="block text-sm font-semibold text-slate-900">{selectedCategory.displayName}</span>
-                      <span className="mt-0.5 block text-xs text-slate-500">카테고리를 선택해 공지 성격을 구분합니다</span>
-                    </div>
-                  </div>
-                  <span className="material-symbols-outlined text-slate-400">expand_more</span>
-                </button>
-              </label>
-
-              <label className="block">
                 <span className="mb-1.5 block text-sm font-medium text-slate-700">공지 내용</span>
                 <textarea
                   value={content}
@@ -440,9 +382,9 @@ export function ClubNoticeEditorClient({
                 <div className="flex items-center gap-3">
                   <span className="material-symbols-outlined text-[var(--primary)]">keep</span>
                   <div>
-                    <span className="block text-sm font-semibold text-slate-900">상단 고정</span>
+                    <span className="block text-sm font-semibold text-slate-900">핀 고정</span>
                     <span className="mt-0.5 block text-[11px] text-slate-500">
-                      {pinned ? "사용 중 · 공지 목록 상단에 우선 노출" : "미사용"}
+                      {pinned ? "사용 중 · 공지 목록에서 핀 고정으로 노출" : "미사용"}
                     </span>
                   </div>
                 </div>
@@ -492,65 +434,6 @@ export function ClubNoticeEditorClient({
           </div>
         ) : null}
       </div>
-
-      {showCategoryModal ? (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/35 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-[28px] bg-white p-5 shadow-[0_20px_80px_rgba(15,23,42,0.28)]">
-            <div className="mb-4 flex items-start justify-between gap-4">
-              <div>
-                <h3 className="text-lg font-bold text-slate-900">카테고리 선택</h3>
-                <p className="mt-1 text-sm text-slate-500">공지의 성격에 맞는 카테고리를 골라주세요.</p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowCategoryModal(false)}
-                className="flex size-10 items-center justify-center rounded-full bg-slate-100 text-slate-500 transition hover:bg-slate-200"
-                aria-label="카테고리 선택 닫기"
-              >
-                <span className="material-symbols-outlined text-[20px]">close</span>
-              </button>
-            </div>
-
-            <div className="space-y-3">
-              {availableCategoryOptions.map((option) => {
-                const accent = getNoticeAccentClasses(option.accentTone);
-                const isSelected = option.categoryKey === categoryKey;
-                return (
-                  <button
-                    key={option.categoryKey}
-                    type="button"
-                    onClick={() => {
-                      setCategoryKey(option.categoryKey);
-                      setShowCategoryModal(false);
-                    }}
-                    className={`flex w-full items-center justify-between rounded-2xl border px-4 py-4 text-left transition ${
-                      isSelected
-                        ? "border-[var(--primary)]/30 bg-[var(--primary)]/5 shadow-sm"
-                        : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50"
-                    }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className={`flex size-11 items-center justify-center rounded-2xl ${accent.icon}`}>
-                        <span className="material-symbols-outlined">{option.iconName}</span>
-                      </div>
-                      <div>
-                        <span className="block text-sm font-semibold text-slate-900">{option.displayName}</span>
-                        <span className="mt-0.5 block text-xs text-slate-500">{option.categoryKey}</span>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {isSelected ? (
-                        <span className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${accent.badge}`}>선택됨</span>
-                      ) : null}
-                      <span className="material-symbols-outlined text-slate-300">chevron_right</span>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-      ) : null}
 
       <AnimatePresence>
         {showDeleteModal ? (

@@ -7,6 +7,7 @@ import { motion, useReducedMotion } from "motion/react";
 import { useEffect, useEffectEvent, useState } from "react";
 import { ClubModeSwitchFab } from "@/app/components/ClubModeSwitchFab";
 import { getClubNoticeDetail, type ClubNoticeDetailResponse } from "@/app/lib/clubs";
+import { getLinkedContentBadge } from "@/app/lib/content-badge";
 import { staggeredFadeUpMotion } from "@/app/lib/motion";
 import { ClubDetailLoadingShell } from "../../ClubRouteLoadingShells";
 
@@ -24,6 +25,7 @@ type NoticeDetailBodyProps = {
   reduceMotion: boolean;
 };
 function NoticeDetailBody({ payload, error, reduceMotion }: NoticeDetailBodyProps) {
+  const badge = getLinkedContentBadge(payload?.linkedTargetType);
 
   return (
     <>
@@ -43,12 +45,12 @@ function NoticeDetailBody({ payload, error, reduceMotion }: NoticeDetailBodyProp
             {...staggeredFadeUpMotion(2, reduceMotion)}
           >
             <div className="mb-3 flex flex-wrap items-center gap-2">
-              <span className="rounded-full bg-[var(--primary)]/10 px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-[var(--primary)]">
-                {payload.categoryLabel}
+              <span className={`rounded-full px-2 py-1 text-[10px] font-bold uppercase tracking-wider ${badge.className}`}>
+                {badge.label}
               </span>
               {payload.pinned ? (
                 <span className="rounded-full bg-slate-100 px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-600">
-                  Pinned
+                  핀 고정
                 </span>
               ) : null}
             </div>

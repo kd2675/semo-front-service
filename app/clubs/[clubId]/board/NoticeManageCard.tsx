@@ -2,8 +2,8 @@
 
 import Image from "next/image";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { getNoticeAccentClasses } from "@/app/lib/notice-category";
 import type { ClubNoticeListItem } from "@/app/lib/clubs";
+import { getLinkedContentBadge } from "@/app/lib/content-badge";
 
 type NoticeManageCardProps = {
   notice: ClubNoticeListItem;
@@ -24,10 +24,10 @@ export function NoticeManageCard({
   onEdit,
   onDelete,
 }: NoticeManageCardProps) {
-  const accent = getNoticeAccentClasses(notice.categoryAccentTone);
   const prefersReducedMotion = useReducedMotion();
   const reduceMotion = Boolean(prefersReducedMotion);
   const metaDateLabel = notice.publishedAtLabel || notice.timeAgo;
+  const badge = getLinkedContentBadge(notice.linkedTargetType);
 
   return (
     <div className="relative overflow-visible rounded-[8px] border border-slate-100 bg-white shadow-sm">
@@ -51,8 +51,8 @@ export function NoticeManageCard({
               </div>
               <div className="p-4">
                 <div className="mb-2 flex items-center justify-between gap-3">
-                  <span className={`rounded px-2 py-0.5 text-[11px] font-bold uppercase ${accent.badge}`}>
-                    {notice.categoryLabel}
+                  <span className={`rounded px-2 py-0.5 text-[11px] font-bold uppercase ${badge.className}`}>
+                    {badge.label}
                   </span>
                   <span className="text-xs text-slate-400">{metaDateLabel}</span>
                 </div>
@@ -63,8 +63,8 @@ export function NoticeManageCard({
           ) : (
             <div className="p-4">
               <div className="mb-2 flex items-center justify-between gap-3">
-                <span className={`rounded px-2 py-0.5 text-[11px] font-bold uppercase ${accent.badge}`}>
-                  {notice.categoryLabel}
+                <span className={`rounded px-2 py-0.5 text-[11px] font-bold uppercase ${badge.className}`}>
+                  {badge.label}
                 </span>
                 <span className="shrink-0 text-xs text-slate-400">{metaDateLabel}</span>
               </div>

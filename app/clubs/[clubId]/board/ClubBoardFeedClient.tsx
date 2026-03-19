@@ -2,8 +2,6 @@
 
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import {
-  startTransition,
-  useDeferredValue,
   useEffect,
   useEffectEvent,
   useRef,
@@ -15,11 +13,8 @@ import { ClubNoticeDetailModal, ClubPollDetailModal, ClubScheduleEventDetailModa
 import {
   deleteClubNotice,
   getClubNoticeFeed,
-  getNoticeCategoryOptions,
   type ClubNoticeFeedResponse,
   type ClubNoticeListItem,
-  type NoticeCategoryOption,
-  type NoticeFeedCategory,
 } from "@/app/lib/clubs";
 import { staggeredFadeUpMotion } from "@/app/lib/motion";
 import { ClubNoticeEditorClient } from "./ClubNoticeEditorClient";
@@ -40,9 +35,6 @@ type ClubBoardFeedClientProps = {
 export function ClubBoardFeedClient({ clubId }: ClubBoardFeedClientProps) {
   const prefersReducedMotion = useReducedMotion();
   const reduceMotion = Boolean(prefersReducedMotion);
-  const [query, setQuery] = useState("");
-  const [activeCategory, setActiveCategory] = useState<NoticeFeedCategory>("all");
-  const [categories, setCategories] = useState<NoticeCategoryOption[]>([]);
   const [items, setItems] = useState<ClubNoticeListItem[]>([]);
   const [clubName, setClubName] = useState("Notice Board");
   const [isAdmin, setIsAdmin] = useState(false);
@@ -58,9 +50,9 @@ export function ClubBoardFeedClient({ clubId }: ClubBoardFeedClientProps) {
   const [deleting, setDeleting] = useState(false);
   const [activeActionNoticeId, setActiveActionNoticeId] = useState<number | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
+  const [pinnedOnly, setPinnedOnly] = useState(false);
   const [cursor, setCursor] = useState<CursorState>({ publishedAt: null, noticeId: null });
   const [sentinelNode, setSentinelNode] = useState<HTMLDivElement | null>(null);
-  const deferredQuery = useDeferredValue(query);
   const loadingRef = useRef(false);
 
   const loadFeed = useEffectEvent(async (mode: "reset" | "append") => {
@@ -84,8 +76,7 @@ export function ClubBoardFeedClient({ clubId }: ClubBoardFeedClientProps) {
     setError(null);
 
     const result = await getClubNoticeFeed(clubId, {
-      category: activeCategory,
-      query: deferredQuery.trim(),
+      pinnedOnly,
       cursorPublishedAt: mode === "append" ? cursor.publishedAt : null,
       cursorNoticeId: mode === "append" ? cursor.noticeId : null,
       size: 10,
@@ -113,23 +104,7 @@ export function ClubBoardFeedClient({ clubId }: ClubBoardFeedClientProps) {
 
   useEffect(() => {
     void loadFeed("reset");
-  }, [clubId, activeCategory, deferredQuery, reloadKey]);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    void (async () => {
-      const result = await getNoticeCategoryOptions(clubId);
-      if (cancelled || !result.ok || !result.data) {
-        return;
-      }
-      setCategories(result.data);
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [clubId]);
+  }, [clubId, pinnedOnly, reloadKey]);
 
   useEffect(() => {
     if (!sentinelNode || !hasNext || loading) {
@@ -186,57 +161,34 @@ export function ClubBoardFeedClient({ clubId }: ClubBoardFeedClientProps) {
         <ClubPageHeader title="공지 게시판" subtitle={clubName} icon="campaign" />
 
         <main className="semo-nav-bottom-space flex-1">
-          <motion.div className="px-4 py-4" {...staggeredFadeUpMotion(0, reduceMotion)}>
-            <label className="flex w-full flex-col">
-              <div className="flex h-12 w-full items-stretch rounded-xl bg-slate-100">
-                <div className="flex items-center justify-center pl-4 text-slate-500">
-                  <span className="material-symbols-outlined">search</span>
-                </div>
-                <input
-                  className="form-input flex w-full border-none bg-transparent px-3 text-base text-slate-900 placeholder:text-slate-500 focus:ring-0"
-                  placeholder="Search announcements..."
-                  type="text"
-                  value={query}
-                  onChange={(event) => {
-                    const nextValue = event.target.value;
-                    startTransition(() => {
-                      setQuery(nextValue);
-                    });
-                  }}
-                />
-              </div>
-            </label>
-          </motion.div>
-
-          <motion.div className="mb-2 px-4" {...staggeredFadeUpMotion(1, reduceMotion)}>
-            <div className="hide-scrollbar flex gap-6 overflow-x-auto border-b border-slate-200">
-              {[{ categoryKey: "all", displayName: "All Posts", iconName: "apps", accentTone: "blue" }, ...categories].map((category) => {
-                const isActive = activeCategory === category.categoryKey;
-                return (
-                  <button
-                    key={category.categoryKey}
-                    type="button"
-                    onClick={() => {
-                      startTransition(() => {
-                        setActiveCategory(category.categoryKey);
-                      });
-                    }}
-                    className={`flex shrink-0 flex-col items-center justify-center border-b-2 pb-3 pt-2 ${
-                      isActive
-                        ? "border-[var(--primary)] text-[var(--primary)]"
-                        : "border-transparent text-slate-500"
-                    }`}
-                  >
-                    <p className={`text-sm ${isActive ? "font-bold" : "font-medium"}`}>{category.displayName}</p>
-                  </button>
-                );
-              })}
+          <div className="px-4 pt-4">
+            <div className="inline-flex rounded-full border border-slate-200 bg-white p-1 shadow-sm">
+              <button
+                type="button"
+                aria-pressed={!pinnedOnly}
+                onClick={() => setPinnedOnly(false)}
+                className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${
+                  pinnedOnly ? "text-slate-500 hover:text-slate-700" : "bg-[#135bec] text-white"
+                }`}
+              >
+                전체
+              </button>
+              <button
+                type="button"
+                aria-pressed={pinnedOnly}
+                onClick={() => setPinnedOnly(true)}
+                className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${
+                  pinnedOnly ? "bg-[#135bec] text-white" : "text-slate-500 hover:text-slate-700"
+                }`}
+              >
+                핀 고정
+              </button>
             </div>
-          </motion.div>
+          </div>
 
           <div className="flex flex-col gap-4 p-4">
             {items.map((notice, index) => (
-              <motion.article key={notice.noticeId} {...staggeredFadeUpMotion(index + 2, reduceMotion)}>
+              <motion.article key={notice.noticeId} {...staggeredFadeUpMotion(index, reduceMotion)}>
                 <NoticeManageCard
                   notice={notice}
                   manageable={isAdmin || notice.canManage}
@@ -274,16 +226,16 @@ export function ClubBoardFeedClient({ clubId }: ClubBoardFeedClientProps) {
           {!loading && initialLoaded && items.length === 0 ? (
             <motion.div
               className="flex justify-center p-8 text-sm font-medium text-slate-500"
-              {...staggeredFadeUpMotion(4, reduceMotion)}
+              {...staggeredFadeUpMotion(2, reduceMotion)}
             >
-              등록된 공지가 없습니다.
+              {pinnedOnly ? "핀 고정 공지가 없습니다." : "등록된 공지가 없습니다."}
             </motion.div>
           ) : null}
 
           {error ? (
             <motion.div
               className="mx-4 mt-6 rounded-2xl bg-rose-50 px-4 py-3 text-sm font-medium text-rose-600"
-              {...staggeredFadeUpMotion(5, reduceMotion)}
+              {...staggeredFadeUpMotion(3, reduceMotion)}
             >
               {error}
             </motion.div>
@@ -297,7 +249,7 @@ export function ClubBoardFeedClient({ clubId }: ClubBoardFeedClientProps) {
                 <motion.article
                   key={`append-shell-${index}`}
                   className="overflow-hidden rounded-[8px] border border-slate-100 bg-white shadow-sm"
-                  {...staggeredFadeUpMotion(index + 6, reduceMotion)}
+                  {...staggeredFadeUpMotion(index + 4, reduceMotion)}
                 >
                   <div className="h-40 w-full bg-slate-100" />
                   <div className="space-y-3 p-4">

@@ -6,7 +6,6 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
   getClubFeatures,
-  MOCK_CLUB_FEATURES,
   type ClubFeatureSummary,
 } from "@/app/lib/clubs";
 import { overlayFadeMotion, popInMotion } from "@/app/lib/motion";
@@ -52,46 +51,6 @@ function getFeatureDisplayName(feature: ClubFeatureSummary) {
   return FEATURE_NAME_BY_KEY[feature.featureKey] ?? feature.displayName;
 }
 
-function withMockFeaturePaths(clubId: string, feature: ClubFeatureSummary): ClubFeatureSummary {
-  if (feature.featureKey === "TIMELINE") {
-    return {
-      ...feature,
-      userPath: `/clubs/${clubId}/more/timeline`,
-      adminPath: `/clubs/${clubId}/admin/more/timeline`,
-    };
-  }
-
-  if (feature.featureKey === "POLL") {
-    return {
-      ...feature,
-      userPath: `/clubs/${clubId}/more/polls`,
-      adminPath: `/clubs/${clubId}/admin/more/polls`,
-    };
-  }
-
-  if (feature.featureKey === "NOTICE") {
-    return {
-      ...feature,
-      userPath: `/clubs/${clubId}/more/notices`,
-      adminPath: `/clubs/${clubId}/admin/more/notices`,
-    };
-  }
-
-  if (feature.featureKey === "SCHEDULE_MANAGE") {
-    return {
-      ...feature,
-      userPath: `/clubs/${clubId}/more/schedules`,
-      adminPath: `/clubs/${clubId}/admin/more/schedules`,
-    };
-  }
-
-  return {
-    ...feature,
-    userPath: `/clubs/${clubId}/more/attendance`,
-    adminPath: `/clubs/${clubId}/admin/more/attendance`,
-  };
-}
-
 const POPOVER_ITEM_VARIANTS = {
   hidden: { opacity: 0, y: 12, scale: 0.96 },
   visible: (index: number) => ({
@@ -126,13 +85,6 @@ export function ClubBottomNav({ clubId, isAdmin = false }: ClubBottomNavProps) {
     let cancelled = false;
 
     const loadFeatures = async () => {
-      if (Number.isNaN(Number(clubId))) {
-        setEnabledFeatures(
-          MOCK_CLUB_FEATURES.map((feature) => withMockFeaturePaths(clubId, feature)),
-        );
-        return;
-      }
-
       const result = await getClubFeatures(clubId);
       if (cancelled) {
         return;

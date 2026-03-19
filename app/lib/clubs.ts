@@ -51,19 +51,6 @@ export type ClubBoardResponse = {
   }>;
 };
 
-export type NoticeFeedCategory = "all" | string;
-
-export type NoticeCategoryOption = {
-  categoryKey: string;
-  displayName: string;
-  iconName: string;
-  accentTone: string;
-};
-
-export type NoticeCategorySetting = NoticeCategoryOption & {
-  visibleInTimeline: boolean;
-};
-
 export type ClubNoticeListItem = {
   noticeId: number;
   title: string;
@@ -73,10 +60,6 @@ export type ClubNoticeListItem = {
   thumbnailUrl: string | null;
   authorDisplayName: string;
   authorRoleCode: string | null;
-  categoryKey: string;
-  categoryLabel: string;
-  categoryIconName: string;
-  categoryAccentTone: string;
   publishedAtLabel: string;
   timeAgo: string;
   pinned: boolean;
@@ -107,10 +90,6 @@ export type ClubNoticeDetailResponse = {
   fileName: string | null;
   imageUrl: string | null;
   thumbnailUrl: string | null;
-  categoryKey: string;
-  categoryLabel: string;
-  categoryIconName: string;
-  categoryAccentTone: string;
   authorDisplayName: string;
   authorRoleCode: string | null;
   publishedAtLabel: string;
@@ -129,7 +108,6 @@ export type ClubNoticeDetailResponse = {
 export type UpsertClubNoticeRequest = {
   title: string;
   content: string;
-  categoryKey?: string | null;
   fileName?: string | null;
   locationLabel?: string | null;
   scheduleAt?: string | null;
@@ -141,7 +119,6 @@ export type UpsertClubNoticeRequest = {
 export type ClubNoticeUpsertResponse = {
   noticeId: number;
   title: string;
-  categoryKey: string;
   fileName: string | null;
   imageUrl: string | null;
   thumbnailUrl: string | null;
@@ -434,10 +411,6 @@ export type ClubTimelineEntry = {
   noticeId: number;
   title: string;
   summary: string;
-  categoryKey: string;
-  categoryLabel: string;
-  categoryIconName: string;
-  categoryAccentTone: string;
   authorDisplayName: string;
   publishedAt: string;
   publishedAtLabel: string;
@@ -482,8 +455,6 @@ export type ClubTimelineResponse = {
   clubId: number;
   clubName: string;
   admin: boolean;
-  selectedCategoryKey: string | null;
-  categories: NoticeCategoryOption[];
   entries: ClubTimelineEntry[];
   nextCursorPublishedAt: string | null;
   nextCursorNoticeId: number | null;
@@ -493,11 +464,6 @@ export type ClubTimelineResponse = {
 export type ClubAdminTimelineResponse = {
   clubId: number;
   clubName: string;
-  categories: NoticeCategorySetting[];
-};
-
-export type UpdateClubTimelineRequest = {
-  visibleCategoryKeys: string[];
 };
 
 export type DashboardScope = "USER_HOME" | "ADMIN_HOME";
@@ -599,54 +565,6 @@ export type AttendanceCheckInRequest = {
   sessionId: number;
 };
 
-export const MOCK_CLUB_FEATURES: ClubFeatureSummary[] = [
-  {
-    featureKey: "ATTENDANCE",
-    displayName: "출석 체크",
-    description: "멤버 출석을 체크하고 출석 세션을 관리합니다.",
-    iconName: "fact_check",
-    enabled: true,
-    userPath: "/clubs/tennis/more/attendance",
-    adminPath: "/clubs/tennis/admin/more/attendance",
-  },
-  {
-    featureKey: "TIMELINE",
-    displayName: "타임라인",
-    description: "공지 기반 타임라인 카드로 모임 활동을 확인합니다.",
-    iconName: "timeline",
-    enabled: true,
-    userPath: "/clubs/tennis/more/timeline",
-    adminPath: "/clubs/tennis/admin/more/timeline",
-  },
-  {
-    featureKey: "NOTICE",
-    displayName: "공지",
-    description: "모임 공지를 작성, 관리, 공유합니다.",
-    iconName: "campaign",
-    enabled: true,
-    userPath: "/clubs/tennis/more/notices",
-    adminPath: "/clubs/tennis/admin/more/notices",
-  },
-  {
-    featureKey: "POLL",
-    displayName: "투표",
-    description: "모임 투표를 작성, 공유, 관리합니다.",
-    iconName: "poll",
-    enabled: true,
-    userPath: "/clubs/tennis/more/polls",
-    adminPath: "/clubs/tennis/admin/more/polls",
-  },
-  {
-    featureKey: "SCHEDULE_MANAGE",
-    displayName: "일정 관리",
-    description: "일정과 투표를 작성하고 관리합니다.",
-    iconName: "edit_calendar",
-    enabled: true,
-    userPath: "/clubs/tennis/more/schedules",
-    adminPath: "/clubs/tennis/admin/more/schedules",
-  },
-];
-
 export function createClub(request: CreateClubRequest) {
   return postJson<ClubCreateResponse>("/api/semo/v1/clubs", request);
 }
@@ -666,19 +584,19 @@ export function getClubBoard(clubId: string | number) {
 export function getClubNoticeFeed(
   clubId: string | number,
   options: {
-    category?: NoticeFeedCategory;
     query?: string;
+    pinnedOnly?: boolean;
     cursorPublishedAt?: string | null;
     cursorNoticeId?: number | null;
     size?: number;
   } = {},
 ) {
   const params = new URLSearchParams();
-  if (options.category && options.category !== "all") {
-    params.set("category", options.category);
-  }
   if (options.query?.trim()) {
     params.set("query", options.query.trim());
+  }
+  if (options.pinnedOnly) {
+    params.set("pinnedOnly", "true");
   }
   if (options.cursorPublishedAt) {
     params.set("cursorPublishedAt", options.cursorPublishedAt);
@@ -701,14 +619,20 @@ export function getClubNoticeDetail(clubId: string | number, noticeId: string | 
   );
 }
 
-export function getNoticeCategoryOptions(clubId: string | number) {
-  return getJson<NoticeCategoryOption[]>(
-    `/api/semo/v1/clubs/${clubId}/more/notices/categories`,
+export function getClubNoticeHome(
+  clubId: string | number,
+  options: {
+    pinnedOnly?: boolean;
+  } = {},
+) {
+  const params = new URLSearchParams();
+  if (options.pinnedOnly) {
+    params.set("pinnedOnly", "true");
+  }
+  const queryString = params.toString();
+  return getJson<ClubNoticeHomeResponse>(
+    `/api/semo/v1/clubs/${clubId}/more/notices${queryString ? `?${queryString}` : ""}`,
   );
-}
-
-export function getClubNoticeHome(clubId: string | number) {
-  return getJson<ClubNoticeHomeResponse>(`/api/semo/v1/clubs/${clubId}/more/notices`);
 }
 
 export function createClubNotice(
@@ -965,16 +889,12 @@ export function getClubAdminAttendance(clubId: string | number) {
 export function getClubTimeline(
   clubId: string | number,
   options: {
-    category?: string;
     cursorPublishedAt?: string | null;
     cursorNoticeId?: number | null;
     size?: number;
   } = {},
 ) {
   const params = new URLSearchParams();
-  if (options.category && options.category !== "all") {
-    params.set("category", options.category);
-  }
   if (options.cursorPublishedAt) {
     params.set("cursorPublishedAt", options.cursorPublishedAt);
   }
@@ -992,16 +912,6 @@ export function getClubTimeline(
 
 export function getClubAdminTimeline(clubId: string | number) {
   return getJson<ClubAdminTimelineResponse>(`/api/semo/v1/clubs/${clubId}/admin/more/timeline`);
-}
-
-export function updateClubAdminTimeline(
-  clubId: string | number,
-  request: UpdateClubTimelineRequest,
-) {
-  return putJson<ClubAdminTimelineResponse>(
-    `/api/semo/v1/clubs/${clubId}/admin/more/timeline`,
-    request,
-  );
 }
 
 export function createClubAttendanceSession(
