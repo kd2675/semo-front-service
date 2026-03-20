@@ -88,7 +88,8 @@ export function ClubNoticeEditorClient({
   const [locationLabel, setLocationLabel] = useState("");
   const [scheduleAt, setScheduleAt] = useState(initialScheduleAt ?? "");
   const [scheduleEndAt, setScheduleEndAt] = useState(initialScheduleEndAt ?? "");
-  const [postToSchedule, setPostToSchedule] = useState(true);
+  const [postToBoard, setPostToBoard] = useState(true);
+  const [postToCalendar, setPostToCalendar] = useState(false);
   const [pinned, setPinned] = useState(false);
   const [clubName, setClubName] = useState("Notice");
   const [loading, setLoading] = useState(isEdit);
@@ -120,7 +121,8 @@ export function ClubNoticeEditorClient({
     setLocationLabel(payload.locationLabel ?? "");
     setScheduleAt(toDateTimeLocalValue(payload.scheduleAt));
     setScheduleEndAt(toDateTimeLocalValue(payload.scheduleEndAt));
-    setPostToSchedule(Boolean(payload.scheduleAt));
+    setPostToBoard(payload.postedToBoard);
+    setPostToCalendar(payload.postedToCalendar);
     setPinned(payload.pinned);
   });
 
@@ -144,9 +146,10 @@ export function ClubNoticeEditorClient({
       content,
       fileName,
       locationLabel: locationLabel.trim() || null,
-      scheduleAt: postToSchedule ? scheduleAt || null : null,
-      scheduleEndAt: postToSchedule ? scheduleEndAt || null : null,
-      postToSchedule,
+      scheduleAt: postToCalendar ? scheduleAt || null : null,
+      scheduleEndAt: postToCalendar ? scheduleEndAt || null : null,
+      postToBoard,
+      postToCalendar,
       pinned,
     };
     const result = isEdit && noticeId
@@ -333,21 +336,34 @@ export function ClubNoticeEditorClient({
               <div className="space-y-3">
                 <div className="flex items-center justify-between rounded-xl border border-[var(--primary)]/5 bg-white p-4 shadow-sm">
                   <div className="flex items-center gap-3">
-                    <span className="material-symbols-outlined text-[var(--primary)]">event_upcoming</span>
+                    <span className="material-symbols-outlined text-[var(--primary)]">leaderboard</span>
                     <div>
-                      <span className="block text-sm font-semibold text-slate-900">일정에도 올리기</span>
+                      <span className="block text-sm font-semibold text-slate-900">게시판에 공유</span>
                       <span className="mt-0.5 block text-[11px] text-slate-500">
-                        {postToSchedule ? "사용 중 · 공지와 함께 일정이 연결됩니다" : "미사용"}
+                        {postToBoard ? "사용 중 · 게시판 메인에 노출됩니다" : "미사용"}
                       </span>
                     </div>
                   </div>
-                  <SettingSwitch checked={postToSchedule} onChange={setPostToSchedule} />
+                  <SettingSwitch checked={postToBoard} onChange={setPostToBoard} />
                 </div>
 
-                {postToSchedule ? (
+                <div className="flex items-center justify-between rounded-xl border border-[var(--primary)]/5 bg-white p-4 shadow-sm">
+                  <div className="flex items-center gap-3">
+                    <span className="material-symbols-outlined text-[var(--primary)]">event_upcoming</span>
+                    <div>
+                      <span className="block text-sm font-semibold text-slate-900">캘린더에 공유</span>
+                      <span className="mt-0.5 block text-[11px] text-slate-500">
+                        {postToCalendar ? "사용 중 · 캘린더 메인에도 함께 노출됩니다" : "미사용"}
+                      </span>
+                    </div>
+                  </div>
+                  <SettingSwitch checked={postToCalendar} onChange={setPostToCalendar} />
+                </div>
+
+                {postToCalendar ? (
                   <div className="space-y-3 rounded-2xl border border-[var(--primary)]/15 bg-[var(--primary)]/[0.03] p-4 shadow-sm">
                     <label className="block">
-                      <span className="mb-1.5 block text-sm font-medium text-slate-700">일정 시작 일시</span>
+                      <span className="mb-1.5 block text-sm font-medium text-slate-700">캘린더 시작 일시</span>
                       <input
                         type="datetime-local"
                         value={scheduleAt}
@@ -356,7 +372,7 @@ export function ClubNoticeEditorClient({
                       />
                     </label>
                     <label className="block">
-                      <span className="mb-1.5 block text-sm font-medium text-slate-700">일정 종료 일시</span>
+                      <span className="mb-1.5 block text-sm font-medium text-slate-700">캘린더 종료 일시</span>
                       <input
                         type="datetime-local"
                         value={scheduleEndAt}
@@ -439,7 +455,7 @@ export function ClubNoticeEditorClient({
         {showDeleteModal ? (
           <ScheduleActionConfirmModal
             title="공지를 삭제할까요?"
-            description="삭제한 공지는 되돌릴 수 없고, 연결된 일정도 함께 정리될 수 있습니다."
+            description="삭제한 공지는 되돌릴 수 없습니다."
             confirmLabel="공지 삭제"
             busyLabel="삭제 중..."
             busy={deleting}

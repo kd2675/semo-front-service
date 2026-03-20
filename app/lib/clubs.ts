@@ -60,11 +60,17 @@ export type ClubNoticeListItem = {
   thumbnailUrl: string | null;
   authorDisplayName: string;
   authorRoleCode: string | null;
+  authorAvatarImageUrl: string | null;
+  authorAvatarThumbnailUrl: string | null;
   publishedAtLabel: string;
   timeAgo: string;
   pinned: boolean;
+  scheduleAt: string | null;
+  scheduleEndAt: string | null;
   scheduleAtLabel: string | null;
   locationLabel: string | null;
+  postedToBoard: boolean;
+  postedToCalendar: boolean;
   canManage: boolean;
   linkedTargetType: "SCHEDULE_EVENT" | "POLL" | null;
   linkedTargetId: number | null;
@@ -74,10 +80,17 @@ export type ClubNoticeFeedResponse = {
   clubId: number;
   clubName: string;
   admin: boolean;
-  notices: ClubNoticeListItem[];
-  nextCursorPublishedAt: string | null;
-  nextCursorNoticeId: number | null;
+  items: ClubBoardFeedItem[];
+  nextCursorBoardItemId: number | null;
   hasNext: boolean;
+};
+
+export type ClubBoardFeedItem = {
+  boardItemId: number;
+  contentType: "NOTICE" | "SCHEDULE_EVENT" | "SCHEDULE_VOTE";
+  notice: ClubNoticeListItem | null;
+  event: ClubScheduleEventSummary | null;
+  vote: ClubScheduleVoteSummary | null;
 };
 
 export type ClubNoticeDetailResponse = {
@@ -100,6 +113,8 @@ export type ClubNoticeDetailResponse = {
   scheduleAtLabel: string | null;
   scheduleEndAt: string | null;
   scheduleEndAtLabel: string | null;
+  postedToBoard: boolean;
+  postedToCalendar: boolean;
   canManage: boolean;
   linkedTargetType: "SCHEDULE_EVENT" | "POLL" | null;
   linkedTargetId: number | null;
@@ -112,6 +127,8 @@ export type UpsertClubNoticeRequest = {
   locationLabel?: string | null;
   scheduleAt?: string | null;
   scheduleEndAt?: string | null;
+  postToBoard?: boolean;
+  postToCalendar?: boolean;
   postToSchedule?: boolean;
   pinned?: boolean;
 };
@@ -157,9 +174,15 @@ export type ClubScheduleResponse = {
     pendingAttendanceCount: number;
     pendingVoteCount: number;
   };
-  monthEvents: ClubScheduleEventSummary[];
-  votes: ClubScheduleVoteSummary[];
-  sharedNotices: ClubNoticeListItem[];
+  items: ClubCalendarFeedItem[];
+};
+
+export type ClubCalendarFeedItem = {
+  calendarItemId: number;
+  contentType: "NOTICE" | "SCHEDULE_EVENT" | "SCHEDULE_VOTE";
+  notice: ClubNoticeListItem | null;
+  event: ClubScheduleEventSummary | null;
+  vote: ClubScheduleVoteSummary | null;
 };
 
 export type ClubScheduleHomeResponse = {
@@ -178,6 +201,9 @@ export type ClubScheduleHomeResponse = {
 export type ClubScheduleEventSummary = {
   eventId: number;
   title: string;
+  authorDisplayName: string;
+  authorAvatarImageUrl: string | null;
+  authorAvatarThumbnailUrl: string | null;
   startDate: string;
   endDate: string | null;
   dateLabel: string;
@@ -191,10 +217,12 @@ export type ClubScheduleEventSummary = {
   feeAmountUndecided: boolean;
   feeNWaySplit: boolean;
   postedToBoard: boolean;
+  postedToCalendar: boolean;
   linkedNoticeId: number | null;
   myParticipationStatus: "GOING" | "NOT_GOING" | null;
   goingCount: number;
   notGoingCount: number;
+  canManage: boolean;
 };
 
 export type ClubScheduleVoteOptionSummary = {
@@ -207,6 +235,9 @@ export type ClubScheduleVoteOptionSummary = {
 export type ClubScheduleVoteSummary = {
   voteId: number;
   title: string;
+  authorDisplayName: string;
+  authorAvatarImageUrl: string | null;
+  authorAvatarThumbnailUrl: string | null;
   voteStatus: "WAITING" | "ONGOING" | "CLOSED";
   voteStartDate: string;
   voteEndDate: string;
@@ -215,11 +246,13 @@ export type ClubScheduleVoteSummary = {
   optionCount: number;
   totalResponses: number;
   postedToBoard: boolean;
+  postedToCalendar: boolean;
   sharedToSchedule: boolean;
   linkedNoticeId: number | null;
   mySelectedOptionId: number | null;
   options: ClubScheduleVoteOptionSummary[];
   votingOpen: boolean;
+  canManage: boolean;
 };
 
 export type ClubScheduleEventDetailResponse = {
@@ -243,6 +276,7 @@ export type ClubScheduleEventDetailResponse = {
   feeAmountUndecided: boolean;
   feeNWaySplit: boolean;
   postedToBoard: boolean;
+  postedToCalendar: boolean;
   linkedNoticeId: number | null;
   myParticipationStatus: "GOING" | "NOT_GOING" | null;
   goingCount: number;
@@ -265,6 +299,7 @@ export type UpsertScheduleEventRequest = {
   feeAmountUndecided?: boolean;
   feeNWaySplit?: boolean;
   postToBoard?: boolean;
+  postToCalendar?: boolean;
 };
 
 export type ScheduleEventUpsertResponse = {
@@ -276,6 +311,7 @@ export type ScheduleEventUpsertResponse = {
   dateLabel: string;
   timeLabel: string | null;
   postedToBoard: boolean;
+  postedToCalendar: boolean;
 };
 
 export type ClubScheduleVoteDetailResponse = {
@@ -292,6 +328,7 @@ export type ClubScheduleVoteDetailResponse = {
   voteEndTime: string | null;
   voteTimeLabel: string | null;
   postedToBoard: boolean;
+  postedToCalendar: boolean;
   sharedToSchedule: boolean;
   linkedNoticeId: number | null;
   mySelectedOptionId: number | null;
@@ -313,6 +350,7 @@ export type UpsertScheduleVoteRequest = {
   voteEndTime?: string | null;
   optionLabels: string[];
   postToBoard?: boolean;
+  postToCalendar?: boolean;
   postToSchedule?: boolean;
 };
 
@@ -332,6 +370,7 @@ export type ScheduleVoteUpsertResponse = {
   voteTimeLabel: string | null;
   optionCount: number;
   postedToBoard: boolean;
+  postedToCalendar: boolean;
   sharedToSchedule: boolean;
 };
 
@@ -364,6 +403,12 @@ export type ClubProfileResponse = {
     value: string;
     description: string;
   }>;
+};
+
+export type UpdateClubProfileRequest = {
+  displayName?: string | null;
+  avatarFileName?: string | null;
+  removeAvatar?: boolean;
 };
 
 export type ClubFeatureSummary = {
@@ -425,6 +470,9 @@ export type ClubTimelineEntry = {
 export type ClubPollSummary = {
   voteId: number;
   title: string;
+  authorDisplayName: string;
+  authorAvatarImageUrl: string | null;
+  authorAvatarThumbnailUrl: string | null;
   voteStatus: "WAITING" | "ONGOING" | "CLOSED";
   voteStartDate: string;
   voteEndDate: string;
@@ -434,6 +482,7 @@ export type ClubPollSummary = {
   totalResponses: number;
   optionCount: number;
   postedToBoard: boolean;
+  postedToCalendar: boolean;
   sharedToSchedule: boolean;
   canManage: boolean;
   mySelectedOptionId: number | null;
@@ -586,8 +635,7 @@ export function getClubNoticeFeed(
   options: {
     query?: string;
     pinnedOnly?: boolean;
-    cursorPublishedAt?: string | null;
-    cursorNoticeId?: number | null;
+    cursorBoardItemId?: number | null;
     size?: number;
   } = {},
 ) {
@@ -598,11 +646,8 @@ export function getClubNoticeFeed(
   if (options.pinnedOnly) {
     params.set("pinnedOnly", "true");
   }
-  if (options.cursorPublishedAt) {
-    params.set("cursorPublishedAt", options.cursorPublishedAt);
-  }
-  if (options.cursorNoticeId) {
-    params.set("cursorNoticeId", String(options.cursorNoticeId));
+  if (options.cursorBoardItemId) {
+    params.set("cursorBoardItemId", String(options.cursorBoardItemId));
   }
   if (options.size) {
     params.set("size", String(options.size));
@@ -790,6 +835,13 @@ export function getClubPollHome(
 
 export function getClubProfile(clubId: string | number) {
   return getJson<ClubProfileResponse>(`/api/semo/v1/clubs/${clubId}/profile`);
+}
+
+export function updateClubProfile(
+  clubId: string | number,
+  request: UpdateClubProfileRequest,
+) {
+  return putJson<ClubProfileResponse>(`/api/semo/v1/clubs/${clubId}/profile`, request);
 }
 
 export function getClubFeatures(clubId: string | number) {

@@ -4,7 +4,7 @@ import { RouterLink } from "@/app/components/RouterLink";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import { AnimatePresence } from "motion/react";
 import { useRouter } from "next/navigation";
-import { useEffect, useEffectEvent, useId, useRef, useState, type ReactNode, type UIEvent } from "react";
+import { useEffect, useEffectEvent, useId, useRef, useState, type UIEvent } from "react";
 import {
   createClubScheduleEvent,
   deleteClubScheduleEvent,
@@ -27,54 +27,6 @@ type ClubScheduleEditorClientProps = {
 };
 
 type ScheduleDateMode = "single" | "range";
-
-type SettingSwitchProps = {
-  checked: boolean;
-  onChange: (checked: boolean) => void;
-  disabled?: boolean;
-};
-
-function SettingSwitch({ checked, onChange, disabled = false }: SettingSwitchProps) {
-  return (
-    <label
-      className={`relative inline-flex h-[31px] w-[51px] items-center rounded-full p-0.5 transition-colors ${
-        checked ? "bg-[var(--primary)]" : "bg-slate-200"
-      } ${disabled ? "cursor-not-allowed opacity-40" : "cursor-pointer"}`}
-    >
-      <input
-        checked={checked}
-        className="sr-only"
-        disabled={disabled}
-        type="checkbox"
-        onChange={(event) => onChange(event.target.checked)}
-      />
-      <div
-        className={`h-[27px] w-[27px] rounded-full bg-white shadow-md transition-transform ${
-          checked ? "translate-x-5" : "translate-x-0"
-        }`}
-      />
-    </label>
-  );
-}
-
-type EditRowProps = {
-  label: string;
-  children: ReactNode;
-  withBorder?: boolean;
-};
-
-function EditRow({ label, children, withBorder = true }: EditRowProps) {
-  return (
-    <div
-      className={`flex min-h-[56px] items-center justify-between gap-4 bg-white px-4 ${
-        withBorder ? "border-b border-slate-50" : ""
-      }`}
-    >
-      <p className="flex-1 text-base font-medium text-slate-900">{label}</p>
-      <div className="shrink-0">{children}</div>
-    </div>
-  );
-}
 
 function getTodayDateValue() {
   return new Date().toISOString().slice(0, 10);
@@ -110,6 +62,7 @@ export function ClubScheduleEditorClient({
   const [feeAmountUndecided, setFeeAmountUndecided] = useState(false);
   const [feeNWaySplit, setFeeNWaySplit] = useState(false);
   const [postToBoard, setPostToBoard] = useState(false);
+  const [postToCalendar, setPostToCalendar] = useState(true);
   const [clubName, setClubName] = useState(initialClubName ?? "일정 스튜디오");
   const [loading, setLoading] = useState(isEdit);
   const [saving, setSaving] = useState(false);
@@ -150,6 +103,7 @@ export function ClubScheduleEditorClient({
     setFeeAmountUndecided(payload.feeAmountUndecided);
     setFeeNWaySplit(payload.feeNWaySplit);
     setPostToBoard(payload.postedToBoard);
+    setPostToCalendar(payload.postedToCalendar);
   });
 
   useEffect(() => {
@@ -179,6 +133,7 @@ export function ClubScheduleEditorClient({
       feeAmountUndecided: feeRequired && feeAmountUndecided,
       feeNWaySplit: feeRequired && participationEnabled && feeNWaySplit,
       postToBoard,
+      postToCalendar,
     };
 
     const result = isEdit && eventId
@@ -238,8 +193,8 @@ export function ClubScheduleEditorClient({
 
   const submitLabel = saving ? "저장 중..." : isEdit ? "수정 저장" : "저장하기";
   const actionBarClassName = isModal
-    ? "sticky bottom-0 border-t border-slate-200 bg-white/95 p-4 backdrop-blur"
-    : "fixed bottom-0 left-1/2 z-20 w-full max-w-md -translate-x-1/2 border-t border-slate-200 bg-white/95 p-4 backdrop-blur";
+    ? "sticky bottom-0 z-20 border-t border-slate-200 bg-white/95 p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] backdrop-blur"
+    : "fixed bottom-0 left-1/2 z-20 w-full max-w-md -translate-x-1/2 border-t border-slate-200 bg-white/95 p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] backdrop-blur";
 
   const handleDelete = async () => {
     if (!eventId) {
@@ -328,294 +283,6 @@ export function ClubScheduleEditorClient({
     return <ClubEditorLoadingShell presentation={presentation} />;
   }
 
-  if (isEdit) {
-    return (
-      <div className="bg-[var(--background-light)] font-display text-slate-900">
-        <div className="relative mx-auto flex min-h-screen w-full max-w-[480px] flex-col bg-white shadow-xl">
-          <ClubPageHeader
-            title="일정 수정"
-            subtitle={clubName}
-            icon="edit_calendar"
-            containerClassName="max-w-[480px]"
-            leftSlot={
-              isModal && onRequestClose ? (
-                <button
-                  type="button"
-                  onClick={onRequestClose}
-                  className="flex size-12 shrink-0 items-center text-slate-900"
-                  aria-label="일정 수정 닫기"
-                >
-                  <span className="material-symbols-outlined">close</span>
-                </button>
-              ) : (
-                <RouterLink
-                  href={backHref}
-                  replace={isModal}
-                  className="flex size-12 shrink-0 items-center text-slate-900"
-                  aria-label="일정으로 돌아가기"
-                >
-                  <span className="material-symbols-outlined">arrow_back</span>
-                </RouterLink>
-              )
-            }
-          />
-
-          <main
-            className={`flex flex-1 flex-col gap-1 ${
-              isModal ? "overflow-y-auto pb-24" : "semo-nav-bottom-space"
-            }`}
-          >
-            <form id={formId} onSubmit={handleSubmit}>
-              <div className="flex flex-wrap items-end gap-4 px-4 py-3">
-                <label className="flex min-w-40 flex-1 flex-col">
-                  <p className="pb-2 text-base font-medium leading-normal text-slate-900">일정 제목</p>
-                  <input
-                    value={title}
-                    onChange={(event) => setTitle(event.target.value)}
-                    className="h-14 w-full rounded-lg border border-slate-200 bg-white p-[15px] text-base font-normal leading-normal text-slate-900 outline-none transition focus:ring-2 focus:ring-[var(--primary)]/50"
-                    placeholder="제목을 입력하세요"
-                    required
-                  />
-                </label>
-              </div>
-
-              <div className="flex px-4 py-3">
-                <div className="flex h-12 flex-1 items-center justify-center rounded-lg bg-slate-100 p-1">
-                  <label className="flex h-full grow cursor-pointer items-center justify-center overflow-hidden rounded-lg px-2 text-sm font-semibold text-slate-500 transition-all has-[:checked]:bg-white has-[:checked]:text-[var(--primary)] has-[:checked]:shadow-sm">
-                    <span className="truncate">날짜 지정</span>
-                    <input
-                      checked={scheduleDateMode === "single"}
-                      className="invisible w-0"
-                      name="date-type"
-                      type="radio"
-                      onChange={() => handleScheduleDateModeChange("single")}
-                    />
-                  </label>
-                  <label className="flex h-full grow cursor-pointer items-center justify-center overflow-hidden rounded-lg px-2 text-sm font-semibold text-slate-500 transition-all has-[:checked]:bg-white has-[:checked]:text-[var(--primary)] has-[:checked]:shadow-sm">
-                    <span className="truncate">기간 설정</span>
-                    <input
-                      checked={scheduleDateMode === "range"}
-                      className="invisible w-0"
-                      name="date-type"
-                      type="radio"
-                      onChange={() => handleScheduleDateModeChange("range")}
-                    />
-                  </label>
-                </div>
-              </div>
-
-              {scheduleDateMode === "single" ? (
-                <EditRow label="날짜">
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="date"
-                      value={startDate}
-                      onChange={(event) => handleStartDateChange(event.target.value)}
-                      className="rounded-md border-none bg-transparent px-0 text-base text-slate-600 outline-none focus:ring-0"
-                      required
-                    />
-                    <span className="material-symbols-outlined text-sm text-slate-400">calendar_today</span>
-                  </div>
-                </EditRow>
-              ) : (
-                <>
-                  <EditRow label="시작 날짜">
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="date"
-                        value={startDate}
-                        onChange={(event) => handleStartDateChange(event.target.value)}
-                        className="rounded-md border-none bg-transparent px-0 text-base text-slate-600 outline-none focus:ring-0"
-                        required
-                      />
-                      <span className="material-symbols-outlined text-sm text-slate-400">calendar_today</span>
-                    </div>
-                  </EditRow>
-                  <EditRow label="종료 날짜">
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="date"
-                        value={endDate}
-                        min={startDate}
-                        onChange={(event) => setEndDate(event.target.value)}
-                        className="rounded-md border-none bg-transparent px-0 text-base text-slate-600 outline-none focus:ring-0"
-                        required
-                      />
-                      <span className="material-symbols-outlined text-sm text-slate-400">event</span>
-                    </div>
-                  </EditRow>
-                </>
-              )}
-
-              <EditRow label="시작 시간">
-                <input
-                  type="time"
-                  value={startTime}
-                  onChange={(event) => setStartTime(event.target.value)}
-                  className="rounded-md border-none bg-transparent px-0 text-base font-semibold text-[var(--primary)] outline-none focus:ring-0"
-                />
-              </EditRow>
-
-              <EditRow label="종료 시간">
-                <input
-                  type="time"
-                  value={endTime}
-                  onChange={(event) => setEndTime(event.target.value)}
-                  className="rounded-md border-none bg-transparent px-0 text-base text-slate-600 outline-none focus:ring-0"
-                />
-              </EditRow>
-
-              <div className="mt-2 flex flex-col gap-1">
-                <EditRow label="장소">
-                  <div className="flex items-center gap-1">
-                    <span className="material-symbols-outlined text-lg text-[var(--primary)]">location_on</span>
-                    <input
-                      value={locationLabel}
-                      onChange={(event) => setLocationLabel(event.target.value)}
-                      className="w-44 rounded-md border-none bg-transparent px-0 text-right text-base text-slate-600 outline-none focus:ring-0"
-                      placeholder="장소를 입력하세요"
-                    />
-                  </div>
-                </EditRow>
-              </div>
-
-              <div className="mt-2 flex flex-col gap-1">
-                <EditRow label="게시판에 공유" withBorder={false}>
-                  <SettingSwitch checked={postToBoard} onChange={setPostToBoard} />
-                </EditRow>
-              </div>
-
-              <div className="mt-2 flex flex-col gap-1">
-                <EditRow label="참가비" withBorder={!feeRequired}>
-                  <div className="flex items-center gap-3">
-                    <span className="text-sm text-slate-500">금액 또는 미정</span>
-                    <SettingSwitch
-                      checked={feeRequired}
-                      onChange={handleFeeRequiredChange}
-                    />
-                  </div>
-                </EditRow>
-
-                {feeRequired ? (
-                  <>
-                    <EditRow label="참가비 금액">
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="number"
-                          min={1}
-                          value={feeAmount}
-                          onChange={(event) => setFeeAmount(event.target.value)}
-                          disabled={feeAmountUndecided}
-                          className="w-24 rounded-md border-none bg-transparent px-0 text-right text-base font-bold text-[var(--primary)] outline-none focus:ring-0 disabled:cursor-not-allowed disabled:text-slate-400"
-                          placeholder="금액"
-                        />
-                        <span className="text-slate-400">원</span>
-                      </div>
-                    </EditRow>
-
-                    <EditRow label="금액 미정">
-                      <SettingSwitch checked={feeAmountUndecided} onChange={setFeeAmountUndecided} />
-                    </EditRow>
-
-                  </>
-                ) : null}
-              </div>
-
-              <div className="mt-2 flex flex-col gap-1">
-                <EditRow label="참가 신청 여부" withBorder={!participationEnabled}>
-                  <SettingSwitch checked={participationEnabled} onChange={handleParticipationEnabledChange} />
-                </EditRow>
-
-                {participationEnabled ? (
-                  <>
-                    <EditRow label="참가 인원 제한">
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="number"
-                          min={1}
-                          value={attendeeLimit}
-                          onChange={(event) => setAttendeeLimit(event.target.value)}
-                          className="w-16 rounded-md border-none bg-transparent px-0 text-right text-base font-bold text-[var(--primary)] outline-none focus:ring-0"
-                          placeholder="0"
-                        />
-                        <span className="text-slate-400">명</span>
-                      </div>
-                    </EditRow>
-
-                    <EditRow label="참가 조건" withBorder={false}>
-                      <input
-                        value={participationConditionText}
-                        onChange={(event) => setParticipationConditionText(event.target.value)}
-                        className="w-44 rounded-md border-none bg-transparent px-0 text-right text-base text-slate-600 outline-none focus:ring-0"
-                        placeholder="참가 조건 입력"
-                      />
-                    </EditRow>
-                  </>
-                ) : null}
-              </div>
-
-              {feeRequired && participationEnabled ? (
-                <div className="mt-2 flex flex-col gap-1">
-                  <EditRow label="1/n 정산" withBorder={false}>
-                    <SettingSwitch
-                      checked={feeNWaySplit}
-                      onChange={setFeeNWaySplit}
-                    />
-                  </EditRow>
-                </div>
-              ) : null}
-
-              {error ? (
-                <div className="px-4 py-3">
-                  <div className="rounded-xl bg-rose-50 px-4 py-3 text-sm font-medium text-rose-600">{error}</div>
-                </div>
-              ) : null}
-            </form>
-          </main>
-
-          <div className="fixed bottom-0 left-0 right-0 mx-auto max-w-[480px] border-t border-slate-100 bg-white p-4">
-            <div className="flex gap-3">
-              <button
-                type="button"
-                onClick={() => setShowDeleteModal(true)}
-                disabled={deleting || saving}
-                className="flex h-14 flex-1 items-center justify-center gap-2 rounded-xl bg-rose-500 text-base font-bold text-white shadow-lg shadow-rose-500/25 transition-all hover:bg-rose-600 disabled:opacity-60"
-              >
-                <span className="material-symbols-outlined text-xl">delete</span>
-                {deleting ? "삭제 중..." : "삭제"}
-              </button>
-              <button
-                type="submit"
-                form={formId}
-                disabled={saving || deleting}
-                className="h-14 flex-[2] rounded-xl bg-[var(--primary)] text-base font-bold text-white shadow-lg shadow-[var(--primary)]/25 transition-all hover:bg-[var(--primary)]/90 disabled:opacity-60"
-              >
-                {saving ? "수정 중..." : "수정 완료"}
-              </button>
-            </div>
-          </div>
-        </div>
-        <AnimatePresence>
-          {showDeleteModal ? (
-            <ScheduleActionConfirmModal
-              title="일정을 삭제할까요?"
-              description="삭제한 일정은 되돌릴 수 없고, 연결된 참여 응답도 함께 정리됩니다."
-              confirmLabel="일정 삭제"
-              busyLabel="삭제 중..."
-              busy={deleting}
-              onCancel={() => {
-                if (!deleting) {
-                  setShowDeleteModal(false);
-                }
-              }}
-              onConfirm={handleDelete}
-            />
-          ) : null}
-        </AnimatePresence>
-      </div>
-    );
-  }
-
   return (
     <div
       className={
@@ -649,7 +316,7 @@ export function ClubScheduleEditorClient({
                   type="button"
                   onClick={onRequestClose}
                   className="flex size-10 shrink-0 items-center justify-center text-slate-900"
-                  aria-label="일정 작성 닫기"
+                  aria-label={isEdit ? "일정 수정 닫기" : "일정 작성 닫기"}
                 >
                   <span className="material-symbols-outlined">close</span>
                 </button>
@@ -822,9 +489,9 @@ export function ClubScheduleEditorClient({
                   <div className="flex items-center gap-3">
                     <span className="material-symbols-outlined text-[var(--primary)]">campaign</span>
                     <div>
-                      <span className="block text-sm font-semibold text-slate-900">게시판 공지로 등록</span>
+                      <span className="block text-sm font-semibold text-slate-900">게시판에 공유</span>
                       <span className="mt-0.5 block text-[11px] text-slate-500">
-                        {postToBoard ? "사용 중 · 생성과 함께 공지에 노출" : "미사용"}
+                        {postToBoard ? "사용 중 · 게시판 메인에도 함께 노출됩니다" : "미사용"}
                       </span>
                     </div>
                   </div>
@@ -834,6 +501,27 @@ export function ClubScheduleEditorClient({
                       className="peer sr-only"
                       type="checkbox"
                       onChange={(event) => setPostToBoard(event.target.checked)}
+                    />
+                    <div className="h-6 w-11 rounded-full bg-slate-200 transition peer-checked:bg-[var(--primary)] after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-slate-300 after:bg-white after:transition-all after:content-[''] peer-checked:after:translate-x-full peer-checked:after:border-white" />
+                  </label>
+                </div>
+
+                <div className="flex items-center justify-between rounded-xl border border-[var(--primary)]/5 bg-white p-4 shadow-sm">
+                  <div className="flex items-center gap-3">
+                    <span className="material-symbols-outlined text-[var(--primary)]">calendar_month</span>
+                    <div>
+                      <span className="block text-sm font-semibold text-slate-900">캘린더에 공유</span>
+                      <span className="mt-0.5 block text-[11px] text-slate-500">
+                        {postToCalendar ? "사용 중 · 캘린더 메인에도 함께 노출됩니다" : "미사용"}
+                      </span>
+                    </div>
+                  </div>
+                  <label className="relative inline-flex cursor-pointer items-center">
+                    <input
+                      checked={postToCalendar}
+                      className="peer sr-only"
+                      type="checkbox"
+                      onChange={(event) => setPostToCalendar(event.target.checked)}
                     />
                     <div className="h-6 w-11 rounded-full bg-slate-200 transition peer-checked:bg-[var(--primary)] after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-slate-300 after:bg-white after:transition-all after:content-[''] peer-checked:after:translate-x-full peer-checked:after:border-white" />
                   </label>
@@ -987,15 +675,47 @@ export function ClubScheduleEditorClient({
         </main>
 
         <div className={actionBarClassName}>
-          <button
-            type="submit"
-            form={formId}
-            disabled={saving}
-            className="h-14 w-full rounded-xl bg-[var(--primary)] font-bold text-white shadow-lg shadow-[var(--primary)]/20 transition-all hover:brightness-110 active:scale-[0.99] disabled:opacity-60"
-          >
-            {submitLabel}
-          </button>
+          <div className="flex gap-3">
+            {isEdit ? (
+              <button
+                type="button"
+                onClick={() => setShowDeleteModal(true)}
+                disabled={deleting || saving}
+                className="flex h-14 flex-1 items-center justify-center gap-2 rounded-xl bg-rose-500 text-base font-bold text-white shadow-lg shadow-rose-500/25 transition-all hover:bg-rose-600 disabled:opacity-60"
+              >
+                <span className="material-symbols-outlined text-xl">delete</span>
+                {deleting ? "삭제 중..." : "삭제"}
+              </button>
+            ) : null}
+            <button
+              type="submit"
+              form={formId}
+              disabled={saving || deleting}
+              className={`h-14 rounded-xl bg-[var(--primary)] font-bold text-white shadow-lg shadow-[var(--primary)]/20 transition-all hover:brightness-110 active:scale-[0.99] disabled:opacity-60 ${
+                isEdit ? "flex-[2]" : "w-full"
+              }`}
+            >
+              {submitLabel}
+            </button>
+          </div>
         </div>
+        <AnimatePresence>
+          {showDeleteModal ? (
+            <ScheduleActionConfirmModal
+              title="일정을 삭제할까요?"
+              description="삭제한 일정은 되돌릴 수 없고, 연결된 참여 응답도 함께 정리됩니다."
+              confirmLabel="일정 삭제"
+              busyLabel="삭제 중..."
+              busy={deleting}
+              onCancel={() => {
+                if (!deleting) {
+                  setShowDeleteModal(false);
+                }
+              }}
+              onConfirm={handleDelete}
+            />
+          ) : null}
+        </AnimatePresence>
       </div>
     </div>
   );

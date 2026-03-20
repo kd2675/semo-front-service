@@ -39,16 +39,8 @@ const FEATURE_ACCENT_CLASS: Record<string, string> = {
   SCHEDULE_MANAGE: "bg-cyan-50 text-cyan-600",
 };
 
-const FEATURE_NAME_BY_KEY: Record<string, string> = {
-  ATTENDANCE: "출석 체크",
-  TIMELINE: "타임라인",
-  NOTICE: "공지",
-  POLL: "투표",
-  SCHEDULE_MANAGE: "일정 관리",
-};
-
 function getFeatureDisplayName(feature: ClubFeatureSummary) {
-  return FEATURE_NAME_BY_KEY[feature.featureKey] ?? feature.displayName;
+  return feature.displayName;
 }
 
 const POPOVER_ITEM_VARIANTS = {

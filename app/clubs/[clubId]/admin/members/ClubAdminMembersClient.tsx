@@ -83,15 +83,6 @@ function getRoleAccentClassName(roleCode: string) {
   }
 }
 
-function buildMockAttendance(member: ClubAdminMember) {
-  const seed = member.clubMemberId % 100;
-  return {
-    attendanceRate: 48 + (seed % 45),
-    recentCount: 2 + (seed % 5),
-    streak: 1 + (seed % 4),
-  };
-}
-
 function MemberAvatar({ member }: { member: ClubAdminMember }) {
   if (member.avatarImageUrl) {
     return (
@@ -123,7 +114,6 @@ function MemberManageModal({
 }) {
   const prefersReducedMotion = useReducedMotion();
   const reduceMotion = Boolean(prefersReducedMotion);
-  const mockAttendance = useMemo(() => buildMockAttendance(member), [member]);
   const [roleCode, setRoleCode] = useState(member.roleCode);
   const [membershipStatus, setMembershipStatus] = useState<"ACTIVE" | "DORMANT">(
     member.membershipStatus === "DORMANT" ? "DORMANT" : "ACTIVE",
@@ -155,21 +145,6 @@ function MemberManageModal({
             >
               <span className="material-symbols-outlined">close</span>
             </button>
-          </div>
-
-          <div className="mt-5 grid grid-cols-3 gap-3">
-            <div className="rounded-2xl bg-slate-50 px-4 py-3">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">출석률</p>
-              <p className="mt-2 text-lg font-bold text-slate-900">{mockAttendance.attendanceRate}%</p>
-            </div>
-            <div className="rounded-2xl bg-slate-50 px-4 py-3">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">최근 참석</p>
-              <p className="mt-2 text-lg font-bold text-slate-900">{mockAttendance.recentCount}회</p>
-            </div>
-            <div className="rounded-2xl bg-slate-50 px-4 py-3">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">연속 참석</p>
-              <p className="mt-2 text-lg font-bold text-slate-900">{mockAttendance.streak}주</p>
-            </div>
           </div>
 
           <div className="mt-6 space-y-5">

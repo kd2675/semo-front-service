@@ -43,7 +43,7 @@ export function ClubScheduleVoteEditorClient({
   const [voteEndTime, setVoteEndTime] = useState("");
   const [options, setOptions] = useState(["", ""]);
   const [postToBoard, setPostToBoard] = useState(false);
-  const [postToSchedule, setPostToSchedule] = useState(false);
+  const [postToCalendar, setPostToCalendar] = useState(false);
   const [loading, setLoading] = useState(isEdit);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -72,7 +72,7 @@ export function ClubScheduleVoteEditorClient({
     setVoteEndTime(payload.voteEndTime ?? "");
     setOptions(payload.options.map((option) => option.label));
     setPostToBoard(payload.postedToBoard);
-    setPostToSchedule(payload.sharedToSchedule);
+    setPostToCalendar(payload.postedToCalendar);
   });
 
   useEffect(() => {
@@ -114,7 +114,7 @@ export function ClubScheduleVoteEditorClient({
       voteEndTime: voteEndTime || null,
       optionLabels: options.map((option) => option.trim()).filter(Boolean),
       postToBoard,
-      postToSchedule,
+      postToCalendar,
     };
 
     const result = isEdit && voteId
@@ -311,15 +311,15 @@ export function ClubScheduleVoteEditorClient({
 
                 <div className="flex items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm">
                   <div>
-                    <h2 className="text-sm font-semibold text-gray-700">5단계. 일정에도 공유</h2>
-                    <p className="text-xs text-gray-400">투표를 일정 화면에도 함께 노출합니다.</p>
+                    <h2 className="text-sm font-semibold text-gray-700">5단계. 캘린더에도 공유</h2>
+                    <p className="text-xs text-gray-400">투표를 캘린더 화면에도 함께 노출합니다.</p>
                   </div>
                   <label className="relative inline-flex cursor-pointer items-center">
                     <input
-                      checked={postToSchedule}
+                      checked={postToCalendar}
                       className="peer sr-only"
                       type="checkbox"
-                      onChange={(event) => setPostToSchedule(event.target.checked)}
+                      onChange={(event) => setPostToCalendar(event.target.checked)}
                     />
                     <div className="h-6 w-11 rounded-full bg-gray-200 transition peer-checked:bg-[var(--primary)] after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:after:translate-x-full peer-checked:after:border-white" />
                   </label>

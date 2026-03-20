@@ -210,7 +210,12 @@ export function ClubScheduleDetailClient({
                   </span>
                   {payload.postedToBoard ? (
                     <span className="rounded-md bg-slate-100 px-2 py-1 text-xs font-bold uppercase text-slate-500">
-                      공지
+                      게시판 공유
+                    </span>
+                  ) : null}
+                  {payload.postedToCalendar ? (
+                    <span className="rounded-md bg-indigo-50 px-2 py-1 text-xs font-bold uppercase text-indigo-600">
+                      캘린더 공유
                     </span>
                   ) : null}
                   <span className="text-sm text-slate-400">#{toAttendanceLabel(payload.myParticipationStatus)}</span>

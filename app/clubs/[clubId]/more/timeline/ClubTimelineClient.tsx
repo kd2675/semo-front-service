@@ -1,6 +1,6 @@
 "use client";
 
-import { ClubNoticeDetailModal, ClubPollDetailModal, ClubScheduleEventDetailModal } from "@/app/components/ClubDetailModals";
+import { ClubNoticeDetailModal } from "@/app/components/ClubDetailModals";
 import { ClubModeSwitchFab } from "@/app/components/ClubModeSwitchFab";
 import {
   getClubTimeline,
@@ -69,8 +69,6 @@ export function ClubTimelineClient({
   const [loading, setLoading] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [detailNoticeId, setDetailNoticeId] = useState<string | null>(null);
-  const [detailEventId, setDetailEventId] = useState<string | null>(null);
-  const [detailVoteId, setDetailVoteId] = useState<string | null>(null);
   const [sentinelNode, setSentinelNode] = useState<HTMLDivElement | null>(null);
   const loadingRef = useRef(false);
 
@@ -188,14 +186,6 @@ export function ClubTimelineClient({
                     <button
                       type="button"
                       onClick={() => {
-                        if (item.entry.linkedTargetType === "SCHEDULE_EVENT" && item.entry.linkedTargetId != null) {
-                          setDetailEventId(String(item.entry.linkedTargetId));
-                          return;
-                        }
-                        if (item.entry.linkedTargetType === "POLL" && item.entry.linkedTargetId != null) {
-                          setDetailVoteId(String(item.entry.linkedTargetId));
-                          return;
-                        }
                         setDetailNoticeId(String(item.entry.noticeId));
                       }}
                       className="rounded-2xl border border-[#135bec]/5 bg-white p-4 text-left shadow-sm transition-transform hover:scale-[1.01]"
@@ -268,20 +258,6 @@ export function ClubTimelineClient({
               clubId={clubId}
               noticeId={detailNoticeId}
               onRequestClose={() => setDetailNoticeId(null)}
-            />
-          ) : null}
-          {detailEventId ? (
-            <ClubScheduleEventDetailModal
-              clubId={clubId}
-              eventId={detailEventId}
-              onRequestClose={() => setDetailEventId(null)}
-            />
-          ) : null}
-          {detailVoteId ? (
-            <ClubPollDetailModal
-              clubId={clubId}
-              voteId={detailVoteId}
-              onRequestClose={() => setDetailVoteId(null)}
             />
           ) : null}
         </AnimatePresence>

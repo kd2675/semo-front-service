@@ -4,10 +4,16 @@ import { startTransition, useMemo, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { ClubModeSwitchFab } from "@/app/components/ClubModeSwitchFab";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
-import { ClubPollDetailModal, ClubScheduleEventDetailModal } from "@/app/components/ClubDetailModals";
+import {
+  ClubNoticeDetailModal,
+  ClubPollDetailModal,
+  ClubScheduleEventDetailModal,
+} from "@/app/components/ClubDetailModals";
 import { RouteModal } from "@/app/components/RouteModal";
 import { staggeredFadeUpMotion } from "@/app/lib/motion";
 import type {
+  ClubCalendarFeedItem,
+  ClubNoticeListItem,
   ClubScheduleEventSummary,
   ClubScheduleResponse,
   ClubScheduleVoteSummary,
@@ -37,11 +43,17 @@ type CalendarMonth = {
   leadingBlankDays: number;
   daysInMonth: number;
   defaultSelectedDay: number;
-  eventsByDay: Record<number, ClubScheduleEventSummary[]>;
+  itemsByDay: Record<number, ClubCalendarFeedItem[]>;
   scheduleItemCountByDay: Record<number, number>;
 };
 
 type SelectedScheduleItem =
+  | {
+      type: "notice";
+      key: string;
+      sortValue: string;
+      notice: ClubNoticeListItem;
+    }
   | {
       type: "event";
       key: string;
@@ -73,52 +85,63 @@ function shiftMonth(year: number, month: number, delta: number) {
   };
 }
 
+function getDatePart(value: string | null | undefined) {
+  return value ? value.slice(0, 10) : null;
+}
+
+function forEachMonthDayInRange(
+  year: number,
+  month: number,
+  startDateValue: string,
+  endDateValue: string,
+  callback: (day: number) => void,
+) {
+  const startDate = new Date(`${startDateValue}T00:00:00`);
+  const endDate = new Date(`${endDateValue}T00:00:00`);
+  for (const cursor = new Date(startDate); cursor <= endDate; cursor.setDate(cursor.getDate() + 1)) {
+    if (cursor.getFullYear() !== year || cursor.getMonth() + 1 !== month) {
+      continue;
+    }
+    callback(cursor.getDate());
+  }
+}
+
 function buildCalendarMonth(
   year: number,
   month: number,
-  events: ClubScheduleEventSummary[],
-  votes: ClubScheduleVoteSummary[],
+  items: ClubCalendarFeedItem[],
 ): CalendarMonth {
   const today = new Date();
   const firstDay = new Date(year, month - 1, 1);
   const daysInMonth = new Date(year, month, 0).getDate();
   const leadingBlankDays = firstDay.getDay();
   const id = getMonthId(year, month);
-  const eventsByDay = events.reduce<Record<number, ClubScheduleEventSummary[]>>((acc, event) => {
-    const startDate = new Date(`${event.startDate}T00:00:00`);
-    const endDate = new Date(`${(event.endDate ?? event.startDate)}T00:00:00`);
-    for (const cursor = new Date(startDate); cursor <= endDate; cursor.setDate(cursor.getDate() + 1)) {
-      if (cursor.getFullYear() !== year || cursor.getMonth() + 1 !== month) {
-        continue;
-      }
-      const day = cursor.getDate();
-      acc[day] = [...(acc[day] ?? []), event];
-    }
-    return acc;
-  }, {});
-  const scheduleItemCountByDay = events.reduce<Record<number, number>>((acc, event) => {
-    const startDate = new Date(`${event.startDate}T00:00:00`);
-    const endDate = new Date(`${(event.endDate ?? event.startDate)}T00:00:00`);
-    for (const cursor = new Date(startDate); cursor <= endDate; cursor.setDate(cursor.getDate() + 1)) {
-      if (cursor.getFullYear() !== year || cursor.getMonth() + 1 !== month) {
-        continue;
-      }
-      const day = cursor.getDate();
-      acc[day] = (acc[day] ?? 0) + 1;
-    }
-    return acc;
-  }, {});
+  const itemsByDay: Record<number, ClubCalendarFeedItem[]> = {};
+  const scheduleItemCountByDay: Record<number, number> = {};
 
-  votes.forEach((vote) => {
-    const startDate = new Date(`${vote.voteStartDate}T00:00:00`);
-    const endDate = new Date(`${vote.voteEndDate}T00:00:00`);
-    for (const cursor = new Date(startDate); cursor <= endDate; cursor.setDate(cursor.getDate() + 1)) {
-      if (cursor.getFullYear() !== year || cursor.getMonth() + 1 !== month) {
-        continue;
-      }
-      const day = cursor.getDate();
-      scheduleItemCountByDay[day] = (scheduleItemCountByDay[day] ?? 0) + 1;
+  items.forEach((item) => {
+    let startDateValue: string | null = null;
+    let endDateValue: string | null = null;
+
+    if (item.contentType === "NOTICE" && item.notice) {
+      startDateValue = getDatePart(item.notice.scheduleAt);
+      endDateValue = getDatePart(item.notice.scheduleEndAt) ?? startDateValue;
+    } else if (item.contentType === "SCHEDULE_EVENT" && item.event) {
+      startDateValue = item.event.startDate;
+      endDateValue = item.event.endDate ?? item.event.startDate;
+    } else if (item.contentType === "SCHEDULE_VOTE" && item.vote) {
+      startDateValue = item.vote.voteStartDate;
+      endDateValue = item.vote.voteEndDate;
     }
+
+    if (!startDateValue || !endDateValue) {
+      return;
+    }
+
+    forEachMonthDayInRange(year, month, startDateValue, endDateValue, (day) => {
+      itemsByDay[day] = [...(itemsByDay[day] ?? []), item];
+      scheduleItemCountByDay[day] = (scheduleItemCountByDay[day] ?? 0) + 1;
+    });
   });
 
   return {
@@ -131,7 +154,7 @@ function buildCalendarMonth(
     daysInMonth,
     defaultSelectedDay:
       year === today.getFullYear() && month === today.getMonth() + 1 ? today.getDate() : 1,
-    eventsByDay,
+    itemsByDay,
     scheduleItemCountByDay,
   };
 }
@@ -176,11 +199,35 @@ function getEventStatusLabel(event: ClubScheduleEventSummary) {
   return "RSVP";
 }
 
-function isVoteActiveOnDate(vote: ClubScheduleVoteSummary, dateValue: string | undefined) {
-  if (!dateValue) {
-    return true;
+function formatNoticeTimeValue(value: string | null | undefined) {
+  if (!value || value.length < 16) {
+    return null;
   }
-  return vote.voteStartDate <= dateValue && dateValue <= vote.voteEndDate;
+  return value.slice(11, 16);
+}
+
+function getNoticeSecondaryText(notice: ClubNoticeListItem) {
+  const parts = [notice.locationLabel, notice.summary].filter(Boolean);
+  return parts.length > 0 ? parts.join(" • ") : "세부 안내 없음";
+}
+
+function getNoticeTimeLabel(notice: ClubNoticeListItem) {
+  const startTime = formatNoticeTimeValue(notice.scheduleAt);
+  const endTime = formatNoticeTimeValue(notice.scheduleEndAt);
+  if (!startTime && !endTime) {
+    return "공지";
+  }
+  if (!endTime || endTime === startTime) {
+    return startTime ?? "공지";
+  }
+  return `${startTime} - ${endTime}`;
+}
+
+function getNoticeStatusLabel(notice: ClubNoticeListItem) {
+  if (notice.pinned) {
+    return "PINNED";
+  }
+  return "NOTICE";
 }
 
 function getEventDotClassName(eventCount: number, maxEventCount: number, isActive: boolean) {
@@ -247,6 +294,46 @@ function EventCard({
           <p className="text-sm font-bold text-slate-900">{event.timeLabel ?? "종일"}</p>
           <p className="text-[10px] font-medium uppercase tracking-wider text-slate-400">
             {getEventStatusLabel(event)}
+          </p>
+        </div>
+      </div>
+    </ScheduleManageCard>
+  );
+}
+
+function NoticeCard({
+  notice,
+  open,
+  onOpenChange,
+  onOpen,
+}: {
+  notice: ClubNoticeListItem;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onOpen: () => void;
+}) {
+  return (
+    <ScheduleManageCard
+      label={notice.title}
+      manageable={false}
+      open={open}
+      onOpenChange={onOpenChange}
+      onOpen={onOpen}
+      onEdit={() => {}}
+      onDelete={() => {}}
+    >
+      <div className="flex items-center gap-4 rounded-xl border border-slate-100 bg-white p-3 pr-7 shadow-sm transition-all hover:border-sky-500/50">
+        <div className="flex size-12 shrink-0 items-center justify-center rounded-lg bg-sky-500/10 text-sky-600">
+          <span className="material-symbols-outlined">campaign</span>
+        </div>
+        <div className="flex flex-1 flex-col justify-center">
+          <p className="mb-1 text-base font-bold leading-none text-slate-900">{notice.title}</p>
+          <p className="line-clamp-2 text-sm font-normal text-slate-500">{getNoticeSecondaryText(notice)}</p>
+        </div>
+        <div className="shrink-0 text-right">
+          <p className="text-sm font-bold text-slate-900">{getNoticeTimeLabel(notice)}</p>
+          <p className="text-[10px] font-medium uppercase tracking-wider text-slate-400">
+            {getNoticeStatusLabel(notice)}
           </p>
         </div>
       </div>
@@ -322,11 +409,9 @@ export function ScheduleClient({
   const prefersReducedMotion = useReducedMotion();
   const reduceMotion = Boolean(prefersReducedMotion);
   const canManageSchedule = false;
-  const month = useMemo(
-    () => buildCalendarMonth(activeYear, activeMonth, payload.monthEvents, payload.votes),
-    [activeMonth, activeYear, payload.monthEvents, payload.votes],
-  );
+  const month = useMemo(() => buildCalendarMonth(activeYear, activeMonth, payload.items), [activeMonth, activeYear, payload.items]);
   const [selectedDay, setSelectedDay] = useState(month.defaultSelectedDay);
+  const [detailNoticeId, setDetailNoticeId] = useState<string | null>(null);
   const [detailEventId, setDetailEventId] = useState<string | null>(null);
   const [editingEventId, setEditingEventId] = useState<string | null>(null);
   const [detailVoteId, setDetailVoteId] = useState<string | null>(null);
@@ -336,28 +421,39 @@ export function ScheduleClient({
   const [deleting, setDeleting] = useState(false);
   const [activeActionKey, setActiveActionKey] = useState<string | null>(null);
 
-  const events = month.eventsByDay[selectedDay] ?? [];
+  const dayItems = month.itemsByDay[selectedDay] ?? [];
   const selectedDateValue = getDateValue(month.year, month.month, selectedDay);
-  const votes = payload.votes.filter((vote) => isVoteActiveOnDate(vote, selectedDateValue));
-  const selectedItems: SelectedScheduleItem[] = [
-    ...events.map((event) => ({
-      type: "event" as const,
-      key: `event-${event.eventId}`,
-      sortValue: `${event.startDate}T${event.timeLabel ?? "00:00"}`,
-      event,
-    })),
-    ...votes.map((vote) => ({
-      type: "vote" as const,
-      key: `vote-${vote.voteId}`,
-      sortValue: `${vote.voteStartDate}T${vote.voteTimeLabel ?? "00:00"}`,
-      vote,
-    })),
-  ].sort((left, right) => left.sortValue.localeCompare(right.sortValue));
+  const selectedItems: SelectedScheduleItem[] = dayItems
+    .map((item) => {
+      if (item.contentType === "NOTICE" && item.notice) {
+        return {
+          type: "notice" as const,
+          key: `notice-${item.notice.noticeId}`,
+          sortValue: item.notice.scheduleAt ?? `${selectedDateValue}T00:00`,
+          notice: item.notice,
+        };
+      }
+      if (item.contentType === "SCHEDULE_EVENT" && item.event) {
+        return {
+          type: "event" as const,
+          key: `event-${item.event.eventId}`,
+          sortValue: `${item.event.startDate}T${item.event.timeLabel ?? "00:00"}`,
+          event: item.event,
+        };
+      }
+      if (item.contentType === "SCHEDULE_VOTE" && item.vote) {
+        return {
+          type: "vote" as const,
+          key: `vote-${item.vote.voteId}`,
+          sortValue: `${item.vote.voteStartDate}T${item.vote.voteTimeLabel ?? "00:00"}`,
+          vote: item.vote,
+        };
+      }
+      return null;
+    })
+    .filter((item): item is SelectedScheduleItem => item !== null)
+    .sort((left, right) => left.sortValue.localeCompare(right.sortValue));
   const maxEventCount = Math.max(0, ...Object.values(month.scheduleItemCountByDay));
-  const nextUpcomingEvent = payload.monthEvents.find((event) => {
-    const eventLastDate = event.endDate ?? event.startDate;
-    return eventLastDate > selectedDateValue;
-  });
 
   const handleMoveMonth = (direction: "prev" | "next") => {
     const next = shiftMonth(activeYear, activeMonth, direction === "prev" ? -1 : 1);
@@ -537,7 +633,7 @@ export function ScheduleClient({
                         setDeleteEventTarget(item.event);
                       }}
                     />
-                  ) : (
+                  ) : item.type === "vote" ? (
                     <VoteCard
                       vote={item.vote}
                       manageable={canManageSchedule}
@@ -558,6 +654,16 @@ export function ScheduleClient({
                         setDeleteVoteTarget(item.vote);
                       }}
                     />
+                  ) : (
+                    <NoticeCard
+                      notice={item.notice}
+                      open={false}
+                      onOpenChange={() => {}}
+                      onOpen={() => {
+                        setActiveActionKey(null);
+                        setDetailNoticeId(String(item.notice.noticeId));
+                      }}
+                    />
                   )}
                 </motion.article>
               ))
@@ -566,45 +672,21 @@ export function ScheduleClient({
                 className="rounded-xl border border-dashed border-slate-300 bg-white px-4 py-6 text-center text-sm text-slate-500"
                 {...staggeredFadeUpMotion(2, reduceMotion)}
               >
-                선택한 날짜에는 일정이나 투표가 없습니다.
+                선택한 날짜에는 캘린더 항목이 없습니다.
               </motion.div>
             )}
-
-            {nextUpcomingEvent ? (
-              <motion.div
-                className="pt-4 opacity-70"
-                {...staggeredFadeUpMotion(events.length + 3, reduceMotion)}
-              >
-                <p className="mb-3 text-xs font-bold tracking-[0.22em] text-slate-500">다음 일정</p>
-                <button
-                  type="button"
-                  onClick={() => setDetailEventId(String(nextUpcomingEvent.eventId))}
-                  className="flex w-full items-center gap-4 rounded-xl border border-dashed border-slate-300 bg-slate-100 p-3 text-left transition-all hover:border-[var(--primary)]/40"
-                >
-                  <div className="flex size-12 shrink-0 items-center justify-center rounded-lg bg-slate-200 text-slate-400">
-                    <span className="material-symbols-outlined">group</span>
-                  </div>
-                  <div className="flex flex-1 flex-col justify-center">
-                    <p className="mb-1 text-base font-bold leading-none text-slate-900">
-                      {nextUpcomingEvent.title}
-                    </p>
-                    <p className="text-sm font-normal text-slate-500">
-                      {getEventSecondaryText(nextUpcomingEvent)}
-                    </p>
-                  </div>
-                  <div className="shrink-0 text-right">
-                    <p className="text-sm font-bold text-slate-900">
-                      {nextUpcomingEvent.timeLabel ?? nextUpcomingEvent.dateLabel}
-                    </p>
-                  </div>
-                </button>
-              </motion.div>
-            ) : null}
           </div>
         </main>
 
         {payload.admin ? <ClubModeSwitchFab clubId={clubId} mode="user" /> : null}
         <AnimatePresence>
+          {detailNoticeId ? (
+            <ClubNoticeDetailModal
+              clubId={clubId}
+              noticeId={detailNoticeId}
+              onRequestClose={() => setDetailNoticeId(null)}
+            />
+          ) : null}
           {detailEventId ? (
             <ClubScheduleEventDetailModal
               clubId={clubId}

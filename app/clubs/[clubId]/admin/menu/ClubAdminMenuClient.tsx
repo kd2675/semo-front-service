@@ -37,22 +37,6 @@ const publicSans = Public_Sans({
   weight: ["300", "400", "500", "600", "700"],
 });
 
-const FEATURE_NAME_BY_KEY: Record<string, string> = {
-  ATTENDANCE: "출석 체크",
-  TIMELINE: "타임라인",
-  NOTICE: "공지",
-  POLL: "투표",
-  SCHEDULE_MANAGE: "일정 관리",
-};
-
-const FEATURE_DESCRIPTION_BY_KEY: Record<string, string> = {
-  ATTENDANCE: "멤버 출석을 체크하고 출석 세션을 관리합니다.",
-  TIMELINE: "공지 기반 타임라인 카드로 모임 활동을 확인합니다.",
-  NOTICE: "모임 공지를 작성, 관리, 공유합니다.",
-  POLL: "모임 투표를 작성, 공유, 관리합니다.",
-  SCHEDULE_MANAGE: "일정과 투표를 작성하고 관리합니다.",
-};
-
 function extractEnabledFeatureKeys(features: ClubFeatureSummary[]) {
   return features
     .filter((feature) => feature.enabled)
@@ -64,11 +48,11 @@ function cloneFeatures(features: ClubFeatureSummary[]) {
 }
 
 function getFeatureDisplayName(feature: ClubFeatureSummary) {
-  return FEATURE_NAME_BY_KEY[feature.featureKey] ?? feature.displayName;
+  return feature.displayName;
 }
 
 function getFeatureDescription(feature: ClubFeatureSummary) {
-  return FEATURE_DESCRIPTION_BY_KEY[feature.featureKey] ?? feature.description ?? "기능 설명이 없습니다.";
+  return feature.description ?? "";
 }
 
 type ClubAdminMenuClientProps = {

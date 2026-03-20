@@ -78,9 +78,7 @@ export function ClubScheduleFallbackClient({ clubId }: ClubScheduleFallbackClien
             pendingAttendanceCount: 0,
             pendingVoteCount: 0,
           },
-          monthEvents: [],
-          votes: [],
-          sharedNotices: [],
+          items: [],
         }
       }
       activeYear={payload?.calendarYear ?? activeYear}
