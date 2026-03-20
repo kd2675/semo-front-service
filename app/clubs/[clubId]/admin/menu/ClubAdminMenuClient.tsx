@@ -22,6 +22,8 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
+import { EphemeralToast } from "@/app/components/EphemeralToast";
+import { useEphemeralToast } from "@/app/components/useEphemeralToast";
 import { Public_Sans } from "next/font/google";
 import { motion, useReducedMotion } from "motion/react";
 import { startTransition, useEffect, useMemo, useState } from "react";
@@ -161,9 +163,8 @@ export function ClubAdminMenuClient({
     () => extractEnabledFeatureKeys(initialFeatures),
   );
   const [isSaving, setIsSaving] = useState(false);
-  const [feedback, setFeedback] = useState<string | null>(null);
-  const [alertMessage, setAlertMessage] = useState<string | null>(null);
   const [activeFeatureKey, setActiveFeatureKey] = useState<string | null>(null);
+  const { toast, showToast, clearToast } = useEphemeralToast();
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
@@ -186,16 +187,6 @@ export function ClubAdminMenuClient({
     setSavedFeatures(cloneFeatures(initialFeatures));
     setSavedEnabledFeatureKeys(extractEnabledFeatureKeys(initialFeatures));
   }, [initialFeatures]);
-
-  useEffect(() => {
-    if (!alertMessage) {
-      return;
-    }
-    const timeoutId = window.setTimeout(() => {
-      setAlertMessage(null);
-    }, 2000);
-    return () => window.clearTimeout(timeoutId);
-  }, [alertMessage]);
 
   const enabledFeatures = useMemo(
     () => features.filter((feature) => feature.enabled),
@@ -272,13 +263,12 @@ export function ClubAdminMenuClient({
 
   const handleSave = async () => {
     if (!canPersist) {
-      setFeedback("모의 모드에서는 저장되지 않습니다.");
+      showToast("모의 모드에서는 저장되지 않습니다.", "info");
       return;
     }
 
     setIsSaving(true);
-    setFeedback(null);
-    setAlertMessage(null);
+    clearToast();
     const result = await updateClubFeatures(clubId, {
       enabledFeatureKeys: features
         .filter((feature) => feature.enabled)
@@ -287,22 +277,21 @@ export function ClubAdminMenuClient({
     setIsSaving(false);
 
     if (!result.ok || !result.data) {
-      setFeedback(result.message ?? "기능 설정 저장에 실패했습니다.");
+      showToast(result.message ?? "기능 설정 저장에 실패했습니다.", "error");
       return;
     }
 
     setFeatures(cloneFeatures(result.data));
     setSavedFeatures(cloneFeatures(result.data));
     setSavedEnabledFeatureKeys(extractEnabledFeatureKeys(result.data));
-    setFeedback(null);
-    setAlertMessage("기능 설정이 저장되었습니다.");
+    showToast("기능 설정이 저장되었습니다.", "success");
     window.dispatchEvent(new Event("semo:club-features-updated"));
   };
 
   const handleReset = () => {
     setActiveFeatureKey(null);
     setFeatures(cloneFeatures(savedFeatures));
-    setFeedback("변경 사항을 되돌렸습니다.");
+    showToast("변경 사항을 되돌렸습니다.", "info");
   };
 
   return (
@@ -486,28 +475,11 @@ export function ClubAdminMenuClient({
                   {isSaving ? "저장 중..." : "변경사항 저장"}
                 </button>
               </div>
-              {feedback ? (
-                <p className="mt-3 text-center text-xs font-medium text-slate-500">
-                  {feedback}
-                </p>
-              ) : null}
             </div>
-          </div>
-        ) : feedback ? (
-          <div className="pointer-events-none fixed bottom-[92px] left-0 right-0 z-30 p-4">
-            <p className="pointer-events-auto mx-auto max-w-xl rounded-full bg-white/90 px-4 py-2 text-center text-xs font-medium text-slate-500 shadow-sm backdrop-blur-sm">
-              {feedback}
-            </p>
           </div>
         ) : null}
       </div>
-      {alertMessage ? (
-        <div className="pointer-events-none fixed inset-x-0 top-5 z-[70] flex justify-center px-4">
-          <div className="rounded-full bg-emerald-500 px-4 py-2 text-sm font-semibold text-white shadow-lg">
-            {alertMessage}
-          </div>
-        </div>
-      ) : null}
+      <EphemeralToast message={toast?.message ?? null} tone={toast?.tone} />
     </div>
   );
 }

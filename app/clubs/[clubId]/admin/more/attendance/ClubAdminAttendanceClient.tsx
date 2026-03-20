@@ -1,6 +1,8 @@
 "use client";
 
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
+import { EphemeralToast } from "@/app/components/EphemeralToast";
+import { useEphemeralToast } from "@/app/components/useEphemeralToast";
 import { Public_Sans } from "next/font/google";
 import { motion, useReducedMotion } from "motion/react";
 import { useState } from "react";
@@ -55,23 +57,23 @@ export function ClubAdminAttendanceClient({
   const reduceMotion = Boolean(prefersReducedMotion);
   const [attendance, setAttendance] = useState(initialData);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [feedback, setFeedback] = useState<string | null>(null);
+  const { toast, showToast, clearToast } = useEphemeralToast();
 
   const currentSession = attendance.currentSession;
 
   const handleCreateSession = async () => {
     if (!canPersist) {
-      setFeedback("모의 모드에서는 세션이 저장되지 않습니다.");
+      showToast("모의 모드에서는 세션이 저장되지 않습니다.", "info");
       return;
     }
 
     setIsProcessing(true);
-    setFeedback(null);
+    clearToast();
     const result = await createClubAttendanceSession(clubId, {});
     setIsProcessing(false);
 
     if (!result.ok || !result.data) {
-      setFeedback(result.message ?? "출석 세션 생성에 실패했습니다.");
+      showToast(result.message ?? "출석 세션 생성에 실패했습니다.", "error");
       return;
     }
 
@@ -92,7 +94,7 @@ export function ClubAdminAttendanceClient({
         ...current.recentSessions.filter((item) => item.sessionId !== session.sessionId),
       ],
     }));
-    setFeedback("오늘 출석 세션이 열렸습니다.");
+    showToast("오늘 출석 세션이 열렸습니다.", "success");
   };
 
   const handleCloseSession = async () => {
@@ -100,17 +102,17 @@ export function ClubAdminAttendanceClient({
       return;
     }
     if (!canPersist) {
-      setFeedback("모의 모드에서는 세션 상태가 저장되지 않습니다.");
+      showToast("모의 모드에서는 세션 상태가 저장되지 않습니다.", "info");
       return;
     }
 
     setIsProcessing(true);
-    setFeedback(null);
+    clearToast();
     const result = await closeClubAttendanceSession(clubId, currentSession.sessionId);
     setIsProcessing(false);
 
     if (!result.ok || !result.data) {
-      setFeedback(result.message ?? "출석 세션 종료에 실패했습니다.");
+      showToast(result.message ?? "출석 세션 종료에 실패했습니다.", "error");
       return;
     }
 
@@ -128,7 +130,7 @@ export function ClubAdminAttendanceClient({
           : historySession,
       ),
     }));
-    setFeedback("출석 세션이 종료되었습니다.");
+    showToast("출석 세션이 종료되었습니다.", "success");
   };
 
   return (
@@ -209,9 +211,6 @@ export function ClubAdminAttendanceClient({
                 종료
               </button>
             </div>
-            {feedback ? (
-              <p className="mt-3 text-center text-xs font-medium text-slate-500">{feedback}</p>
-            ) : null}
           </motion.section>
 
           <motion.section
@@ -254,6 +253,7 @@ export function ClubAdminAttendanceClient({
             </div>
           </motion.section>
         </main>
+        <EphemeralToast message={toast?.message ?? null} tone={toast?.tone} />
       </div>
     </div>
   );

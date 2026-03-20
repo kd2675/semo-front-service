@@ -1,10 +1,12 @@
 "use client";
 
 import { RouterLink } from "@/app/components/RouterLink";
+import { EphemeralToast } from "@/app/components/EphemeralToast";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { startTransition, useCallback, useEffect, useMemo, useState } from "react";
 import { ClubModeSwitchFab } from "@/app/components/ClubModeSwitchFab";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
+import { useEphemeralToast } from "@/app/components/useEphemeralToast";
 import {
   checkInClubAttendance,
   getClubAttendance,
@@ -94,7 +96,6 @@ function DashboardWidgetCard({
   attendanceData,
   attendanceLoading,
   attendanceError,
-  attendanceFeedback,
   attendancePulseToken,
   isCheckingInAttendance,
   onRemove,
@@ -116,7 +117,6 @@ function DashboardWidgetCard({
   attendanceData: ClubAttendanceResponse | null;
   attendanceLoading: boolean;
   attendanceError: string | null;
-  attendanceFeedback: string | null;
   attendancePulseToken: number;
   isCheckingInAttendance: boolean;
   onRemove: (widgetKey: string) => void;
@@ -300,20 +300,6 @@ function DashboardWidgetCard({
               ) : null}
             </>
           )}
-          <AnimatePresence initial={false}>
-            {attendanceFeedback ? (
-              <motion.p
-                key={`attendance-feedback-${attendanceFeedback}`}
-                initial={reduceMotion ? false : { opacity: 0, y: 6 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={reduceMotion ? undefined : { opacity: 0, y: -4 }}
-                transition={{ duration: reduceMotion ? 0 : 0.2, ease: "easeOut" }}
-                className="text-xs font-medium text-slate-500"
-              >
-                {attendanceFeedback}
-              </motion.p>
-            ) : null}
-          </AnimatePresence>
         </div>
       ) : (
         <p className="text-sm text-slate-500">{widget.description ?? "No widget description yet."}</p>
@@ -381,7 +367,6 @@ export function ClubDashboardFallbackClient({
   const [editor, setEditor] = useState<ClubDashboardEditorResponse | null>(null);
   const [editMode, setEditMode] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [feedback, setFeedback] = useState<string | null>(null);
   const [draggingWidgetKey, setDraggingWidgetKey] = useState<string | null>(null);
   const [dragOverWidgetKey, setDragOverWidgetKey] = useState<string | null>(null);
   const [touchDraggingWidgetKey, setTouchDraggingWidgetKey] = useState<string | null>(null);
@@ -389,9 +374,9 @@ export function ClubDashboardFallbackClient({
   const [attendanceData, setAttendanceData] = useState<ClubAttendanceResponse | null>(null);
   const [attendanceLoading, setAttendanceLoading] = useState(false);
   const [attendanceError, setAttendanceError] = useState<string | null>(null);
-  const [attendanceFeedback, setAttendanceFeedback] = useState<string | null>(null);
   const [attendancePulseToken, setAttendancePulseToken] = useState(0);
   const [isCheckingInAttendance, setIsCheckingInAttendance] = useState(false);
+  const { toast, showToast, clearToast } = useEphemeralToast();
 
   useEffect(() => {
     let cancelled = false;
@@ -401,7 +386,7 @@ export function ClubDashboardFallbackClient({
       setDashboardLoading(true);
       setError(null);
       setDashboardError(null);
-      setFeedback(null);
+      clearToast();
 
       const clubResult = await getMyClub(clubId);
       if (cancelled) {
@@ -452,7 +437,7 @@ export function ClubDashboardFallbackClient({
     return () => {
       cancelled = true;
     };
-  }, [clubId]);
+  }, [clearToast, clubId]);
 
   const visibleWidgets = useMemo(() => {
     if (!club) {
@@ -521,7 +506,7 @@ export function ClubDashboardFallbackClient({
       }
 
       setIsSaving(true);
-      setFeedback(null);
+      clearToast();
       const result = await updateClubDashboardWidgets(clubId, {
         scope: "USER_HOME",
         widgets: nextWidgets.map((widget) => ({
@@ -535,15 +520,15 @@ export function ClubDashboardFallbackClient({
       setIsSaving(false);
 
       if (!result.ok || !result.data) {
-        setFeedback(result.message ?? "위젯 저장에 실패했습니다.");
+        showToast(result.message ?? "위젯 저장에 실패했습니다.", "error");
         return;
       }
 
       setEditor(result.data);
-      setFeedback(successMessage);
+      showToast(successMessage, "success");
       window.dispatchEvent(new Event("semo:dashboard-widgets-updated"));
     },
-    [club?.admin, clubId],
+    [clearToast, club?.admin, clubId, showToast],
   );
 
   const handleRemoveWidget = (widgetKey: string) => {
@@ -676,21 +661,21 @@ export function ClubDashboardFallbackClient({
     }
 
     setIsCheckingInAttendance(true);
-    setAttendanceFeedback(null);
+    clearToast();
     const result = await checkInClubAttendance(clubId, {
       sessionId: currentSession.sessionId,
     });
     setIsCheckingInAttendance(false);
 
     if (!result.ok || !result.data) {
-      setAttendanceFeedback(result.message ?? "출석 처리에 실패했습니다.");
+      showToast(result.message ?? "출석 처리에 실패했습니다.", "error");
       return;
     }
 
-    setAttendanceFeedback("출석이 완료되었습니다.");
+    showToast("출석이 완료되었습니다.", "success");
     setAttendancePulseToken((current) => current + 1);
     await loadAttendanceData();
-  }, [attendanceData?.currentSession, clubId, isCheckingInAttendance, loadAttendanceData]);
+  }, [attendanceData?.currentSession, clearToast, clubId, isCheckingInAttendance, loadAttendanceData, showToast]);
 
   if (isLoading && !club && !error) {
     return <ClubDashboardLoadingShell />;
@@ -708,7 +693,7 @@ export function ClubDashboardFallbackClient({
               <button
                 type="button"
                 onClick={() => {
-                  setFeedback(null);
+                  clearToast();
                   clearDragState();
                   setTouchDraggingWidgetKey(null);
                   setTouchDragOverWidgetKey(null);
@@ -779,9 +764,6 @@ export function ClubDashboardFallbackClient({
                     </span>
                   ) : null}
                 </div>
-                {feedback ? (
-                  <p className="mt-3 text-xs font-medium text-slate-500">{feedback}</p>
-                ) : null}
               </>
             )}
           </motion.section>
@@ -809,7 +791,6 @@ export function ClubDashboardFallbackClient({
                     attendanceData={widget.widgetKey === "ATTENDANCE_STATUS" ? attendanceData : null}
                     attendanceLoading={widget.widgetKey === "ATTENDANCE_STATUS" && attendanceLoading}
                     attendanceError={widget.widgetKey === "ATTENDANCE_STATUS" ? attendanceError : null}
-                    attendanceFeedback={widget.widgetKey === "ATTENDANCE_STATUS" ? attendanceFeedback : null}
                     attendancePulseToken={widget.widgetKey === "ATTENDANCE_STATUS" ? attendancePulseToken : 0}
                     isCheckingInAttendance={widget.widgetKey === "ATTENDANCE_STATUS" && isCheckingInAttendance}
                     onRemove={handleRemoveWidget}
@@ -874,6 +855,7 @@ export function ClubDashboardFallbackClient({
         </main>
 
         {club?.admin ? <ClubModeSwitchFab clubId={clubId} mode="user" /> : null}
+        <EphemeralToast message={toast?.message ?? null} tone={toast?.tone} />
       </div>
     </div>
   );

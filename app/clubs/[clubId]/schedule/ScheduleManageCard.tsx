@@ -4,7 +4,8 @@ import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 
 type ScheduleManageCardProps = {
   label: string;
-  manageable: boolean;
+  canEdit: boolean;
+  canDelete: boolean;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onOpen: () => void;
@@ -16,7 +17,8 @@ type ScheduleManageCardProps = {
 
 export function ScheduleManageCard({
   label,
-  manageable,
+  canEdit,
+  canDelete,
   open,
   onOpenChange,
   onOpen,
@@ -27,6 +29,7 @@ export function ScheduleManageCard({
 }: ScheduleManageCardProps) {
   const prefersReducedMotion = useReducedMotion();
   const reduceMotion = Boolean(prefersReducedMotion);
+  const manageable = canEdit || canDelete;
 
   if (variant === "menu") {
     return (
@@ -65,30 +68,36 @@ export function ScheduleManageCard({
                   transition={{ duration: reduceMotion ? 0.1 : 0.16, ease: "easeOut" }}
                   className="absolute bottom-12 right-4 z-20 w-28 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-[0_12px_32px_rgba(15,23,42,0.14)]"
                 >
-                  <button
-                    type="button"
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      onOpenChange(false);
-                      onEdit();
-                    }}
-                    className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm font-semibold text-amber-600 transition hover:bg-amber-50"
-                  >
-                    <span className="material-symbols-outlined text-[18px]">edit</span>
-                    수정
-                  </button>
-                  <button
-                    type="button"
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      onOpenChange(false);
-                      onDelete();
-                    }}
-                    className="flex w-full items-center gap-2 border-t border-slate-100 px-3 py-2.5 text-left text-sm font-semibold text-rose-600 transition hover:bg-rose-50"
-                  >
-                    <span className="material-symbols-outlined text-[18px]">delete</span>
-                    삭제
-                  </button>
+                  {canEdit ? (
+                    <button
+                      type="button"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        onOpenChange(false);
+                        onEdit();
+                      }}
+                      className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm font-semibold text-amber-600 transition hover:bg-amber-50"
+                    >
+                      <span className="material-symbols-outlined text-[18px]">edit</span>
+                      수정
+                    </button>
+                  ) : null}
+                  {canDelete ? (
+                    <button
+                      type="button"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        onOpenChange(false);
+                        onDelete();
+                      }}
+                      className={`flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm font-semibold text-rose-600 transition hover:bg-rose-50 ${
+                        canEdit ? "border-t border-slate-100" : ""
+                      }`}
+                    >
+                      <span className="material-symbols-outlined text-[18px]">delete</span>
+                      삭제
+                    </button>
+                  ) : null}
                 </motion.div>
               ) : null}
             </AnimatePresence>
@@ -183,57 +192,63 @@ export function ScheduleManageCard({
               자세히 보기
             </motion.button>
 
-            <motion.button
-              type="button"
-              onClick={(event) => {
-                event.stopPropagation();
-                onEdit();
-              }}
-              aria-label={`${label} 수정`}
-              className="flex flex-1 flex-col items-center justify-center gap-2 border-r border-white/40 bg-amber-500/84 px-2 text-[11px] font-bold text-white transition hover:bg-amber-500/94"
-              initial={false}
-              animate={
-                open
-                  ? { opacity: 1, x: 0 }
-                  : reduceMotion
-                    ? { opacity: 0, x: 0 }
-                    : { opacity: 0, x: 14 }
-              }
-              transition={{
-                duration: reduceMotion ? 0.1 : 0.24,
-                ease: "easeOut",
-                delay: open && !reduceMotion ? 0.05 : 0,
-              }}
-            >
-              <span className="material-symbols-outlined text-[22px]">edit</span>
-              수정
-            </motion.button>
+            {canEdit ? (
+              <motion.button
+                type="button"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onEdit();
+                }}
+                aria-label={`${label} 수정`}
+                className={`flex flex-1 flex-col items-center justify-center gap-2 bg-amber-500/84 px-2 text-[11px] font-bold text-white transition hover:bg-amber-500/94 ${
+                  canDelete ? "border-r border-white/40" : ""
+                }`}
+                initial={false}
+                animate={
+                  open
+                    ? { opacity: 1, x: 0 }
+                    : reduceMotion
+                      ? { opacity: 0, x: 0 }
+                      : { opacity: 0, x: 14 }
+                }
+                transition={{
+                  duration: reduceMotion ? 0.1 : 0.24,
+                  ease: "easeOut",
+                  delay: open && !reduceMotion ? 0.05 : 0,
+                }}
+              >
+                <span className="material-symbols-outlined text-[22px]">edit</span>
+                수정
+              </motion.button>
+            ) : null}
 
-            <motion.button
-              type="button"
-              onClick={(event) => {
-                event.stopPropagation();
-                onDelete();
-              }}
-              aria-label={`${label} 삭제`}
-              className="flex flex-1 flex-col items-center justify-center gap-2 bg-rose-500/84 px-2 text-[11px] font-bold text-white transition hover:bg-rose-500/94"
-              initial={false}
-              animate={
-                open
-                  ? { opacity: 1, x: 0 }
-                  : reduceMotion
-                    ? { opacity: 0, x: 0 }
-                    : { opacity: 0, x: 18 }
-              }
-              transition={{
-                duration: reduceMotion ? 0.1 : 0.22,
-                ease: "easeOut",
-                delay: open && !reduceMotion ? 0.08 : 0,
-              }}
-            >
-              <span className="material-symbols-outlined text-[22px]">delete</span>
-              삭제
-            </motion.button>
+            {canDelete ? (
+              <motion.button
+                type="button"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onDelete();
+                }}
+                aria-label={`${label} 삭제`}
+                className="flex flex-1 flex-col items-center justify-center gap-2 bg-rose-500/84 px-2 text-[11px] font-bold text-white transition hover:bg-rose-500/94"
+                initial={false}
+                animate={
+                  open
+                    ? { opacity: 1, x: 0 }
+                    : reduceMotion
+                      ? { opacity: 0, x: 0 }
+                      : { opacity: 0, x: 18 }
+                }
+                transition={{
+                  duration: reduceMotion ? 0.1 : 0.22,
+                  ease: "easeOut",
+                  delay: open && !reduceMotion ? 0.08 : 0,
+                }}
+              >
+                <span className="material-symbols-outlined text-[22px]">delete</span>
+                삭제
+              </motion.button>
+            ) : null}
           </div>
         </div>
       ) : null}

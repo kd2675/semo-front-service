@@ -3,7 +3,7 @@
 import { startTransition, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getClubPollHome, type ClubPollHomeResponse } from "@/app/lib/clubs";
-import { ClubScheduleLoadingShell } from "../../ClubRouteLoadingShells";
+import { ClubPollHomeLoadingShell } from "../../ClubRouteLoadingShells";
 import { ClubPollHomeClient } from "./ClubPollHomeClient";
 
 type ClubPollFallbackClientProps = {
@@ -51,7 +51,7 @@ export function ClubPollFallbackClient({
   };
 
   if (loading || !payload) {
-    return <ClubScheduleLoadingShell />;
+    return <ClubPollHomeLoadingShell mode={mode} />;
   }
 
   return (

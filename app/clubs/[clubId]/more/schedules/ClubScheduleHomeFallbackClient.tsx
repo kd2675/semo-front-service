@@ -3,7 +3,7 @@
 import { startTransition, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getClubScheduleHome, type ClubScheduleHomeResponse } from "@/app/lib/clubs";
-import { ClubScheduleLoadingShell } from "../../ClubRouteLoadingShells";
+import { ClubScheduleHomeLoadingShell } from "../../ClubRouteLoadingShells";
 import { ClubScheduleHomeClient } from "./ClubScheduleHomeClient";
 
 type ClubScheduleHomeFallbackClientProps = {
@@ -51,7 +51,7 @@ export function ClubScheduleHomeFallbackClient({
   };
 
   if (loading || !payload) {
-    return <ClubScheduleLoadingShell />;
+    return <ClubScheduleHomeLoadingShell mode={mode} />;
   }
 
   return (

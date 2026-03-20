@@ -38,6 +38,34 @@ function AdminShellFrame({
   );
 }
 
+function AdminMobileShellFrame({
+  titleWidthClassName,
+  subtitleWidthClassName,
+  children,
+}: {
+  titleWidthClassName: string;
+  subtitleWidthClassName: string;
+  children: ReactNode;
+}) {
+  return (
+    <div className="min-h-screen bg-[#f8f6f6] text-slate-900">
+      <div className="mx-auto min-h-screen max-w-md bg-[#f8f6f6] pb-40">
+        <header className="sticky top-0 z-20 border-b border-slate-200 bg-[#f8f6f6]/85 backdrop-blur-md">
+          <div className="mx-auto flex w-full max-w-md items-center gap-3 p-4">
+            <div className="size-10 rounded-xl bg-[var(--primary)]/10" />
+            <div className="space-y-2">
+              <ShellLine className={`h-5 ${titleWidthClassName}`} />
+              <ShellLine className={`h-3 ${subtitleWidthClassName}`} />
+            </div>
+          </div>
+        </header>
+
+        <main className="semo-nav-bottom-space space-y-4 px-4 pt-4">{children}</main>
+      </div>
+    </div>
+  );
+}
+
 export function AdminHomeLoadingShell() {
   return (
     <AdminShellFrame titleWidthClassName="w-24" subtitleWidthClassName="w-20">
@@ -329,5 +357,61 @@ export function AdminAttendanceLoadingShell() {
         </main>
       </div>
     </div>
+  );
+}
+
+export function AdminFeatureSettingsLoadingShell() {
+  return (
+    <AdminMobileShellFrame titleWidthClassName="w-28" subtitleWidthClassName="w-24">
+      <section className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm">
+        <ShellLine className="h-3 w-28" />
+        <ShellLine className="mt-4 h-8 w-40" />
+        <ShellLine className="mt-3 h-4 w-full" />
+        <ShellLine className="mt-2 h-4 w-5/6" />
+      </section>
+      {Array.from({ length: 3 }, (_, index) => (
+        <section
+          key={`admin-feature-setting-${index}`}
+          className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm"
+        >
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex items-start gap-3">
+              <div className="size-12 rounded-2xl bg-[var(--primary)]/10" />
+              <div>
+                <ShellLine className="h-4 w-36" />
+                <ShellLine className="mt-3 h-4 w-48" />
+                <ShellLine className="mt-2 h-4 w-40" />
+                <div className="mt-4 h-4 w-14 rounded-full bg-[var(--primary)]/10" />
+              </div>
+            </div>
+            <div className="h-[31px] w-[51px] rounded-full bg-slate-100" />
+          </div>
+        </section>
+      ))}
+    </AdminMobileShellFrame>
+  );
+}
+
+export function AdminTimelineLoadingShell() {
+  return (
+    <AdminMobileShellFrame titleWidthClassName="w-28" subtitleWidthClassName="w-24">
+      <section className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm">
+        <ShellLine className="h-3 w-24" />
+        <ShellLine className="mt-4 h-8 w-36" />
+        <ShellLine className="mt-3 h-4 w-full" />
+        <ShellLine className="mt-2 h-4 w-5/6" />
+      </section>
+      <section className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="flex items-start gap-3">
+          <div className="mt-1 size-5 rounded-full bg-[var(--primary)]/10" />
+          <div className="flex-1 space-y-3">
+            <ShellLine className="h-4 w-20" />
+            <ShellLine className="h-4 w-full" />
+            <ShellLine className="h-4 w-4/5" />
+            <ShellLine className="h-4 w-5/6" />
+          </div>
+        </div>
+      </section>
+    </AdminMobileShellFrame>
   );
 }

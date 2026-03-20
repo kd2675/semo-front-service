@@ -140,7 +140,8 @@ export function ClubScheduleHomeClient({
                     <motion.div key={item.key} {...staggeredFadeUpMotion(index + 8, reduceMotion)}>
                       <BoardScheduleManageCard
                         event={item.event}
-                        manageable={true}
+                        canEdit={item.event.canEdit}
+                        canDelete={item.event.canDelete}
                         open={activeActionKey === item.key}
                         onOpenChange={(open) => setActiveActionKey(open ? item.key : null)}
                         onOpen={() => {

@@ -18,7 +18,9 @@ import {
   useSortable,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { EphemeralToast } from "@/app/components/EphemeralToast";
 import { RouterLink } from "@/app/components/RouterLink";
+import { useEphemeralToast } from "@/app/components/useEphemeralToast";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
@@ -163,7 +165,7 @@ export function AdminBottomNav({ clubId }: AdminBottomNavProps) {
   const [activeFeatureKey, setActiveFeatureKey] = useState<string | null>(null);
   const [isReorderSaving, setIsReorderSaving] = useState(false);
   const [reorderFeedback, setReorderFeedback] = useState<string | null>(null);
-  const [reorderAlertMessage, setReorderAlertMessage] = useState<string | null>(null);
+  const { toast, showToast, clearToast } = useEphemeralToast();
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
@@ -235,20 +237,10 @@ export function AdminBottomNav({ clubId }: AdminBottomNavProps) {
     };
   }, [isMoreOpen]);
 
-  useEffect(() => {
-    if (!reorderAlertMessage) {
-      return;
-    }
-    const timeoutId = window.setTimeout(() => {
-      setReorderAlertMessage(null);
-    }, 2000);
-    return () => window.clearTimeout(timeoutId);
-  }, [reorderAlertMessage]);
-
   const persistFeatureOrder = async (nextOrderedFeatures: ClubFeatureSummary[]) => {
     setIsReorderSaving(true);
     setReorderFeedback(null);
-    setReorderAlertMessage(null);
+    clearToast();
     const result = await updateClubFeatures(clubId, {
       enabledFeatureKeys: nextOrderedFeatures.map((feature) => feature.featureKey),
     });
@@ -256,6 +248,7 @@ export function AdminBottomNav({ clubId }: AdminBottomNavProps) {
 
     if (!result.ok || !result.data) {
       setReorderFeedback(result.message ?? "순서 저장에 실패했습니다.");
+      showToast(result.message ?? "순서 저장에 실패했습니다.", "error");
       return;
     }
 
@@ -263,7 +256,7 @@ export function AdminBottomNav({ clubId }: AdminBottomNavProps) {
     setEnabledFeatures(nextEnabled);
     setOrderedMenuItems(nextEnabled);
     setReorderFeedback(null);
-    setReorderAlertMessage("순서를 저장했습니다.");
+    showToast("순서를 저장했습니다.", "success");
     window.dispatchEvent(new Event("semo:club-features-updated"));
   };
 
@@ -331,7 +324,7 @@ export function AdminBottomNav({ clubId }: AdminBottomNavProps) {
     setActiveFeatureKey(null);
     setOrderedMenuItems(enabledFeatures);
     setReorderFeedback(null);
-    setReorderAlertMessage(null);
+    clearToast();
   };
 
   const closeMoreMenu = () => {
@@ -339,7 +332,7 @@ export function AdminBottomNav({ clubId }: AdminBottomNavProps) {
     setReorderEnabled(false);
     setActiveFeatureKey(null);
     setReorderFeedback(null);
-    setReorderAlertMessage(null);
+    clearToast();
     setOrderedMenuItems(enabledFeatures);
   };
 
@@ -352,7 +345,7 @@ export function AdminBottomNav({ clubId }: AdminBottomNavProps) {
     setReorderEnabled(false);
     setActiveFeatureKey(null);
     setReorderFeedback(null);
-    setReorderAlertMessage(null);
+    clearToast();
     setOrderedMenuItems(enabledFeatures);
     setOpenMenuPathname(pathname);
   };
@@ -603,13 +596,7 @@ export function AdminBottomNav({ clubId }: AdminBottomNavProps) {
         ) : null}
       </AnimatePresence>
 
-      {reorderAlertMessage ? (
-        <div className="pointer-events-none fixed inset-x-0 top-5 z-[70] flex justify-center px-4">
-          <div className="rounded-full bg-emerald-500 px-4 py-2 text-sm font-semibold text-white shadow-lg">
-            {reorderAlertMessage}
-          </div>
-        </div>
-      ) : null}
+      <EphemeralToast message={toast?.message ?? null} tone={toast?.tone} />
 
       <AnimatePresence initial={false}>
         {isDocked ? (

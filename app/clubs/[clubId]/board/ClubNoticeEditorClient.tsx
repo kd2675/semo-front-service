@@ -96,6 +96,8 @@ export function ClubNoticeEditorClient({
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [canEdit, setCanEdit] = useState(!isEdit);
+  const [canDelete, setCanDelete] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const resolvedBasePath = basePath ?? `/clubs/${clubId}/more/notices`;
   const backHref = isEdit && noticeId ? `${resolvedBasePath}/${noticeId}` : resolvedBasePath;
@@ -124,6 +126,8 @@ export function ClubNoticeEditorClient({
     setPostToBoard(payload.postedToBoard);
     setPostToCalendar(payload.postedToCalendar);
     setPinned(payload.pinned);
+    setCanEdit(payload.canEdit);
+    setCanDelete(payload.canDelete);
   });
 
   useEffect(() => {
@@ -139,6 +143,10 @@ export function ClubNoticeEditorClient({
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (isEdit && !canEdit) {
+      setError("공지 수정 권한이 없습니다.");
+      return;
+    }
     setSaving(true);
     setError(null);
     const request = {
@@ -191,6 +199,10 @@ export function ClubNoticeEditorClient({
 
   const handleDelete = async () => {
     if (!noticeId) {
+      return;
+    }
+    if (!canDelete) {
+      setError("공지 삭제 권한이 없습니다.");
       return;
     }
     setDeleting(true);
@@ -407,6 +419,16 @@ export function ClubNoticeEditorClient({
                 <SettingSwitch checked={pinned} onChange={setPinned} />
               </div>
 
+              {isEdit && (!canEdit || !canDelete) ? (
+                <div className="rounded-2xl bg-slate-100 px-4 py-3 text-sm font-medium text-slate-600">
+                  {!canEdit && !canDelete
+                    ? "이 공지는 현재 수정과 삭제가 모두 제한되어 있습니다."
+                    : !canEdit
+                      ? "현재 권한으로는 삭제만 가능합니다."
+                      : "현재 권한으로는 수정만 가능합니다."}
+                </div>
+              ) : null}
+
               {error ? (
                 <div className="rounded-2xl bg-rose-50 px-4 py-3 text-sm font-medium text-rose-600">
                   {error}
@@ -426,26 +448,30 @@ export function ClubNoticeEditorClient({
           </form>
         </main>
 
-        {isEdit ? (
+        {isEdit && (canEdit || canDelete) ? (
           <div className="fixed bottom-0 left-0 right-0 mx-auto max-w-md border-t border-slate-100 bg-white p-4">
             <div className="flex gap-3">
-              <button
-                type="button"
-                onClick={() => setShowDeleteModal(true)}
-                disabled={deleting || saving}
-                className="flex h-14 flex-1 items-center justify-center gap-2 rounded-xl bg-rose-500 text-base font-bold text-white shadow-lg shadow-rose-500/25 transition-all hover:bg-rose-600 disabled:opacity-60"
-              >
-                <span className="material-symbols-outlined text-xl">delete</span>
-                {deleting ? "삭제 중..." : "삭제"}
-              </button>
-              <button
-                type="submit"
-                form={formId}
-                disabled={saving || deleting}
-                className="h-14 flex-[2] rounded-xl bg-[var(--primary)] text-base font-bold text-white shadow-lg shadow-[var(--primary)]/25 transition-all hover:bg-[var(--primary)]/90 disabled:opacity-60"
-              >
-                {saving ? "수정 중..." : "수정 완료"}
-              </button>
+              {canDelete ? (
+                <button
+                  type="button"
+                  onClick={() => setShowDeleteModal(true)}
+                  disabled={deleting || saving}
+                  className="flex h-14 flex-1 items-center justify-center gap-2 rounded-xl bg-rose-500 text-base font-bold text-white shadow-lg shadow-rose-500/25 transition-all hover:bg-rose-600 disabled:opacity-60"
+                >
+                  <span className="material-symbols-outlined text-xl">delete</span>
+                  {deleting ? "삭제 중..." : "삭제"}
+                </button>
+              ) : null}
+              {canEdit ? (
+                <button
+                  type="submit"
+                  form={formId}
+                  disabled={saving || deleting}
+                  className="h-14 flex-[2] rounded-xl bg-[var(--primary)] text-base font-bold text-white shadow-lg shadow-[var(--primary)]/25 transition-all hover:bg-[var(--primary)]/90 disabled:opacity-60"
+                >
+                  {saving ? "수정 중..." : "수정 완료"}
+                </button>
+              ) : null}
             </div>
           </div>
         ) : null}

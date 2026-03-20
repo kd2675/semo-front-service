@@ -13,6 +13,10 @@ type AdminChromeProps = {
 export function AdminChrome({ clubId, children }: AdminChromeProps) {
   const pathname = usePathname();
   const isMenuPage = pathname === `/clubs/${clubId}/admin/menu`;
+  const isNoticeSettingsPage = pathname === `/clubs/${clubId}/admin/more/notices`;
+  const isScheduleSettingsPage = pathname === `/clubs/${clubId}/admin/more/schedules`;
+  const isPollSettingsPage = pathname === `/clubs/${clubId}/admin/more/polls`;
+  const fabClassName = isMenuPage || isNoticeSettingsPage || isScheduleSettingsPage || isPollSettingsPage ? "bottom-44" : undefined;
 
   return (
     <div
@@ -24,7 +28,7 @@ export function AdminChrome({ clubId, children }: AdminChromeProps) {
       }
     >
       {children}
-      <ClubModeSwitchFab clubId={clubId} mode="admin" className={isMenuPage ? "bottom-44" : undefined} />
+      <ClubModeSwitchFab clubId={clubId} mode="admin" className={fabClassName} />
       <AdminBottomNav clubId={clubId} />
     </div>
   );

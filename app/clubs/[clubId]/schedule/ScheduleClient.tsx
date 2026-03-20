@@ -253,7 +253,8 @@ function getEventDotClassName(eventCount: number, maxEventCount: number, isActiv
 
 function EventCard({
   event,
-  manageable,
+  canEdit,
+  canDelete,
   open,
   onOpenChange,
   onOpen,
@@ -261,7 +262,8 @@ function EventCard({
   onDelete,
 }: {
   event: ClubScheduleEventSummary;
-  manageable: boolean;
+  canEdit: boolean;
+  canDelete: boolean;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onOpen: () => void;
@@ -273,7 +275,8 @@ function EventCard({
   return (
     <ScheduleManageCard
       label={event.title}
-      manageable={manageable}
+      canEdit={canEdit}
+      canDelete={canDelete}
       open={open}
       onOpenChange={onOpenChange}
       onOpen={onOpen}
@@ -315,7 +318,8 @@ function NoticeCard({
   return (
     <ScheduleManageCard
       label={notice.title}
-      manageable={false}
+      canEdit={false}
+      canDelete={false}
       open={open}
       onOpenChange={onOpenChange}
       onOpen={onOpen}
@@ -343,7 +347,8 @@ function NoticeCard({
 
 function VoteCard({
   vote,
-  manageable,
+  canEdit,
+  canDelete,
   open,
   onOpenChange,
   onOpen,
@@ -351,7 +356,8 @@ function VoteCard({
   onDelete,
 }: {
   vote: ClubScheduleVoteSummary;
-  manageable: boolean;
+  canEdit: boolean;
+  canDelete: boolean;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onOpen: () => void;
@@ -361,7 +367,8 @@ function VoteCard({
   return (
     <ScheduleManageCard
       label={vote.title}
-      manageable={manageable}
+      canEdit={canEdit}
+      canDelete={canDelete}
       open={open}
       onOpenChange={onOpenChange}
       onOpen={onOpen}
@@ -408,7 +415,6 @@ export function ScheduleClient({
 }: ScheduleClientProps) {
   const prefersReducedMotion = useReducedMotion();
   const reduceMotion = Boolean(prefersReducedMotion);
-  const canManageSchedule = false;
   const month = useMemo(() => buildCalendarMonth(activeYear, activeMonth, payload.items), [activeMonth, activeYear, payload.items]);
   const [selectedDay, setSelectedDay] = useState(month.defaultSelectedDay);
   const [detailNoticeId, setDetailNoticeId] = useState<string | null>(null);
@@ -615,7 +621,8 @@ export function ScheduleClient({
                   {item.type === "event" ? (
                     <EventCard
                       event={item.event}
-                      manageable={canManageSchedule}
+                      canEdit={item.event.canEdit}
+                      canDelete={item.event.canDelete}
                       open={activeActionKey === item.key}
                       onOpenChange={(nextOpen) => {
                         setActiveActionKey(nextOpen ? item.key : null);
@@ -636,7 +643,8 @@ export function ScheduleClient({
                   ) : item.type === "vote" ? (
                     <VoteCard
                       vote={item.vote}
-                      manageable={canManageSchedule}
+                      canEdit={item.vote.canEdit}
+                      canDelete={item.vote.canDelete}
                       open={activeActionKey === item.key}
                       onOpenChange={(nextOpen) => {
                         setActiveActionKey(nextOpen ? item.key : null);

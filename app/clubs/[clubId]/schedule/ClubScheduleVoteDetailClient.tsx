@@ -131,7 +131,7 @@ export function ClubScheduleVoteDetailClient({
   };
 
   const handleCloseVote = async () => {
-    if (!payload || !payload.canManage || payload.voteStatus === "CLOSED") {
+    if (!payload || !payload.canEdit || payload.voteStatus === "CLOSED") {
       return;
     }
     if (!window.confirm("이 투표를 지금 종료하시겠습니까?")) {
@@ -155,7 +155,7 @@ export function ClubScheduleVoteDetailClient({
   }
 
   const showPrimaryAction = Boolean(payload?.votingOpen);
-  const showAdminCloseAction = Boolean(payload?.canManage && payload?.voteStatus !== "CLOSED");
+  const showAdminCloseAction = Boolean(payload?.canEdit && payload?.voteStatus !== "CLOSED");
   const submitDisabled = !payload?.votingOpen
     || selectedOptionId == null
     || submittingVoteOptionId !== null

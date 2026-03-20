@@ -1,4 +1,4 @@
-import { ClubScheduleHomeFallbackClient } from "@/app/clubs/[clubId]/more/schedules/ClubScheduleHomeFallbackClient";
+import { ClubAdminScheduleSettingsFallbackClient } from "./ClubAdminScheduleSettingsFallbackClient";
 
 type ClubAdminScheduleHomePageProps = {
   params: Promise<{
@@ -10,5 +10,5 @@ export default async function ClubAdminScheduleHomePage({
   params,
 }: ClubAdminScheduleHomePageProps) {
   const { clubId } = await params;
-  return <ClubScheduleHomeFallbackClient clubId={clubId} mode="admin" />;
+  return <ClubAdminScheduleSettingsFallbackClient clubId={clubId} />;
 }

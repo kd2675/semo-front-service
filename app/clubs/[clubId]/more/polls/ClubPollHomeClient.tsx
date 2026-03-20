@@ -61,7 +61,8 @@ function getOptionPercent(voteCount: number, totalResponses: number) {
 
 function PollCard({
   poll,
-  manageable,
+  canEdit,
+  canDelete,
   open,
   onOpenChange,
   onOpen,
@@ -69,7 +70,8 @@ function PollCard({
   onDelete,
 }: {
   poll: ClubPollSummary;
-  manageable: boolean;
+  canEdit: boolean;
+  canDelete: boolean;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onOpen: () => void;
@@ -81,6 +83,7 @@ function PollCard({
   const prefersReducedMotion = useReducedMotion();
   const reduceMotion = Boolean(prefersReducedMotion);
   const authorAvatarUrl = poll.authorAvatarThumbnailUrl ?? poll.authorAvatarImageUrl;
+  const manageable = canEdit || canDelete;
 
   return (
     <article className="relative overflow-visible rounded-[8px] border border-slate-100 bg-white shadow-sm">
@@ -119,30 +122,36 @@ function PollCard({
                   transition={{ duration: reduceMotion ? 0.1 : 0.16, ease: "easeOut" }}
                   className="absolute right-0 top-10 z-20 w-28 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-[0_12px_32px_rgba(15,23,42,0.14)]"
                 >
-                  <button
-                    type="button"
-                    onClick={(targetEvent) => {
-                      targetEvent.stopPropagation();
-                      onOpenChange(false);
-                      onEdit();
-                    }}
-                    className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm font-semibold text-amber-600 transition hover:bg-amber-50"
-                  >
-                    <span className="material-symbols-outlined text-[18px]">edit</span>
-                    수정
-                  </button>
-                  <button
-                    type="button"
-                    onClick={(targetEvent) => {
-                      targetEvent.stopPropagation();
-                      onOpenChange(false);
-                      onDelete();
-                    }}
-                    className="flex w-full items-center gap-2 border-t border-slate-100 px-3 py-2.5 text-left text-sm font-semibold text-rose-600 transition hover:bg-rose-50"
-                  >
-                    <span className="material-symbols-outlined text-[18px]">delete</span>
-                    삭제
-                  </button>
+                  {canEdit ? (
+                    <button
+                      type="button"
+                      onClick={(targetEvent) => {
+                        targetEvent.stopPropagation();
+                        onOpenChange(false);
+                        onEdit();
+                      }}
+                      className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm font-semibold text-amber-600 transition hover:bg-amber-50"
+                    >
+                      <span className="material-symbols-outlined text-[18px]">edit</span>
+                      수정
+                    </button>
+                  ) : null}
+                  {canDelete ? (
+                    <button
+                      type="button"
+                      onClick={(targetEvent) => {
+                        targetEvent.stopPropagation();
+                        onOpenChange(false);
+                        onDelete();
+                      }}
+                      className={`flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm font-semibold text-rose-600 transition hover:bg-rose-50 ${
+                        canEdit ? "border-t border-slate-100" : ""
+                      }`}
+                    >
+                      <span className="material-symbols-outlined text-[18px]">delete</span>
+                      삭제
+                    </button>
+                  ) : null}
                 </motion.div>
               ) : null}
             </AnimatePresence>
@@ -344,7 +353,8 @@ export function ClubPollHomeClient({
                   <motion.div key={poll.voteId} {...staggeredFadeUpMotion(index, reduceMotion)}>
                     <PollCard
                       poll={poll}
-                      manageable={poll.canManage}
+                      canEdit={poll.canEdit}
+                      canDelete={poll.canDelete}
                       open={activeActionKey === actionKey}
                       onOpenChange={(open) => {
                         setActiveActionKey(open ? actionKey : null);

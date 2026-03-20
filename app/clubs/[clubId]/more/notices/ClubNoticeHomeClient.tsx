@@ -129,7 +129,8 @@ export function ClubNoticeHomeClient({
                       <motion.div key={notice.noticeId} {...staggeredFadeUpMotion(index + 5, reduceMotion)}>
                         <NoticeManageCard
                           notice={notice}
-                          manageable={notice.canManage}
+                          canEdit={notice.canEdit}
+                          canDelete={notice.canDelete}
                           open={activeMenuNoticeId === notice.noticeId}
                           onOpenChange={(open) => setActiveMenuNoticeId(open ? notice.noticeId : null)}
                           onOpen={() => {

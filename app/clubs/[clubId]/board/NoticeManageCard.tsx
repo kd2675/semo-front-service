@@ -7,7 +7,8 @@ import { getLinkedContentBadge } from "@/app/lib/content-badge";
 
 type NoticeManageCardProps = {
   notice: ClubNoticeListItem;
-  manageable: boolean;
+  canEdit: boolean;
+  canDelete: boolean;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onOpen: () => void;
@@ -17,7 +18,8 @@ type NoticeManageCardProps = {
 
 export function NoticeManageCard({
   notice,
-  manageable,
+  canEdit,
+  canDelete,
   open,
   onOpenChange,
   onOpen,
@@ -26,6 +28,7 @@ export function NoticeManageCard({
 }: NoticeManageCardProps) {
   const prefersReducedMotion = useReducedMotion();
   const reduceMotion = Boolean(prefersReducedMotion);
+  const manageable = canEdit || canDelete;
   const metaDateLabel = notice.publishedAtLabel || notice.timeAgo;
   const metaAuthorLabel = notice.authorDisplayName;
   const metaAuthorAvatarUrl = notice.authorAvatarThumbnailUrl ?? notice.authorAvatarImageUrl;
@@ -75,30 +78,36 @@ export function NoticeManageCard({
                   transition={{ duration: reduceMotion ? 0.1 : 0.16, ease: "easeOut" }}
                   className="absolute right-0 top-10 z-20 w-28 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-[0_12px_32px_rgba(15,23,42,0.14)]"
                 >
-                  <button
-                    type="button"
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      onOpenChange(false);
-                      onEdit();
-                    }}
-                    className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm font-semibold text-amber-600 transition hover:bg-amber-50"
-                  >
-                    <span className="material-symbols-outlined text-[18px]">edit</span>
-                    수정
-                  </button>
-                  <button
-                    type="button"
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      onOpenChange(false);
-                      onDelete();
-                    }}
-                    className="flex w-full items-center gap-2 border-t border-slate-100 px-3 py-2.5 text-left text-sm font-semibold text-rose-600 transition hover:bg-rose-50"
-                  >
-                    <span className="material-symbols-outlined text-[18px]">delete</span>
-                    삭제
-                  </button>
+                  {canEdit ? (
+                    <button
+                      type="button"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        onOpenChange(false);
+                        onEdit();
+                      }}
+                      className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm font-semibold text-amber-600 transition hover:bg-amber-50"
+                    >
+                      <span className="material-symbols-outlined text-[18px]">edit</span>
+                      수정
+                    </button>
+                  ) : null}
+                  {canDelete ? (
+                    <button
+                      type="button"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        onOpenChange(false);
+                        onDelete();
+                      }}
+                      className={`flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm font-semibold text-rose-600 transition hover:bg-rose-50 ${
+                        canEdit ? "border-t border-slate-100" : ""
+                      }`}
+                    >
+                      <span className="material-symbols-outlined text-[18px]">delete</span>
+                      삭제
+                    </button>
+                  ) : null}
                 </motion.div>
               ) : null}
             </AnimatePresence>

@@ -2,8 +2,10 @@
 
 import { motion, useReducedMotion } from "motion/react";
 import { useState } from "react";
+import { EphemeralToast } from "@/app/components/EphemeralToast";
 import { ClubModeSwitchFab } from "@/app/components/ClubModeSwitchFab";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
+import { useEphemeralToast } from "@/app/components/useEphemeralToast";
 import {
   checkInClubAttendance,
   type ClubAttendanceResponse,
@@ -27,7 +29,7 @@ export function ClubAttendanceClient({
   const reduceMotion = Boolean(prefersReducedMotion);
   const [attendance, setAttendance] = useState(initialData);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [feedback, setFeedback] = useState<string | null>(null);
+  const { toast, showToast, clearToast } = useEphemeralToast();
 
   const currentSession = attendance.currentSession;
 
@@ -36,19 +38,19 @@ export function ClubAttendanceClient({
       return;
     }
     if (!canPersist) {
-      setFeedback("Mock mode에서는 출석 저장이 되지 않습니다.");
+      showToast("Mock mode에서는 출석 저장이 되지 않습니다.", "info");
       return;
     }
 
     setIsSubmitting(true);
-    setFeedback(null);
+    clearToast();
     const result = await checkInClubAttendance(clubId, {
       sessionId: currentSession.sessionId,
     });
     setIsSubmitting(false);
 
     if (!result.ok || !result.data) {
-      setFeedback(result.message ?? "출석 체크에 실패했습니다.");
+      showToast(result.message ?? "출석 체크에 실패했습니다.", "error");
       return;
     }
 
@@ -66,7 +68,7 @@ export function ClubAttendanceClient({
           : session,
       ),
     }));
-    setFeedback("출석 체크가 완료되었습니다.");
+    showToast("출석 체크가 완료되었습니다.", "success");
   };
 
   return (
@@ -128,9 +130,6 @@ export function ClubAttendanceClient({
                   ? "출석 처리 중..."
                   : "출석 체크"}
             </button>
-            {feedback ? (
-              <p className="mt-3 text-center text-xs font-medium text-slate-500">{feedback}</p>
-            ) : null}
           </motion.section>
 
           <motion.section
@@ -183,6 +182,7 @@ export function ClubAttendanceClient({
         </main>
 
         {isAdmin ? <ClubModeSwitchFab clubId={clubId} mode="user" /> : null}
+        <EphemeralToast message={toast?.message ?? null} tone={toast?.tone} />
       </div>
     </div>
   );

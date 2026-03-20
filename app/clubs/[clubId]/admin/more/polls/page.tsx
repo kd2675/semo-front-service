@@ -1,4 +1,4 @@
-import { ClubPollFallbackClient } from "@/app/clubs/[clubId]/more/polls/ClubPollFallbackClient";
+import { ClubAdminPollSettingsFallbackClient } from "./ClubAdminPollSettingsFallbackClient";
 
 type ClubAdminPollPageProps = {
   params: Promise<{
@@ -8,5 +8,5 @@ type ClubAdminPollPageProps = {
 
 export default async function ClubAdminPollPage({ params }: ClubAdminPollPageProps) {
   const { clubId } = await params;
-  return <ClubPollFallbackClient clubId={clubId} mode="admin" />;
+  return <ClubAdminPollSettingsFallbackClient clubId={clubId} />;
 }

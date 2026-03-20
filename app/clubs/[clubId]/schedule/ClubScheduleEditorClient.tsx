@@ -67,6 +67,8 @@ export function ClubScheduleEditorClient({
   const [loading, setLoading] = useState(isEdit);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [canEdit, setCanEdit] = useState(!isEdit);
+  const [canDelete, setCanDelete] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [progressWidth, setProgressWidth] = useState(0);
@@ -104,6 +106,8 @@ export function ClubScheduleEditorClient({
     setFeeNWaySplit(payload.feeNWaySplit);
     setPostToBoard(payload.postedToBoard);
     setPostToCalendar(payload.postedToCalendar);
+    setCanEdit(payload.canEdit);
+    setCanDelete(payload.canDelete);
   });
 
   useEffect(() => {
@@ -115,6 +119,10 @@ export function ClubScheduleEditorClient({
 
   const handleSubmit = async (formEvent: React.FormEvent<HTMLFormElement>) => {
     formEvent.preventDefault();
+    if (isEdit && !canEdit) {
+      setError("이 일정을 수정할 권한이 없습니다.");
+      return;
+    }
     setSaving(true);
     setError(null);
 
@@ -198,6 +206,10 @@ export function ClubScheduleEditorClient({
 
   const handleDelete = async () => {
     if (!eventId) {
+      return;
+    }
+    if (!canDelete) {
+      setError("이 일정을 삭제할 권한이 없습니다.");
       return;
     }
 
@@ -674,31 +686,35 @@ export function ClubScheduleEditorClient({
           </form>
         </main>
 
-        <div className={actionBarClassName}>
-          <div className="flex gap-3">
-            {isEdit ? (
-              <button
-                type="button"
-                onClick={() => setShowDeleteModal(true)}
-                disabled={deleting || saving}
-                className="flex h-14 flex-1 items-center justify-center gap-2 rounded-xl bg-rose-500 text-base font-bold text-white shadow-lg shadow-rose-500/25 transition-all hover:bg-rose-600 disabled:opacity-60"
-              >
-                <span className="material-symbols-outlined text-xl">delete</span>
-                {deleting ? "삭제 중..." : "삭제"}
-              </button>
-            ) : null}
-            <button
-              type="submit"
-              form={formId}
-              disabled={saving || deleting}
-              className={`h-14 rounded-xl bg-[var(--primary)] font-bold text-white shadow-lg shadow-[var(--primary)]/20 transition-all hover:brightness-110 active:scale-[0.99] disabled:opacity-60 ${
-                isEdit ? "flex-[2]" : "w-full"
-              }`}
-            >
-              {submitLabel}
-            </button>
+        {(!isEdit || canEdit || canDelete) ? (
+          <div className={actionBarClassName}>
+            <div className="flex gap-3">
+              {isEdit && canDelete ? (
+                <button
+                  type="button"
+                  onClick={() => setShowDeleteModal(true)}
+                  disabled={deleting || saving}
+                  className="flex h-14 flex-1 items-center justify-center gap-2 rounded-xl bg-rose-500 text-base font-bold text-white shadow-lg shadow-rose-500/25 transition-all hover:bg-rose-600 disabled:opacity-60"
+                >
+                  <span className="material-symbols-outlined text-xl">delete</span>
+                  {deleting ? "삭제 중..." : "삭제"}
+                </button>
+              ) : null}
+              {!isEdit || canEdit ? (
+                <button
+                  type="submit"
+                  form={formId}
+                  disabled={saving || deleting}
+                  className={`h-14 rounded-xl bg-[var(--primary)] font-bold text-white shadow-lg shadow-[var(--primary)]/20 transition-all hover:brightness-110 active:scale-[0.99] disabled:opacity-60 ${
+                    isEdit && canDelete ? "flex-[2]" : "w-full"
+                  }`}
+                >
+                  {submitLabel}
+                </button>
+              ) : null}
+            </div>
           </div>
-        </div>
+        ) : null}
         <AnimatePresence>
           {showDeleteModal ? (
             <ScheduleActionConfirmModal

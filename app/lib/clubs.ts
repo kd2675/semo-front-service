@@ -72,6 +72,8 @@ export type ClubNoticeListItem = {
   postedToBoard: boolean;
   postedToCalendar: boolean;
   canManage: boolean;
+  canEdit: boolean;
+  canDelete: boolean;
   linkedTargetType: "SCHEDULE_EVENT" | "POLL" | null;
   linkedTargetId: number | null;
 };
@@ -116,6 +118,8 @@ export type ClubNoticeDetailResponse = {
   postedToBoard: boolean;
   postedToCalendar: boolean;
   canManage: boolean;
+  canEdit: boolean;
+  canDelete: boolean;
   linkedTargetType: "SCHEDULE_EVENT" | "POLL" | null;
   linkedTargetId: number | null;
 };
@@ -222,7 +226,8 @@ export type ClubScheduleEventSummary = {
   myParticipationStatus: "GOING" | "NOT_GOING" | null;
   goingCount: number;
   notGoingCount: number;
-  canManage: boolean;
+  canEdit: boolean;
+  canDelete: boolean;
 };
 
 export type ClubScheduleVoteOptionSummary = {
@@ -252,7 +257,8 @@ export type ClubScheduleVoteSummary = {
   mySelectedOptionId: number | null;
   options: ClubScheduleVoteOptionSummary[];
   votingOpen: boolean;
-  canManage: boolean;
+  canEdit: boolean;
+  canDelete: boolean;
 };
 
 export type ClubScheduleEventDetailResponse = {
@@ -281,7 +287,8 @@ export type ClubScheduleEventDetailResponse = {
   myParticipationStatus: "GOING" | "NOT_GOING" | null;
   goingCount: number;
   notGoingCount: number;
-  canManage: boolean;
+  canEdit: boolean;
+  canDelete: boolean;
 };
 
 export type UpsertScheduleEventRequest = {
@@ -334,7 +341,8 @@ export type ClubScheduleVoteDetailResponse = {
   mySelectedOptionId: number | null;
   totalResponses: number;
   options: ClubScheduleVoteOptionSummary[];
-  canManage: boolean;
+  canEdit: boolean;
+  canDelete: boolean;
   votingOpen: boolean;
 };
 
@@ -484,7 +492,8 @@ export type ClubPollSummary = {
   postedToBoard: boolean;
   postedToCalendar: boolean;
   sharedToSchedule: boolean;
-  canManage: boolean;
+  canEdit: boolean;
+  canDelete: boolean;
   mySelectedOptionId: number | null;
   options: ClubScheduleVoteOptionSummary[];
 };
@@ -513,6 +522,51 @@ export type ClubTimelineResponse = {
 export type ClubAdminTimelineResponse = {
   clubId: number;
   clubName: string;
+};
+
+export type ClubAdminNoticeSettingsResponse = {
+  clubId: number;
+  clubName: string;
+  admin: boolean;
+  allowMemberCreate: boolean;
+  allowMemberUpdate: boolean;
+  allowMemberDelete: boolean;
+};
+
+export type UpdateClubAdminNoticeSettingsRequest = {
+  allowMemberCreate: boolean;
+  allowMemberUpdate: boolean;
+  allowMemberDelete: boolean;
+};
+
+export type ClubAdminScheduleSettingsResponse = {
+  clubId: number;
+  clubName: string;
+  admin: boolean;
+  allowMemberCreate: boolean;
+  allowMemberUpdate: boolean;
+  allowMemberDelete: boolean;
+};
+
+export type UpdateClubAdminScheduleSettingsRequest = {
+  allowMemberCreate: boolean;
+  allowMemberUpdate: boolean;
+  allowMemberDelete: boolean;
+};
+
+export type ClubAdminPollSettingsResponse = {
+  clubId: number;
+  clubName: string;
+  admin: boolean;
+  allowMemberCreate: boolean;
+  allowMemberUpdate: boolean;
+  allowMemberDelete: boolean;
+};
+
+export type UpdateClubAdminPollSettingsRequest = {
+  allowMemberCreate: boolean;
+  allowMemberUpdate: boolean;
+  allowMemberDelete: boolean;
 };
 
 export type DashboardScope = "USER_HOME" | "ADMIN_HOME";
@@ -964,6 +1018,48 @@ export function getClubTimeline(
 
 export function getClubAdminTimeline(clubId: string | number) {
   return getJson<ClubAdminTimelineResponse>(`/api/semo/v1/clubs/${clubId}/admin/more/timeline`);
+}
+
+export function getClubAdminNoticeSettings(clubId: string | number) {
+  return getJson<ClubAdminNoticeSettingsResponse>(`/api/semo/v1/clubs/${clubId}/admin/more/notices`);
+}
+
+export function updateClubAdminNoticeSettings(
+  clubId: string | number,
+  request: UpdateClubAdminNoticeSettingsRequest,
+) {
+  return putJson<ClubAdminNoticeSettingsResponse>(
+    `/api/semo/v1/clubs/${clubId}/admin/more/notices`,
+    request,
+  );
+}
+
+export function getClubAdminScheduleSettings(clubId: string | number) {
+  return getJson<ClubAdminScheduleSettingsResponse>(`/api/semo/v1/clubs/${clubId}/admin/more/schedules`);
+}
+
+export function updateClubAdminScheduleSettings(
+  clubId: string | number,
+  request: UpdateClubAdminScheduleSettingsRequest,
+) {
+  return putJson<ClubAdminScheduleSettingsResponse>(
+    `/api/semo/v1/clubs/${clubId}/admin/more/schedules`,
+    request,
+  );
+}
+
+export function getClubAdminPollSettings(clubId: string | number) {
+  return getJson<ClubAdminPollSettingsResponse>(`/api/semo/v1/clubs/${clubId}/admin/more/polls`);
+}
+
+export function updateClubAdminPollSettings(
+  clubId: string | number,
+  request: UpdateClubAdminPollSettingsRequest,
+) {
+  return putJson<ClubAdminPollSettingsResponse>(
+    `/api/semo/v1/clubs/${clubId}/admin/more/polls`,
+    request,
+  );
 }
 
 export function createClubAttendanceSession(

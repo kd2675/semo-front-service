@@ -129,35 +129,39 @@ export function ClubDashboardWidgetGridShell() {
 export function ClubBoardFeedLoadingShell() {
   return (
     <MobilePageShell titleWidthClassName="w-32">
-      <div className="px-4 py-4">
-        <div className="flex h-12 w-full items-stretch rounded-xl bg-slate-100" />
-      </div>
-      <div className="mb-2 px-4">
-        <div className="flex gap-3 border-b border-slate-200 pb-3">
+      <section className="px-4 pt-6">
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <div className="inline-flex rounded-full border border-slate-200 bg-white p-1 shadow-sm">
+            <div className="h-8 w-14 rounded-full bg-[var(--primary)]/10" />
+            <div className="ml-1 h-8 w-16 rounded-full bg-slate-100" />
+          </div>
+          <div className="h-5 w-12 rounded-full bg-[var(--primary)]/10" />
+        </div>
+        <div className="space-y-4 pb-4">
           {Array.from({ length: 4 }, (_, index) => (
-            <ShellLine key={`tab-${index}`} className="h-4 w-20" />
+            <article
+              key={`notice-manage-${index}`}
+              className="rounded-[8px] border border-slate-100 bg-white shadow-sm"
+            >
+              <div className="flex gap-4 px-4 py-5">
+                <div className="size-12 rounded-xl bg-[var(--primary)]/10" />
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <div className="h-5 w-12 rounded-full bg-[var(--primary)]/10" />
+                    <ShellLine className="h-4 w-24" />
+                  </div>
+                  <ShellLine className="mt-3 h-4 w-full" />
+                  <ShellLine className="mt-2 h-4 w-4/5" />
+                  <div className="mt-3 flex gap-2">
+                    <ShellLine className="h-3 w-16" />
+                    <ShellLine className="h-3 w-20" />
+                  </div>
+                </div>
+              </div>
+            </article>
           ))}
         </div>
-      </div>
-      <div className="flex flex-col divide-y divide-slate-100">
-        {Array.from({ length: 5 }, (_, index) => (
-          <article key={`notice-${index}`} className="flex gap-4 bg-white px-4 py-5">
-            <div className="size-12 rounded-xl bg-[var(--primary)]/10" />
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2">
-                <div className="h-5 w-10 rounded-full bg-[var(--primary)]/10" />
-                <ShellLine className="h-4 w-28" />
-              </div>
-              <ShellLine className="mt-3 h-4 w-full" />
-              <ShellLine className="mt-2 h-4 w-3/4" />
-              <div className="mt-3 flex gap-2">
-                <ShellLine className="h-3 w-20" />
-                <ShellLine className="h-3 w-16" />
-              </div>
-            </div>
-          </article>
-        ))}
-      </div>
+      </section>
     </MobilePageShell>
   );
 }
@@ -239,6 +243,152 @@ export function ClubScheduleLoadingShell() {
             <ShellLine className="mt-2 h-4 w-2/3" />
           </article>
         ))}
+      </section>
+    </MobilePageShell>
+  );
+}
+
+export function ClubScheduleHomeLoadingShell({
+  mode = "user",
+}: {
+  mode?: "user" | "admin";
+}) {
+  return (
+    <MobilePageShell
+      titleWidthClassName="w-32"
+      mainClassName="semo-nav-bottom-space flex-1 px-4 pt-6"
+      showBottomNav={mode === "user"}
+    >
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <div className="h-8 w-20 rounded-lg bg-[var(--primary)]/10" />
+        <div className="h-5 w-12 rounded-full bg-[var(--primary)]/10" />
+      </div>
+      <div className="mb-4 h-12 rounded-[8px] border border-slate-200 bg-white shadow-sm" />
+      <div className="space-y-4 pb-4">
+        {Array.from({ length: 4 }, (_, index) => (
+          <article
+            key={`schedule-home-${index}`}
+            className="rounded-[8px] border border-slate-100 bg-white shadow-sm"
+          >
+            <div className="flex gap-4 p-4">
+              <div className="size-12 rounded-xl bg-[var(--primary)]/10" />
+              <div className="min-w-0 flex-1">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="space-y-2">
+                    <ShellLine className="h-4 w-28" />
+                    <ShellLine className="h-3 w-24" />
+                  </div>
+                  <div className="h-5 w-10 rounded-full bg-slate-100" />
+                </div>
+                <ShellLine className="mt-4 h-4 w-full" />
+                <ShellLine className="mt-2 h-4 w-2/3" />
+              </div>
+            </div>
+          </article>
+        ))}
+      </div>
+    </MobilePageShell>
+  );
+}
+
+export function ClubPollHomeLoadingShell({
+  mode = "user",
+}: {
+  mode?: "user" | "admin";
+}) {
+  return (
+    <MobilePageShell
+      titleWidthClassName="w-32"
+      mainClassName="semo-nav-bottom-space flex-1 pb-24"
+      showBottomNav={mode === "user"}
+    >
+      <nav className="flex border-b border-gray-200 bg-white">
+        {Array.from({ length: 3 }, (_, index) => (
+          <div key={`poll-tab-${index}`} className="flex-1 px-4 py-3">
+            <div className="mx-auto h-4 w-16 rounded-full bg-slate-200" />
+          </div>
+        ))}
+      </nav>
+      <section className="p-4">
+        <div className="h-12 rounded-xl border border-slate-200 bg-white shadow-sm" />
+      </section>
+      <section className="space-y-4 px-4">
+        {Array.from({ length: 4 }, (_, index) => (
+          <article
+            key={`poll-home-${index}`}
+            className="rounded-[8px] border border-slate-100 bg-white shadow-sm"
+          >
+            <div className="flex items-center justify-between gap-3 px-4 pb-2 pt-4">
+              <div className="flex items-center gap-3">
+                <div className="h-8 w-8 rounded-full bg-slate-100" />
+                <ShellLine className="h-4 w-20" />
+              </div>
+              <div className="h-5 w-10 rounded-full bg-slate-100" />
+            </div>
+            <div className="mx-4 border-t border-slate-100" />
+            <div className="px-4 pb-4 pt-3">
+              <div className="mb-3 flex items-start justify-between gap-3">
+                <div className="flex gap-2">
+                  <div className="h-5 w-12 rounded bg-blue-50" />
+                  <div className="h-5 w-16 rounded bg-slate-100" />
+                </div>
+                <ShellLine className="h-3 w-24" />
+              </div>
+              <ShellLine className="h-5 w-2/3" />
+              <ShellLine className="mt-3 h-3 w-20" />
+              <div className="mt-4 space-y-2">
+                {Array.from({ length: 2 }, (_, optionIndex) => (
+                  <div key={`poll-option-${index}-${optionIndex}`}>
+                    <div className="mb-1 flex items-center justify-between">
+                      <ShellLine className="h-3 w-24" />
+                      <ShellLine className="h-3 w-10" />
+                    </div>
+                    <div className="h-2 rounded-full bg-slate-100" />
+                  </div>
+                ))}
+              </div>
+            </div>
+          </article>
+        ))}
+      </section>
+    </MobilePageShell>
+  );
+}
+
+export function ClubTimelineLoadingShell() {
+  return (
+    <MobilePageShell titleWidthClassName="w-28">
+      <section className="px-4 pt-4">
+        <div className="relative">
+          <div className="absolute left-[19px] top-4 bottom-4 w-0.5 bg-[#135bec]/10" />
+          <div className="space-y-6">
+            {Array.from({ length: 4 }, (_, index) => (
+              <div key={`timeline-shell-group-${index}`}>
+                <div className="relative flex justify-center py-2">
+                  <div className="z-10 h-4 w-20 rounded-full bg-slate-200" />
+                  <div className="absolute inset-x-0 top-1/2 h-px bg-[#135bec]/5" />
+                </div>
+                <div className="relative mt-4 grid grid-cols-[40px_1fr] items-start gap-x-4">
+                  <div className="z-10 flex h-10 w-10 items-center justify-center rounded-full border-2 border-white bg-blue-100 ring-2 ring-[#135bec]/20" />
+                  <div className="rounded-2xl border border-[#135bec]/5 bg-white p-4 shadow-sm">
+                    <div className="flex items-center gap-2">
+                      <div className="h-5 w-14 rounded-md bg-slate-100" />
+                      <div className="h-4 w-12 rounded-full bg-slate-100" />
+                    </div>
+                    <ShellLine className="mt-3 h-5 w-4/5" />
+                    <ShellLine className="mt-3 h-4 w-full" />
+                    <ShellLine className="mt-2 h-4 w-5/6" />
+                    <div className="mt-3 flex gap-2">
+                      <ShellLine className="h-3 w-16" />
+                      <ShellLine className="h-3 w-12" />
+                      <ShellLine className="h-3 w-20" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       </section>
     </MobilePageShell>
   );

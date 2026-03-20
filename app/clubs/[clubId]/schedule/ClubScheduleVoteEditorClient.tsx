@@ -44,6 +44,7 @@ export function ClubScheduleVoteEditorClient({
   const [options, setOptions] = useState(["", ""]);
   const [postToBoard, setPostToBoard] = useState(false);
   const [postToCalendar, setPostToCalendar] = useState(false);
+  const [canEdit, setCanEdit] = useState(!isEdit);
   const [loading, setLoading] = useState(isEdit);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -73,6 +74,7 @@ export function ClubScheduleVoteEditorClient({
     setOptions(payload.options.map((option) => option.label));
     setPostToBoard(payload.postedToBoard);
     setPostToCalendar(payload.postedToCalendar);
+    setCanEdit(payload.canEdit);
   });
 
   useEffect(() => {
@@ -103,6 +105,10 @@ export function ClubScheduleVoteEditorClient({
 
   const handleSubmit = async (formEvent: React.FormEvent<HTMLFormElement>) => {
     formEvent.preventDefault();
+    if (isEdit && !canEdit) {
+      setError("이 투표를 수정할 권한이 없습니다.");
+      return;
+    }
     setSaving(true);
     setError(null);
 
@@ -335,16 +341,18 @@ export function ClubScheduleVoteEditorClient({
           </form>
         </main>
 
-        <div className={bottomBarClassName}>
-          <button
-            type="submit"
-            form={formId}
-            disabled={saving}
-            className="w-full rounded-xl bg-[var(--primary)] py-4 text-lg font-bold text-white shadow-lg transition-transform active:scale-[0.98] disabled:opacity-60"
-          >
-            {submitLabel}
-          </button>
-        </div>
+        {!isEdit || canEdit ? (
+          <div className={bottomBarClassName}>
+            <button
+              type="submit"
+              form={formId}
+              disabled={saving}
+              className="w-full rounded-xl bg-[var(--primary)] py-4 text-lg font-bold text-white shadow-lg transition-transform active:scale-[0.98] disabled:opacity-60"
+            >
+              {submitLabel}
+            </button>
+          </div>
+        ) : null}
       </div>
     </div>
   );
