@@ -1,5 +1,24 @@
 "use client";
 
+import {
+  DndContext,
+  DragOverlay,
+  KeyboardSensor,
+  PointerSensor,
+  TouchSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+  type DragStartEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { RouterLink } from "@/app/components/RouterLink";
 import { EphemeralToast } from "@/app/components/EphemeralToast";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
@@ -10,13 +29,20 @@ import { useEphemeralToast } from "@/app/components/useEphemeralToast";
 import {
   checkInClubAttendance,
   getClubAttendance,
+  getClubBoard,
   getClubDashboardWidgetEditor,
   getClubDashboardWidgets,
   getMyClub,
+  getClubPollHome,
+  getClubSchedule,
   updateClubDashboardWidgets,
   type ClubAttendanceResponse,
+  type ClubBoardResponse,
+  type ClubPollHomeResponse,
+  type ClubPollSummary,
   type ClubDashboardEditorResponse,
   type ClubDashboardWidgetSummary,
+  type ClubScheduleResponse,
   type MyClubSummary,
 } from "@/app/lib/clubs";
 import { staggeredFadeUpMotion } from "@/app/lib/motion";
@@ -32,6 +58,7 @@ type ClubDashboardFallbackClientProps = {
 const WIDGET_ACCENT_CLASS: Record<string, string> = {
   BOARD_NOTICE: "bg-blue-50 text-blue-600",
   SCHEDULE_OVERVIEW: "bg-amber-50 text-amber-600",
+  POLL_STATUS: "bg-amber-50 text-amber-500",
   PROFILE_SUMMARY: "bg-emerald-50 text-emerald-600",
   ATTENDANCE_STATUS: "bg-indigo-50 text-indigo-600",
 };
@@ -47,6 +74,17 @@ function normalizeSortOrder(widgets: ClubDashboardWidgetSummary[]) {
       ? { ...widget, sortOrder: sortOrderByKey.get(widget.widgetKey) ?? widget.sortOrder }
       : widget,
   );
+}
+
+function cloneWidgets(widgets: ClubDashboardWidgetSummary[]) {
+  return widgets.map((widget) => ({ ...widget }));
+}
+
+function extractEnabledWidgetKeys(widgets: ClubDashboardWidgetSummary[]) {
+  return widgets
+    .filter((widget) => widget.enabled)
+    .sort((a, b) => a.sortOrder - b.sortOrder || a.widgetKey.localeCompare(b.widgetKey))
+    .map((widget) => widget.widgetKey);
 }
 
 function reorderEnabledWidgets(
@@ -84,6 +122,109 @@ function reorderEnabledWidgets(
   );
 }
 
+function getWidgetFeatureLabel(widget: ClubDashboardWidgetSummary) {
+  if (!widget.requiredFeatureKey) {
+    return "기본 위젯";
+  }
+  return `${widget.requiredFeatureKey} 기능 필요`;
+}
+
+function EnabledDashboardWidgetCard({
+  widget,
+  onRemove,
+}: {
+  widget: ClubDashboardWidgetSummary;
+  onRemove: (widgetKey: string) => void;
+}) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    setActivatorNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: widget.widgetKey });
+
+  return (
+    <article
+      ref={setNodeRef}
+      style={{
+        transform: CSS.Transform.toString(transform),
+        transition,
+      }}
+      className={`relative flex min-h-[96px] items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm ${
+        isDragging ? "z-20 opacity-0" : ""
+      }`}
+    >
+      <button
+        ref={setActivatorNodeRef}
+        type="button"
+        {...attributes}
+        {...listeners}
+        className="flex size-9 touch-none shrink-0 cursor-grab items-center justify-center rounded-xl bg-slate-100 text-slate-500 transition hover:bg-slate-200 hover:text-slate-700 active:cursor-grabbing"
+        aria-label={`${widget.displayName} 순서 변경`}
+        title="드래그해서 순서를 바꿀 수 있습니다."
+      >
+        <span className="material-symbols-outlined text-lg">drag_indicator</span>
+      </button>
+      <div className={`flex size-12 shrink-0 items-center justify-center rounded-2xl ${WIDGET_ACCENT_CLASS[widget.widgetKey] ?? "bg-slate-100 text-slate-600"}`}>
+        <span className="material-symbols-outlined text-[22px]">{widget.iconName}</span>
+      </div>
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-2">
+          <p className="truncate text-base font-bold text-slate-900">{widget.displayName}</p>
+          <span className="rounded-full bg-[var(--primary)]/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--primary)]">
+            Live
+          </span>
+        </div>
+        <p className="mt-1 line-clamp-2 text-sm text-slate-500">
+          {widget.description ?? "홈에서 빠르게 확인할 수 있는 위젯입니다."}
+        </p>
+        <div className="mt-2 flex flex-wrap gap-2">
+          <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-600">
+            {getWidgetFeatureLabel(widget)}
+          </span>
+          <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-600">
+            {widget.userPath}
+          </span>
+        </div>
+      </div>
+      <button
+        type="button"
+        onClick={() => onRemove(widget.widgetKey)}
+        className="rounded-full bg-[var(--primary)]/10 px-4 py-2 text-xs font-bold text-[var(--primary)] transition hover:bg-[var(--primary)]/20"
+      >
+        숨김
+      </button>
+    </article>
+  );
+}
+
+function EnabledDashboardWidgetOverlayCard({ widget }: { widget: ClubDashboardWidgetSummary }) {
+  return (
+    <article className="pointer-events-none w-[min(calc(100vw-2rem),72rem)] rounded-2xl border border-[var(--primary)]/30 bg-white px-4 py-4 shadow-[0_20px_44px_rgba(15,23,42,0.18)] ring-2 ring-[var(--primary)]/15">
+      <div className="flex min-h-[96px] items-center gap-3">
+        <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-500">
+          <span className="material-symbols-outlined text-lg">drag_indicator</span>
+        </div>
+        <div className={`flex size-12 shrink-0 items-center justify-center rounded-2xl ${WIDGET_ACCENT_CLASS[widget.widgetKey] ?? "bg-slate-100 text-slate-600"}`}>
+          <span className="material-symbols-outlined text-[22px]">{widget.iconName}</span>
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="text-base font-bold text-slate-900">{widget.displayName}</p>
+          <p className="mt-1 text-sm text-slate-500">
+            {widget.description ?? "홈에서 빠르게 확인할 수 있는 위젯입니다."}
+          </p>
+        </div>
+        <div className="rounded-full bg-[var(--primary)]/10 px-4 py-2 text-xs font-bold text-[var(--primary)]">
+          순서 이동
+        </div>
+      </div>
+    </article>
+  );
+}
+
 function DashboardWidgetCard({
   clubId,
   widget,
@@ -96,6 +237,15 @@ function DashboardWidgetCard({
   attendanceData,
   attendanceLoading,
   attendanceError,
+  boardData,
+  boardLoading,
+  boardError,
+  scheduleData,
+  scheduleLoading,
+  scheduleError,
+  pollData,
+  pollLoading,
+  pollError,
   attendancePulseToken,
   isCheckingInAttendance,
   onRemove,
@@ -117,6 +267,15 @@ function DashboardWidgetCard({
   attendanceData: ClubAttendanceResponse | null;
   attendanceLoading: boolean;
   attendanceError: string | null;
+  boardData: ClubBoardResponse | null;
+  boardLoading: boolean;
+  boardError: string | null;
+  scheduleData: ClubScheduleResponse | null;
+  scheduleLoading: boolean;
+  scheduleError: string | null;
+  pollData: ClubPollHomeResponse | null;
+  pollLoading: boolean;
+  pollError: string | null;
   attendancePulseToken: number;
   isCheckingInAttendance: boolean;
   onRemove: (widgetKey: string) => void;
@@ -131,8 +290,48 @@ function DashboardWidgetCard({
   const accentClass = WIDGET_ACCENT_CLASS[widget.widgetKey] ?? "bg-slate-100 text-slate-600";
   const isEditMode = isAdmin && editMode;
   const isAttendanceWidget = widget.widgetKey === "ATTENDANCE_STATUS";
+  const isBoardNoticeWidget = widget.widgetKey === "BOARD_NOTICE";
+  const isScheduleWidget = widget.widgetKey === "SCHEDULE_OVERVIEW";
+  const isPollWidget = widget.widgetKey === "POLL_STATUS";
   const todayAttendance = attendanceData?.todayAttendance;
   const recentLog = attendanceData?.recentLogs?.[0] ?? null;
+  const latestNotice = boardData?.notices?.[0] ?? null;
+  const latestOngoingPoll = useMemo<ClubPollSummary | null>(() => {
+    if (!pollData) {
+      return null;
+    }
+
+    return [...pollData.polls]
+      .filter((poll) => poll.voteStatus === "ONGOING")
+      .sort((left, right) => {
+        const leftValue = `${left.voteStartDate}T${left.voteTimeLabel ?? "00:00"}`;
+        const rightValue = `${right.voteStartDate}T${right.voteTimeLabel ?? "00:00"}`;
+        return rightValue.localeCompare(leftValue);
+      })[0] ?? null;
+  }, [pollData]);
+  const todayScheduleItems = useMemo(() => {
+    if (!scheduleData) {
+      return [];
+    }
+
+    const today = new Date();
+    const todayLabel = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+
+    return scheduleData.items
+      .filter((item) => {
+        if (item.contentType === "SCHEDULE_EVENT" && item.event) {
+          return item.event.startDate === todayLabel;
+        }
+        if (item.contentType === "SCHEDULE_VOTE" && item.vote) {
+          return item.vote.voteStartDate === todayLabel;
+        }
+        if (item.contentType === "NOTICE" && item.notice?.scheduleAt) {
+          return item.notice.scheduleAt.slice(0, 10) === todayLabel;
+        }
+        return false;
+      })
+      .slice(0, 3);
+  }, [scheduleData]);
   const statusLabel = todayAttendance
     ? todayAttendance.checkedIn
       ? "Checked In"
@@ -297,6 +496,191 @@ function DashboardWidgetCard({
             </>
           )}
         </div>
+      ) : isBoardNoticeWidget ? (
+        <div className="space-y-2">
+          {boardLoading ? (
+            <>
+              <div className="h-4 w-28 rounded-full bg-slate-100" />
+              <div className="h-5 w-full rounded-full bg-slate-100" />
+              <div className="h-4 w-full rounded-full bg-slate-50" />
+              <div className="h-4 w-2/3 rounded-full bg-slate-50" />
+            </>
+          ) : boardError ? (
+            <p className="text-sm text-slate-500">최근 공지를 가져오지 못했습니다.</p>
+          ) : latestNotice ? (
+            <>
+              {latestNotice.thumbnailUrl || latestNotice.imageUrl ? (
+                <div className="overflow-hidden rounded-xl bg-slate-100">
+                  <div
+                    className="h-28 w-full bg-cover bg-center"
+                    style={{
+                      backgroundImage: `url('${latestNotice.thumbnailUrl ?? latestNotice.imageUrl}')`,
+                    }}
+                  />
+                </div>
+              ) : null}
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-blue-600">
+                Latest Notice
+              </p>
+              <p className="line-clamp-2 text-base font-bold text-slate-900">{latestNotice.title}</p>
+              <p className="line-clamp-2 text-sm text-slate-500">{latestNotice.summary}</p>
+              <div className="flex items-center justify-between rounded-lg bg-slate-50 px-3 py-2">
+                <p className="text-xs font-medium text-slate-500">{latestNotice.author}</p>
+                <span className="rounded-full bg-blue-100 px-2 py-0.5 text-[11px] font-bold text-blue-600">
+                  {latestNotice.timeAgo}
+                </span>
+              </div>
+            </>
+          ) : (
+            <>
+              <p className="text-sm font-semibold text-slate-900">아직 등록된 공지가 없습니다.</p>
+              <p className="text-xs text-slate-500">가장 최근 공지가 생기면 이 위젯에 바로 표시됩니다.</p>
+            </>
+          )}
+        </div>
+      ) : isScheduleWidget ? (
+        <div className="space-y-3">
+          {scheduleLoading ? (
+            <>
+              <div className="h-4 w-24 rounded-full bg-slate-100" />
+              <div className="h-16 w-full rounded-xl bg-slate-50" />
+              <div className="h-16 w-full rounded-xl bg-slate-50" />
+            </>
+          ) : scheduleError ? (
+            <p className="text-sm text-slate-500">오늘 일정을 가져오지 못했습니다.</p>
+          ) : todayScheduleItems.length > 0 ? (
+            <>
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-amber-600">
+                Today Schedule
+              </p>
+              <div className="space-y-2">
+                {todayScheduleItems.map((item) => {
+                  if (item.contentType === "SCHEDULE_EVENT" && item.event) {
+                    return (
+                      <RouterLink
+                        key={`schedule-widget-event-${item.calendarItemId}`}
+                        href={`/clubs/${clubId}/schedule/${item.event.eventId}`}
+                        className="flex items-center gap-3 rounded-xl border border-slate-100 bg-white p-3 shadow-sm transition-all hover:border-[var(--primary)]/40"
+                      >
+                        <div className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-[var(--primary)]/10 text-[var(--primary)]">
+                          <span className="material-symbols-outlined">edit_calendar</span>
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-bold text-slate-900">{item.event.title}</p>
+                          <p className="truncate text-xs text-slate-500">
+                            {item.event.locationLabel ?? item.event.dateLabel}
+                          </p>
+                        </div>
+                        <div className="shrink-0 text-right">
+                          <p className="text-xs font-bold text-slate-900">{item.event.timeLabel ?? "종일"}</p>
+                          <p className="text-[10px] font-medium uppercase tracking-wider text-slate-400">EVENT</p>
+                        </div>
+                      </RouterLink>
+                    );
+                  }
+
+                  if (item.contentType === "SCHEDULE_VOTE" && item.vote) {
+                    return (
+                      <RouterLink
+                        key={`schedule-widget-vote-${item.calendarItemId}`}
+                        href={`/clubs/${clubId}/schedule/votes/${item.vote.voteId}`}
+                        className="flex items-center gap-3 rounded-xl border border-slate-100 bg-white p-3 shadow-sm transition-all hover:border-amber-500/40"
+                      >
+                        <div className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-amber-500/10 text-amber-500">
+                          <span className="material-symbols-outlined">poll</span>
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-bold text-slate-900">{item.vote.title}</p>
+                          <p className="truncate text-xs text-slate-500">
+                            {item.vote.votePeriodLabel}
+                            {item.vote.voteTimeLabel ? ` · ${item.vote.voteTimeLabel}` : ""}
+                          </p>
+                        </div>
+                        <div className="shrink-0 text-right">
+                          <p className="text-xs font-bold text-slate-900">{item.vote.totalResponses}명</p>
+                          <p className="text-[10px] font-medium uppercase tracking-wider text-slate-400">VOTE</p>
+                        </div>
+                      </RouterLink>
+                    );
+                  }
+
+                  if (item.contentType === "NOTICE" && item.notice) {
+                    return (
+                      <RouterLink
+                        key={`schedule-widget-notice-${item.calendarItemId}`}
+                        href={`/clubs/${clubId}/board/${item.notice.noticeId}`}
+                        className="flex items-center gap-3 rounded-xl border border-slate-100 bg-white p-3 shadow-sm transition-all hover:border-sky-500/40"
+                      >
+                        <div className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-sky-500/10 text-sky-600">
+                          <span className="material-symbols-outlined">campaign</span>
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-bold text-slate-900">{item.notice.title}</p>
+                          <p className="truncate text-xs text-slate-500">
+                            {item.notice.locationLabel ?? item.notice.scheduleAtLabel ?? item.notice.timeAgo}
+                          </p>
+                        </div>
+                        <div className="shrink-0 text-right">
+                          <p className="text-xs font-bold text-slate-900">
+                            {item.notice.scheduleAtLabel ?? "공지"}
+                          </p>
+                          <p className="text-[10px] font-medium uppercase tracking-wider text-slate-400">NOTICE</p>
+                        </div>
+                      </RouterLink>
+                    );
+                  }
+
+                  return null;
+                })}
+              </div>
+            </>
+          ) : (
+            <>
+              <p className="text-sm font-semibold text-slate-900">오늘 일정이 없습니다.</p>
+              <p className="text-xs text-slate-500">오늘 날짜에 연결된 일정, 투표, 공지가 최대 3개까지 표시됩니다.</p>
+            </>
+          )}
+        </div>
+      ) : isPollWidget ? (
+        <div className="space-y-3">
+          {pollLoading ? (
+            <>
+              <div className="h-4 w-24 rounded-full bg-slate-100" />
+              <div className="h-20 w-full rounded-xl bg-slate-50" />
+            </>
+          ) : pollError ? (
+            <p className="text-sm text-slate-500">진행 중인 투표를 가져오지 못했습니다.</p>
+          ) : latestOngoingPoll ? (
+            <RouterLink
+              href={`/clubs/${clubId}/more/polls/${latestOngoingPoll.voteId}`}
+              className="block rounded-xl border border-amber-100 bg-white p-4 shadow-sm transition-all hover:border-amber-300"
+            >
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-amber-600">
+                Ongoing Poll
+              </p>
+              <p className="mt-2 line-clamp-2 text-base font-bold text-slate-900">
+                {latestOngoingPoll.title}
+              </p>
+              <p className="mt-1 text-sm text-slate-500">
+                {latestOngoingPoll.votePeriodLabel}
+                {latestOngoingPoll.voteTimeLabel ? ` · ${latestOngoingPoll.voteTimeLabel}` : ""}
+              </p>
+              <div className="mt-3 flex items-center justify-between rounded-lg bg-amber-50/60 px-3 py-2">
+                <p className="text-xs font-medium text-slate-500">
+                  {latestOngoingPoll.totalResponses}명 참여 · 선택지 {latestOngoingPoll.optionCount}개
+                </p>
+                <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-bold text-amber-600">
+                  진행 중
+                </span>
+              </div>
+            </RouterLink>
+          ) : (
+            <>
+              <p className="text-sm font-semibold text-slate-900">현재 진행 중인 투표가 없습니다.</p>
+              <p className="text-xs text-slate-500">진행 상태의 가장 최근 투표 1건이 이 위젯에 표시됩니다.</p>
+            </>
+          )}
+        </div>
       ) : (
         <p className="text-sm text-slate-500">{widget.description ?? "No widget description yet."}</p>
       )}
@@ -360,19 +744,43 @@ export function ClubDashboardFallbackClient({
   const [dashboardError, setDashboardError] = useState<string | null>(null);
   const [dashboardLoading, setDashboardLoading] = useState(true);
   const [widgets, setWidgets] = useState<ClubDashboardWidgetSummary[]>([]);
-  const [editor, setEditor] = useState<ClubDashboardEditorResponse | null>(null);
+  const [, setEditor] = useState<ClubDashboardEditorResponse | null>(null);
+  const [editorWidgets, setEditorWidgets] = useState<ClubDashboardWidgetSummary[]>([]);
+  const [savedEditorWidgets, setSavedEditorWidgets] = useState<ClubDashboardWidgetSummary[]>([]);
   const [editMode, setEditMode] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [draggingWidgetKey, setDraggingWidgetKey] = useState<string | null>(null);
-  const [dragOverWidgetKey, setDragOverWidgetKey] = useState<string | null>(null);
-  const [touchDraggingWidgetKey, setTouchDraggingWidgetKey] = useState<string | null>(null);
-  const [touchDragOverWidgetKey, setTouchDragOverWidgetKey] = useState<string | null>(null);
+  const [activeEditorWidgetKey, setActiveEditorWidgetKey] = useState<string | null>(null);
   const [attendanceData, setAttendanceData] = useState<ClubAttendanceResponse | null>(null);
   const [attendanceLoading, setAttendanceLoading] = useState(false);
   const [attendanceError, setAttendanceError] = useState<string | null>(null);
+  const [boardData, setBoardData] = useState<ClubBoardResponse | null>(null);
+  const [boardLoading, setBoardLoading] = useState(false);
+  const [boardError, setBoardError] = useState<string | null>(null);
+  const [scheduleData, setScheduleData] = useState<ClubScheduleResponse | null>(null);
+  const [scheduleLoading, setScheduleLoading] = useState(false);
+  const [scheduleError, setScheduleError] = useState<string | null>(null);
+  const [pollData, setPollData] = useState<ClubPollHomeResponse | null>(null);
+  const [pollLoading, setPollLoading] = useState(false);
+  const [pollError, setPollError] = useState<string | null>(null);
   const [attendancePulseToken, setAttendancePulseToken] = useState(0);
   const [isCheckingInAttendance, setIsCheckingInAttendance] = useState(false);
   const { toast, showToast, clearToast } = useEphemeralToast();
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 6,
+      },
+    }),
+    useSensor(TouchSensor, {
+      activationConstraint: {
+        delay: 120,
+        tolerance: 10,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    }),
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -412,6 +820,8 @@ export function ClubDashboardFallbackClient({
           return;
         }
         setEditor(editorResult.data);
+        setEditorWidgets(cloneWidgets(editorResult.data.widgets));
+        setSavedEditorWidgets(cloneWidgets(editorResult.data.widgets));
         setDashboardLoading(false);
         return;
       }
@@ -435,46 +845,91 @@ export function ClubDashboardFallbackClient({
     };
   }, [clearToast, clubId]);
 
+  const dashboardWidgetSource = useMemo(() => {
+    if (club?.admin) {
+      return editorWidgets;
+    }
+    return widgets;
+  }, [club?.admin, editorWidgets, widgets]);
+
   const visibleWidgets = useMemo(() => {
     if (!club) {
       return [];
     }
 
-    if (club.admin) {
-      const source = editor?.widgets ?? [];
-      return source
-        .filter((widget) => widget.enabled && widget.available)
-        .sort((a, b) => a.sortOrder - b.sortOrder || a.widgetKey.localeCompare(b.widgetKey));
-    }
-
-    return widgets
+    return dashboardWidgetSource
       .filter((widget) => widget.enabled && widget.available)
       .sort((a, b) => a.sortOrder - b.sortOrder || a.widgetKey.localeCompare(b.widgetKey));
-  }, [club, editor?.widgets, widgets]);
+  }, [club, dashboardWidgetSource]);
+
+  const enabledEditorWidgets = useMemo(() => {
+    return editorWidgets
+      .filter((widget) => widget.enabled && widget.available)
+      .sort((a, b) => a.sortOrder - b.sortOrder || a.widgetKey.localeCompare(b.widgetKey));
+  }, [editorWidgets]);
 
   const addableWidgets = useMemo(() => {
-    if (!club?.admin || !editor) {
+    if (!club?.admin) {
       return [];
     }
-    return editor.widgets
+    return editorWidgets
       .filter((widget) => !widget.enabled && widget.available)
       .sort((a, b) => a.sortOrder - b.sortOrder || a.widgetKey.localeCompare(b.widgetKey));
-  }, [club?.admin, editor]);
+  }, [club?.admin, editorWidgets]);
+
+  const blockedWidgets = useMemo(() => {
+    if (!club?.admin) {
+      return [];
+    }
+    return editorWidgets
+      .filter((widget) => !widget.enabled && !widget.available)
+      .sort((a, b) => a.sortOrder - b.sortOrder || a.widgetKey.localeCompare(b.widgetKey));
+  }, [club?.admin, editorWidgets]);
+
+  const savedEnabledWidgetKeys = useMemo(
+    () => extractEnabledWidgetKeys(savedEditorWidgets),
+    [savedEditorWidgets],
+  );
+  const currentEnabledWidgetKeys = useMemo(
+    () => extractEnabledWidgetKeys(editorWidgets),
+    [editorWidgets],
+  );
+  const isEditorDirty = useMemo(
+    () =>
+      savedEnabledWidgetKeys.length !== currentEnabledWidgetKeys.length ||
+      savedEnabledWidgetKeys.some((widgetKey, index) => widgetKey !== currentEnabledWidgetKeys[index]),
+    [currentEnabledWidgetKeys, savedEnabledWidgetKeys],
+  );
+  const activeEditorWidget = useMemo(
+    () =>
+      enabledEditorWidgets.find((widget) => widget.widgetKey === activeEditorWidgetKey) ?? null,
+    [activeEditorWidgetKey, enabledEditorWidgets],
+  );
 
   const hasAttendanceWidget = useMemo(() => {
-    if (club?.admin) {
-      return Boolean(
-        editor?.widgets.some(
-          (widget) =>
-            widget.widgetKey === "ATTENDANCE_STATUS" && widget.enabled && widget.available,
-        ),
-      );
-    }
-    return widgets.some(
+    return dashboardWidgetSource.some(
       (widget) =>
         widget.widgetKey === "ATTENDANCE_STATUS" && widget.enabled && widget.available,
     );
-  }, [club?.admin, editor?.widgets, widgets]);
+  }, [dashboardWidgetSource]);
+
+  const hasBoardNoticeWidget = useMemo(() => {
+    return dashboardWidgetSource.some(
+      (widget) => widget.widgetKey === "BOARD_NOTICE" && widget.enabled && widget.available,
+    );
+  }, [dashboardWidgetSource]);
+
+  const hasScheduleWidget = useMemo(() => {
+    return dashboardWidgetSource.some(
+      (widget) => widget.widgetKey === "SCHEDULE_OVERVIEW" && widget.enabled && widget.available,
+    );
+  }, [dashboardWidgetSource]);
+
+  const hasPollWidget = useMemo(() => {
+    return dashboardWidgetSource.some(
+      (widget) => widget.widgetKey === "POLL_STATUS" && widget.enabled && widget.available,
+    );
+  }, [dashboardWidgetSource]);
 
   const loadAttendanceData = useCallback(async () => {
     if (!hasAttendanceWidget) {
@@ -494,6 +949,67 @@ export function ClubDashboardFallbackClient({
     setAttendanceData(result.data);
     setAttendanceLoading(false);
   }, [clubId, hasAttendanceWidget]);
+
+  const loadBoardData = useCallback(async () => {
+    if (!hasBoardNoticeWidget) {
+      return;
+    }
+
+    setBoardLoading(true);
+    setBoardError(null);
+    const result = await getClubBoard(clubId);
+    if (!result.ok || !result.data) {
+      setBoardData(null);
+      setBoardError(result.message ?? "공지 정보를 불러오지 못했습니다.");
+      setBoardLoading(false);
+      return;
+    }
+
+    setBoardData(result.data);
+    setBoardLoading(false);
+  }, [clubId, hasBoardNoticeWidget]);
+
+  const loadScheduleData = useCallback(async () => {
+    if (!hasScheduleWidget) {
+      return;
+    }
+
+    setScheduleLoading(true);
+    setScheduleError(null);
+    const today = new Date();
+    const result = await getClubSchedule(clubId, {
+      year: today.getFullYear(),
+      month: today.getMonth() + 1,
+    });
+    if (!result.ok || !result.data) {
+      setScheduleData(null);
+      setScheduleError(result.message ?? "일정 정보를 불러오지 못했습니다.");
+      setScheduleLoading(false);
+      return;
+    }
+
+    setScheduleData(result.data);
+    setScheduleLoading(false);
+  }, [clubId, hasScheduleWidget]);
+
+  const loadPollData = useCallback(async () => {
+    if (!hasPollWidget) {
+      return;
+    }
+
+    setPollLoading(true);
+    setPollError(null);
+    const result = await getClubPollHome(clubId);
+    if (!result.ok || !result.data) {
+      setPollData(null);
+      setPollError(result.message ?? "투표 정보를 불러오지 못했습니다.");
+      setPollLoading(false);
+      return;
+    }
+
+    setPollData(result.data);
+    setPollLoading(false);
+  }, [clubId, hasPollWidget]);
 
   const persistEditorWidgets = useCallback(
     async (nextWidgets: ClubDashboardWidgetSummary[], successMessage: string) => {
@@ -521,6 +1037,8 @@ export function ClubDashboardFallbackClient({
       }
 
       setEditor(result.data);
+      setEditorWidgets(cloneWidgets(result.data.widgets));
+      setSavedEditorWidgets(cloneWidgets(result.data.widgets));
       showToast(successMessage, "success");
       window.dispatchEvent(new Event("semo:dashboard-widgets-updated"));
     },
@@ -528,115 +1046,78 @@ export function ClubDashboardFallbackClient({
   );
 
   const handleRemoveWidget = (widgetKey: string) => {
-    if (!editor || isSaving) {
+    if (!club?.admin || isSaving) {
       return;
     }
 
-    const nextWidgets = normalizeSortOrder(
-      editor.widgets.map((widget) =>
-        widget.widgetKey === widgetKey ? { ...widget, enabled: false } : widget,
-      ),
-    );
     startTransition(() => {
-      void persistEditorWidgets(nextWidgets, "위젯이 홈에서 제거되었습니다.");
+      setEditorWidgets((current) =>
+        normalizeSortOrder(
+          current.map((widget) =>
+        widget.widgetKey === widgetKey ? { ...widget, enabled: false } : widget,
+          ),
+        ),
+      );
     });
   };
 
   const handleAddWidget = (widgetKey: string) => {
-    if (!editor || isSaving) {
+    if (!club?.admin || isSaving) {
       return;
     }
 
-    const nextWidgets = normalizeSortOrder(
-      editor.widgets.map((widget) =>
-        widget.widgetKey === widgetKey ? { ...widget, enabled: true } : widget,
-      ),
-    );
     startTransition(() => {
-      void persistEditorWidgets(nextWidgets, "위젯이 홈에 추가되었습니다.");
+      setEditorWidgets((current) =>
+        normalizeSortOrder(
+          current.map((widget) =>
+        widget.widgetKey === widgetKey ? { ...widget, enabled: true } : widget,
+          ),
+        ),
+      );
     });
   };
 
-  const reorderAndPersist = useCallback(
+  const reorderEditorWidgets = useCallback(
     (sourceWidgetKey: string, targetWidgetKey: string) => {
-      if (!editor || isSaving || sourceWidgetKey === targetWidgetKey) {
+      if (!club?.admin || isSaving || sourceWidgetKey === targetWidgetKey) {
         return;
       }
 
-      const nextWidgets = reorderEnabledWidgets(editor.widgets, sourceWidgetKey, targetWidgetKey);
       startTransition(() => {
-        void persistEditorWidgets(nextWidgets, "위젯 순서가 저장되었습니다.");
+        setEditorWidgets((current) =>
+          reorderEnabledWidgets(current, sourceWidgetKey, targetWidgetKey),
+        );
       });
     },
-    [editor, isSaving, persistEditorWidgets],
+    [club?.admin, isSaving],
   );
 
-  const clearDragState = () => {
-    setDraggingWidgetKey(null);
-    setDragOverWidgetKey(null);
+  const handleEditorDragStart = (event: DragStartEvent) => {
+    setActiveEditorWidgetKey(String(event.active.id));
   };
 
-  const handleDesktopDragStart = (widgetKey: string) => {
-    if (!club?.admin || !editMode || isSaving) {
+  const handleEditorDragEnd = (event: DragEndEvent) => {
+    setActiveEditorWidgetKey(null);
+    const activeId = String(event.active.id);
+    const overId = event.over?.id == null ? null : String(event.over.id);
+    if (overId == null || activeId === overId) {
       return;
     }
-    setDraggingWidgetKey(widgetKey);
-    setDragOverWidgetKey(widgetKey);
+    reorderEditorWidgets(activeId, overId);
   };
 
-  const handleDesktopDragOver = (widgetKey: string) => {
-    if (!draggingWidgetKey || draggingWidgetKey === widgetKey) {
+  const handleSaveEditor = async () => {
+    if (!club?.admin) {
       return;
     }
-    setDragOverWidgetKey(widgetKey);
+    await persistEditorWidgets(editorWidgets, "홈 위젯 구성이 저장되었습니다.");
   };
 
-  const handleDesktopDrop = (widgetKey: string) => {
-    if (!draggingWidgetKey) {
-      return;
-    }
-    reorderAndPersist(draggingWidgetKey, widgetKey);
-    clearDragState();
+  const handleResetEditor = () => {
+    setActiveEditorWidgetKey(null);
+    setEditorWidgets(cloneWidgets(savedEditorWidgets));
+    showToast("위젯 편집 초안을 되돌렸습니다.", "info");
   };
-
-  useEffect(() => {
-    if (!touchDraggingWidgetKey) {
-      return;
-    }
-
-    const handleTouchMove = (event: TouchEvent) => {
-      event.preventDefault();
-      const touch = event.touches[0];
-      if (!touch) {
-        return;
-      }
-
-      const targetElement = document
-        .elementFromPoint(touch.clientX, touch.clientY)
-        ?.closest<HTMLElement>("[data-widget-key]");
-      const widgetKey = targetElement?.dataset.widgetKey ?? null;
-      if (!widgetKey || widgetKey === touchDragOverWidgetKey) {
-        return;
-      }
-      setTouchDragOverWidgetKey(widgetKey);
-    };
-
-    const handleTouchEnd = () => {
-      const targetWidgetKey = touchDragOverWidgetKey ?? touchDraggingWidgetKey;
-      reorderAndPersist(touchDraggingWidgetKey, targetWidgetKey);
-      setTouchDraggingWidgetKey(null);
-      setTouchDragOverWidgetKey(null);
-    };
-
-    window.addEventListener("touchmove", handleTouchMove, { passive: false });
-    window.addEventListener("touchend", handleTouchEnd);
-    window.addEventListener("touchcancel", handleTouchEnd);
-    return () => {
-      window.removeEventListener("touchmove", handleTouchMove);
-      window.removeEventListener("touchend", handleTouchEnd);
-      window.removeEventListener("touchcancel", handleTouchEnd);
-    };
-  }, [touchDraggingWidgetKey, touchDragOverWidgetKey, reorderAndPersist]);
 
   useEffect(() => {
     if (!hasAttendanceWidget) {
@@ -649,6 +1130,42 @@ export function ClubDashboardFallbackClient({
       window.clearTimeout(timerId);
     };
   }, [hasAttendanceWidget, loadAttendanceData]);
+
+  useEffect(() => {
+    if (!hasBoardNoticeWidget) {
+      return;
+    }
+    const timerId = window.setTimeout(() => {
+      void loadBoardData();
+    }, 0);
+    return () => {
+      window.clearTimeout(timerId);
+    };
+  }, [hasBoardNoticeWidget, loadBoardData]);
+
+  useEffect(() => {
+    if (!hasScheduleWidget) {
+      return;
+    }
+    const timerId = window.setTimeout(() => {
+      void loadScheduleData();
+    }, 0);
+    return () => {
+      window.clearTimeout(timerId);
+    };
+  }, [hasScheduleWidget, loadScheduleData]);
+
+  useEffect(() => {
+    if (!hasPollWidget) {
+      return;
+    }
+    const timerId = window.setTimeout(() => {
+      void loadPollData();
+    }, 0);
+    return () => {
+      window.clearTimeout(timerId);
+    };
+  }, [hasPollWidget, loadPollData]);
 
   const handleAttendanceCheckIn = useCallback(async () => {
     const todayAttendance = attendanceData?.todayAttendance;
@@ -688,9 +1205,10 @@ export function ClubDashboardFallbackClient({
                 type="button"
                 onClick={() => {
                   clearToast();
-                  clearDragState();
-                  setTouchDraggingWidgetKey(null);
-                  setTouchDragOverWidgetKey(null);
+                  if (editMode && isEditorDirty) {
+                    showToast("저장하거나 되돌린 뒤 편집을 종료할 수 있습니다.", "info");
+                    return;
+                  }
                   setEditMode((current) => !current);
                 }}
                 className="rounded-full bg-[var(--primary)]/10 px-3 py-1.5 text-xs font-bold text-[var(--primary)] transition-colors hover:bg-[var(--primary)]/20"
@@ -752,9 +1270,13 @@ export function ClubDashboardFallbackClient({
                       {club?.summary ?? club?.description ?? "클럽 소개가 아직 없습니다."}
                     </p>
                   </div>
-                  {editMode && club?.admin ? (
-                    <span className="rounded-full bg-[var(--primary)]/10 px-3 py-1 text-xs font-bold text-[var(--primary)]">
-                      Widget Edit Mode
+                  {club?.admin ? (
+                    <span className={`rounded-full px-3 py-1 text-xs font-bold ${
+                      editMode
+                        ? "bg-[var(--primary)]/10 text-[var(--primary)]"
+                        : "bg-slate-100 text-slate-500"
+                    }`}>
+                      {editMode ? "Widget Edit Mode" : "Home Widgets"}
                     </span>
                   ) : null}
                 </div>
@@ -769,6 +1291,125 @@ export function ClubDashboardFallbackClient({
               <div className="rounded-xl border border-slate-200 bg-white p-5 text-sm text-slate-500 shadow-sm">
                 {dashboardError}
               </div>
+            ) : club?.admin && editMode ? (
+              <div className="space-y-6">
+                <section>
+                  <div className="mb-4 flex items-center gap-2">
+                    <span className="material-symbols-outlined text-[var(--primary)]">view_quilt</span>
+                    <h3 className="text-lg font-bold text-slate-900">활성 위젯 순서</h3>
+                  </div>
+                  {enabledEditorWidgets.length === 0 ? (
+                    <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-4 py-10 text-center text-sm text-slate-500">
+                      현재 홈에 노출 중인 위젯이 없습니다.
+                    </div>
+                  ) : (
+                    <DndContext
+                      sensors={sensors}
+                      collisionDetection={closestCenter}
+                      onDragStart={handleEditorDragStart}
+                      onDragEnd={handleEditorDragEnd}
+                      onDragCancel={() => {
+                        setActiveEditorWidgetKey(null);
+                      }}
+                    >
+                      <SortableContext
+                        items={enabledEditorWidgets.map((widget) => widget.widgetKey)}
+                        strategy={verticalListSortingStrategy}
+                      >
+                        <div className="flex flex-col gap-3">
+                          {enabledEditorWidgets.map((widget) => (
+                            <EnabledDashboardWidgetCard
+                              key={widget.widgetKey}
+                              widget={widget}
+                              onRemove={handleRemoveWidget}
+                            />
+                          ))}
+                        </div>
+                      </SortableContext>
+                      <DragOverlay dropAnimation={null}>
+                        {activeEditorWidget ? (
+                          <EnabledDashboardWidgetOverlayCard widget={activeEditorWidget} />
+                        ) : null}
+                      </DragOverlay>
+                    </DndContext>
+                  )}
+                </section>
+
+                <section>
+                  <div className="mb-4 flex items-center gap-2">
+                    <span className="material-symbols-outlined text-[var(--primary)]">add_circle</span>
+                    <h3 className="text-lg font-bold text-slate-900">추가 가능 위젯</h3>
+                  </div>
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    {addableWidgets.length === 0 ? (
+                      <div className="col-span-full rounded-2xl border border-dashed border-slate-300 bg-white px-4 py-10 text-center text-sm text-slate-500">
+                        추가 가능한 위젯이 없습니다.
+                      </div>
+                    ) : (
+                      addableWidgets.map((widget) => (
+                        <article
+                          key={widget.widgetKey}
+                          className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm"
+                        >
+                          <div className={`flex size-11 shrink-0 items-center justify-center rounded-2xl ${WIDGET_ACCENT_CLASS[widget.widgetKey] ?? "bg-slate-100 text-slate-600"}`}>
+                            <span className="material-symbols-outlined text-[22px]">{widget.iconName}</span>
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-base font-bold text-slate-900">{widget.displayName}</p>
+                            <p className="mt-1 line-clamp-2 text-sm text-slate-500">
+                              {widget.description ?? "홈에서 빠르게 확인할 수 있는 위젯입니다."}
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => handleAddWidget(widget.widgetKey)}
+                            className="rounded-full bg-[var(--primary)]/10 px-4 py-2 text-xs font-bold text-[var(--primary)] transition hover:bg-[var(--primary)]/20"
+                          >
+                            추가
+                          </button>
+                        </article>
+                      ))
+                    )}
+                  </div>
+                </section>
+
+                <section>
+                  <div className="mb-4 flex items-center gap-2">
+                    <span className="material-symbols-outlined text-slate-500">lock</span>
+                    <h3 className="text-lg font-bold text-slate-900">현재 사용할 수 없는 위젯</h3>
+                  </div>
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    {blockedWidgets.length === 0 ? (
+                      <div className="col-span-full rounded-2xl border border-dashed border-slate-300 bg-white px-4 py-10 text-center text-sm text-slate-500">
+                        기능 비활성 때문에 막힌 위젯이 없습니다.
+                      </div>
+                    ) : (
+                      blockedWidgets.map((widget) => (
+                        <article
+                          key={widget.widgetKey}
+                          className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 shadow-sm"
+                        >
+                          <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-slate-200 text-slate-500">
+                            <span className="material-symbols-outlined text-[22px]">{widget.iconName}</span>
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-base font-bold text-slate-900">{widget.displayName}</p>
+                            <p className="mt-1 text-sm text-slate-500">
+                              {getWidgetFeatureLabel(widget)}
+                            </p>
+                          </div>
+                          <RouterLink
+                            href={`/clubs/${clubId}/admin/menu`}
+                            className="rounded-full bg-white px-4 py-2 text-xs font-bold text-slate-600 shadow-sm transition hover:bg-slate-100"
+                          >
+                            기능 켜기
+                          </RouterLink>
+                        </article>
+                      ))
+                    )}
+                  </div>
+                </section>
+              </div>
             ) : (
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 {visibleWidgets.map((widget) => (
@@ -776,63 +1417,36 @@ export function ClubDashboardFallbackClient({
                     key={widget.widgetKey}
                     clubId={clubId}
                     widget={widget}
-                    editMode={editMode}
+                    editMode={false}
                     isAdmin={Boolean(club?.admin)}
-                    isDragging={draggingWidgetKey === widget.widgetKey || touchDraggingWidgetKey === widget.widgetKey}
-                    isDropTarget={dragOverWidgetKey === widget.widgetKey || touchDragOverWidgetKey === widget.widgetKey}
+                    isDragging={false}
+                    isDropTarget={false}
                     isDisabled={isSaving}
                     reduceMotion={reduceMotion}
                     attendanceData={widget.widgetKey === "ATTENDANCE_STATUS" ? attendanceData : null}
                     attendanceLoading={widget.widgetKey === "ATTENDANCE_STATUS" && attendanceLoading}
                     attendanceError={widget.widgetKey === "ATTENDANCE_STATUS" ? attendanceError : null}
+                    boardData={widget.widgetKey === "BOARD_NOTICE" ? boardData : null}
+                    boardLoading={widget.widgetKey === "BOARD_NOTICE" && boardLoading}
+                    boardError={widget.widgetKey === "BOARD_NOTICE" ? boardError : null}
+                    scheduleData={widget.widgetKey === "SCHEDULE_OVERVIEW" ? scheduleData : null}
+                    scheduleLoading={widget.widgetKey === "SCHEDULE_OVERVIEW" && scheduleLoading}
+                    scheduleError={widget.widgetKey === "SCHEDULE_OVERVIEW" ? scheduleError : null}
+                    pollData={widget.widgetKey === "POLL_STATUS" ? pollData : null}
+                    pollLoading={widget.widgetKey === "POLL_STATUS" && pollLoading}
+                    pollError={widget.widgetKey === "POLL_STATUS" ? pollError : null}
                     attendancePulseToken={widget.widgetKey === "ATTENDANCE_STATUS" ? attendancePulseToken : 0}
                     isCheckingInAttendance={widget.widgetKey === "ATTENDANCE_STATUS" && isCheckingInAttendance}
-                    onRemove={handleRemoveWidget}
+                    onRemove={() => {}}
                     onAttendanceCheckIn={handleAttendanceCheckIn}
-                    onDragStart={handleDesktopDragStart}
-                    onDragOver={handleDesktopDragOver}
-                    onDrop={handleDesktopDrop}
-                    onDragEnd={clearDragState}
-                    onTouchDragStart={(widgetKey) => {
-                      if (!club?.admin || !editMode || isSaving) {
-                        return;
-                      }
-                      setTouchDraggingWidgetKey(widgetKey);
-                      setTouchDragOverWidgetKey(widgetKey);
-                    }}
+                    onDragStart={() => {}}
+                    onDragOver={() => {}}
+                    onDrop={() => {}}
+                    onDragEnd={() => {}}
+                    onTouchDragStart={() => {}}
                   />
                 ))}
-                {club?.admin && editMode ? (
-                  <article className="flex min-h-[180px] flex-col rounded-xl border-2 border-dashed border-slate-300 bg-white p-5 shadow-sm">
-                    <div className="mb-3 flex items-center gap-2 text-slate-500">
-                      <span className="material-symbols-outlined">add_circle</span>
-                      <h3 className="text-base font-bold">Add Widget</h3>
-                    </div>
-                    <p className="text-sm text-slate-500">
-                      `/more`에서 활성화된 기능 위젯만 홈에 추가할 수 있습니다.
-                    </p>
-                    <div className="mt-4 flex flex-wrap gap-2">
-                      {addableWidgets.map((widget) => (
-                        <button
-                          key={widget.widgetKey}
-                          type="button"
-                          disabled={isSaving}
-                          onClick={() => handleAddWidget(widget.widgetKey)}
-                          className="inline-flex items-center gap-1 rounded-full bg-[var(--primary)]/10 px-3 py-1.5 text-xs font-bold text-[var(--primary)] transition-colors hover:bg-[var(--primary)]/20 disabled:opacity-60"
-                        >
-                          <span className="material-symbols-outlined text-sm">add</span>
-                          {widget.displayName}
-                        </button>
-                      ))}
-                      {addableWidgets.length === 0 ? (
-                        <p className="text-xs font-medium text-slate-400">
-                          추가 가능한 위젯이 없습니다.
-                        </p>
-                      ) : null}
-                    </div>
-                  </article>
-                ) : null}
-                {!dashboardLoading && !dashboardError && visibleWidgets.length === 0 && !editMode ? (
+                {!dashboardLoading && !dashboardError && visibleWidgets.length === 0 ? (
                   <div className="rounded-xl border border-dashed border-slate-300 bg-white p-6 text-sm text-slate-500">
                     표시할 홈 위젯이 없습니다.
                   </div>
@@ -840,13 +1454,37 @@ export function ClubDashboardFallbackClient({
               </div>
             )}
           </motion.section>
-
-          {touchDraggingWidgetKey ? (
-            <div className="fixed inset-x-4 bottom-28 z-40 rounded-full bg-slate-900/90 px-4 py-2 text-center text-xs font-semibold text-white shadow-lg">
-              드래그해서 원하는 위치에 놓으세요.
-            </div>
-          ) : null}
         </main>
+
+        {club?.admin && editMode && isEditorDirty ? (
+          <div className="pointer-events-none fixed bottom-[76px] left-0 right-0 z-30 p-4">
+            <div className="pointer-events-auto mx-auto max-w-5xl">
+              <div className="grid grid-cols-[auto_1fr] gap-2">
+                <button
+                  type="button"
+                  onClick={handleResetEditor}
+                  disabled={isSaving}
+                  aria-label="위젯 편집 초안 되돌리기"
+                  title="위젯 편집 초안 되돌리기"
+                  className="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-600 shadow-sm transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-70"
+                >
+                  <span className="material-symbols-outlined text-[18px]">restart_alt</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void handleSaveEditor()}
+                  disabled={isSaving}
+                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--primary)] py-4 text-base font-bold text-white shadow-lg transition-all hover:scale-[1.01] hover:shadow-[0_18px_36px_rgba(19,91,236,0.24)] disabled:cursor-not-allowed disabled:opacity-70"
+                >
+                  <span className="material-symbols-outlined">
+                    {isSaving ? "progress_activity" : "save"}
+                  </span>
+                  {isSaving ? "저장 중..." : "변경사항 저장"}
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : null}
 
         {club?.admin ? <ClubModeSwitchFab clubId={clubId} mode="user" /> : null}
         <EphemeralToast message={toast?.message ?? null} tone={toast?.tone} />

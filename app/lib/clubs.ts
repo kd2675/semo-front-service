@@ -45,6 +45,8 @@ export type ClubBoardResponse = {
     icon: string;
     title: string;
     summary: string;
+    imageUrl: string | null;
+    thumbnailUrl: string | null;
     author: string;
     timeAgo: string;
     category: "tournaments" | "matches" | "social";
