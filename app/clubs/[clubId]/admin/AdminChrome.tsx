@@ -16,7 +16,11 @@ export function AdminChrome({ clubId, children }: AdminChromeProps) {
   const isNoticeSettingsPage = pathname === `/clubs/${clubId}/admin/more/notices`;
   const isScheduleSettingsPage = pathname === `/clubs/${clubId}/admin/more/schedules`;
   const isPollSettingsPage = pathname === `/clubs/${clubId}/admin/more/polls`;
-  const fabClassName = isMenuPage || isNoticeSettingsPage || isScheduleSettingsPage || isPollSettingsPage ? "bottom-44" : undefined;
+  const isRoleManagementPage = pathname.startsWith(`/clubs/${clubId}/admin/more/roles`);
+  const fabClassName =
+    isMenuPage || isNoticeSettingsPage || isScheduleSettingsPage || isPollSettingsPage || isRoleManagementPage
+      ? "bottom-44"
+      : undefined;
 
   return (
     <div

@@ -43,6 +43,11 @@ function getFeatureDisplayName(feature: ClubFeatureSummary) {
   return feature.displayName;
 }
 
+function stripQuery(path: string) {
+  const [pathname] = path.split("?");
+  return pathname ?? path;
+}
+
 const POPOVER_ITEM_VARIANTS = {
   hidden: { opacity: 0, y: 12, scale: 0.96 },
   visible: (index: number) => ({
@@ -71,7 +76,7 @@ export function ClubBottomNav({ clubId, isAdmin = false }: ClubBottomNavProps) {
   const [enabledFeatures, setEnabledFeatures] = useState<ClubFeatureSummary[]>([]);
   const menuItems = enabledFeatures;
   const isMoreOpen = openMenuPathname === pathname;
-  const isFeatureRouteActive = menuItems.some((feature) => pathname === feature.userPath);
+  const isFeatureRouteActive = menuItems.some((feature) => pathname === stripQuery(feature.userPath));
 
   useEffect(() => {
     let cancelled = false;
@@ -87,7 +92,11 @@ export function ClubBottomNav({ clubId, isAdmin = false }: ClubBottomNavProps) {
         return;
       }
 
-      setEnabledFeatures(result.data.filter((feature) => feature.enabled));
+      setEnabledFeatures(
+        result.data.filter(
+          (feature) => feature.enabled && feature.navigationScope !== "ADMIN_ONLY",
+        ),
+      );
     };
 
     void loadFeatures();

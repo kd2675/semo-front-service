@@ -1,4 +1,4 @@
-import { ClubAdminScheduleSettingsFallbackClient } from "./ClubAdminScheduleSettingsFallbackClient";
+import { redirect } from "next/navigation";
 
 type ClubAdminScheduleHomePageProps = {
   params: Promise<{
@@ -10,5 +10,5 @@ export default async function ClubAdminScheduleHomePage({
   params,
 }: ClubAdminScheduleHomePageProps) {
   const { clubId } = await params;
-  return <ClubAdminScheduleSettingsFallbackClient clubId={clubId} />;
+  redirect(`/clubs/${clubId}/admin/more/roles?feature=SCHEDULE_MANAGE`);
 }

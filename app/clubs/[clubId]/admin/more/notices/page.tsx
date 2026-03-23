@@ -1,4 +1,4 @@
-import { ClubAdminNoticeSettingsFallbackClient } from "./ClubAdminNoticeSettingsFallbackClient";
+import { redirect } from "next/navigation";
 
 type ClubAdminNoticeHomePageProps = {
   params: Promise<{
@@ -8,5 +8,5 @@ type ClubAdminNoticeHomePageProps = {
 
 export default async function ClubAdminNoticeHomePage({ params }: ClubAdminNoticeHomePageProps) {
   const { clubId } = await params;
-  return <ClubAdminNoticeSettingsFallbackClient clubId={clubId} />;
+  redirect(`/clubs/${clubId}/admin/more/roles?feature=NOTICE`);
 }

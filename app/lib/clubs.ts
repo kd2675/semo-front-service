@@ -424,9 +424,38 @@ export type ClubFeatureSummary = {
   displayName: string;
   description: string | null;
   iconName: string;
+  navigationScope: "USER_AND_ADMIN" | "ADMIN_ONLY" | string;
   enabled: boolean;
   userPath: string;
   adminPath: string;
+};
+
+export type ClubPositionSummary = {
+  clubPositionId: number;
+  positionCode: string;
+  displayName: string;
+  description: string | null;
+  iconName: string | null;
+  colorHex: string | null;
+  active: boolean;
+  permissionCount: number;
+  memberCount: number;
+  permissionKeys: string[];
+};
+
+export type ClubPermissionItem = {
+  permissionKey: string;
+  displayName: string;
+  description: string | null;
+  ownershipScope: string;
+};
+
+export type ClubPermissionGroup = {
+  featureKey: string;
+  displayName: string;
+  description: string | null;
+  iconName: string;
+  permissions: ClubPermissionItem[];
 };
 
 export type ClubAdminMember = {
@@ -443,12 +472,15 @@ export type ClubAdminMember = {
   canManage: boolean;
   canApprove: boolean;
   self: boolean;
+  positions: ClubPositionSummary[];
 };
 
 export type ClubAdminMembersResponse = {
   clubId: number;
   clubName: string;
   admin: boolean;
+  roleManagementEnabled: boolean;
+  availablePositions: ClubPositionSummary[];
   members: ClubAdminMember[];
 };
 
@@ -528,6 +560,7 @@ export type ClubAdminNoticeSettingsResponse = {
   clubId: number;
   clubName: string;
   admin: boolean;
+  roleManagementEnabled: boolean;
   allowMemberCreate: boolean;
   allowMemberUpdate: boolean;
   allowMemberDelete: boolean;
@@ -543,6 +576,7 @@ export type ClubAdminScheduleSettingsResponse = {
   clubId: number;
   clubName: string;
   admin: boolean;
+  roleManagementEnabled: boolean;
   allowMemberCreate: boolean;
   allowMemberUpdate: boolean;
   allowMemberDelete: boolean;
@@ -558,6 +592,7 @@ export type ClubAdminPollSettingsResponse = {
   clubId: number;
   clubName: string;
   admin: boolean;
+  roleManagementEnabled: boolean;
   allowMemberCreate: boolean;
   allowMemberUpdate: boolean;
   allowMemberDelete: boolean;
@@ -609,6 +644,47 @@ export type UpdateClubDashboardLayoutRequest = {
 
 export type UpdateClubFeaturesRequest = {
   enabledFeatureKeys: string[];
+};
+
+export type ClubAdminRoleManagementResponse = {
+  clubId: number;
+  clubName: string;
+  admin: boolean;
+  roleManagementEnabled: boolean;
+  positions: ClubPositionSummary[];
+  permissionGroups: ClubPermissionGroup[];
+};
+
+export type ClubPositionDetailResponse = {
+  clubId: number;
+  clubName: string;
+  admin: boolean;
+  roleManagementEnabled: boolean;
+  position: ClubPositionSummary;
+  permissionGroups: ClubPermissionGroup[];
+};
+
+export type CreateClubPositionRequest = {
+  displayName: string;
+  positionCode: string;
+  description?: string | null;
+  iconName?: string | null;
+  colorHex?: string | null;
+  permissionKeys: string[];
+};
+
+export type UpdateClubPositionRequest = {
+  displayName: string;
+  positionCode: string;
+  description?: string | null;
+  iconName?: string | null;
+  colorHex?: string | null;
+  active?: boolean;
+  permissionKeys: string[];
+};
+
+export type UpdateClubMemberPositionsRequest = {
+  clubPositionIds: number[];
 };
 
 export type AttendanceSession = {
@@ -971,6 +1047,17 @@ export function updateClubAdminMemberStatus(
   );
 }
 
+export function updateClubAdminMemberPositions(
+  clubId: string | number,
+  clubMemberId: string | number,
+  request: UpdateClubMemberPositionsRequest,
+) {
+  return putJson<ClubAdminMember>(
+    `/api/semo/v1/clubs/${clubId}/admin/members/${clubMemberId}/positions`,
+    request,
+  );
+}
+
 export function approveClubAdminMember(clubId: string | number, clubMemberId: string | number) {
   return postJson<ClubAdminMember>(
     `/api/semo/v1/clubs/${clubId}/admin/members/${clubMemberId}/approve`,
@@ -1018,6 +1105,47 @@ export function getClubTimeline(
 
 export function getClubAdminTimeline(clubId: string | number) {
   return getJson<ClubAdminTimelineResponse>(`/api/semo/v1/clubs/${clubId}/admin/more/timeline`);
+}
+
+export function getClubAdminRoleManagement(clubId: string | number) {
+  return getJson<ClubAdminRoleManagementResponse>(`/api/semo/v1/clubs/${clubId}/admin/more/roles`);
+}
+
+export function getClubAdminRoleDetail(
+  clubId: string | number,
+  clubPositionId: string | number,
+) {
+  return getJson<ClubPositionDetailResponse>(
+    `/api/semo/v1/clubs/${clubId}/admin/more/roles/${clubPositionId}`,
+  );
+}
+
+export function createClubAdminRole(
+  clubId: string | number,
+  request: CreateClubPositionRequest,
+) {
+  return postJson<ClubPositionDetailResponse>(
+    `/api/semo/v1/clubs/${clubId}/admin/more/roles`,
+    request,
+  );
+}
+
+export function updateClubAdminRole(
+  clubId: string | number,
+  clubPositionId: string | number,
+  request: UpdateClubPositionRequest,
+) {
+  return putJson<ClubPositionDetailResponse>(
+    `/api/semo/v1/clubs/${clubId}/admin/more/roles/${clubPositionId}`,
+    request,
+  );
+}
+
+export function deleteClubAdminRole(
+  clubId: string | number,
+  clubPositionId: string | number,
+) {
+  return deleteJson<boolean>(`/api/semo/v1/clubs/${clubId}/admin/more/roles/${clubPositionId}`);
 }
 
 export function getClubAdminNoticeSettings(clubId: string | number) {

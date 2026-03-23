@@ -64,6 +64,11 @@ function getFeatureDisplayName(feature: ClubFeatureSummary) {
   return feature.displayName;
 }
 
+function stripQuery(path: string) {
+  const [pathname] = path.split("?");
+  return pathname ?? path;
+}
+
 const POPOVER_ITEM_VARIANTS = {
   hidden: { opacity: 0, y: 12, scale: 0.96 },
   visible: (index: number) => ({
@@ -181,7 +186,7 @@ export function AdminBottomNav({ clubId }: AdminBottomNavProps) {
   );
   const menuItems = enabledFeatures;
   const isMoreOpen = openMenuPathname === pathname;
-  const isFeatureRouteActive = menuItems.some((feature) => pathname === feature.adminPath);
+  const isFeatureRouteActive = menuItems.some((feature) => pathname === stripQuery(feature.adminPath));
 
   useEffect(() => {
     let cancelled = false;
