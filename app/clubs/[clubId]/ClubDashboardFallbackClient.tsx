@@ -131,21 +131,17 @@ function DashboardWidgetCard({
   const accentClass = WIDGET_ACCENT_CLASS[widget.widgetKey] ?? "bg-slate-100 text-slate-600";
   const isEditMode = isAdmin && editMode;
   const isAttendanceWidget = widget.widgetKey === "ATTENDANCE_STATUS";
-  const currentSession = attendanceData?.currentSession;
-  const recentSession = attendanceData?.recentSessions?.[0] ?? null;
-  const statusLabel = currentSession
-    ? currentSession.checkedIn
+  const todayAttendance = attendanceData?.todayAttendance;
+  const recentLog = attendanceData?.recentLogs?.[0] ?? null;
+  const statusLabel = todayAttendance
+    ? todayAttendance.checkedIn
       ? "Checked In"
-      : currentSession.canCheckIn
-        ? "Open"
-        : "Closed"
-    : "Closed";
-  const statusClassName = currentSession
-    ? currentSession.checkedIn
+      : "Pending"
+    : "Unavailable";
+  const statusClassName = todayAttendance
+    ? todayAttendance.checkedIn
       ? "bg-emerald-100 text-emerald-600"
-      : currentSession.canCheckIn
-        ? "bg-blue-100 text-blue-600"
-        : "bg-slate-200 text-slate-500"
+      : "bg-blue-100 text-blue-600"
     : "bg-slate-200 text-slate-500";
   const shouldPulseAttendance = isAttendanceWidget && attendancePulseToken > 0 && !reduceMotion;
   const baseBoxShadow = "0 1px 2px rgba(15, 23, 42, 0.06)";
@@ -251,27 +247,27 @@ function DashboardWidgetCard({
             </>
           ) : attendanceError ? (
             <p className="text-sm text-slate-500">출석 정보를 가져오지 못했습니다.</p>
-          ) : currentSession ? (
+          ) : todayAttendance ? (
             <>
               <motion.p
-                key={`attendance-title-${currentSession.sessionId}`}
+                key={`attendance-title-${todayAttendance.attendanceDateLabel}`}
                 initial={reduceMotion ? false : { opacity: 0, y: 6 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: reduceMotion ? 0 : 0.25, ease: "easeOut" }}
                 className="text-sm font-semibold text-slate-900"
               >
-                {currentSession.title}
+                {todayAttendance.checkedIn ? "오늘 출석 완료" : "오늘 출석 필요"}
               </motion.p>
-              <p className="text-xs text-slate-500">{currentSession.attendanceDateLabel}</p>
+              <p className="text-xs text-slate-500">{todayAttendance.attendanceDateLabel}</p>
               <div className="flex items-center justify-between rounded-lg bg-slate-50 px-3 py-2">
                 <motion.p
-                  key={`attendance-count-${currentSession.checkedInCount}-${currentSession.memberCount}`}
+                  key={`attendance-count-${todayAttendance.checkedInCount}-${todayAttendance.memberCount}`}
                   initial={reduceMotion ? false : { opacity: 0, y: 4 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: reduceMotion ? 0 : 0.2, ease: "easeOut" }}
                   className="text-xs font-medium text-slate-500"
                 >
-                  {currentSession.checkedInCount}/{currentSession.memberCount} checked-in
+                  {todayAttendance.checkedInCount}/{todayAttendance.memberCount} checked-in
                 </motion.p>
                 <AnimatePresence mode="wait" initial={false}>
                   <motion.span
@@ -286,16 +282,16 @@ function DashboardWidgetCard({
                   </motion.span>
                 </AnimatePresence>
               </div>
-              {currentSession.checkedInAtLabel ? (
-                <p className="text-[11px] text-slate-400">체크인 시각: {currentSession.checkedInAtLabel}</p>
+              {todayAttendance.checkedInAtLabel ? (
+                <p className="text-[11px] text-slate-400">체크인 시각: {todayAttendance.checkedInAtLabel}</p>
               ) : null}
             </>
           ) : (
             <>
-              <p className="text-sm text-slate-500">현재 열린 출석 세션이 없습니다.</p>
-              {recentSession ? (
+              <p className="text-sm text-slate-500">오늘 출석 정보를 아직 불러오지 못했습니다.</p>
+              {recentLog ? (
                 <p className="text-xs text-slate-400">
-                  최근: {recentSession.title} · {recentSession.attendanceDateLabel}
+                  최근: {recentLog.attendanceDateLabel} · {recentLog.checkedInCount}/{recentLog.memberCount}명 출석
                 </p>
               ) : null}
             </>
@@ -311,7 +307,7 @@ function DashboardWidgetCard({
           </span>
         ) : (
           <>
-            {isAttendanceWidget && currentSession?.canCheckIn && !currentSession.checkedIn ? (
+            {isAttendanceWidget && todayAttendance?.canCheckIn && !todayAttendance.checkedIn ? (
               <motion.button
                 type="button"
                 onClick={onAttendanceCheckIn}
@@ -655,16 +651,14 @@ export function ClubDashboardFallbackClient({
   }, [hasAttendanceWidget, loadAttendanceData]);
 
   const handleAttendanceCheckIn = useCallback(async () => {
-    const currentSession = attendanceData?.currentSession;
-    if (!currentSession || !currentSession.canCheckIn || isCheckingInAttendance) {
+    const todayAttendance = attendanceData?.todayAttendance;
+    if (!todayAttendance || !todayAttendance.canCheckIn || isCheckingInAttendance) {
       return;
     }
 
     setIsCheckingInAttendance(true);
     clearToast();
-    const result = await checkInClubAttendance(clubId, {
-      sessionId: currentSession.sessionId,
-    });
+    const result = await checkInClubAttendance(clubId);
     setIsCheckingInAttendance(false);
 
     if (!result.ok || !result.data) {
@@ -675,7 +669,7 @@ export function ClubDashboardFallbackClient({
     showToast("출석이 완료되었습니다.", "success");
     setAttendancePulseToken((current) => current + 1);
     await loadAttendanceData();
-  }, [attendanceData?.currentSession, clearToast, clubId, isCheckingInAttendance, loadAttendanceData, showToast]);
+  }, [attendanceData?.todayAttendance, clearToast, clubId, isCheckingInAttendance, loadAttendanceData, showToast]);
 
   if (isLoading && !club && !error) {
     return <ClubDashboardLoadingShell />;

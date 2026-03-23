@@ -27,6 +27,33 @@ const POLL_TABS: Array<{ key: PollTabKey; label: string }> = [
   { key: "CLOSED", label: "투표 종료" },
 ];
 
+function AdminInsightTile({
+  icon,
+  label,
+  value,
+  detail,
+}: {
+  icon: string;
+  label: string;
+  value: string;
+  detail: string;
+}) {
+  return (
+    <div className="rounded-[24px] border border-orange-100 bg-white/90 p-4 shadow-sm">
+      <div className="flex items-center gap-3">
+        <div className="flex size-11 items-center justify-center rounded-2xl bg-orange-50 text-orange-600">
+          <span className="material-symbols-outlined text-[22px]">{icon}</span>
+        </div>
+        <div>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">{label}</p>
+          <p className="mt-1 text-2xl font-black tracking-tight text-slate-900">{value}</p>
+        </div>
+      </div>
+      <p className="mt-3 text-xs leading-5 text-slate-500">{detail}</p>
+    </div>
+  );
+}
+
 function getStatusBadge(poll: ClubPollSummary) {
   if (poll.voteStatus === "WAITING") {
     return {
@@ -246,6 +273,22 @@ export function ClubPollHomeClient({
   const accent = mode === "admin" ? "#ec5b13" : "#135bec";
   const background = mode === "admin" ? "#f8f6f6" : "#f6f6f8";
   const basePath = mode === "admin" ? `/clubs/${clubId}/admin/more/polls` : `/clubs/${clubId}/more/polls`;
+  const totalResponses = useMemo(
+    () => payload.polls.reduce((sum, poll) => sum + poll.totalResponses, 0),
+    [payload.polls],
+  );
+  const priorityPoll = useMemo(() => {
+    const ongoing = [...payload.polls]
+      .filter((poll) => poll.voteStatus === "ONGOING")
+      .sort((left, right) => left.voteEndDate.localeCompare(right.voteEndDate))[0];
+    if (ongoing) {
+      return ongoing;
+    }
+    const waiting = [...payload.polls]
+      .filter((poll) => poll.voteStatus === "WAITING")
+      .sort((left, right) => left.voteStartDate.localeCompare(right.voteStartDate))[0];
+    return waiting ?? payload.polls[0] ?? null;
+  }, [payload.polls]);
 
   const filteredPolls = useMemo(() => {
     const normalizedQuery = deferredQuery.trim().toLowerCase();
@@ -298,6 +341,68 @@ export function ClubPollHomeClient({
         />
 
         <main className="semo-nav-bottom-space flex-1 pb-24">
+          {mode === "admin" ? (
+            <section className="space-y-4 px-4 pt-6">
+              <motion.div className="space-y-4" {...staggeredFadeUpMotion(0, reduceMotion)}>
+                <section className="overflow-hidden rounded-[32px] bg-[linear-gradient(135deg,#fff7ed_0%,#ffffff_58%,#fff1e7_100%)] p-6 shadow-[0_18px_50px_rgba(249,115,22,0.12)] ring-1 ring-orange-100">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="max-w-[70%]">
+                      <p className="text-[11px] font-bold uppercase tracking-[0.26em] text-orange-500">
+                        Poll Control
+                      </p>
+                      <h2 className="mt-3 text-3xl font-black tracking-tight text-slate-900">투표 운영 현황</h2>
+                      <p className="mt-2 text-sm leading-6 text-slate-600">
+                        진행 상태, 응답 수, 마감 시점을 기준으로 현재 의사결정 흐름을 빠르게 파악합니다.
+                      </p>
+                    </div>
+                    <div className="flex size-14 shrink-0 items-center justify-center rounded-3xl bg-orange-500 text-white shadow-lg shadow-orange-500/20">
+                      <span className="material-symbols-outlined text-[30px]">poll</span>
+                    </div>
+                  </div>
+                  <div className="mt-5 rounded-[24px] bg-white/80 p-4">
+                    <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">우선 확인할 투표</p>
+                    <p className="mt-2 text-lg font-bold text-slate-900">
+                      {priorityPoll ? priorityPoll.title : "아직 생성된 투표가 없습니다."}
+                    </p>
+                    <p className="mt-1 text-sm text-slate-500">
+                      {priorityPoll
+                        ? `${priorityPoll.voteWindowLabel} · 응답 ${priorityPoll.totalResponses.toLocaleString("ko-KR")}건`
+                        : "새 투표를 만들면 진행 상태와 마감 시점이 여기 표시됩니다."}
+                    </p>
+                  </div>
+                </section>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <AdminInsightTile
+                    icon="rule"
+                    label="전체 투표"
+                    value={payload.polls.length.toLocaleString("ko-KR")}
+                    detail="현재 저장된 전체 투표 수"
+                  />
+                  <AdminInsightTile
+                    icon="hourglass_top"
+                    label="진행 중"
+                    value={payload.ongoingCount.toLocaleString("ko-KR")}
+                    detail="지금 응답을 받고 있는 투표 수"
+                  />
+                  <AdminInsightTile
+                    icon="schedule"
+                    label="투표 대기"
+                    value={payload.waitingCount.toLocaleString("ko-KR")}
+                    detail="아직 시작 전인 투표 수"
+                  />
+                  <AdminInsightTile
+                    icon="group"
+                    label="총 응답"
+                    value={totalResponses.toLocaleString("ko-KR")}
+                    detail={`종료 투표 ${payload.closedCount.toLocaleString("ko-KR")}건 포함 누적 응답`}
+                  />
+                </div>
+              </motion.div>
+            </section>
+          ) : null}
+
+          {mode === "admin" ? null : (
           <nav className="flex border-b border-gray-200 bg-white">
             {POLL_TABS.map((tab) => {
               const active = activeTab === tab.key;
@@ -322,7 +427,9 @@ export function ClubPollHomeClient({
               );
             })}
           </nav>
+          )}
 
+          {mode === "admin" ? null : (
           <section className="p-4" data-purpose="search-section">
             <div className="relative">
               <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
@@ -337,7 +444,9 @@ export function ClubPollHomeClient({
               />
             </div>
           </section>
+          )}
 
+          {mode === "admin" ? null : (
           <section className="space-y-4 px-4" data-purpose="poll-list">
             {filteredPolls.length === 0 ? (
               <motion.div
@@ -377,9 +486,10 @@ export function ClubPollHomeClient({
               })
             )}
           </section>
+          )}
         </main>
 
-        {payload.canCreate ? (
+        {payload.canCreate && mode !== "admin" ? (
           <button
             type="button"
             aria-label="투표 생성"
@@ -387,12 +497,7 @@ export function ClubPollHomeClient({
             className={`fixed right-6 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-[var(--primary)] text-white transition-transform active:scale-95 ${
               mode === "user" && payload.admin ? "bottom-40" : "bottom-24"
             }`}
-            style={{
-              boxShadow:
-                mode === "admin"
-                  ? "0 4px 14px rgba(236, 91, 19, 0.35)"
-                  : "0 4px 14px rgba(19, 91, 236, 0.35)",
-            }}
+            style={{ boxShadow: "0 4px 14px rgba(19, 91, 236, 0.35)" }}
           >
             <span className="material-symbols-outlined text-[30px]">add</span>
           </button>

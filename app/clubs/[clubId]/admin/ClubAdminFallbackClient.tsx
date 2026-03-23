@@ -4,7 +4,14 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ClubAdminHomeClient } from "./ClubAdminHomeClient";
 import { AdminHomeLoadingShell } from "./AdminRouteLoadingShells";
-import { getMyClub, type MyClubSummary } from "@/app/lib/clubs";
+import {
+  getClubAdminActivities,
+  getClubAdminMembers,
+  getMyClub,
+  type ClubAdminActivityItem,
+  type ClubAdminMembersResponse,
+  type MyClubSummary,
+} from "@/app/lib/clubs";
 
 type ClubAdminFallbackClientProps = {
   clubId: string;
@@ -13,23 +20,32 @@ type ClubAdminFallbackClientProps = {
 export function ClubAdminFallbackClient({ clubId }: ClubAdminFallbackClientProps) {
   const router = useRouter();
   const [club, setClub] = useState<MyClubSummary | null>(null);
+  const [membersPayload, setMembersPayload] = useState<ClubAdminMembersResponse | null>(null);
+  const [activities, setActivities] = useState<ClubAdminActivityItem[]>([]);
 
   useEffect(() => {
     let cancelled = false;
 
     void (async () => {
-      const result = await getMyClub(clubId);
-      if (cancelled || !result.ok || !result.data) {
+      const [clubResult, membersResult, activitiesResult] = await Promise.all([
+        getMyClub(clubId),
+        getClubAdminMembers(clubId),
+        getClubAdminActivities(clubId, { size: 5 }),
+      ]);
+
+      if (cancelled || !clubResult.ok || !clubResult.data || !membersResult.ok || !membersResult.data) {
         router.replace(`/clubs/${clubId}`);
         return;
       }
 
-      if (!result.data.admin) {
+      if (!clubResult.data.admin) {
         router.replace(`/clubs/${clubId}`);
         return;
       }
 
-      setClub(result.data);
+      setClub(clubResult.data);
+      setMembersPayload(membersResult.data);
+      setActivities(activitiesResult.ok && activitiesResult.data ? activitiesResult.data.activities : []);
     })();
 
     return () => {
@@ -38,43 +54,33 @@ export function ClubAdminFallbackClient({ clubId }: ClubAdminFallbackClientProps
   }, [clubId, router]);
 
   const metrics = useMemo(
-    () => [
+    () => {
+      const members = membersPayload?.members ?? [];
+      const pendingCount = members.filter((member) => member.membershipStatus === "PENDING").length;
+      const activeCount = members.filter((member) => member.membershipStatus === "ACTIVE").length;
+
+      return [
       {
         id: "members",
         label: "전체 멤버",
-        value: "1,284",
+        value: members.length.toLocaleString("ko-KR"),
         accent: "primary" as const,
-        detail: "이번 달 +12%",
-        detailIcon: "trending_up",
-        detailTone: "green" as const,
-      },
-      {
-        id: "events",
-        label: "진행 중 일정",
-        value: "8",
-        detail: "오늘 시작 3건",
-        detailIcon: "schedule",
+        detail: `활성 멤버 ${activeCount.toLocaleString("ko-KR")}명`,
+        detailIcon: "groups",
         detailTone: "slate" as const,
       },
       {
         id: "approvals",
         label: "승인 대기",
-        value: "24",
-        accent: "orange" as const,
-        detail: "확인 필요",
-        detailIcon: "priority_high",
-        detailTone: "orange" as const,
+        value: pendingCount.toLocaleString("ko-KR"),
+        accent: pendingCount > 0 ? ("orange" as const) : ("default" as const),
+        detail: pendingCount > 0 ? "확인 필요" : "대기 신청 없음",
+        detailIcon: pendingCount > 0 ? "priority_high" : "check_circle",
+        detailTone: pendingCount > 0 ? ("orange" as const) : ("slate" as const),
       },
-      {
-        id: "revenue",
-        label: "당월 매출",
-        value: "420만원",
-        detail: "회비/행사 기준",
-        detailIcon: "payments",
-        detailTone: "slate" as const,
-      },
-    ],
-    [],
+    ];
+    },
+    [membersPayload],
   );
 
   const actions = useMemo(
@@ -104,42 +110,13 @@ export function ClubAdminFallbackClient({ clubId }: ClubAdminFallbackClientProps
     [clubId],
   );
 
-  const activities = useMemo(
-    () => [
-      {
-        id: "permission",
-        actor: "관리자 마커스",
-        action: "수정",
-        target: "권한: 모더레이터",
-        timeAgo: "2분 전",
-        avatarLabel: "마",
-      },
-      {
-        id: "approval",
-        actor: "시스템",
-        action: "자동 승인",
-        target: "신규 멤버 신청 12건",
-        timeAgo: "1시간 전",
-        avatarLabel: "시",
-      },
-      {
-        id: "request",
-        actor: "데이비드 첸",
-        action: "요청",
-        target: "기능 요청: 다크 모드",
-        timeAgo: "3시간 전",
-        avatarLabel: "데",
-      },
-    ],
-    [],
-  );
-
-  if (!club) {
+  if (!club || !membersPayload) {
     return <AdminHomeLoadingShell />;
   }
 
   return (
     <ClubAdminHomeClient
+      clubId={clubId}
       clubName={club.name}
       metrics={metrics}
       actions={actions}

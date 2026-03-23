@@ -31,15 +31,19 @@ type AdminActionItem = {
 };
 
 type AdminActivityItem = {
-  id: string;
-  actor: string;
-  action: string;
-  target: string;
-  timeAgo: string;
-  avatarLabel: string;
+  activityId: number;
+  actorDisplayName: string;
+  actorAvatarLabel: string;
+  subject: string;
+  detail: string;
+  status: "SUCCESS" | "FAIL" | string;
+  errorMessage: string | null;
+  createdAt: string | null;
+  createdAtLabel: string | null;
 };
 
 type ClubAdminHomeClientProps = {
+  clubId: string;
   clubName: string;
   metrics: AdminSummaryMetric[];
   actions: AdminActionItem[];
@@ -52,7 +56,36 @@ const DETAIL_TONE_CLASS = {
   slate: "text-slate-400",
 } as const;
 
+function formatRelativeTime(value: string | null, fallback: string | null) {
+  if (!value) {
+    return fallback ?? "";
+  }
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    return fallback ?? "";
+  }
+
+  const diffMs = Date.now() - parsed.getTime();
+  const diffMinutes = Math.max(Math.floor(diffMs / 60000), 0);
+  if (diffMinutes < 1) {
+    return "방금 전";
+  }
+  if (diffMinutes < 60) {
+    return `${diffMinutes}분 전`;
+  }
+  const diffHours = Math.floor(diffMinutes / 60);
+  if (diffHours < 24) {
+    return `${diffHours}시간 전`;
+  }
+  const diffDays = Math.floor(diffHours / 24);
+  if (diffDays < 7) {
+    return `${diffDays}일 전`;
+  }
+  return fallback ?? parsed.toLocaleString("ko-KR");
+}
+
 export function ClubAdminHomeClient({
+  clubId,
   clubName,
   metrics,
   actions,
@@ -81,7 +114,7 @@ export function ClubAdminHomeClient({
         />
 
         <main className="semo-nav-bottom-space mx-auto w-full max-w-5xl space-y-6 px-4 pt-4">
-          <section className="grid grid-cols-2 gap-4 md:grid-cols-4">
+          <section className={`grid grid-cols-2 gap-4 ${metrics.length > 2 ? "md:grid-cols-4" : "md:grid-cols-2"}`}>
             {metrics.map((metric, index) => (
               <motion.article
                 key={metric.id}
@@ -159,30 +192,51 @@ export function ClubAdminHomeClient({
                 <span className="material-symbols-outlined text-[var(--primary)]">history</span>
                 <h2 className="text-lg font-bold">최근 활동</h2>
               </div>
-              <button type="button" className="text-xs font-bold text-[var(--primary)] hover:underline">
+              <RouterLink
+                href={`/clubs/${clubId}/admin/logs`}
+                className="text-xs font-bold text-[var(--primary)] hover:underline"
+              >
                 전체 로그 보기
-              </button>
+              </RouterLink>
             </div>
             <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-              {activities.map((activity, index) => (
-                <motion.article
-                  key={activity.id}
-                  className={`flex gap-3 p-4 ${index > 0 ? "border-t border-slate-100" : ""}`}
-                  {...staggeredFadeUpMotion(index + 10, reduceMotion)}
-                >
-                  <div className="flex size-8 items-center justify-center rounded-full bg-[var(--primary)]/12 text-xs font-bold text-[var(--primary)]">
-                    {activity.avatarLabel}
-                  </div>
-                  <div>
-                    <p className="text-sm">
-                      <span className="font-bold">{activity.actor}</span>{" "}
-                      {activity.action}{" "}
-                      <span className="font-medium text-[var(--primary)]">{activity.target}</span>
-                    </p>
-                    <p className="mt-0.5 text-xs text-slate-400">{activity.timeAgo}</p>
-                  </div>
-                </motion.article>
-              ))}
+              {activities.length === 0 ? (
+                <div className="p-6 text-sm text-slate-500">아직 기록된 최근 활동이 없습니다.</div>
+              ) : (
+                activities.map((activity, index) => (
+                  <motion.article
+                    key={activity.activityId}
+                    className={`flex gap-3 p-4 ${index > 0 ? "border-t border-slate-100" : ""}`}
+                    {...staggeredFadeUpMotion(index + 10, reduceMotion)}
+                  >
+                    <div className="flex size-8 items-center justify-center rounded-full bg-[var(--primary)]/12 text-xs font-bold text-[var(--primary)]">
+                      {activity.actorAvatarLabel}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm text-slate-700">
+                        <span className="font-bold text-slate-900">{activity.actorDisplayName}</span>{" "}
+                        {activity.detail}
+                      </p>
+                      <div className="mt-1 flex flex-wrap items-center gap-2 text-[11px]">
+                        <span className="rounded-full bg-slate-100 px-2 py-0.5 font-semibold text-slate-600">
+                          {activity.subject}
+                        </span>
+                        <span className="text-slate-400">
+                          {formatRelativeTime(activity.createdAt, activity.createdAtLabel)}
+                        </span>
+                        {activity.status === "FAIL" ? (
+                          <span className="rounded-full bg-red-50 px-2 py-0.5 font-semibold text-red-600">
+                            실패
+                          </span>
+                        ) : null}
+                      </div>
+                      {activity.status === "FAIL" && activity.errorMessage ? (
+                        <p className="mt-1 text-xs text-red-500">{activity.errorMessage}</p>
+                      ) : null}
+                    </div>
+                  </motion.article>
+                ))
+              )}
             </div>
           </motion.section>
         </main>

@@ -31,10 +31,10 @@ export function ClubAttendanceClient({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast, showToast, clearToast } = useEphemeralToast();
 
-  const currentSession = attendance.currentSession;
+  const todayAttendance = attendance.todayAttendance;
 
   const handleCheckIn = async () => {
-    if (!currentSession) {
+    if (!todayAttendance) {
       return;
     }
     if (!canPersist) {
@@ -44,28 +44,28 @@ export function ClubAttendanceClient({
 
     setIsSubmitting(true);
     clearToast();
-    const result = await checkInClubAttendance(clubId, {
-      sessionId: currentSession.sessionId,
-    });
+    const result = await checkInClubAttendance(clubId);
     setIsSubmitting(false);
 
     if (!result.ok || !result.data) {
       showToast(result.message ?? "출석 체크에 실패했습니다.", "error");
       return;
     }
+    const todayAttendanceResult = result.data;
 
     setAttendance((current) => ({
       ...current,
-      currentSession: result.data,
-      recentSessions: current.recentSessions.map((session) =>
-        session.sessionId === result.data?.sessionId
+      todayAttendance: todayAttendanceResult,
+      recentLogs: current.recentLogs.map((log, index) =>
+        index === 0
           ? {
-              ...session,
+              ...log,
               checkedIn: true,
-              checkedInAtLabel: result.data.checkedInAtLabel,
-              status: result.data.status,
+              checkedInAtLabel: todayAttendanceResult.checkedInAtLabel,
+              checkedInCount: todayAttendanceResult.checkedInCount,
+              memberCount: todayAttendanceResult.memberCount,
             }
-          : session,
+          : log,
       ),
     }));
     showToast("출석 체크가 완료되었습니다.", "success");
@@ -90,19 +90,19 @@ export function ClubAttendanceClient({
               오늘
             </p>
             <h2 className="mt-3 text-xl font-bold">
-              {currentSession?.title ?? "열린 출석 세션이 없습니다."}
+              {todayAttendance?.checkedIn ? "오늘 출석을 완료했습니다." : "오늘 출석을 진행하세요."}
             </h2>
             <p className="mt-2 text-sm text-slate-500">
-              {currentSession?.attendanceDateLabel ?? "관리자가 출석 세션을 열면 이곳에서 체크할 수 있습니다."}
+              {todayAttendance?.attendanceDateLabel ?? "오늘 출석 정보가 아직 준비되지 않았습니다."}
             </p>
-            {currentSession ? (
+            {todayAttendance ? (
               <div className="mt-5 grid grid-cols-2 gap-3">
                 <div className="rounded-xl bg-slate-50 p-4">
                   <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
                     상태
                   </p>
                   <p className="mt-2 text-sm font-bold text-slate-900">
-                    {currentSession.checkedIn ? "출석 완료" : currentSession.status}
+                    {todayAttendance.checkedIn ? "출석 완료" : "미출석"}
                   </p>
                 </div>
                 <div className="rounded-xl bg-slate-50 p-4">
@@ -110,7 +110,7 @@ export function ClubAttendanceClient({
                     진행률
                   </p>
                   <p className="mt-2 text-sm font-bold text-slate-900">
-                    {currentSession.checkedInCount}/{currentSession.memberCount}
+                    {todayAttendance.checkedInCount}/{todayAttendance.memberCount}
                   </p>
                 </div>
               </div>
@@ -118,13 +118,13 @@ export function ClubAttendanceClient({
             <button
               type="button"
               onClick={() => void handleCheckIn()}
-              disabled={!currentSession?.canCheckIn || isSubmitting}
+              disabled={!todayAttendance?.canCheckIn || isSubmitting}
               className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--primary)] py-4 text-sm font-bold text-white shadow-sm transition hover:bg-[#135bec]/90 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500"
             >
               <span className="material-symbols-outlined">
                 {isSubmitting ? "progress_activity" : "how_to_reg"}
               </span>
-              {currentSession?.checkedIn
+              {todayAttendance?.checkedIn
                 ? "이미 출석 완료"
                 : isSubmitting
                   ? "출석 처리 중..."
@@ -139,40 +139,40 @@ export function ClubAttendanceClient({
             <div className="mb-4 flex items-center justify-between">
               <h3 className="text-base font-bold">최근 세션</h3>
               <span className="text-xs font-medium text-slate-400">
-                {attendance.recentSessions.length}건
+                {attendance.recentLogs.length}건
               </span>
             </div>
             <div className="space-y-3">
-              {attendance.recentSessions.length === 0 ? (
+              {attendance.recentLogs.length === 0 ? (
                 <div className="rounded-xl bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">
                   최근 출석 기록이 없습니다.
                 </div>
               ) : (
-                attendance.recentSessions.map((session, index) => (
+                attendance.recentLogs.map((log, index) => (
                   <motion.article
-                    key={session.sessionId}
+                    key={`${log.attendanceDateLabel}-${index}`}
                     className="rounded-xl border border-slate-100 bg-slate-50 px-4 py-4"
                     {...staggeredFadeUpMotion(index + 2, reduceMotion)}
                   >
                     <div className="flex items-center justify-between gap-3">
                       <div>
-                        <p className="text-sm font-bold text-slate-900">{session.title}</p>
+                        <p className="text-sm font-bold text-slate-900">{log.attendanceDateLabel}</p>
                         <p className="mt-1 text-xs text-slate-500">
-                          {session.attendanceDateLabel}
+                          {log.checkedInCount}/{log.memberCount}명 출석
                         </p>
                       </div>
                       <span
                         className={`rounded-full px-3 py-1 text-[11px] font-bold ${
-                          session.checkedIn
+                          log.checkedIn
                             ? "bg-blue-50 text-[#135bec]"
                             : "bg-slate-200 text-slate-500"
                         }`}
                       >
-                        {session.checkedIn ? "출석" : session.status}
+                        {log.checkedIn ? "출석" : "미출석"}
                       </span>
                     </div>
                     <p className="mt-3 text-xs text-slate-400">
-                      {session.checkedInAtLabel ?? "체크인 기록이 없습니다."}
+                      {log.checkedInAtLabel ?? "체크인 기록이 없습니다."}
                     </p>
                   </motion.article>
                 ))

@@ -484,6 +484,27 @@ export type ClubAdminMembersResponse = {
   members: ClubAdminMember[];
 };
 
+export type ClubAdminActivityItem = {
+  activityId: number;
+  actorDisplayName: string;
+  actorAvatarLabel: string;
+  subject: string;
+  detail: string;
+  status: "SUCCESS" | "FAIL" | string;
+  errorMessage: string | null;
+  createdAt: string | null;
+  createdAtLabel: string | null;
+};
+
+export type ClubAdminActivityFeedResponse = {
+  clubId: number;
+  clubName: string;
+  activities: ClubAdminActivityItem[];
+  nextCursorCreatedAt: string | null;
+  nextCursorActivityId: number | null;
+  hasNext: boolean;
+};
+
 export type UpdateClubAdminMemberRoleRequest = {
   roleCode: "OWNER" | "ADMIN" | "MEMBER" | string;
 };
@@ -687,13 +708,8 @@ export type UpdateClubMemberPositionsRequest = {
   clubPositionIds: number[];
 };
 
-export type AttendanceSession = {
-  sessionId: number;
-  title: string;
+export type AttendanceToday = {
   attendanceDateLabel: string;
-  status: string;
-  openAtLabel: string | null;
-  closeAtLabel: string | null;
   checkedIn: boolean;
   checkedInAtLabel: string | null;
   canCheckIn: boolean;
@@ -701,11 +717,10 @@ export type AttendanceSession = {
   memberCount: number;
 };
 
-export type AttendanceHistoryItem = {
-  sessionId: number;
-  title: string;
+export type AttendanceDailyLog = {
   attendanceDateLabel: string;
-  status: string;
+  checkedInCount: number;
+  memberCount: number;
   checkedIn: boolean;
   checkedInAtLabel: string | null;
 };
@@ -714,8 +729,8 @@ export type ClubAttendanceResponse = {
   clubId: number;
   clubName: string;
   featureEnabled: boolean;
-  currentSession: AttendanceSession | null;
-  recentSessions: AttendanceHistoryItem[];
+  todayAttendance: AttendanceToday | null;
+  recentLogs: AttendanceDailyLog[];
 };
 
 export type AdminAttendanceMember = {
@@ -730,18 +745,9 @@ export type ClubAdminAttendanceResponse = {
   clubId: number;
   clubName: string;
   featureEnabled: boolean;
-  currentSession: AttendanceSession | null;
+  todayAttendance: AttendanceToday | null;
   members: AdminAttendanceMember[];
-  recentSessions: AttendanceHistoryItem[];
-};
-
-export type CreateAttendanceSessionRequest = {
-  title?: string | null;
-  attendanceDate?: string | null;
-};
-
-export type AttendanceCheckInRequest = {
-  sessionId: number;
+  recentLogs: AttendanceDailyLog[];
 };
 
 export function createClub(request: CreateClubRequest) {
@@ -1025,6 +1031,30 @@ export function getClubAdminMembers(clubId: string | number) {
   return getJson<ClubAdminMembersResponse>(`/api/semo/v1/clubs/${clubId}/admin/members`);
 }
 
+export function getClubAdminActivities(
+  clubId: string | number,
+  options: {
+    size?: number;
+    cursorCreatedAt?: string | null;
+    cursorActivityId?: number | null;
+  } = {},
+) {
+  const params = new URLSearchParams();
+  if (options.size != null) {
+    params.set("size", String(options.size));
+  }
+  if (options.cursorCreatedAt) {
+    params.set("cursorCreatedAt", options.cursorCreatedAt);
+  }
+  if (options.cursorActivityId != null) {
+    params.set("cursorActivityId", String(options.cursorActivityId));
+  }
+  const queryString = params.toString();
+  return getJson<ClubAdminActivityFeedResponse>(
+    `/api/semo/v1/clubs/${clubId}/admin/activity${queryString ? `?${queryString}` : ""}`,
+  );
+}
+
 export function updateClubAdminMemberRole(
   clubId: string | number,
   clubMemberId: string | number,
@@ -1065,14 +1095,8 @@ export function approveClubAdminMember(clubId: string | number, clubMemberId: st
   );
 }
 
-export function checkInClubAttendance(
-  clubId: string | number,
-  request: AttendanceCheckInRequest,
-) {
-  return postJson<AttendanceSession>(
-    `/api/semo/v1/clubs/${clubId}/more/attendance/check-in`,
-    request,
-  );
+export function checkInClubAttendance(clubId: string | number) {
+  return postJson<AttendanceToday>(`/api/semo/v1/clubs/${clubId}/more/attendance/check-in`, undefined);
 }
 
 export function getClubAdminAttendance(clubId: string | number) {
@@ -1187,22 +1211,5 @@ export function updateClubAdminPollSettings(
   return putJson<ClubAdminPollSettingsResponse>(
     `/api/semo/v1/clubs/${clubId}/admin/more/polls`,
     request,
-  );
-}
-
-export function createClubAttendanceSession(
-  clubId: string | number,
-  request: CreateAttendanceSessionRequest = {},
-) {
-  return postJson<AttendanceSession>(
-    `/api/semo/v1/clubs/${clubId}/admin/more/attendance/sessions`,
-    request,
-  );
-}
-
-export function closeClubAttendanceSession(clubId: string | number, sessionId: number) {
-  return postJson<AttendanceSession>(
-    `/api/semo/v1/clubs/${clubId}/admin/more/attendance/sessions/${sessionId}/close`,
-    {},
   );
 }

@@ -25,6 +25,33 @@ type ClubNoticeHomeClientProps = {
   onReload: () => void;
 };
 
+function AdminInsightTile({
+  icon,
+  label,
+  value,
+  detail,
+}: {
+  icon: string;
+  label: string;
+  value: string;
+  detail: string;
+}) {
+  return (
+    <div className="rounded-[24px] border border-orange-100 bg-white/90 p-4 shadow-sm">
+      <div className="flex items-center gap-3">
+        <div className="flex size-11 items-center justify-center rounded-2xl bg-orange-50 text-orange-600">
+          <span className="material-symbols-outlined text-[22px]">{icon}</span>
+        </div>
+        <div>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">{label}</p>
+          <p className="mt-1 text-2xl font-black tracking-tight text-slate-900">{value}</p>
+        </div>
+      </div>
+      <p className="mt-3 text-xs leading-5 text-slate-500">{detail}</p>
+    </div>
+  );
+}
+
 export function ClubNoticeHomeClient({
   clubId,
   payload,
@@ -45,6 +72,7 @@ export function ClubNoticeHomeClient({
   const accent = mode === "admin" ? "#f97316" : "#135bec";
   const background = mode === "admin" ? "#f6f6f8" : "#f6f6f8";
   const basePath = mode === "admin" ? `/clubs/${clubId}/admin/more/notices` : `/clubs/${clubId}/more/notices`;
+  const latestNotice = payload.notices[0] ?? null;
 
   const handleDelete = async () => {
     if (!deleteTarget) {
@@ -78,84 +106,143 @@ export function ClubNoticeHomeClient({
         />
 
         <main className="semo-nav-bottom-space flex-1">
-          {mode === "user" ? (
-            <>
-              <section className="px-4 pt-6">
-                <motion.div className="mb-4" {...staggeredFadeUpMotion(4, reduceMotion)}>
-                  <div className="flex items-center justify-between gap-3">
-                  <div className="flex min-w-0 items-center gap-3">
-                      <h3 className="shrink-0 rounded-lg border border-[var(--primary)]/15 bg-[var(--primary)]/[0.08] px-3 py-1.5 text-sm font-bold tracking-[-0.02em] text-[var(--primary)] shadow-sm">
-                        내 게시글
-                      </h3>
-                      <div className="inline-flex rounded-full border border-slate-200 bg-white p-1 shadow-sm">
-                        <button
-                          type="button"
-                          aria-pressed={!pinnedOnly}
-                          onClick={() => onPinnedOnlyChange(false)}
-                          className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${
-                            pinnedOnly ? "text-slate-500 hover:text-slate-700" : "bg-[var(--primary)] text-white"
-                          }`}
-                        >
-                          전체
-                        </button>
-                        <button
-                          type="button"
-                          aria-pressed={pinnedOnly}
-                          onClick={() => onPinnedOnlyChange(true)}
-                          className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${
-                            pinnedOnly ? "bg-[var(--primary)] text-white" : "text-slate-500 hover:text-slate-700"
-                          }`}
-                        >
-                          핀 고정
-                        </button>
-                      </div>
+          <section className="px-4 pt-6">
+            {mode === "admin" ? (
+              <motion.div className="mb-6 space-y-4" {...staggeredFadeUpMotion(4, reduceMotion)}>
+                <section className="overflow-hidden rounded-[32px] bg-[linear-gradient(135deg,#fff7ed_0%,#ffffff_55%,#fff1e7_100%)] p-6 shadow-[0_18px_50px_rgba(249,115,22,0.12)] ring-1 ring-orange-100">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="max-w-[70%]">
+                      <p className="text-[11px] font-bold uppercase tracking-[0.26em] text-orange-500">
+                        Notice Control
+                      </p>
+                      <h2 className="mt-3 text-3xl font-black tracking-tight text-slate-900">공지 운영 현황</h2>
+                      <p className="mt-2 text-sm leading-6 text-slate-600">
+                        작성된 공지 수, 고정 비율, 예약 발행 상태를 기준으로 현재 공지 운영 밀도를 확인합니다.
+                      </p>
                     </div>
-                    <div className="shrink-0 text-sm font-bold text-[var(--primary)]">
-                      {payload.manageableNoticeCount}건
+                    <div className="flex size-14 shrink-0 items-center justify-center rounded-3xl bg-orange-500 text-white shadow-lg shadow-orange-500/20">
+                      <span className="material-symbols-outlined text-[30px]">campaign</span>
                     </div>
                   </div>
-                </motion.div>
+                  <div className="mt-5 rounded-[24px] bg-white/80 p-4">
+                    <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">가장 최근 공지</p>
+                    <p className="mt-2 text-lg font-bold text-slate-900">
+                      {latestNotice ? latestNotice.title : "아직 작성된 공지가 없습니다."}
+                    </p>
+                    <p className="mt-1 text-sm text-slate-500">
+                      {latestNotice
+                        ? `${latestNotice.authorDisplayName} · ${latestNotice.timeAgo}`
+                        : "첫 공지를 작성하면 여기서 가장 최근 발행 상태를 바로 확인할 수 있습니다."}
+                    </p>
+                  </div>
+                </section>
 
-                <div className="space-y-5 pb-4">
-                  {payload.notices.length === 0 ? (
-                    <motion.div
-                      className="rounded-2xl border border-dashed border-slate-300 bg-white px-5 py-10 text-center text-sm text-slate-500"
-                      {...staggeredFadeUpMotion(5, reduceMotion)}
-                    >
-                      {pinnedOnly ? "핀 고정 게시글이 없습니다." : "관리 가능한 게시글이 없습니다."}
-                    </motion.div>
-                  ) : (
-                    payload.notices.map((notice, index) => (
-                      <motion.div key={notice.noticeId} {...staggeredFadeUpMotion(index + 5, reduceMotion)}>
-                        <NoticeManageCard
-                          notice={notice}
-                          canEdit={notice.canEdit}
-                          canDelete={notice.canDelete}
-                          open={activeMenuNoticeId === notice.noticeId}
-                          onOpenChange={(open) => setActiveMenuNoticeId(open ? notice.noticeId : null)}
-                          onOpen={() => {
-                            setActiveMenuNoticeId(null);
-                            setDetailNoticeId(String(notice.noticeId));
-                          }}
-                          onEdit={() => {
-                            setActiveMenuNoticeId(null);
-                            setEditingNoticeId(String(notice.noticeId));
-                          }}
-                          onDelete={() => {
-                            setActiveMenuNoticeId(null);
-                            setDeleteTarget(notice);
-                          }}
-                        />
-                      </motion.div>
-                    ))
-                  )}
+                <div className="grid grid-cols-2 gap-3">
+                  <AdminInsightTile
+                    icon="article"
+                    label="전체 공지"
+                    value={payload.totalNoticeCount.toLocaleString("ko-KR")}
+                    detail={`운영자가 관리 가능한 공지 ${payload.manageableNoticeCount.toLocaleString("ko-KR")}건`}
+                  />
+                  <AdminInsightTile
+                    icon="push_pin"
+                    label="고정 공지"
+                    value={payload.pinnedNoticeCount.toLocaleString("ko-KR")}
+                    detail="중요 공지로 상단에 유지되는 항목 수"
+                  />
+                  <AdminInsightTile
+                    icon="schedule"
+                    label="예약 게시"
+                    value={payload.scheduledNoticeCount.toLocaleString("ko-KR")}
+                    detail="일정 또는 예약 발행 시점이 설정된 공지"
+                  />
+                  <AdminInsightTile
+                    icon="today"
+                    label="오늘 발행"
+                    value={payload.publishedTodayCount.toLocaleString("ko-KR")}
+                    detail="오늘 새로 게시된 공지 수"
+                  />
                 </div>
-              </section>
-            </>
-          ) : null}
+              </motion.div>
+            ) : null}
+
+            {mode === "admin" ? null : (
+            <motion.div className="mb-4" {...staggeredFadeUpMotion(4, reduceMotion)}>
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex min-w-0 items-center gap-3">
+                  <h3 className="shrink-0 rounded-lg border border-[var(--primary)]/15 bg-[var(--primary)]/[0.08] px-3 py-1.5 text-sm font-bold tracking-[-0.02em] text-[var(--primary)] shadow-sm">
+                    내 게시글
+                  </h3>
+                  <div className="inline-flex rounded-full border border-slate-200 bg-white p-1 shadow-sm">
+                    <button
+                      type="button"
+                      aria-pressed={!pinnedOnly}
+                      onClick={() => onPinnedOnlyChange(false)}
+                      className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${
+                        pinnedOnly ? "text-slate-500 hover:text-slate-700" : "bg-[var(--primary)] text-white"
+                      }`}
+                    >
+                      전체
+                    </button>
+                    <button
+                      type="button"
+                      aria-pressed={pinnedOnly}
+                      onClick={() => onPinnedOnlyChange(true)}
+                      className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${
+                        pinnedOnly ? "bg-[var(--primary)] text-white" : "text-slate-500 hover:text-slate-700"
+                      }`}
+                    >
+                      핀 고정
+                    </button>
+                  </div>
+                </div>
+                <div className="shrink-0 text-sm font-bold text-[var(--primary)]">
+                  {payload.manageableNoticeCount.toLocaleString("ko-KR")}건
+                </div>
+              </div>
+            </motion.div>
+            )}
+
+            {mode === "admin" ? null : (
+            <div className="space-y-5 pb-4">
+              {payload.notices.length === 0 ? (
+                <motion.div
+                  className="rounded-2xl border border-dashed border-slate-300 bg-white px-5 py-10 text-center text-sm text-slate-500"
+                  {...staggeredFadeUpMotion(5, reduceMotion)}
+                >
+                  {pinnedOnly ? "핀 고정 게시글이 없습니다." : "관리 가능한 게시글이 없습니다."}
+                </motion.div>
+              ) : (
+                payload.notices.map((notice, index) => (
+                  <motion.div key={notice.noticeId} {...staggeredFadeUpMotion(index + 5, reduceMotion)}>
+                    <NoticeManageCard
+                      notice={notice}
+                      canEdit={notice.canEdit}
+                      canDelete={notice.canDelete}
+                      open={activeMenuNoticeId === notice.noticeId}
+                      onOpenChange={(open) => setActiveMenuNoticeId(open ? notice.noticeId : null)}
+                      onOpen={() => {
+                        setActiveMenuNoticeId(null);
+                        setDetailNoticeId(String(notice.noticeId));
+                      }}
+                      onEdit={() => {
+                        setActiveMenuNoticeId(null);
+                        setEditingNoticeId(String(notice.noticeId));
+                      }}
+                      onDelete={() => {
+                        setActiveMenuNoticeId(null);
+                        setDeleteTarget(notice);
+                      }}
+                    />
+                  </motion.div>
+                ))
+              )}
+            </div>
+            )}
+          </section>
         </main>
 
-        {payload.canCreate ? (
+        {payload.canCreate && mode !== "admin" ? (
           <button
             type="button"
             aria-label="게시글 작성"
@@ -163,12 +250,7 @@ export function ClubNoticeHomeClient({
             className={`fixed right-6 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-[var(--primary)] text-white transition-transform active:scale-95 ${
               mode === "user" && payload.admin ? "bottom-40" : "bottom-24"
             }`}
-            style={{
-              boxShadow:
-                mode === "admin"
-                  ? "0 6px 16px rgba(249, 115, 22, 0.32)"
-                  : "0 6px 16px rgba(19, 91, 236, 0.32)",
-            }}
+            style={{ boxShadow: "0 6px 16px rgba(19, 91, 236, 0.32)" }}
           >
             <span className="material-symbols-outlined text-[28px]">edit_square</span>
           </button>

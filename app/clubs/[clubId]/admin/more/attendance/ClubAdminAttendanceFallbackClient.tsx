@@ -57,5 +57,5 @@ export function ClubAdminAttendanceFallbackClient({
     return <AdminAttendanceLoadingShell />;
   }
 
-  return <ClubAdminAttendanceClient clubId={clubId} initialData={attendance} />;
+  return <ClubAdminAttendanceClient initialData={attendance} />;
 }

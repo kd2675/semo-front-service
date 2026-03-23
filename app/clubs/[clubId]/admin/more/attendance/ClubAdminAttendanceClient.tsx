@@ -5,13 +5,8 @@ import { EphemeralToast } from "@/app/components/EphemeralToast";
 import { useEphemeralToast } from "@/app/components/useEphemeralToast";
 import { Public_Sans } from "next/font/google";
 import { motion, useReducedMotion } from "motion/react";
-import { useState } from "react";
 import type { CSSProperties } from "react";
-import {
-  closeClubAttendanceSession,
-  createClubAttendanceSession,
-  type ClubAdminAttendanceResponse,
-} from "@/app/lib/clubs";
+import { type ClubAdminAttendanceResponse } from "@/app/lib/clubs";
 import { staggeredFadeUpMotion } from "@/app/lib/motion";
 
 const publicSans = Public_Sans({
@@ -20,20 +15,8 @@ const publicSans = Public_Sans({
 });
 
 type ClubAdminAttendanceClientProps = {
-  clubId: string;
   initialData: ClubAdminAttendanceResponse;
-  canPersist?: boolean;
 };
-
-function getSessionStatusLabel(status: string | null | undefined) {
-  if (status === "OPEN") {
-    return "진행 중";
-  }
-  if (status === "CLOSED") {
-    return "종료";
-  }
-  return "대기";
-}
 
 function getRoleLabel(roleCode: string) {
   if (roleCode === "OWNER") {
@@ -49,89 +32,13 @@ function getRoleLabel(roleCode: string) {
 }
 
 export function ClubAdminAttendanceClient({
-  clubId,
   initialData,
-  canPersist = true,
 }: ClubAdminAttendanceClientProps) {
   const prefersReducedMotion = useReducedMotion();
   const reduceMotion = Boolean(prefersReducedMotion);
-  const [attendance, setAttendance] = useState(initialData);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const { toast, showToast, clearToast } = useEphemeralToast();
-
-  const currentSession = attendance.currentSession;
-
-  const handleCreateSession = async () => {
-    if (!canPersist) {
-      showToast("모의 모드에서는 세션이 저장되지 않습니다.", "info");
-      return;
-    }
-
-    setIsProcessing(true);
-    clearToast();
-    const result = await createClubAttendanceSession(clubId, {});
-    setIsProcessing(false);
-
-    if (!result.ok || !result.data) {
-      showToast(result.message ?? "출석 세션 생성에 실패했습니다.", "error");
-      return;
-    }
-
-    const session = result.data;
-
-    setAttendance((current) => ({
-      ...current,
-      currentSession: session,
-      recentSessions: [
-        {
-          sessionId: session.sessionId,
-          title: session.title,
-          attendanceDateLabel: session.attendanceDateLabel,
-          status: session.status,
-          checkedIn: false,
-          checkedInAtLabel: null,
-        },
-        ...current.recentSessions.filter((item) => item.sessionId !== session.sessionId),
-      ],
-    }));
-    showToast("오늘 출석 세션이 열렸습니다.", "success");
-  };
-
-  const handleCloseSession = async () => {
-    if (!currentSession) {
-      return;
-    }
-    if (!canPersist) {
-      showToast("모의 모드에서는 세션 상태가 저장되지 않습니다.", "info");
-      return;
-    }
-
-    setIsProcessing(true);
-    clearToast();
-    const result = await closeClubAttendanceSession(clubId, currentSession.sessionId);
-    setIsProcessing(false);
-
-    if (!result.ok || !result.data) {
-      showToast(result.message ?? "출석 세션 종료에 실패했습니다.", "error");
-      return;
-    }
-
-    const session = result.data;
-
-    setAttendance((current) => ({
-      ...current,
-      currentSession: session,
-      recentSessions: current.recentSessions.map((historySession) =>
-        historySession.sessionId === session.sessionId
-          ? {
-              ...historySession,
-              status: session.status,
-            }
-          : historySession,
-      ),
-    }));
-    showToast("출석 세션이 종료되었습니다.", "success");
-  };
+  const attendance = initialData;
+  const { toast } = useEphemeralToast();
+  const todayAttendance = attendance.todayAttendance;
 
   return (
     <div
@@ -160,56 +67,41 @@ export function ClubAdminAttendanceClient({
             <div className="flex items-start justify-between gap-3">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
-                  현재 세션
+                  오늘 로그
                 </p>
                 <h2 className="mt-3 text-xl font-bold">
-                  {currentSession?.title ?? "아직 열린 세션이 없습니다."}
+                  {todayAttendance?.attendanceDateLabel ?? "오늘 출석 로그가 없습니다."}
                 </h2>
                 <p className="mt-2 text-sm text-slate-500">
-                  {currentSession?.attendanceDateLabel ?? "오늘 출석 세션을 생성해보세요."}
+                  오늘 멤버 출석 현황과 최근 일자 로그를 확인할 수 있습니다.
                 </p>
               </div>
               <div className="rounded-full bg-orange-50 px-3 py-1 text-xs font-bold text-[var(--primary)]">
-                {getSessionStatusLabel(currentSession?.status)}
+                {todayAttendance?.checkedInCount ?? 0}/{todayAttendance?.memberCount ?? attendance.members.length} 출석
               </div>
             </div>
-            {currentSession ? (
+            {todayAttendance ? (
               <div className="mt-5 grid grid-cols-2 gap-3">
                 <div className="rounded-xl bg-slate-50 p-4">
                   <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
                     출석 완료
                   </p>
                   <p className="mt-2 text-sm font-bold">
-                    {currentSession.checkedInCount}/{currentSession.memberCount}
+                    {todayAttendance.checkedInCount}/{todayAttendance.memberCount}
                   </p>
                 </div>
                 <div className="rounded-xl bg-slate-50 p-4">
                   <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
-                    시작 시각
+                    내 상태
                   </p>
                   <p className="mt-2 text-sm font-bold">
-                    {currentSession.openAtLabel ?? "-"}
+                    {todayAttendance.checkedIn ? "출석 완료" : "미출석"}
                   </p>
                 </div>
               </div>
             ) : null}
-            <div className="mt-5 flex gap-3">
-              <button
-                type="button"
-                onClick={() => void handleCreateSession()}
-                disabled={Boolean(currentSession && currentSession.status === "OPEN") || isProcessing}
-                className="flex-1 rounded-xl bg-[var(--primary)] py-3 text-sm font-bold text-white transition hover:bg-[var(--primary)]/90 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500"
-              >
-                {isProcessing ? "처리 중..." : "오늘 세션 열기"}
-              </button>
-              <button
-                type="button"
-                onClick={() => void handleCloseSession()}
-                disabled={!currentSession || currentSession.status !== "OPEN" || isProcessing}
-                className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:border-slate-100 disabled:text-slate-300"
-              >
-                종료
-              </button>
+            <div className="mt-5 rounded-xl bg-orange-50 px-4 py-3 text-sm text-slate-600">
+              출석은 멤버가 하루에 한 번 직접 체크합니다. 관리자는 당일 출석 현황과 최근 일자 로그를 확인합니다.
             </div>
           </motion.section>
 
@@ -247,6 +139,39 @@ export function ClubAdminAttendanceClient({
                     <p className="mt-2 text-[11px] text-slate-400">
                       {member.checkedInAtLabel ?? "체크인 기록 없음"}
                     </p>
+                  </div>
+                </motion.article>
+              ))}
+            </div>
+          </motion.section>
+
+          <motion.section
+            className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
+            {...staggeredFadeUpMotion(2, reduceMotion)}
+          >
+            <div className="mb-4 flex items-center justify-between">
+              <h3 className="text-base font-bold">최근 일자 로그</h3>
+              <span className="text-xs font-medium text-slate-400">
+                {attendance.recentLogs.length}일
+              </span>
+            </div>
+            <div className="space-y-3">
+              {attendance.recentLogs.map((log, index) => (
+                <motion.article
+                  key={`${log.attendanceDateLabel}-${index}`}
+                  className="rounded-xl bg-slate-50 px-4 py-4"
+                  {...staggeredFadeUpMotion(index + 3, reduceMotion)}
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-bold text-slate-900">{log.attendanceDateLabel}</p>
+                      <p className="mt-1 text-xs text-slate-500">
+                        {log.checkedInCount}/{log.memberCount}명 출석
+                      </p>
+                    </div>
+                    <span className="rounded-full bg-orange-50 px-3 py-1 text-[11px] font-bold text-[var(--primary)]">
+                      {Math.round((log.checkedInCount / Math.max(log.memberCount, 1)) * 100)}%
+                    </span>
                   </div>
                 </motion.article>
               ))}
