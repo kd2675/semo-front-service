@@ -505,7 +505,7 @@ export function ScheduleClient({
   return (
     <div className="bg-[var(--background-light)] font-display text-slate-900">
       <div className="relative mx-auto flex min-h-full w-full max-w-md flex-col bg-[var(--background-light)]">
-        <ClubPageHeader title="일정" subtitle={payload.clubName} />
+        <ClubPageHeader title="캘린더" subtitle={payload.clubName} />
 
         <main className="semo-nav-bottom-space relative flex-1">
           <motion.div className="bg-white p-4 shadow-sm" {...staggeredFadeUpMotion(0, reduceMotion)}>

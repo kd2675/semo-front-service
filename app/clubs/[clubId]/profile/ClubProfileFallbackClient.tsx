@@ -240,7 +240,7 @@ export function ClubProfileFallbackClient({ clubId }: ClubProfileFallbackClientP
                   {clubProfile?.membershipStatus ?? "ACTIVE"}
                 </span>
                 <span className="text-sm text-slate-500">
-                  {clubProfile?.joinedLabel ?? "Joined recently"}
+                  {clubProfile?.joinedLabel ?? "-"}
                 </span>
               </div>
             </div>
