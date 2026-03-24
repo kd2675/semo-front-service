@@ -524,18 +524,14 @@ export type UpdateClubAdminMemberStatusRequest = {
 };
 
 export type ClubTimelineEntry = {
-  noticeId: number;
-  title: string;
-  summary: string;
-  authorDisplayName: string;
-  publishedAt: string;
-  publishedAtLabel: string;
-  timeAgo: string;
-  pinned: boolean;
-  scheduleAtLabel: string | null;
-  locationLabel: string | null;
-  linkedTargetType: "SCHEDULE_EVENT" | "POLL" | null;
-  linkedTargetId: number | null;
+  activityId: number;
+  actorDisplayName: string;
+  actorAvatarLabel: string;
+  subject: string;
+  detail: string;
+  status: "SUCCESS" | "FAIL" | string;
+  createdAt: string | null;
+  createdAtLabel: string | null;
 };
 
 export type ClubPollSummary = {
@@ -578,8 +574,8 @@ export type ClubTimelineResponse = {
   clubName: string;
   admin: boolean;
   entries: ClubTimelineEntry[];
-  nextCursorPublishedAt: string | null;
-  nextCursorNoticeId: number | null;
+  nextCursorCreatedAt: string | null;
+  nextCursorActivityId: number | null;
   hasNext: boolean;
 };
 
@@ -1117,17 +1113,17 @@ export function getClubAdminAttendance(clubId: string | number) {
 export function getClubTimeline(
   clubId: string | number,
   options: {
-    cursorPublishedAt?: string | null;
-    cursorNoticeId?: number | null;
+    cursorCreatedAt?: string | null;
+    cursorActivityId?: number | null;
     size?: number;
   } = {},
 ) {
   const params = new URLSearchParams();
-  if (options.cursorPublishedAt) {
-    params.set("cursorPublishedAt", options.cursorPublishedAt);
+  if (options.cursorCreatedAt) {
+    params.set("cursorCreatedAt", options.cursorCreatedAt);
   }
-  if (options.cursorNoticeId) {
-    params.set("cursorNoticeId", String(options.cursorNoticeId));
+  if (options.cursorActivityId != null) {
+    params.set("cursorActivityId", String(options.cursorActivityId));
   }
   if (options.size) {
     params.set("size", String(options.size));

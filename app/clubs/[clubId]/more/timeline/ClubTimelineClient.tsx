@@ -1,14 +1,12 @@
 "use client";
 
-import { ClubNoticeDetailModal } from "@/app/components/ClubDetailModals";
 import { ClubModeSwitchFab } from "@/app/components/ClubModeSwitchFab";
 import {
   getClubTimeline,
   type ClubTimelineEntry,
   type ClubTimelineResponse,
 } from "@/app/lib/clubs";
-import { getLinkedContentBadge } from "@/app/lib/content-badge";
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { motion, useReducedMotion } from "motion/react";
 import {
   useEffect,
   useEffectEvent,
@@ -26,13 +24,63 @@ type ClubTimelineClientProps = {
 };
 
 type CursorState = {
-  publishedAt: string | null;
-  noticeId: number | null;
+  createdAt: string | null;
+  activityId: number | null;
 };
 
 type TimelineListItem =
   | { type: "separator"; key: string; label: string }
   | { type: "entry"; key: string; entry: ClubTimelineEntry };
+
+const SUBJECT_META: Record<
+  string,
+  {
+    icon: string;
+    avatarClassName: string;
+    badgeClassName: string;
+  }
+> = {
+  공지관리: {
+    icon: "campaign",
+    avatarClassName: "bg-blue-50 text-blue-600 ring-blue-100",
+    badgeClassName: "bg-blue-50 text-blue-700",
+  },
+  일정관리: {
+    icon: "calendar_month",
+    avatarClassName: "bg-amber-50 text-amber-600 ring-amber-100",
+    badgeClassName: "bg-amber-50 text-amber-700",
+  },
+  투표관리: {
+    icon: "how_to_vote",
+    avatarClassName: "bg-sky-50 text-sky-600 ring-sky-100",
+    badgeClassName: "bg-sky-50 text-sky-700",
+  },
+  출석관리: {
+    icon: "fact_check",
+    avatarClassName: "bg-emerald-50 text-emerald-600 ring-emerald-100",
+    badgeClassName: "bg-emerald-50 text-emerald-700",
+  },
+  멤버관리: {
+    icon: "groups",
+    avatarClassName: "bg-orange-50 text-orange-600 ring-orange-100",
+    badgeClassName: "bg-orange-50 text-orange-700",
+  },
+  기능관리: {
+    icon: "widgets",
+    avatarClassName: "bg-indigo-50 text-indigo-600 ring-indigo-100",
+    badgeClassName: "bg-indigo-50 text-indigo-700",
+  },
+  직책관리: {
+    icon: "manage_accounts",
+    avatarClassName: "bg-cyan-50 text-cyan-600 ring-cyan-100",
+    badgeClassName: "bg-cyan-50 text-cyan-700",
+  },
+  모임관리: {
+    icon: "apartment",
+    avatarClassName: "bg-slate-100 text-slate-700 ring-slate-200",
+    badgeClassName: "bg-slate-100 text-slate-700",
+  },
+};
 
 function startOfDay(date: Date) {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate());
@@ -58,6 +106,42 @@ function getGroupLabel(isoValue: string) {
   return `${target.getFullYear()}년 ${target.getMonth() + 1}월`;
 }
 
+function formatRelativeTime(value: string | null, fallback: string | null) {
+  if (!value) {
+    return fallback ?? "";
+  }
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    return fallback ?? "";
+  }
+
+  const diffMs = Date.now() - parsed.getTime();
+  const diffMinutes = Math.max(Math.floor(diffMs / 60000), 0);
+  if (diffMinutes < 1) {
+    return "방금 전";
+  }
+  if (diffMinutes < 60) {
+    return `${diffMinutes}분 전`;
+  }
+  const diffHours = Math.floor(diffMinutes / 60);
+  if (diffHours < 24) {
+    return `${diffHours}시간 전`;
+  }
+  const diffDays = Math.floor(diffHours / 24);
+  if (diffDays < 7) {
+    return `${diffDays}일 전`;
+  }
+  return fallback ?? parsed.toLocaleString("ko-KR");
+}
+
+function getSubjectMeta(subject: string) {
+  return SUBJECT_META[subject] ?? {
+    icon: "timeline",
+    avatarClassName: "bg-slate-100 text-slate-700 ring-slate-200",
+    badgeClassName: "bg-slate-100 text-slate-700",
+  };
+}
+
 export function ClubTimelineClient({
   clubId,
   initialData,
@@ -68,13 +152,12 @@ export function ClubTimelineClient({
   const [timeline, setTimeline] = useState(initialData);
   const [loading, setLoading] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
-  const [detailNoticeId, setDetailNoticeId] = useState<string | null>(null);
   const [sentinelNode, setSentinelNode] = useState<HTMLDivElement | null>(null);
   const loadingRef = useRef(false);
 
   const cursor: CursorState = {
-    publishedAt: timeline.nextCursorPublishedAt,
-    noticeId: timeline.nextCursorNoticeId,
+    createdAt: timeline.nextCursorCreatedAt,
+    activityId: timeline.nextCursorActivityId,
   };
 
   const loadTimeline = useEffectEvent(async (mode: "reset" | "append") => {
@@ -87,8 +170,8 @@ export function ClubTimelineClient({
     setFeedback(null);
 
     const result = await getClubTimeline(clubId, {
-      cursorPublishedAt: mode === "append" ? cursor.publishedAt : null,
-      cursorNoticeId: mode === "append" ? cursor.noticeId : null,
+      cursorCreatedAt: mode === "append" ? cursor.createdAt : null,
+      cursorActivityId: mode === "append" ? cursor.activityId : null,
       size: 12,
     });
 
@@ -135,12 +218,12 @@ export function ClubTimelineClient({
     let previousLabel: string | null = null;
 
     timeline.entries.forEach((entry) => {
-      const label = getGroupLabel(entry.publishedAt);
+      const label = getGroupLabel(entry.createdAt ?? new Date().toISOString());
       if (label !== previousLabel) {
-        items.push({ type: "separator", key: `separator-${label}-${entry.noticeId}`, label });
+        items.push({ type: "separator", key: `separator-${label}-${entry.activityId}`, label });
         previousLabel = label;
       }
-      items.push({ type: "entry", key: `entry-${entry.noticeId}`, entry });
+      items.push({ type: "entry", key: `entry-${entry.activityId}`, entry });
     });
 
     return items;
@@ -152,12 +235,26 @@ export function ClubTimelineClient({
         <ClubPageHeader
           title="타임라인"
           icon="timeline"
+          subtitle={initialData.clubName}
           className="border-[#135bec]/10 bg-white/85 backdrop-blur-md"
         />
 
         <main className="semo-nav-bottom-space flex-1 px-4 pt-4">
-          <div className="relative">
-            <div className="absolute left-[19px] top-4 bottom-4 w-0.5 bg-[#135bec]/10" />
+          <motion.section
+            className="rounded-[28px] border border-[#135bec]/10 bg-white px-5 py-4 shadow-sm"
+            {...staggeredFadeUpMotion(0, reduceMotion)}
+          >
+            <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[#135bec]/60">
+              My Activity Timeline
+            </p>
+            <h2 className="mt-2 text-xl font-bold text-slate-900">내가 남긴 활동만 시간순으로 확인</h2>
+            <p className="mt-2 text-sm leading-relaxed text-slate-500">
+              내가 작성하거나 실행한 공지, 일정, 투표, 출석, 운영 액션만 한 흐름으로 보여줍니다.
+            </p>
+          </motion.section>
+
+          <div className="relative mt-5">
+            <div className="absolute left-[21px] top-4 bottom-4 w-0.5 bg-[#135bec]/10" />
             <div className="space-y-6">
               {renderedItems.map((item, index) => {
                 if (item.type === "separator") {
@@ -171,59 +268,64 @@ export function ClubTimelineClient({
                   );
                 }
 
-                const badge = getLinkedContentBadge(item.entry.linkedTargetType);
+                const subjectMeta = getSubjectMeta(item.entry.subject);
+                const relativeTime = formatRelativeTime(
+                  item.entry.createdAt,
+                  item.entry.createdAtLabel,
+                );
                 return (
                   <motion.div
                     key={item.key}
                     className="relative grid grid-cols-[40px_1fr] gap-x-4 items-start"
                     {...staggeredFadeUpMotion(index, reduceMotion)}
                   >
-                    <div className="z-10 flex h-10 w-10 items-center justify-center rounded-full border-2 border-white bg-blue-100 text-[#135bec] ring-2 ring-[#135bec]/20">
+                    <div
+                      className={`z-10 flex h-10 w-10 items-center justify-center rounded-full border-2 border-white ring-2 ${subjectMeta.avatarClassName}`}
+                    >
                       <span className="material-symbols-outlined text-[20px]">
-                        campaign
+                        {subjectMeta.icon}
                       </span>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setDetailNoticeId(String(item.entry.noticeId));
-                      }}
-                      className="rounded-2xl border border-[#135bec]/5 bg-white p-4 text-left shadow-sm transition-transform hover:scale-[1.01]"
+                    <article
+                      className={`rounded-[24px] border bg-white p-4 shadow-sm ${
+                        item.entry.status === "FAIL"
+                          ? "border-rose-100"
+                          : "border-[#135bec]/5"
+                      }`}
                     >
-                      <div className="flex items-center gap-2">
-                        <span className={`rounded-md px-2 py-1 text-[11px] font-bold ${badge.className}`}>
-                          {badge.label}
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span
+                          className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${subjectMeta.badgeClassName}`}
+                        >
+                          {item.entry.subject}
                         </span>
-                        {item.entry.pinned ? (
-                          <span className="text-[11px] font-bold text-slate-400">핀 고정</span>
+                        <span className="text-sm font-semibold text-slate-900">
+                          {item.entry.actorDisplayName || "알 수 없는 사용자"}
+                        </span>
+                        <span className="text-xs text-slate-400">{relativeTime}</span>
+                        {item.entry.status === "FAIL" ? (
+                          <span className="rounded-full bg-rose-50 px-2.5 py-1 text-[11px] font-bold text-rose-600">
+                            실패
+                          </span>
                         ) : null}
                       </div>
-                      <p className="mt-3 text-base font-semibold leading-snug text-slate-900">
-                        {item.entry.title}
+                      <p className="mt-3 text-base font-semibold leading-relaxed text-slate-900">
+                        {item.entry.detail}
                       </p>
-                      <p className="mt-2 text-sm leading-relaxed text-slate-600">
-                        {item.entry.summary}
-                      </p>
-                      <div className="mt-3 flex flex-wrap items-center gap-2">
-                        <span className="text-xs font-medium text-slate-500">
-                          {item.entry.authorDisplayName}
+                      <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-slate-500">
+                        <span className="rounded-full bg-slate-100 px-2.5 py-1 font-semibold text-slate-600">
+                          {item.entry.actorAvatarLabel}
                         </span>
-                        <span className="h-1 w-1 rounded-full bg-slate-300" />
-                        <span className="text-xs text-slate-500">{item.entry.timeAgo}</span>
-                        {item.entry.scheduleAtLabel ? (
-                          <>
-                            <span className="h-1 w-1 rounded-full bg-slate-300" />
-                            <span className="text-xs text-slate-500">{item.entry.scheduleAtLabel}</span>
-                          </>
+                        {item.entry.createdAtLabel ? (
+                          <span>{item.entry.createdAtLabel}</span>
                         ) : null}
                       </div>
-                      {item.entry.locationLabel ? (
-                        <div className="mt-3 inline-flex items-center gap-1 rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">
-                          <span className="material-symbols-outlined text-[14px]">location_on</span>
-                          <span>{item.entry.locationLabel}</span>
+                      {item.entry.status === "FAIL" ? (
+                        <div className="mt-3 rounded-2xl bg-rose-50 px-4 py-3 text-xs leading-relaxed text-rose-600">
+                          처리되지 않은 작업으로 기록되었습니다.
                         </div>
                       ) : null}
-                    </button>
+                    </article>
                   </motion.div>
                 );
               })}
@@ -235,7 +337,7 @@ export function ClubTimelineClient({
               className="rounded-2xl border border-dashed border-slate-300 bg-white px-5 py-10 text-center text-sm text-slate-500"
               {...staggeredFadeUpMotion(2, reduceMotion)}
             >
-              등록된 타임라인 기록이 없습니다.
+              아직 내가 남긴 타임라인 기록이 없습니다.
             </motion.div>
           ) : null}
 
@@ -248,19 +350,14 @@ export function ClubTimelineClient({
             </motion.div>
           ) : null}
 
+          {loading && timeline.entries.length > 0 ? (
+            <div className="py-2 text-center text-sm text-slate-400">활동을 더 불러오는 중...</div>
+          ) : null}
+
           <div ref={setSentinelNode} className="h-16" />
         </main>
 
         {isAdmin ? <ClubModeSwitchFab clubId={clubId} mode="user" /> : null}
-        <AnimatePresence>
-          {detailNoticeId ? (
-            <ClubNoticeDetailModal
-              clubId={clubId}
-              noticeId={detailNoticeId}
-              onRequestClose={() => setDetailNoticeId(null)}
-            />
-          ) : null}
-        </AnimatePresence>
       </div>
     </div>
   );

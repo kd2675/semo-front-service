@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import { RouterLink } from "@/app/components/RouterLink";
 import {
@@ -49,23 +49,34 @@ export function ClubAdminLogsClient({ clubId, clubName, initialData }: ClubAdmin
   const prefersReducedMotion = useReducedMotion();
   const reduceMotion = Boolean(prefersReducedMotion);
   const [items, setItems] = useState<ClubAdminActivityItem[]>(initialData.activities);
-  const [nextCursorCreatedAt, setNextCursorCreatedAt] = useState<string | null>(initialData.nextCursorCreatedAt);
-  const [nextCursorActivityId, setNextCursorActivityId] = useState<number | null>(initialData.nextCursorActivityId);
+  const [nextCursorCreatedAt, setNextCursorCreatedAt] = useState<string | null>(
+    initialData.nextCursorCreatedAt,
+  );
+  const [nextCursorActivityId, setNextCursorActivityId] = useState<number | null>(
+    initialData.nextCursorActivityId,
+  );
   const [hasNext, setHasNext] = useState(initialData.hasNext);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [sentinelNode, setSentinelNode] = useState<HTMLDivElement | null>(null);
+  const loadingRef = useRef(false);
 
-  const handleLoadMore = async () => {
-    if (isLoadingMore || !hasNext) {
+  const handleLoadMore = useEffectEvent(async () => {
+    if (loadingRef.current || !hasNext) {
       return;
     }
+
+    loadingRef.current = true;
     setIsLoadingMore(true);
     setLoadError(null);
+
     const result = await getClubAdminActivities(clubId, {
       size: 20,
       cursorCreatedAt: nextCursorCreatedAt,
       cursorActivityId: nextCursorActivityId,
     });
+
+    loadingRef.current = false;
     setIsLoadingMore(false);
 
     if (!result.ok || !result.data) {
@@ -78,7 +89,28 @@ export function ClubAdminLogsClient({ clubId, clubName, initialData }: ClubAdmin
     setNextCursorCreatedAt(data.nextCursorCreatedAt);
     setNextCursorActivityId(data.nextCursorActivityId);
     setHasNext(data.hasNext);
-  };
+  });
+
+  useEffect(() => {
+    if (!sentinelNode || !hasNext || isLoadingMore) {
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (!entries[0]?.isIntersecting) {
+          return;
+        }
+        void handleLoadMore();
+      },
+      { rootMargin: "260px 0px" },
+    );
+
+    observer.observe(sentinelNode);
+    return () => {
+      observer.disconnect();
+    };
+  }, [hasNext, isLoadingMore, sentinelNode]);
 
   return (
     <div className="min-h-screen bg-[#f8f6f6] text-slate-900">
@@ -102,7 +134,7 @@ export function ClubAdminLogsClient({ clubId, clubName, initialData }: ClubAdmin
                 <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Activity Feed</p>
                 <h2 className="mt-2 text-2xl font-bold">최근 관리자 활동 전체 보기</h2>
                 <p className="mt-2 text-sm text-slate-500">
-                  최신 활동 20개씩 커서 기준으로 이어서 불러옵니다.
+                  화면 하단까지 내려가면 최신 활동 20개씩 자동으로 이어서 불러옵니다.
                 </p>
               </div>
               <RouterLink
@@ -172,22 +204,17 @@ export function ClubAdminLogsClient({ clubId, clubName, initialData }: ClubAdmin
           ) : null}
 
           {hasNext ? (
-            <motion.div {...staggeredFadeUpMotion(items.length + 2, reduceMotion)}>
-              <button
-                type="button"
-                onClick={handleLoadMore}
-                disabled={isLoadingMore}
-                className="flex w-full items-center justify-center gap-2 rounded-[24px] bg-[#ec5b13] px-5 py-4 text-sm font-bold text-white shadow-lg shadow-[#ec5b13]/20 transition disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                <span className="material-symbols-outlined text-[18px]">
-                  {isLoadingMore ? "progress_activity" : "expand_more"}
-                </span>
-                {isLoadingMore ? "불러오는 중..." : "활동 20개 더 보기"}
-              </button>
+            <motion.div
+              className="rounded-[24px] border border-dashed border-slate-200 bg-white/70 px-5 py-4 text-center text-sm text-slate-400"
+              {...staggeredFadeUpMotion(items.length + 2, reduceMotion)}
+            >
+              {isLoadingMore ? "활동을 더 불러오는 중..." : "스크롤을 내리면 다음 활동을 자동으로 불러옵니다."}
             </motion.div>
           ) : items.length > 0 ? (
             <div className="pb-4 text-center text-sm text-slate-400">마지막 활동까지 모두 불러왔습니다.</div>
           ) : null}
+
+          <div ref={setSentinelNode} className="h-16" />
         </main>
       </div>
     </div>
