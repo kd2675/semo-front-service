@@ -96,23 +96,13 @@ export function ClubAttendanceClient({
               {todayAttendance?.attendanceDateLabel ?? "오늘 출석 정보가 아직 준비되지 않았습니다."}
             </p>
             {todayAttendance ? (
-              <div className="mt-5 grid grid-cols-2 gap-3">
-                <div className="rounded-xl bg-slate-50 p-4">
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
-                    상태
-                  </p>
-                  <p className="mt-2 text-sm font-bold text-slate-900">
-                    {todayAttendance.checkedIn ? "출석 완료" : "미출석"}
-                  </p>
-                </div>
-                <div className="rounded-xl bg-slate-50 p-4">
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
-                    진행률
-                  </p>
-                  <p className="mt-2 text-sm font-bold text-slate-900">
-                    {todayAttendance.checkedInCount}/{todayAttendance.memberCount}
-                  </p>
-                </div>
+              <div className="mt-5 rounded-xl bg-slate-50 p-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
+                  상태
+                </p>
+                <p className="mt-2 text-sm font-bold text-slate-900">
+                  {todayAttendance.checkedIn ? "출석 완료" : "미출석"}
+                </p>
               </div>
             ) : null}
             <button
@@ -137,7 +127,7 @@ export function ClubAttendanceClient({
             {...staggeredFadeUpMotion(1, reduceMotion)}
           >
             <div className="mb-4 flex items-center justify-between">
-              <h3 className="text-base font-bold">최근 세션</h3>
+              <h3 className="text-base font-bold">최근 출석</h3>
               <span className="text-xs font-medium text-slate-400">
                 {attendance.recentLogs.length}건
               </span>
@@ -157,9 +147,6 @@ export function ClubAttendanceClient({
                     <div className="flex items-center justify-between gap-3">
                       <div>
                         <p className="text-sm font-bold text-slate-900">{log.attendanceDateLabel}</p>
-                        <p className="mt-1 text-xs text-slate-500">
-                          {log.checkedInCount}/{log.memberCount}명 출석
-                        </p>
                       </div>
                       <span
                         className={`rounded-full px-3 py-1 text-[11px] font-bold ${
