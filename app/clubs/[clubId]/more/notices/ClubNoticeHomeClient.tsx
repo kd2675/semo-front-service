@@ -148,10 +148,10 @@ export function ClubNoticeHomeClient({
                     detail="중요 공지로 상단에 유지되는 항목 수"
                   />
                   <AdminInsightTile
-                    icon="schedule"
-                    label="예약 게시"
+                    icon="calendar_month"
+                    label="캘린더 공유"
                     value={payload.scheduledNoticeCount.toLocaleString("ko-KR")}
-                    detail="일정 또는 예약 발행 시점이 설정된 공지"
+                    detail="캘린더에도 함께 노출되는 공지 수"
                   />
                   <AdminInsightTile
                     icon="today"
