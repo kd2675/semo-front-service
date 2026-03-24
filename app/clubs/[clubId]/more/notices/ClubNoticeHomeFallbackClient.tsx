@@ -19,14 +19,13 @@ export function ClubNoticeHomeFallbackClient({
   const [payload, setPayload] = useState<ClubNoticeHomeResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [reloadKey, setReloadKey] = useState(0);
-  const [pinnedOnly, setPinnedOnly] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
 
     void (async () => {
       setLoading(true);
-      const result = await getClubNoticeHome(clubId, { pinnedOnly });
+      const result = await getClubNoticeHome(clubId);
       if (cancelled) {
         return;
       }
@@ -43,7 +42,7 @@ export function ClubNoticeHomeFallbackClient({
     return () => {
       cancelled = true;
     };
-  }, [clubId, mode, pinnedOnly, reloadKey, router]);
+  }, [clubId, mode, reloadKey, router]);
 
   const handleReload = () => {
     startTransition(() => {
@@ -60,8 +59,6 @@ export function ClubNoticeHomeFallbackClient({
       clubId={clubId}
       payload={payload}
       mode={mode}
-      pinnedOnly={pinnedOnly}
-      onPinnedOnlyChange={setPinnedOnly}
       onReload={handleReload}
     />
   );

@@ -10,7 +10,9 @@ import {
   ClubScheduleEventDetailModal,
 } from "@/app/components/ClubDetailModals";
 import { RouteModal } from "@/app/components/RouteModal";
+import { getShareTargetBadges } from "@/app/lib/content-badge";
 import { staggeredFadeUpMotion } from "@/app/lib/motion";
+import { getVoteLifecycleLabel } from "@/app/lib/vote-status";
 import type {
   ClubCalendarFeedItem,
   ClubNoticeListItem,
@@ -230,6 +232,17 @@ function getNoticeStatusLabel(notice: ClubNoticeListItem) {
   return "NOTICE";
 }
 
+function renderCalendarBadges(badges: Array<{ label: string; className: string }>) {
+  return badges.map((badge) => (
+    <span
+      key={badge.label}
+      className={`rounded px-2 py-0.5 text-[11px] font-bold uppercase ${badge.className}`}
+    >
+      {badge.label}
+    </span>
+  ));
+}
+
 function getEventDotClassName(eventCount: number, maxEventCount: number, isActive: boolean) {
   if (eventCount <= 0 || maxEventCount <= 0) {
     return "";
@@ -249,6 +262,16 @@ function getEventDotClassName(eventCount: number, maxEventCount: number, isActiv
     return isActive ? "bg-white" : "bg-white ring-1 ring-slate-300";
   }
   return "";
+}
+
+function getWeekendTextClassName(weekdayIndex: number) {
+  if (weekdayIndex === 0) {
+    return "text-rose-500";
+  }
+  if (weekdayIndex === 6) {
+    return "text-blue-500";
+  }
+  return "text-slate-400";
 }
 
 function EventCard({
@@ -271,6 +294,10 @@ function EventCard({
   onDelete: () => void;
 }) {
   const visual = getEventVisual(event);
+  const shareBadges = getShareTargetBadges({
+    postedToBoard: event.postedToBoard,
+    postedToCalendar: event.postedToCalendar,
+  });
 
   return (
     <ScheduleManageCard
@@ -283,16 +310,27 @@ function EventCard({
       onEdit={onEdit}
       onDelete={onDelete}
     >
-      <div className="flex items-center gap-4 rounded-xl border border-slate-100 bg-white p-3 pr-7 shadow-sm transition-all hover:border-[var(--primary)]/50">
-        <div
-          className={`flex size-12 shrink-0 items-center justify-center rounded-lg ${visual.iconSurfaceClassName} ${visual.iconClassName}`}
-        >
-          <span className="material-symbols-outlined">{visual.icon}</span>
-        </div>
-        <div className="flex flex-1 flex-col justify-center">
-          <p className="mb-1 text-base font-bold leading-none text-slate-900">{event.title}</p>
-          <p className="text-sm font-normal text-slate-500">{getEventSecondaryText(event)}</p>
-        </div>
+        <div className="flex items-center gap-4 rounded-xl border border-slate-100 bg-white p-3 pr-7 shadow-sm transition-all hover:border-[var(--primary)]/50">
+          <div
+            className={`flex size-12 shrink-0 items-center justify-center rounded-lg ${visual.iconSurfaceClassName} ${visual.iconClassName}`}
+          >
+            <span className="material-symbols-outlined">{visual.icon}</span>
+          </div>
+          <div className="flex flex-1 flex-col justify-center">
+            <div className="mb-2 flex flex-wrap items-center gap-2">
+              <span className="rounded bg-amber-50 px-2 py-0.5 text-[11px] font-bold uppercase text-amber-600">
+                일정
+              </span>
+              {event.pinned ? (
+                <span className="rounded bg-red-50 px-2 py-0.5 text-[11px] font-bold uppercase text-red-600">
+                  고정
+                </span>
+              ) : null}
+              {renderCalendarBadges(shareBadges)}
+            </div>
+            <p className="mb-1 text-base font-bold leading-none text-slate-900">{event.title}</p>
+            <p className="text-sm font-normal text-slate-500">{getEventSecondaryText(event)}</p>
+          </div>
         <div className="shrink-0 text-right">
           <p className="text-sm font-bold text-slate-900">{event.timeLabel ?? "종일"}</p>
           <p className="text-[10px] font-medium uppercase tracking-wider text-slate-400">
@@ -315,6 +353,11 @@ function NoticeCard({
   onOpenChange: (open: boolean) => void;
   onOpen: () => void;
 }) {
+  const shareBadges = getShareTargetBadges({
+    postedToBoard: notice.postedToBoard,
+    postedToCalendar: notice.postedToCalendar,
+  });
+
   return (
     <ScheduleManageCard
       label={notice.title}
@@ -331,6 +374,17 @@ function NoticeCard({
           <span className="material-symbols-outlined">campaign</span>
         </div>
         <div className="flex flex-1 flex-col justify-center">
+          <div className="mb-2 flex flex-wrap items-center gap-2">
+            <span className="rounded bg-blue-50 px-2 py-0.5 text-[11px] font-bold uppercase text-blue-600">
+              공지
+            </span>
+            {notice.pinned ? (
+              <span className="rounded bg-red-50 px-2 py-0.5 text-[11px] font-bold uppercase text-red-600">
+                고정
+              </span>
+            ) : null}
+            {renderCalendarBadges(shareBadges)}
+          </div>
           <p className="mb-1 text-base font-bold leading-none text-slate-900">{notice.title}</p>
           <p className="line-clamp-2 text-sm font-normal text-slate-500">{getNoticeSecondaryText(notice)}</p>
         </div>
@@ -364,6 +418,11 @@ function VoteCard({
   onEdit: () => void;
   onDelete: () => void;
 }) {
+  const shareBadges = getShareTargetBadges({
+    postedToBoard: vote.postedToBoard,
+    postedToCalendar: vote.postedToCalendar,
+  });
+
   return (
     <ScheduleManageCard
       label={vote.title}
@@ -380,6 +439,17 @@ function VoteCard({
           <span className="material-symbols-outlined">poll</span>
         </div>
         <div className="flex flex-1 flex-col justify-center">
+          <div className="mb-2 flex flex-wrap items-center gap-2">
+            <span className="rounded bg-violet-50 px-2 py-0.5 text-[11px] font-bold uppercase text-violet-600">
+              투표
+            </span>
+            {vote.pinned ? (
+              <span className="rounded bg-red-50 px-2 py-0.5 text-[11px] font-bold uppercase text-red-600">
+                고정
+              </span>
+            ) : null}
+            {renderCalendarBadges(shareBadges)}
+          </div>
           <p className="mb-1 text-base font-bold leading-none text-slate-900">{vote.title}</p>
           <p className="text-sm font-normal text-slate-500">
             {vote.votePeriodLabel}
@@ -390,13 +460,7 @@ function VoteCard({
         <div className="shrink-0 text-right">
           <p className="text-sm font-bold text-slate-900">{vote.totalResponses}명</p>
           <p className="text-[10px] font-medium uppercase tracking-wider text-slate-400">
-            {vote.voteStatus === "CLOSED"
-              ? "CLOSED"
-              : vote.voteStatus === "WAITING"
-                ? "WAITING"
-                : vote.mySelectedOptionId
-                  ? "VOTED"
-                  : "PENDING"}
+            {getVoteLifecycleLabel(vote.voteStatus)}
           </p>
         </div>
       </div>
@@ -416,6 +480,7 @@ export function ScheduleClient({
   const prefersReducedMotion = useReducedMotion();
   const reduceMotion = Boolean(prefersReducedMotion);
   const month = useMemo(() => buildCalendarMonth(activeYear, activeMonth, payload.items), [activeMonth, activeYear, payload.items]);
+  const today = new Date();
   const [selectedDay, setSelectedDay] = useState(month.defaultSelectedDay);
   const [detailNoticeId, setDetailNoticeId] = useState<string | null>(null);
   const [detailEventId, setDetailEventId] = useState<string | null>(null);
@@ -531,7 +596,10 @@ export function ScheduleClient({
 
             <div className="mb-2 grid grid-cols-7 text-center">
               {WEEKDAY_LABELS.map((label, index) => (
-                <p key={`${month.id}-weekday-${index}`} className="py-2 text-xs font-bold text-slate-400">
+                <p
+                  key={`${month.id}-weekday-${index}`}
+                  className={`py-2 text-xs font-bold ${getWeekendTextClassName(index)}`}
+                >
                   {label}
                 </p>
               ))}
@@ -543,9 +611,20 @@ export function ScheduleClient({
               {Array.from({ length: month.daysInMonth }, (_, index) => {
                 const day = index + 1;
                 const isActive = day === selectedDay;
+                const weekdayIndex = new Date(month.year, month.month - 1, day).getDay();
+                const isToday =
+                  month.year === today.getFullYear()
+                  && month.month === today.getMonth() + 1
+                  && day === today.getDate();
                 const eventCount = month.scheduleItemCountByDay[day] ?? 0;
                 const hasEvents = eventCount > 0;
                 const eventDotClassName = getEventDotClassName(eventCount, maxEventCount, isActive);
+                const weekendTextClassName = weekdayIndex === 0
+                  ? "text-rose-500"
+                  : weekdayIndex === 6
+                    ? "text-blue-500"
+                    : "text-slate-700";
+                const dayTextClassName = isToday ? "text-emerald-600" : weekendTextClassName;
 
                 return (
                   <button
@@ -556,7 +635,7 @@ export function ScheduleClient({
                   >
                     {isActive ? (
                       <div className="relative flex size-8 items-center justify-center rounded-full bg-[var(--primary)] font-bold text-white shadow-lg shadow-[var(--primary)]/30">
-                        {day}
+                        <span className={isToday ? "text-emerald-200" : ""}>{day}</span>
                         {hasEvents ? (
                           <div
                             className={`absolute -bottom-0.5 left-1/2 size-1.5 -translate-x-1/2 rounded-full ${eventDotClassName}`}
@@ -564,8 +643,10 @@ export function ScheduleClient({
                         ) : null}
                       </div>
                     ) : (
-                      <div className="relative flex size-8 items-center justify-center">
-                        <span>{day}</span>
+                      <div className="relative flex size-8 items-center justify-center rounded-full">
+                        <span className={`font-medium ${dayTextClassName}`}>
+                          {day}
+                        </span>
                         {hasEvents ? (
                           <div
                             className={`absolute bottom-0.5 left-1/2 size-1.5 -translate-x-1/2 rounded-full ${eventDotClassName}`}

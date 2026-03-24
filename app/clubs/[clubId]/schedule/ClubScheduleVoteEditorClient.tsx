@@ -44,6 +44,7 @@ export function ClubScheduleVoteEditorClient({
   const [options, setOptions] = useState(["", ""]);
   const [postToBoard, setPostToBoard] = useState(false);
   const [postToCalendar, setPostToCalendar] = useState(false);
+  const [pinned, setPinned] = useState(false);
   const [canEdit, setCanEdit] = useState(!isEdit);
   const [loading, setLoading] = useState(isEdit);
   const [saving, setSaving] = useState(false);
@@ -74,6 +75,7 @@ export function ClubScheduleVoteEditorClient({
     setOptions(payload.options.map((option) => option.label));
     setPostToBoard(payload.postedToBoard);
     setPostToCalendar(payload.postedToCalendar);
+    setPinned(payload.pinned);
     setCanEdit(payload.canEdit);
   });
 
@@ -121,6 +123,7 @@ export function ClubScheduleVoteEditorClient({
       optionLabels: options.map((option) => option.trim()).filter(Boolean),
       postToBoard,
       postToCalendar,
+      pinned,
     };
 
     const result = isEdit && voteId
@@ -301,8 +304,8 @@ export function ClubScheduleVoteEditorClient({
               <div className="space-y-3">
                 <div className="flex items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm">
                   <div>
-                    <h2 className="text-sm font-semibold text-gray-700">4단계. 공지에도 공유</h2>
-                    <p className="text-xs text-gray-400">투표를 공지에도 함께 노출합니다.</p>
+                    <h2 className="text-sm font-semibold text-gray-700">4단계. 게시판에도 공유</h2>
+                    <p className="text-xs text-gray-400">투표를 게시판에도 함께 노출합니다.</p>
                   </div>
                   <label className="relative inline-flex cursor-pointer items-center">
                     <input
@@ -326,6 +329,22 @@ export function ClubScheduleVoteEditorClient({
                       className="peer sr-only"
                       type="checkbox"
                       onChange={(event) => setPostToCalendar(event.target.checked)}
+                    />
+                    <div className="h-6 w-11 rounded-full bg-gray-200 transition peer-checked:bg-[var(--primary)] after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:after:translate-x-full peer-checked:after:border-white" />
+                  </label>
+                </div>
+
+                <div className="flex items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm">
+                  <div>
+                    <h2 className="text-sm font-semibold text-gray-700">6단계. 핀 고정</h2>
+                    <p className="text-xs text-gray-400">게시판 중요 고정 게시물 영역에 우선 노출합니다.</p>
+                  </div>
+                  <label className="relative inline-flex cursor-pointer items-center">
+                    <input
+                      checked={pinned}
+                      className="peer sr-only"
+                      type="checkbox"
+                      onChange={(event) => setPinned(event.target.checked)}
                     />
                     <div className="h-6 w-11 rounded-full bg-gray-200 transition peer-checked:bg-[var(--primary)] after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:after:translate-x-full peer-checked:after:border-white" />
                   </label>

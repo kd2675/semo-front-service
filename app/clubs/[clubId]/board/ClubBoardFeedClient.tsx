@@ -22,6 +22,8 @@ import {
   type ClubScheduleVoteSummary,
 } from "@/app/lib/clubs";
 import { staggeredFadeUpMotion } from "@/app/lib/motion";
+import { getShareTargetBadges } from "@/app/lib/content-badge";
+import { getVoteLifecycleLabel } from "@/app/lib/vote-status";
 import { ClubNoticeEditorClient } from "./ClubNoticeEditorClient";
 import { NoticeManageCard } from "./NoticeManageCard";
 import { BoardScheduleManageCard } from "./BoardScheduleManageCard";
@@ -31,6 +33,7 @@ import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import Image from "next/image";
 import { ClubScheduleEditorClient } from "../schedule/ClubScheduleEditorClient";
 import { ClubScheduleVoteEditorClient } from "../schedule/ClubScheduleVoteEditorClient";
+import { PinnedBoardCarousel } from "./PinnedBoardCarousel";
 
 type CursorState = {
   boardItemId: number | null;
@@ -40,14 +43,12 @@ type ClubBoardFeedClientProps = {
   clubId: string;
 };
 
-function getSharedVoteStatusLabel(vote: ClubScheduleVoteSummary) {
-  if (vote.voteStatus === "CLOSED") {
-    return "종료";
-  }
-  if (vote.voteStatus === "WAITING") {
-    return "예정";
-  }
-  return vote.mySelectedOptionId ? "참여 완료" : "진행 중";
+function isPinnedBoardItem(item: ClubBoardFeedItem) {
+  return Boolean(
+    (item.contentType === "NOTICE" && item.notice?.pinned)
+      || (item.contentType === "SCHEDULE_EVENT" && item.event?.pinned)
+      || (item.contentType === "SCHEDULE_VOTE" && item.vote?.pinned),
+  );
 }
 
 function BoardAuthorMeta({
@@ -58,7 +59,7 @@ function BoardAuthorMeta({
   avatarUrl: string | null;
 }) {
   return (
-    <div className="mb-3 flex min-w-0 items-center gap-3">
+    <div className="flex min-w-0 items-center gap-3">
       {avatarUrl ? (
         <div className="relative h-8 w-8 overflow-hidden rounded-full bg-slate-100">
           <Image src={avatarUrl} alt={name} fill sizes="32px" className="object-cover" />
@@ -95,89 +96,115 @@ function BoardVoteCard({
   const prefersReducedMotion = useReducedMotion();
   const reduceMotion = Boolean(prefersReducedMotion);
   const manageable = canEdit || canDelete;
+  const shareBadges = getShareTargetBadges({
+    postedToBoard: vote.postedToBoard,
+    postedToCalendar: vote.postedToCalendar,
+    includeBoard: true,
+  });
 
   return (
     <div className="relative overflow-visible rounded-[8px] border border-slate-100 bg-white shadow-sm">
-      <div className="relative z-10 flex items-center justify-between gap-3 px-4 pb-2 pt-4">
-        <BoardAuthorMeta
-          name={vote.authorDisplayName}
-          avatarUrl={vote.authorAvatarThumbnailUrl ?? vote.authorAvatarImageUrl}
-        />
-        {manageable ? (
-          <div className="relative">
-            <button
-              type="button"
-              aria-label={`${vote.title} 관리 메뉴`}
-              onClick={(targetEvent) => {
-                targetEvent.stopPropagation();
-                onOpenChange(!open);
-              }}
-              className="rounded-full p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
-            >
-              <span className="material-symbols-outlined text-[20px]">more_horiz</span>
-            </button>
-            <AnimatePresence initial={false}>
-              {open ? (
-                <motion.div
-                  initial={false}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: 6, scale: 0.98 }}
-                  transition={{ duration: reduceMotion ? 0.1 : 0.16, ease: "easeOut" }}
-                  className="absolute right-0 top-10 z-20 w-28 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-[0_12px_32px_rgba(15,23,42,0.14)]"
-                >
-                  {canEdit ? (
-                    <button
-                      type="button"
-                      onClick={(targetEvent) => {
-                        targetEvent.stopPropagation();
-                        onOpenChange(false);
-                        onEdit();
-                      }}
-                      className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm font-semibold text-amber-600 transition hover:bg-amber-50"
-                    >
-                      <span className="material-symbols-outlined text-[18px]">edit</span>
-                      수정
-                    </button>
-                  ) : null}
-                  {canDelete ? (
-                    <button
-                      type="button"
-                      onClick={(targetEvent) => {
-                        targetEvent.stopPropagation();
-                        onOpenChange(false);
-                        onDelete();
-                      }}
-                      className={`flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm font-semibold text-rose-600 transition hover:bg-rose-50 ${
-                        canEdit ? "border-t border-slate-100" : ""
-                      }`}
-                    >
-                      <span className="material-symbols-outlined text-[18px]">delete</span>
-                      삭제
-                    </button>
-                  ) : null}
-                </motion.div>
-              ) : null}
-            </AnimatePresence>
-          </div>
-        ) : null}
-      </div>
-      <div className="mx-4 border-t border-slate-100" aria-hidden="true" />
-      <button
-        type="button"
+      <div
+        role="button"
+        tabIndex={0}
         onClick={onOpen}
-        className="block w-full px-4 pb-4 pt-1 text-left transition hover:bg-slate-50"
+        onKeyDown={(eventKey) => {
+          if (eventKey.key === "Enter" || eventKey.key === " ") {
+            eventKey.preventDefault();
+            onOpen();
+          }
+        }}
+        className="block cursor-pointer px-4 py-4 text-left transition hover:bg-slate-50"
         aria-label={`${vote.title} 투표 자세히 보기`}
       >
         <div className="mb-2 flex items-center justify-between gap-3">
-          <span className="rounded bg-violet-50 px-2 py-0.5 text-[11px] font-bold uppercase text-violet-600">투표</span>
-          <span className="shrink-0 text-xs text-slate-400">{getSharedVoteStatusLabel(vote)}</span>
+          <div className="flex items-center gap-2">
+            <span className="rounded bg-violet-50 px-2 py-0.5 text-[11px] font-bold uppercase text-violet-600">투표</span>
+            {vote.pinned ? (
+              <span className="rounded bg-red-50 px-2 py-0.5 text-[11px] font-bold uppercase text-red-600">고정</span>
+            ) : null}
+            {shareBadges.map((shareBadge) => (
+              <span
+                key={shareBadge.label}
+                className={`rounded px-2 py-0.5 text-[11px] font-bold uppercase ${shareBadge.className}`}
+              >
+                {shareBadge.label}
+              </span>
+            ))}
+          </div>
+          <span className="shrink-0 text-xs text-slate-400">{getVoteLifecycleLabel(vote.voteStatus)}</span>
         </div>
         <h2 className="mb-2 line-clamp-1 text-base font-bold text-slate-900">{vote.title}</h2>
         <p className="line-clamp-2 text-sm leading-6 text-slate-500">
           {vote.votePeriodLabel}
-          {vote.voteTimeLabel ? ` • ${vote.voteTimeLabel}` : ""}
+          {vote.voteTimeLabel ? ` · ${vote.voteTimeLabel}` : ""}
+          {vote.totalResponses > 0 ? ` · ${vote.totalResponses}명 참여` : ""}
         </p>
-      </button>
+
+        <div className="mt-4 flex items-center justify-between gap-3 border-t border-slate-100 pt-3">
+          <BoardAuthorMeta
+            name={vote.authorDisplayName}
+            avatarUrl={vote.authorAvatarThumbnailUrl ?? vote.authorAvatarImageUrl}
+          />
+          {manageable ? (
+            <div className="relative">
+              <button
+                type="button"
+                aria-label={`${vote.title} 관리 메뉴`}
+                onClick={(targetEvent) => {
+                  targetEvent.stopPropagation();
+                  onOpenChange(!open);
+                }}
+                className="rounded-full p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+              >
+                <span className="material-symbols-outlined text-[20px]">more_horiz</span>
+              </button>
+              <AnimatePresence initial={false}>
+                {open ? (
+                  <motion.div
+                    initial={false}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 6, scale: 0.98 }}
+                    transition={{ duration: reduceMotion ? 0.1 : 0.16, ease: "easeOut" }}
+                    className="absolute right-0 top-10 z-30 w-28 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-[0_12px_32px_rgba(15,23,42,0.14)]"
+                  >
+                    {canEdit ? (
+                      <button
+                        type="button"
+                        onClick={(targetEvent) => {
+                          targetEvent.stopPropagation();
+                          onOpenChange(false);
+                          onEdit();
+                        }}
+                        className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm font-semibold text-amber-600 transition hover:bg-amber-50"
+                      >
+                        <span className="material-symbols-outlined text-[18px]">edit</span>
+                        수정
+                      </button>
+                    ) : null}
+                    {canDelete ? (
+                      <button
+                        type="button"
+                        onClick={(targetEvent) => {
+                          targetEvent.stopPropagation();
+                          onOpenChange(false);
+                          onDelete();
+                        }}
+                        className={`flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm font-semibold text-rose-600 transition hover:bg-rose-50 ${
+                          canEdit ? "border-t border-slate-100" : ""
+                        }`}
+                      >
+                        <span className="material-symbols-outlined text-[18px]">delete</span>
+                        삭제
+                      </button>
+                    ) : null}
+                  </motion.div>
+                ) : null}
+              </AnimatePresence>
+            </div>
+          ) : null}
+        </div>
+      </div>
     </div>
   );
 }
@@ -341,48 +368,106 @@ export function ClubBoardFeedClient({ clubId }: ClubBoardFeedClientProps) {
     return <ClubBoardFeedLoadingShell />;
   }
 
+  const pinnedItems = items.filter(isPinnedBoardItem);
+
+  const visibleItems = pinnedOnly
+    ? items
+    : items;
+
   return (
     <div className="bg-[var(--background-light)] font-display text-slate-900">
       <div className="relative mx-auto flex min-h-full max-w-md flex-col bg-white">
         <ClubPageHeader title="게시판" subtitle={clubName} icon="campaign" />
 
         <main className="semo-nav-bottom-space flex-1">
-          <div className="px-4 pt-4">
-            <div className="inline-flex rounded-full border border-slate-200 bg-white p-1 shadow-sm">
-              <button
-                type="button"
-                aria-pressed={!pinnedOnly}
-                onClick={() => setPinnedOnly(false)}
-                className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${
-                  pinnedOnly ? "text-slate-500 hover:text-slate-700" : "bg-[#135bec] text-white"
-                }`}
-              >
-                전체
-              </button>
-              <button
-                type="button"
-                aria-pressed={pinnedOnly}
-                onClick={() => setPinnedOnly(true)}
-                className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${
-                  pinnedOnly ? "bg-[#135bec] text-white" : "text-slate-500 hover:text-slate-700"
-                }`}
-              >
-                핀 고정
-              </button>
-            </div>
-          </div>
+          <div className="space-y-6 px-4 pt-6">
+            {pinnedOnly ? (
+              <section>
+                <div className="mb-4 flex items-center justify-between gap-3">
+                  <h2 className="flex items-center gap-2 text-base font-bold text-slate-900">
+                    <span
+                      className="material-symbols-outlined text-red-500 text-[20px]"
+                      style={{ fontVariationSettings: "'FILL' 1, 'wght' 600, 'GRAD' 0, 'opsz' 20" }}
+                    >
+                      push_pin
+                    </span>
+                    중요 핀 게시물
+                  </h2>
+                  <button
+                    type="button"
+                    onClick={() => setPinnedOnly(false)}
+                    className="text-xs font-medium text-slate-400 transition hover:text-slate-600"
+                  >
+                    전체 게시글
+                  </button>
+                </div>
+              </section>
+            ) : pinnedItems.length > 0 ? (
+              <section>
+                <div className="mb-4 flex items-center justify-between gap-3">
+                  <h2 className="flex items-center gap-2 text-base font-bold text-slate-900">
+                    <span
+                      className="material-symbols-outlined text-red-500 text-[20px]"
+                      style={{ fontVariationSettings: "'FILL' 1, 'wght' 600, 'GRAD' 0, 'opsz' 20" }}
+                    >
+                      push_pin
+                    </span>
+                    중요 고정 게시물
+                  </h2>
+                  <button
+                    type="button"
+                    onClick={() => setPinnedOnly(true)}
+                    className="text-xs font-medium text-slate-400 transition hover:text-slate-600"
+                  >
+                    전체보기
+                  </button>
+                </div>
+                <PinnedBoardCarousel
+                  items={pinnedItems}
+                  onOpenNotice={(noticeId) => {
+                    setActiveActionKey(null);
+                    setDetailNoticeId(String(noticeId));
+                  }}
+                  onOpenEvent={(eventId) => {
+                    setActiveActionKey(null);
+                    setDetailEventId(String(eventId));
+                  }}
+                  onOpenVote={(voteId) => {
+                    setActiveActionKey(null);
+                    setDetailVoteId(String(voteId));
+                  }}
+                />
+              </section>
+            ) : null}
 
-          <div className="flex flex-col gap-4 p-4">
-            {items.map((item, index) => (
+            <section>
+              <div className="mb-4 flex items-center justify-between gap-3">
+                <h2 className="text-base font-bold text-slate-900">{pinnedOnly ? "중요 핀 게시물" : "최근 게시글"}</h2>
+              </div>
+              <div className="flex flex-col gap-4">
+            {visibleItems.map((item, index) => (
               <motion.article
                 key={`${item.contentType}-${item.boardItemId}`}
                 {...staggeredFadeUpMotion(index, reduceMotion)}
+                className={
+                  activeActionKey ===
+                  (item.contentType === "NOTICE" && item.notice
+                    ? `notice-${item.notice.noticeId}`
+                    : item.contentType === "SCHEDULE_EVENT" && item.event
+                      ? `event-${item.event.eventId}`
+                      : item.contentType === "SCHEDULE_VOTE" && item.vote
+                        ? `vote-${item.vote.voteId}`
+                        : "")
+                    ? "relative z-20"
+                    : "relative"
+                }
               >
                 {item.contentType === "NOTICE" && item.notice ? (
                   <NoticeManageCard
                     notice={item.notice}
                     canEdit={isAdmin || item.notice.canEdit}
                     canDelete={isAdmin || item.notice.canDelete}
+                    showBoardShareBadge
                     open={activeActionKey === `notice-${item.notice.noticeId}`}
                     onOpenChange={(nextOpen) => {
                       setActiveActionKey(nextOpen ? `notice-${item.notice!.noticeId}` : null);
@@ -408,6 +493,7 @@ export function ClubBoardFeedClient({ clubId }: ClubBoardFeedClientProps) {
                     event={item.event}
                     canEdit={isAdmin || item.event.canEdit}
                     canDelete={isAdmin || item.event.canDelete}
+                    showBoardShareBadge
                     open={activeActionKey === `event-${item.event.eventId}`}
                     onOpenChange={(nextOpen) => {
                       setActiveActionKey(nextOpen ? `event-${item.event!.eventId}` : null);
@@ -455,14 +541,16 @@ export function ClubBoardFeedClient({ clubId }: ClubBoardFeedClientProps) {
                 ) : null}
               </motion.article>
             ))}
+              </div>
+            </section>
           </div>
 
-          {!loading && initialLoaded && items.length === 0 ? (
+          {!loading && initialLoaded && visibleItems.length === 0 ? (
             <motion.div
               className="flex justify-center p-8 text-sm font-medium text-slate-500"
               {...staggeredFadeUpMotion(2, reduceMotion)}
             >
-              {pinnedOnly ? "핀 고정 공지가 없습니다." : "등록된 게시판 항목이 없습니다."}
+              {pinnedOnly ? "핀 고정 게시물이 없습니다." : "등록된 게시판 항목이 없습니다."}
             </motion.div>
           ) : null}
 

@@ -350,9 +350,9 @@ export function ClubNoticeEditorClient({
                   <div className="flex items-center gap-3">
                     <span className="material-symbols-outlined text-[var(--primary)]">leaderboard</span>
                     <div>
-                      <span className="block text-sm font-semibold text-slate-900">게시판에 공유</span>
+                      <span className="block text-sm font-semibold text-slate-900">게시판에도 공유</span>
                       <span className="mt-0.5 block text-[11px] text-slate-500">
-                        {postToBoard ? "사용 중 · 게시판 메인에 노출됩니다" : "미사용"}
+                        {postToBoard ? "사용 중 · 게시판 메인에도 함께 노출됩니다" : "미사용"}
                       </span>
                     </div>
                   </div>
@@ -363,7 +363,7 @@ export function ClubNoticeEditorClient({
                   <div className="flex items-center gap-3">
                     <span className="material-symbols-outlined text-[var(--primary)]">event_upcoming</span>
                     <div>
-                      <span className="block text-sm font-semibold text-slate-900">캘린더에 공유</span>
+                      <span className="block text-sm font-semibold text-slate-900">캘린더에도 공유</span>
                       <span className="mt-0.5 block text-[11px] text-slate-500">
                         {postToCalendar ? "사용 중 · 캘린더 메인에도 함께 노출됩니다" : "미사용"}
                       </span>

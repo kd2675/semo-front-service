@@ -63,6 +63,7 @@ export function ClubScheduleEditorClient({
   const [feeNWaySplit, setFeeNWaySplit] = useState(false);
   const [postToBoard, setPostToBoard] = useState(false);
   const [postToCalendar, setPostToCalendar] = useState(true);
+  const [pinned, setPinned] = useState(false);
   const [clubName, setClubName] = useState(initialClubName ?? "일정 스튜디오");
   const [loading, setLoading] = useState(isEdit);
   const [saving, setSaving] = useState(false);
@@ -106,6 +107,7 @@ export function ClubScheduleEditorClient({
     setFeeNWaySplit(payload.feeNWaySplit);
     setPostToBoard(payload.postedToBoard);
     setPostToCalendar(payload.postedToCalendar);
+    setPinned(payload.pinned);
     setCanEdit(payload.canEdit);
     setCanDelete(payload.canDelete);
   });
@@ -142,6 +144,7 @@ export function ClubScheduleEditorClient({
       feeNWaySplit: feeRequired && participationEnabled && feeNWaySplit,
       postToBoard,
       postToCalendar,
+      pinned,
     };
 
     const result = isEdit && eventId
@@ -501,7 +504,7 @@ export function ClubScheduleEditorClient({
                   <div className="flex items-center gap-3">
                     <span className="material-symbols-outlined text-[var(--primary)]">campaign</span>
                     <div>
-                      <span className="block text-sm font-semibold text-slate-900">게시판에 공유</span>
+                      <span className="block text-sm font-semibold text-slate-900">게시판에도 공유</span>
                       <span className="mt-0.5 block text-[11px] text-slate-500">
                         {postToBoard ? "사용 중 · 게시판 메인에도 함께 노출됩니다" : "미사용"}
                       </span>
@@ -522,7 +525,7 @@ export function ClubScheduleEditorClient({
                   <div className="flex items-center gap-3">
                     <span className="material-symbols-outlined text-[var(--primary)]">calendar_month</span>
                     <div>
-                      <span className="block text-sm font-semibold text-slate-900">캘린더에 공유</span>
+                      <span className="block text-sm font-semibold text-slate-900">캘린더에도 공유</span>
                       <span className="mt-0.5 block text-[11px] text-slate-500">
                         {postToCalendar ? "사용 중 · 캘린더 메인에도 함께 노출됩니다" : "미사용"}
                       </span>
@@ -534,6 +537,27 @@ export function ClubScheduleEditorClient({
                       className="peer sr-only"
                       type="checkbox"
                       onChange={(event) => setPostToCalendar(event.target.checked)}
+                    />
+                    <div className="h-6 w-11 rounded-full bg-slate-200 transition peer-checked:bg-[var(--primary)] after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-slate-300 after:bg-white after:transition-all after:content-[''] peer-checked:after:translate-x-full peer-checked:after:border-white" />
+                  </label>
+                </div>
+
+                <div className="flex items-center justify-between rounded-xl border border-[var(--primary)]/5 bg-white p-4 shadow-sm">
+                  <div className="flex items-center gap-3">
+                    <span className="material-symbols-outlined text-[var(--primary)]">push_pin</span>
+                    <div>
+                      <span className="block text-sm font-semibold text-slate-900">핀 고정</span>
+                      <span className="mt-0.5 block text-[11px] text-slate-500">
+                        {pinned ? "사용 중 · 게시판 중요 고정 게시물로 우선 노출됩니다" : "미사용"}
+                      </span>
+                    </div>
+                  </div>
+                  <label className="relative inline-flex cursor-pointer items-center">
+                    <input
+                      checked={pinned}
+                      className="peer sr-only"
+                      type="checkbox"
+                      onChange={(event) => setPinned(event.target.checked)}
                     />
                     <div className="h-6 w-11 rounded-full bg-slate-200 transition peer-checked:bg-[var(--primary)] after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-slate-300 after:bg-white after:transition-all after:content-[''] peer-checked:after:translate-x-full peer-checked:after:border-white" />
                   </label>

@@ -11,7 +11,9 @@ import {
   submitClubScheduleVoteSelection,
   type ClubScheduleVoteDetailResponse,
 } from "@/app/lib/clubs";
+import { getShareTargetBadges } from "@/app/lib/content-badge";
 import { staggeredFadeUpMotion } from "@/app/lib/motion";
+import { getVoteLifecycleBadgeClassName, getVoteLifecycleLabel } from "@/app/lib/vote-status";
 import { ClubDetailLoadingShell } from "../ClubRouteLoadingShells";
 
 type ClubScheduleVoteDetailClientProps = {
@@ -21,34 +23,6 @@ type ClubScheduleVoteDetailClientProps = {
   basePath?: string;
   onRequestClose?: () => void;
 };
-
-function getVoteStatusLabel(payload: ClubScheduleVoteDetailResponse) {
-  if (payload.voteStatus === "CLOSED") {
-    return "마감";
-  }
-  if (payload.voteStatus === "WAITING") {
-    return "대기";
-  }
-  if (payload.mySelectedOptionId) {
-    return "참여 완료";
-  }
-  return "진행 중";
-}
-
-function getVoteStatusClassName(payload: ClubScheduleVoteDetailResponse) {
-  if (payload.voteStatus === "CLOSED") {
-    return "bg-slate-100 text-slate-500";
-  }
-  if (payload.voteStatus === "WAITING") {
-    return "bg-amber-50 text-amber-600";
-  }
-  return "bg-blue-50 text-blue-600";
-}
-
-function buildVoteTag(payload: ClubScheduleVoteDetailResponse) {
-  const normalizedClubName = payload.clubName.replace(/\s+/g, "_");
-  return `#${normalizedClubName}_투표`;
-}
 
 function getOptionPercent(voteCount: number, totalResponses: number) {
   if (totalResponses <= 0) {
@@ -95,6 +69,10 @@ export function ClubScheduleVoteDetailClient({
   const [submittingVoteOptionId, setSubmittingVoteOptionId] = useState<number | null>(null);
   const [selectedOptionId, setSelectedOptionId] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const shareBadges = getShareTargetBadges({
+    postedToBoard: payload?.postedToBoard,
+    postedToCalendar: payload?.postedToCalendar,
+  });
 
   const loadDetail = useEffectEvent(async () => {
     setLoading(true);
@@ -210,11 +188,26 @@ export function ClubScheduleVoteDetailClient({
           {payload ? (
             <>
               <motion.section className="mb-8" {...staggeredFadeUpMotion(2, reduceMotion)}>
-                <div className="mb-3 flex items-center gap-2">
-                  <span className={`rounded-md px-2 py-1 text-xs font-semibold ${getVoteStatusClassName(payload)}`}>
-                    {getVoteStatusLabel(payload)}
+                <div className="mb-3 flex flex-wrap items-center gap-2">
+                  <span className="rounded-md bg-violet-50 px-2 py-1 text-xs font-semibold text-violet-600">
+                    투표
                   </span>
-                  <span className="text-sm text-gray-400">{buildVoteTag(payload)}</span>
+                  <span className={`rounded-md px-2 py-1 text-xs font-semibold ${getVoteLifecycleBadgeClassName(payload.voteStatus)}`}>
+                    {getVoteLifecycleLabel(payload.voteStatus)}
+                  </span>
+                  {payload.pinned ? (
+                    <span className="rounded-md bg-red-50 px-2 py-1 text-xs font-semibold text-red-600">
+                      고정
+                    </span>
+                  ) : null}
+                  {shareBadges.map((shareBadge) => (
+                    <span
+                      key={shareBadge.label}
+                      className={`rounded-md px-2 py-1 text-xs font-semibold ${shareBadge.className}`}
+                    >
+                      {shareBadge.label}
+                    </span>
+                  ))}
                 </div>
                 <h2 className="mb-4 text-2xl font-bold leading-tight">{payload.title}</h2>
                 <div className="flex flex-col gap-1.5 border-y border-gray-100 py-4">

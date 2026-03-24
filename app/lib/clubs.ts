@@ -224,6 +224,7 @@ export type ClubScheduleEventSummary = {
   feeNWaySplit: boolean;
   postedToBoard: boolean;
   postedToCalendar: boolean;
+  pinned: boolean;
   linkedNoticeId: number | null;
   myParticipationStatus: "GOING" | "NOT_GOING" | null;
   goingCount: number;
@@ -255,6 +256,7 @@ export type ClubScheduleVoteSummary = {
   postedToBoard: boolean;
   postedToCalendar: boolean;
   sharedToSchedule: boolean;
+  pinned: boolean;
   linkedNoticeId: number | null;
   mySelectedOptionId: number | null;
   options: ClubScheduleVoteOptionSummary[];
@@ -285,6 +287,7 @@ export type ClubScheduleEventDetailResponse = {
   feeNWaySplit: boolean;
   postedToBoard: boolean;
   postedToCalendar: boolean;
+  pinned: boolean;
   linkedNoticeId: number | null;
   myParticipationStatus: "GOING" | "NOT_GOING" | null;
   goingCount: number;
@@ -309,6 +312,7 @@ export type UpsertScheduleEventRequest = {
   feeNWaySplit?: boolean;
   postToBoard?: boolean;
   postToCalendar?: boolean;
+  pinned?: boolean;
 };
 
 export type ScheduleEventUpsertResponse = {
@@ -321,6 +325,7 @@ export type ScheduleEventUpsertResponse = {
   timeLabel: string | null;
   postedToBoard: boolean;
   postedToCalendar: boolean;
+  pinned: boolean;
 };
 
 export type ClubScheduleVoteDetailResponse = {
@@ -339,6 +344,7 @@ export type ClubScheduleVoteDetailResponse = {
   postedToBoard: boolean;
   postedToCalendar: boolean;
   sharedToSchedule: boolean;
+  pinned: boolean;
   linkedNoticeId: number | null;
   mySelectedOptionId: number | null;
   totalResponses: number;
@@ -362,6 +368,7 @@ export type UpsertScheduleVoteRequest = {
   postToBoard?: boolean;
   postToCalendar?: boolean;
   postToSchedule?: boolean;
+  pinned?: boolean;
 };
 
 export type SubmitScheduleVoteSelectionRequest = {
@@ -382,6 +389,7 @@ export type ScheduleVoteUpsertResponse = {
   postedToBoard: boolean;
   postedToCalendar: boolean;
   sharedToSchedule: boolean;
+  pinned: boolean;
 };
 
 export type ClubProfileResponse = {
@@ -547,6 +555,7 @@ export type ClubPollSummary = {
   postedToBoard: boolean;
   postedToCalendar: boolean;
   sharedToSchedule: boolean;
+  pinned: boolean;
   canEdit: boolean;
   canDelete: boolean;
   mySelectedOptionId: number | null;

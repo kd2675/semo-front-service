@@ -95,10 +95,16 @@ export function ClubScheduleHomeClient({
   const items = useMemo(() => {
     return payload.events.map((event) => ({
       key: `event-${event.eventId}`,
+      pinned: event.pinned ? 1 : 0,
       sortValue: `${event.startDate}T${event.timeLabel ?? "00:00"}`,
       event,
     }))
-      .sort((left, right) => right.sortValue.localeCompare(left.sortValue));
+      .sort((left, right) => {
+        if (left.pinned !== right.pinned) {
+          return right.pinned - left.pinned;
+        }
+        return right.sortValue.localeCompare(left.sortValue);
+      });
   }, [payload.events]);
 
   const filteredItems = useMemo(() => {
@@ -249,11 +255,16 @@ export function ClubScheduleHomeClient({
                 </motion.div>
               ) : (
                 filteredItems.map((item, index) => (
-                  <motion.div key={item.key} {...staggeredFadeUpMotion(index + 8, reduceMotion)}>
+                  <motion.div
+                    key={item.key}
+                    {...staggeredFadeUpMotion(index + 8, reduceMotion)}
+                    className={activeActionKey === item.key ? "relative z-20" : "relative"}
+                  >
                     <BoardScheduleManageCard
                       event={item.event}
                       canEdit={item.event.canEdit}
                       canDelete={item.event.canDelete}
+                      showBoardShareBadge
                       open={activeActionKey === item.key}
                       onOpenChange={(open) => setActiveActionKey(open ? item.key : null)}
                       onOpen={() => {

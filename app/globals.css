@@ -1,4 +1,6 @@
 @import "tailwindcss";
+@import "swiper/css";
+@import "swiper/css/pagination";
 
 :root {
   --background-light: #f6f6f8;

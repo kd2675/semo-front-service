@@ -20,8 +20,6 @@ type ClubNoticeHomeClientProps = {
   clubId: string;
   payload: ClubNoticeHomeResponse;
   mode?: "user" | "admin";
-  pinnedOnly: boolean;
-  onPinnedOnlyChange: (next: boolean) => void;
   onReload: () => void;
 };
 
@@ -56,8 +54,6 @@ export function ClubNoticeHomeClient({
   clubId,
   payload,
   mode = "user",
-  pinnedOnly,
-  onPinnedOnlyChange,
   onReload,
 }: ClubNoticeHomeClientProps) {
   const prefersReducedMotion = useReducedMotion();
@@ -73,6 +69,7 @@ export function ClubNoticeHomeClient({
   const background = mode === "admin" ? "#f6f6f8" : "#f6f6f8";
   const basePath = mode === "admin" ? `/clubs/${clubId}/admin/more/notices` : `/clubs/${clubId}/more/notices`;
   const latestNotice = payload.notices[0] ?? null;
+  const visibleNotices = payload.notices;
 
   const handleDelete = async () => {
     if (!deleteTarget) {
@@ -169,33 +166,7 @@ export function ClubNoticeHomeClient({
             {mode === "admin" ? null : (
             <motion.div className="mb-4" {...staggeredFadeUpMotion(4, reduceMotion)}>
               <div className="flex items-center justify-between gap-3">
-                <div className="flex min-w-0 items-center gap-3">
-                  <h3 className="shrink-0 rounded-lg border border-[var(--primary)]/15 bg-[var(--primary)]/[0.08] px-3 py-1.5 text-sm font-bold tracking-[-0.02em] text-[var(--primary)] shadow-sm">
-                    내 게시글
-                  </h3>
-                  <div className="inline-flex rounded-full border border-slate-200 bg-white p-1 shadow-sm">
-                    <button
-                      type="button"
-                      aria-pressed={!pinnedOnly}
-                      onClick={() => onPinnedOnlyChange(false)}
-                      className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${
-                        pinnedOnly ? "text-slate-500 hover:text-slate-700" : "bg-[var(--primary)] text-white"
-                      }`}
-                    >
-                      전체
-                    </button>
-                    <button
-                      type="button"
-                      aria-pressed={pinnedOnly}
-                      onClick={() => onPinnedOnlyChange(true)}
-                      className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${
-                        pinnedOnly ? "bg-[var(--primary)] text-white" : "text-slate-500 hover:text-slate-700"
-                      }`}
-                    >
-                      핀 고정
-                    </button>
-                  </div>
-                </div>
+                <h3 className="text-sm font-bold tracking-[-0.02em] text-slate-900">내 게시글</h3>
                 <div className="shrink-0 text-sm font-bold text-[var(--primary)]">
                   {payload.manageableNoticeCount.toLocaleString("ko-KR")}건
                 </div>
@@ -205,20 +176,30 @@ export function ClubNoticeHomeClient({
 
             {mode === "admin" ? null : (
             <div className="space-y-5 pb-4">
-              {payload.notices.length === 0 ? (
+              <section>
+                <div className="mb-4 flex items-center justify-between">
+                  <h2 className="text-base font-bold text-slate-900">최근 게시글</h2>
+                </div>
+
+              {visibleNotices.length === 0 ? (
                 <motion.div
                   className="rounded-2xl border border-dashed border-slate-300 bg-white px-5 py-10 text-center text-sm text-slate-500"
-                  {...staggeredFadeUpMotion(5, reduceMotion)}
+                  {...staggeredFadeUpMotion(6, reduceMotion)}
                 >
-                  {pinnedOnly ? "핀 고정 게시글이 없습니다." : "관리 가능한 게시글이 없습니다."}
+                  관리 가능한 게시글이 없습니다.
                 </motion.div>
               ) : (
-                payload.notices.map((notice, index) => (
-                  <motion.div key={notice.noticeId} {...staggeredFadeUpMotion(index + 5, reduceMotion)}>
+                visibleNotices.map((notice, index) => (
+                  <motion.div
+                    key={notice.noticeId}
+                    {...staggeredFadeUpMotion(index + 6, reduceMotion)}
+                    className={activeMenuNoticeId === notice.noticeId ? "relative z-20" : "relative"}
+                  >
                     <NoticeManageCard
                       notice={notice}
                       canEdit={notice.canEdit}
                       canDelete={notice.canDelete}
+                      showBoardShareBadge
                       open={activeMenuNoticeId === notice.noticeId}
                       onOpenChange={(open) => setActiveMenuNoticeId(open ? notice.noticeId : null)}
                       onOpen={() => {
@@ -237,6 +218,7 @@ export function ClubNoticeHomeClient({
                   </motion.div>
                 ))
               )}
+              </section>
             </div>
             )}
           </section>

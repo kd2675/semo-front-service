@@ -7,7 +7,7 @@ import { motion, useReducedMotion } from "motion/react";
 import { useEffect, useEffectEvent, useState } from "react";
 import { ClubModeSwitchFab } from "@/app/components/ClubModeSwitchFab";
 import { getClubNoticeDetail, type ClubNoticeDetailResponse } from "@/app/lib/clubs";
-import { getLinkedContentBadge } from "@/app/lib/content-badge";
+import { getLinkedContentBadge, getShareTargetBadges } from "@/app/lib/content-badge";
 import { staggeredFadeUpMotion } from "@/app/lib/motion";
 import { ClubDetailLoadingShell } from "../../ClubRouteLoadingShells";
 
@@ -26,6 +26,10 @@ type NoticeDetailBodyProps = {
 };
 function NoticeDetailBody({ payload, error, reduceMotion }: NoticeDetailBodyProps) {
   const badge = getLinkedContentBadge(payload?.linkedTargetType);
+  const shareBadges = getShareTargetBadges({
+    postedToBoard: payload?.postedToBoard,
+    postedToCalendar: payload?.postedToCalendar,
+  });
 
   return (
     <>
@@ -53,6 +57,14 @@ function NoticeDetailBody({ payload, error, reduceMotion }: NoticeDetailBodyProp
                   핀 고정
                 </span>
               ) : null}
+              {shareBadges.map((shareBadge) => (
+                <span
+                  key={shareBadge.label}
+                  className={`rounded-full px-2 py-1 text-[10px] font-bold uppercase tracking-wider ${shareBadge.className}`}
+                >
+                  {shareBadge.label}
+                </span>
+              ))}
             </div>
             <h1 className="text-2xl font-extrabold tracking-tight text-slate-900">{payload.title}</h1>
             <div className="mt-4 space-y-1 text-sm text-slate-500">

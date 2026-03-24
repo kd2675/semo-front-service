@@ -10,6 +10,7 @@ import {
   updateClubScheduleEventParticipation,
   type ClubScheduleEventDetailResponse,
 } from "@/app/lib/clubs";
+import { getShareTargetBadges } from "@/app/lib/content-badge";
 import { staggeredFadeUpMotion } from "@/app/lib/motion";
 import { ClubDetailLoadingShell } from "../ClubRouteLoadingShells";
 
@@ -154,6 +155,10 @@ export function ClubScheduleDetailClient({
 
   const mapHref = buildMapHref(payload?.locationLabel ?? null);
   const durationLabel = payload ? buildDurationLabel(payload) : null;
+  const shareBadges = getShareTargetBadges({
+    postedToBoard: payload?.postedToBoard,
+    postedToCalendar: payload?.postedToCalendar,
+  });
   const showParticipationActions = Boolean(payload?.participationEnabled);
   const showFooter = showParticipationActions;
   const isModal = presentation === "modal";
@@ -208,17 +213,19 @@ export function ClubScheduleDetailClient({
                   <span className="rounded-md bg-[#e7effd] px-2 py-1 text-xs font-bold uppercase text-[#135bec]">
                     일정
                   </span>
-                  {payload.postedToBoard ? (
-                    <span className="rounded-md bg-slate-100 px-2 py-1 text-xs font-bold uppercase text-slate-500">
-                      게시판 공유
+                  {payload.pinned ? (
+                    <span className="rounded-md bg-red-50 px-2 py-1 text-xs font-bold uppercase text-red-600">
+                      고정
                     </span>
                   ) : null}
-                  {payload.postedToCalendar ? (
-                    <span className="rounded-md bg-indigo-50 px-2 py-1 text-xs font-bold uppercase text-indigo-600">
-                      캘린더 공유
+                  {shareBadges.map((shareBadge) => (
+                    <span
+                      key={shareBadge.label}
+                      className={`rounded-md px-2 py-1 text-xs font-bold uppercase ${shareBadge.className}`}
+                    >
+                      {shareBadge.label}
                     </span>
-                  ) : null}
-                  <span className="text-sm text-slate-400">#{toAttendanceLabel(payload.myParticipationStatus)}</span>
+                  ))}
                 </div>
 
                 <h2 className="mb-4 text-2xl font-bold">{payload.title}</h2>
