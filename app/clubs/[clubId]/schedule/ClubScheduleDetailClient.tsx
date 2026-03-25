@@ -2,6 +2,7 @@
 
 import { RouterLink } from "@/app/components/RouterLink";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
+import { RouteModal } from "@/app/components/RouteModal";
 import { motion, useReducedMotion } from "motion/react";
 import { useEffect, useEffectEvent, useState } from "react";
 import { ClubModeSwitchFab } from "@/app/components/ClubModeSwitchFab";
@@ -20,10 +21,6 @@ type ClubScheduleDetailClientProps = {
   presentation?: "page" | "modal";
   onRequestClose?: () => void;
 };
-
-function toAttendanceLabel(status: ClubScheduleEventDetailResponse["myParticipationStatus"]) {
-  return status === "GOING" ? "참석" : status === "NOT_GOING" ? "불참" : "응답 대기";
-}
 
 function buildMapHref(locationLabel: string | null) {
   if (!locationLabel) {
@@ -94,20 +91,6 @@ function buildFeeDescription(payload: ClubScheduleEventDetailResponse) {
   return `총 ${new Intl.NumberFormat("ko-KR").format(payload.feeAmount)}원을 현재 참석 ${payload.goingCount}명 기준으로 나눈 금액입니다.`;
 }
 
-function getParticipationPrimaryLabel(status: ClubScheduleEventDetailResponse["myParticipationStatus"]) {
-  if (status === "GOING") {
-    return "참석 완료";
-  }
-  if (status === "NOT_GOING") {
-    return "다시 참석하기";
-  }
-  return "참석하기";
-}
-
-function getParticipationSecondaryLabel(status: ClubScheduleEventDetailResponse["myParticipationStatus"]) {
-  return status === "NOT_GOING" ? "불참 완료" : "불참";
-}
-
 export function ClubScheduleDetailClient({
   clubId,
   eventId,
@@ -119,6 +102,8 @@ export function ClubScheduleDetailClient({
   const [payload, setPayload] = useState<ClubScheduleEventDetailResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [savingParticipation, setSavingParticipation] = useState(false);
+  const [pendingParticipationAction, setPendingParticipationAction] = useState<"GOING" | "NOT_GOING" | "CANCEL" | null>(null);
+  const [showGoingParticipants, setShowGoingParticipants] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const loadDetail = useEffectEvent(async () => {
@@ -137,11 +122,13 @@ export function ClubScheduleDetailClient({
     void loadDetail();
   }, [clubId, eventId]);
 
-  const handleParticipation = async (participationStatus: "GOING" | "NOT_GOING") => {
+  const handleParticipation = async (participationStatus: "GOING" | "NOT_GOING" | "CANCEL") => {
     setSavingParticipation(true);
+    setPendingParticipationAction(participationStatus);
     setError(null);
     const result = await updateClubScheduleEventParticipation(clubId, eventId, { participationStatus });
     setSavingParticipation(false);
+    setPendingParticipationAction(null);
     if (!result.ok || !result.data) {
       setError(result.message ?? "참석 상태 저장에 실패했습니다.");
       return;
@@ -282,14 +269,19 @@ export function ClubScheduleDetailClient({
                 ) : null}
 
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="rounded-xl border border-[#f3f4f6] bg-[#f9fafb] p-4">
+                  <button
+                    type="button"
+                    onClick={() => setShowGoingParticipants(true)}
+                    className="rounded-xl border border-[#f3f4f6] bg-[#f9fafb] p-4 text-left transition hover:border-[var(--primary)]/25 hover:bg-[#f5f8ff]"
+                  >
                     <p className="mb-1 text-[11px] font-bold text-slate-400">참석 인원</p>
                     <p className="font-bold">
                       {payload.goingCount}
                       {payload.attendeeLimit ? ` / ${payload.attendeeLimit}` : ""}{" "}
                       <span className="text-xs font-normal text-slate-400">참석</span>
                     </p>
-                  </div>
+                    <p className="mt-2 text-[11px] font-medium text-[var(--primary)]">참석 명단 보기</p>
+                  </button>
                   <div className="rounded-xl border border-[#f3f4f6] bg-[#f9fafb] p-4">
                     <p className="mb-1 text-[11px] font-bold text-slate-400">참석 조건</p>
                     <p className="font-bold">{payload.participationConditionText ?? "조건 없음"}</p>
@@ -334,32 +326,96 @@ export function ClubScheduleDetailClient({
           <footer className="fixed bottom-0 left-0 right-0 z-30 border-t border-[#f3f4f6] bg-white p-4 shadow-[0_-4px_12px_rgba(0,0,0,0.05)]">
             <div className="mx-auto max-w-md space-y-3 pb-[calc(env(safe-area-inset-bottom)+4.75rem)]">
               {showParticipationActions ? (
-                <div className="grid grid-cols-2 gap-3">
+                payload.myParticipationStatus == null ? (
+                  <div className="grid grid-cols-2 gap-3">
+                    <button
+                      type="button"
+                      onClick={() => handleParticipation("GOING")}
+                      disabled={savingParticipation}
+                      className="rounded-2xl bg-[#135bec] px-4 py-4 font-bold text-white transition-all active:scale-[0.98] disabled:opacity-70"
+                    >
+                      {savingParticipation && pendingParticipationAction === "GOING" ? "처리 중..." : "참석"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleParticipation("NOT_GOING")}
+                      disabled={savingParticipation}
+                      className="rounded-2xl border-2 border-slate-100 bg-slate-50 px-4 py-4 font-bold text-slate-600 transition-colors disabled:opacity-70"
+                    >
+                      {savingParticipation && pendingParticipationAction === "NOT_GOING" ? "처리 중..." : "불참"}
+                    </button>
+                  </div>
+                ) : (
                   <button
                     type="button"
-                    onClick={() => handleParticipation("GOING")}
-                    disabled={savingParticipation || payload.myParticipationStatus === "GOING"}
-                    className="rounded-2xl bg-[#135bec] px-4 py-4 font-bold text-white transition-all active:scale-[0.98] disabled:opacity-70"
+                    onClick={() => handleParticipation("CANCEL")}
+                    disabled={savingParticipation}
+                    className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-4 font-bold text-slate-500 transition-colors disabled:opacity-50"
                   >
-                    {savingParticipation && payload.myParticipationStatus !== "GOING"
-                      ? "처리 중..."
-                      : getParticipationPrimaryLabel(payload.myParticipationStatus)}
+                    {savingParticipation && pendingParticipationAction === "CANCEL" ? "처리 중..." : "취소"}
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => handleParticipation("NOT_GOING")}
-                    disabled={savingParticipation || payload.myParticipationStatus === "NOT_GOING"}
-                    className="rounded-2xl border-2 border-slate-100 bg-slate-50 px-4 py-4 font-bold text-slate-600 transition-colors disabled:opacity-70"
-                  >
-                    {savingParticipation && payload.myParticipationStatus !== "NOT_GOING"
-                      ? "처리 중..."
-                      : getParticipationSecondaryLabel(payload.myParticipationStatus)}
-                  </button>
-                </div>
+                )
               ) : null}
 
             </div>
           </footer>
+        ) : null}
+
+        {payload && showGoingParticipants ? (
+          <RouteModal onDismiss={() => setShowGoingParticipants(false)} contentClassName="max-w-md">
+            <div className="flex min-h-0 flex-1 flex-col">
+              <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
+                <div>
+                  <p className="text-sm font-bold text-slate-900">참석 명단</p>
+                  <p className="mt-1 text-xs text-slate-400">현재 {payload.goingCount}명 참석</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowGoingParticipants(false)}
+                  className="rounded-full p-2 text-slate-500 transition hover:bg-slate-100"
+                  aria-label="참석 명단 닫기"
+                >
+                  <span className="material-symbols-outlined text-[20px]">close</span>
+                </button>
+              </div>
+
+              <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
+                {payload.goingParticipants.length === 0 ? (
+                  <div className="rounded-2xl bg-slate-50 px-4 py-10 text-center text-sm text-slate-500">
+                    아직 참석한 멤버가 없습니다.
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {payload.goingParticipants.map((participant) => {
+                      const avatarUrl = participant.avatarThumbnailUrl ?? participant.avatarImageUrl;
+                      return (
+                        <div
+                          key={participant.clubProfileId}
+                          className="flex items-center gap-3 rounded-2xl border border-slate-100 bg-white px-4 py-3 shadow-sm"
+                        >
+                          {avatarUrl ? (
+                            <div
+                              className="size-11 rounded-full bg-cover bg-center bg-no-repeat"
+                              style={{ backgroundImage: `url('${avatarUrl}')` }}
+                              aria-hidden="true"
+                            />
+                          ) : (
+                            <div className="flex size-11 items-center justify-center rounded-full bg-[var(--primary)]/10 text-sm font-bold text-[var(--primary)]">
+                              {participant.displayName.slice(0, 1)}
+                            </div>
+                          )}
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-sm font-bold text-slate-900">{participant.displayName}</p>
+                            <p className="mt-1 text-xs text-slate-400">참석 확정</p>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+          </RouteModal>
         ) : null}
 
         {!isModal && payload?.admin ? <ClubModeSwitchFab clubId={clubId} mode="user" className="bottom-32" /> : null}

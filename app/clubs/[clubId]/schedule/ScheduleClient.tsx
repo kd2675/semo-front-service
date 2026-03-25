@@ -20,7 +20,10 @@ import type {
   ClubScheduleResponse,
   ClubScheduleVoteSummary,
 } from "@/app/lib/clubs";
-import { deleteClubScheduleEvent, deleteClubScheduleVote } from "@/app/lib/clubs";
+import {
+  deleteClubScheduleEvent,
+  deleteClubScheduleVote,
+} from "@/app/lib/clubs";
 import { ClubScheduleEditorClient } from "./ClubScheduleEditorClient";
 import { ClubScheduleVoteEditorClient } from "./ClubScheduleVoteEditorClient";
 import { ScheduleActionConfirmModal } from "./ScheduleActionConfirmModal";
@@ -494,35 +497,34 @@ export function ScheduleClient({
 
   const dayItems = month.itemsByDay[selectedDay] ?? [];
   const selectedDateValue = getDateValue(month.year, month.month, selectedDay);
-  const selectedItems: SelectedScheduleItem[] = dayItems
-    .map((item) => {
+  const selectedItems = dayItems
+    .flatMap<SelectedScheduleItem>((item) => {
       if (item.contentType === "NOTICE" && item.notice) {
-        return {
+        return [{
           type: "notice" as const,
           key: `notice-${item.notice.noticeId}`,
           sortValue: item.notice.scheduleAt ?? `${selectedDateValue}T00:00`,
           notice: item.notice,
-        };
+        }];
       }
       if (item.contentType === "SCHEDULE_EVENT" && item.event) {
-        return {
+        return [{
           type: "event" as const,
           key: `event-${item.event.eventId}`,
           sortValue: `${item.event.startDate}T${item.event.timeLabel ?? "00:00"}`,
           event: item.event,
-        };
+        }];
       }
       if (item.contentType === "SCHEDULE_VOTE" && item.vote) {
-        return {
+        return [{
           type: "vote" as const,
           key: `vote-${item.vote.voteId}`,
           sortValue: `${item.vote.voteStartDate}T${item.vote.voteTimeLabel ?? "00:00"}`,
           vote: item.vote,
-        };
+        }];
       }
-      return null;
+      return [];
     })
-    .filter((item): item is SelectedScheduleItem => item !== null)
     .sort((left, right) => left.sortValue.localeCompare(right.sortValue));
   const maxEventCount = Math.max(0, ...Object.values(month.scheduleItemCountByDay));
 

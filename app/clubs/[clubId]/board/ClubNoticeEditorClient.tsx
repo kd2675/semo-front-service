@@ -4,6 +4,7 @@ import Image from "next/image";
 import { AnimatePresence } from "motion/react";
 import { RouterLink } from "@/app/components/RouterLink";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
+import { DatePopoverField } from "@/app/components/DatePopoverField";
 import { useRouter } from "next/navigation";
 import { useEffect, useEffectEvent, useId, useState } from "react";
 import { uploadTempImage } from "@/app/lib/imageUpload";
@@ -34,6 +35,22 @@ function toDateTimeLocalValue(value: string | null | undefined) {
     return "";
   }
   return value.slice(0, 16);
+}
+
+function toDatePart(value: string | null | undefined) {
+  return toDateTimeLocalValue(value).slice(0, 10);
+}
+
+function toTimePart(value: string | null | undefined) {
+  const normalized = toDateTimeLocalValue(value);
+  return normalized.length >= 16 ? normalized.slice(11, 16) : "";
+}
+
+function combineDateTimeValue(dateValue: string, timeValue: string) {
+  if (!dateValue) {
+    return "";
+  }
+  return `${dateValue}T${timeValue || "00:00"}`;
 }
 
 function SettingSwitch({
@@ -86,8 +103,10 @@ export function ClubNoticeEditorClient({
   const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [locationLabel, setLocationLabel] = useState("");
-  const [scheduleAt, setScheduleAt] = useState(initialScheduleAt ?? "");
-  const [scheduleEndAt, setScheduleEndAt] = useState(initialScheduleEndAt ?? "");
+  const [scheduleAtDate, setScheduleAtDate] = useState(toDatePart(initialScheduleAt));
+  const [scheduleAtTime, setScheduleAtTime] = useState(toTimePart(initialScheduleAt));
+  const [scheduleEndAtDate, setScheduleEndAtDate] = useState(toDatePart(initialScheduleEndAt));
+  const [scheduleEndAtTime, setScheduleEndAtTime] = useState(toTimePart(initialScheduleEndAt));
   const [postToBoard, setPostToBoard] = useState(true);
   const [postToCalendar, setPostToCalendar] = useState(false);
   const [pinned, setPinned] = useState(false);
@@ -121,8 +140,10 @@ export function ClubNoticeEditorClient({
     setImageUrl(payload.imageUrl);
     setThumbnailUrl(payload.thumbnailUrl);
     setLocationLabel(payload.locationLabel ?? "");
-    setScheduleAt(toDateTimeLocalValue(payload.scheduleAt));
-    setScheduleEndAt(toDateTimeLocalValue(payload.scheduleEndAt));
+    setScheduleAtDate(toDatePart(payload.scheduleAt));
+    setScheduleAtTime(toTimePart(payload.scheduleAt));
+    setScheduleEndAtDate(toDatePart(payload.scheduleEndAt));
+    setScheduleEndAtTime(toTimePart(payload.scheduleEndAt));
     setPostToBoard(payload.postedToBoard);
     setPostToCalendar(payload.postedToCalendar);
     setPinned(payload.pinned);
@@ -154,8 +175,8 @@ export function ClubNoticeEditorClient({
       content,
       fileName,
       locationLabel: locationLabel.trim() || null,
-      scheduleAt: postToCalendar ? scheduleAt || null : null,
-      scheduleEndAt: postToCalendar ? scheduleEndAt || null : null,
+      scheduleAt: postToCalendar ? combineDateTimeValue(scheduleAtDate, scheduleAtTime) || null : null,
+      scheduleEndAt: postToCalendar ? combineDateTimeValue(scheduleEndAtDate, scheduleEndAtTime) || null : null,
       postToBoard,
       postToCalendar,
       pinned,
@@ -374,24 +395,45 @@ export function ClubNoticeEditorClient({
 
                 {postToCalendar ? (
                   <div className="space-y-3 rounded-2xl border border-[var(--primary)]/15 bg-[var(--primary)]/[0.03] p-4 shadow-sm">
-                    <label className="block">
-                      <span className="mb-1.5 block text-sm font-medium text-slate-700">캘린더 시작 일시</span>
-                      <input
-                        type="datetime-local"
-                        value={scheduleAt}
-                        onChange={(event) => setScheduleAt(event.target.value)}
-                        className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm shadow-sm outline-none transition focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/15"
-                      />
-                    </label>
-                    <label className="block">
-                      <span className="mb-1.5 block text-sm font-medium text-slate-700">캘린더 종료 일시</span>
-                      <input
-                        type="datetime-local"
-                        value={scheduleEndAt}
-                        onChange={(event) => setScheduleEndAt(event.target.value)}
-                        className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm shadow-sm outline-none transition focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/15"
-                      />
-                    </label>
+                    <div className="grid grid-cols-[1.35fr_1fr] gap-3">
+                      <label className="block">
+                        <span className="mb-1.5 block text-sm font-medium text-slate-700">캘린더 시작 날짜</span>
+                        <DatePopoverField
+                          value={scheduleAtDate}
+                          onChange={setScheduleAtDate}
+                          placeholder="시작 날짜를 선택하세요"
+                        />
+                      </label>
+                      <label className="block">
+                        <span className="mb-1.5 block text-sm font-medium text-slate-700">시작 시간</span>
+                        <input
+                          type="time"
+                          value={scheduleAtTime}
+                          onChange={(event) => setScheduleAtTime(event.target.value)}
+                          className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm shadow-sm outline-none transition focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/15"
+                        />
+                      </label>
+                    </div>
+                    <div className="grid grid-cols-[1.35fr_1fr] gap-3">
+                      <label className="block">
+                        <span className="mb-1.5 block text-sm font-medium text-slate-700">캘린더 종료 날짜</span>
+                        <DatePopoverField
+                          value={scheduleEndAtDate}
+                          onChange={setScheduleEndAtDate}
+                          minDate={scheduleAtDate || undefined}
+                          placeholder="종료 날짜를 선택하세요"
+                        />
+                      </label>
+                      <label className="block">
+                        <span className="mb-1.5 block text-sm font-medium text-slate-700">종료 시간</span>
+                        <input
+                          type="time"
+                          value={scheduleEndAtTime}
+                          onChange={(event) => setScheduleEndAtTime(event.target.value)}
+                          className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm shadow-sm outline-none transition focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/15"
+                        />
+                      </label>
+                    </div>
                   </div>
                 ) : null}
               </div>

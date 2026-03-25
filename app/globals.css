@@ -151,3 +151,129 @@ a {
     animation: none;
   }
 }
+
+:where(.calendar-popover) {
+  --cal-font:
+    var(--font-semo-display), "Pretendard", "Noto Sans KR", "Apple SD Gothic Neo", sans-serif;
+  --cal-line: #d9e0ef;
+  --cal-ink: #1a2133;
+  --cal-muted: #6a748d;
+  --cal-accent: #2667ff;
+  --cal-accent-deep: #194ec8;
+}
+
+.calendar-popover {
+  position: fixed;
+  z-index: 1085;
+  width: 286px;
+  border: 1px solid #d9e0ef;
+  border-radius: 14px;
+  background: linear-gradient(165deg, #ffffff 0%, #f4f8ff 100%);
+  box-shadow: 0 22px 38px rgba(21, 41, 83, 0.24);
+  overflow: hidden;
+}
+
+.calendar-popover__inner {
+  padding: 10px;
+}
+
+.cp-head {
+  display: grid;
+  grid-template-columns: 34px 1fr 34px;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.cp-title {
+  text-align: center;
+  color: var(--cal-ink);
+  font-family: var(--cal-font);
+  font-weight: 800;
+}
+
+.cp-nav {
+  appearance: none;
+  width: 34px;
+  height: 30px;
+  border: 1px solid var(--cal-line);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--cal-ink);
+  font-family: var(--cal-font);
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.cp-nav:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.cp-week-row {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  margin-bottom: 4px;
+}
+
+.cp-week {
+  text-align: center;
+  color: var(--cal-muted);
+  font-family: var(--cal-font);
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  padding: 3px 0;
+}
+
+.cp-day-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 4px;
+}
+
+.cp-day {
+  appearance: none;
+  min-height: 31px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--cal-ink);
+  font-family: var(--cal-font);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.cp-day:hover {
+  border-color: rgba(38, 103, 255, 0.38);
+  background: rgba(38, 103, 255, 0.06);
+}
+
+.cp-day.is-outside {
+  color: #a2aec8;
+}
+
+.cp-day.is-selected {
+  border-color: transparent;
+  color: #fff;
+  background: linear-gradient(145deg, var(--cal-accent), var(--cal-accent-deep));
+  box-shadow: 0 8px 14px rgba(25, 78, 200, 0.28);
+}
+
+.cp-day:disabled {
+  color: #b8c1d5;
+  cursor: default;
+}
+
+.cp-day:disabled:hover {
+  border-color: transparent;
+  background: transparent;
+}
+
+.cp-foot {
+  margin-top: 8px;
+  color: var(--cal-muted);
+  font-family: var(--cal-font);
+  font-weight: 700;
+  text-align: right;
+  font-size: 12px;
+}

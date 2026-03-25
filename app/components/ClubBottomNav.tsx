@@ -76,7 +76,10 @@ export function ClubBottomNav({ clubId, isAdmin = false }: ClubBottomNavProps) {
   const [enabledFeatures, setEnabledFeatures] = useState<ClubFeatureSummary[]>([]);
   const menuItems = enabledFeatures;
   const isMoreOpen = openMenuPathname === pathname;
-  const isFeatureRouteActive = menuItems.some((feature) => pathname === stripQuery(feature.userPath));
+  const isFeatureRouteActive = menuItems.some((feature) => {
+    const targetPath = stripQuery(feature.userPath);
+    return pathname === targetPath || pathname.startsWith(`${targetPath}/`);
+  });
 
   useEffect(() => {
     let cancelled = false;

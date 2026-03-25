@@ -90,7 +90,6 @@ function getBoardItemMeta(item: ClubBoardFeedItem) {
       imageUrl: null,
     };
   }
-
   return null;
 }
 

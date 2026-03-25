@@ -186,7 +186,10 @@ export function AdminBottomNav({ clubId }: AdminBottomNavProps) {
   );
   const menuItems = enabledFeatures;
   const isMoreOpen = openMenuPathname === pathname;
-  const isFeatureRouteActive = menuItems.some((feature) => pathname === stripQuery(feature.adminPath));
+  const isFeatureRouteActive = menuItems.some((feature) => {
+    const targetPath = stripQuery(feature.adminPath);
+    return pathname === targetPath || pathname.startsWith(`${targetPath}/`);
+  });
 
   useEffect(() => {
     let cancelled = false;

@@ -2,6 +2,7 @@
 
 import { RouterLink } from "@/app/components/RouterLink";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
+import { DatePopoverField } from "@/app/components/DatePopoverField";
 import { AnimatePresence } from "motion/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useEffectEvent, useId, useRef, useState, type UIEvent } from "react";
@@ -415,38 +416,28 @@ export function ClubScheduleEditorClient({
                     <span className="mb-1 block text-xs font-medium text-slate-700">
                       {scheduleDateMode === "single" ? "날짜" : "시작 날짜"}
                     </span>
-                    <div className="relative">
-                      <input
-                        type="date"
-                        value={startDate}
-                        onChange={(event) => handleStartDateChange(event.target.value)}
-                        className="h-11 w-full rounded-xl border border-[var(--primary)]/20 bg-white pl-9 pr-3 text-sm outline-none transition focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/20"
-                        required
-                      />
-                      <span className="material-symbols-outlined pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-slate-400">
-                        calendar_today
-                      </span>
-                    </div>
+                    <DatePopoverField
+                      value={startDate}
+                      onChange={handleStartDateChange}
+                      buttonClassName="h-11 rounded-xl border-[var(--primary)]/20 px-3"
+                      placeholder="시작 날짜를 선택하세요"
+                      iconName="calendar_today"
+                    />
                   </label>
 
                   <label className="block">
                     <span className="mb-1 block text-xs font-medium text-slate-700">종료 날짜</span>
-                    <div className="relative">
-                      <input
-                        type="date"
-                        value={scheduleDateMode === "range" ? endDate : ""}
-                        min={startDate}
-                        onChange={(event) => setEndDate(event.target.value)}
-                        className={`h-11 w-full rounded-xl border border-[var(--primary)]/20 bg-white pl-9 pr-3 text-sm outline-none transition focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/20 ${
-                          scheduleDateMode === "single" ? "cursor-not-allowed opacity-45" : ""
-                        }`}
-                        disabled={scheduleDateMode === "single"}
-                        required={scheduleDateMode === "range"}
-                      />
-                      <span className="material-symbols-outlined pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-slate-400">
-                        event
-                      </span>
-                    </div>
+                    <DatePopoverField
+                      value={scheduleDateMode === "range" ? endDate : ""}
+                      minDate={startDate}
+                      onChange={setEndDate}
+                      buttonClassName={`h-11 rounded-xl border-[var(--primary)]/20 px-3 ${
+                        scheduleDateMode === "single" ? "cursor-not-allowed opacity-45" : ""
+                      }`}
+                      disabled={scheduleDateMode === "single"}
+                      placeholder="종료 날짜를 선택하세요"
+                      iconName="event"
+                    />
                   </label>
                 </div>
 

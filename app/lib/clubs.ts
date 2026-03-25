@@ -292,6 +292,12 @@ export type ClubScheduleEventDetailResponse = {
   myParticipationStatus: "GOING" | "NOT_GOING" | null;
   goingCount: number;
   notGoingCount: number;
+  goingParticipants: {
+    clubProfileId: number;
+    displayName: string;
+    avatarImageUrl: string | null;
+    avatarThumbnailUrl: string | null;
+  }[];
   canEdit: boolean;
   canDelete: boolean;
 };
@@ -355,7 +361,7 @@ export type ClubScheduleVoteDetailResponse = {
 };
 
 export type UpdateScheduleEventParticipationRequest = {
-  participationStatus: "GOING" | "NOT_GOING";
+  participationStatus: "GOING" | "NOT_GOING" | "CANCEL";
 };
 
 export type UpsertScheduleVoteRequest = {

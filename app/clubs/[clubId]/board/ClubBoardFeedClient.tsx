@@ -9,7 +9,11 @@ import {
 } from "react";
 import { ClubModeSwitchFab } from "@/app/components/ClubModeSwitchFab";
 import { RouteModal } from "@/app/components/RouteModal";
-import { ClubNoticeDetailModal, ClubPollDetailModal, ClubScheduleEventDetailModal } from "@/app/components/ClubDetailModals";
+import {
+  ClubNoticeDetailModal,
+  ClubPollDetailModal,
+  ClubScheduleEventDetailModal,
+} from "@/app/components/ClubDetailModals";
 import {
   type ClubBoardFeedItem,
   deleteClubNotice,
@@ -369,10 +373,7 @@ export function ClubBoardFeedClient({ clubId }: ClubBoardFeedClientProps) {
   }
 
   const pinnedItems = items.filter(isPinnedBoardItem);
-
-  const visibleItems = pinnedOnly
-    ? items
-    : items;
+  const visibleItems = items;
 
   return (
     <div className="bg-[var(--background-light)] font-display text-slate-900">
@@ -455,7 +456,7 @@ export function ClubBoardFeedClient({ clubId }: ClubBoardFeedClientProps) {
                     ? `notice-${item.notice.noticeId}`
                     : item.contentType === "SCHEDULE_EVENT" && item.event
                       ? `event-${item.event.eventId}`
-                      : item.contentType === "SCHEDULE_VOTE" && item.vote
+                    : item.contentType === "SCHEDULE_VOTE" && item.vote
                         ? `vote-${item.vote.voteId}`
                         : "")
                     ? "relative z-20"
