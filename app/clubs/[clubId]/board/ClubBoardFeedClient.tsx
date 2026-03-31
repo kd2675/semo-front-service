@@ -13,9 +13,12 @@ import {
   ClubNoticeDetailModal,
   ClubPollDetailModal,
   ClubScheduleEventDetailModal,
+  ClubTournamentDetailModal,
 } from "@/app/components/ClubDetailModals";
 import {
   type ClubBoardFeedItem,
+  type TournamentSummary,
+  deleteClubTournament,
   deleteClubNotice,
   deleteClubScheduleEvent,
   deleteClubScheduleVote,
@@ -38,6 +41,8 @@ import Image from "next/image";
 import { ClubScheduleEditorClient } from "../schedule/ClubScheduleEditorClient";
 import { ClubScheduleVoteEditorClient } from "../schedule/ClubScheduleVoteEditorClient";
 import { PinnedBoardCarousel } from "./PinnedBoardCarousel";
+import { BoardTournamentManageCard } from "./BoardTournamentManageCard";
+import { ClubTournamentEditorClient } from "../more/tournaments/ClubTournamentEditorClient";
 
 type CursorState = {
   boardItemId: number | null;
@@ -51,7 +56,8 @@ function isPinnedBoardItem(item: ClubBoardFeedItem) {
   return Boolean(
     (item.contentType === "NOTICE" && item.notice?.pinned)
       || (item.contentType === "SCHEDULE_EVENT" && item.event?.pinned)
-      || (item.contentType === "SCHEDULE_VOTE" && item.vote?.pinned),
+      || (item.contentType === "SCHEDULE_VOTE" && item.vote?.pinned)
+      || (item.contentType === "TOURNAMENT" && item.tournament?.pinned),
   );
 }
 
@@ -226,12 +232,15 @@ export function ClubBoardFeedClient({ clubId }: ClubBoardFeedClientProps) {
   const [detailNoticeId, setDetailNoticeId] = useState<string | null>(null);
   const [detailEventId, setDetailEventId] = useState<string | null>(null);
   const [detailVoteId, setDetailVoteId] = useState<string | null>(null);
+  const [detailTournamentId, setDetailTournamentId] = useState<string | null>(null);
   const [editingNoticeId, setEditingNoticeId] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<ClubNoticeListItem | null>(null);
   const [editingEventId, setEditingEventId] = useState<string | null>(null);
   const [editingVoteId, setEditingVoteId] = useState<string | null>(null);
+  const [editingTournamentId, setEditingTournamentId] = useState<string | null>(null);
   const [deleteEventTarget, setDeleteEventTarget] = useState<ClubScheduleEventSummary | null>(null);
   const [deleteVoteTarget, setDeleteVoteTarget] = useState<ClubScheduleVoteSummary | null>(null);
+  const [deleteTournamentTarget, setDeleteTournamentTarget] = useState<TournamentSummary | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [activeActionKey, setActiveActionKey] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
@@ -254,6 +263,7 @@ export function ClubBoardFeedClient({ clubId }: ClubBoardFeedClientProps) {
       setDetailNoticeId(null);
       setDetailEventId(null);
       setDetailVoteId(null);
+      setDetailTournamentId(null);
     }
 
     loadingRef.current = true;
@@ -368,6 +378,21 @@ export function ClubBoardFeedClient({ clubId }: ClubBoardFeedClientProps) {
     setReloadKey((current) => current + 1);
   };
 
+  const handleDeleteTournament = async () => {
+    if (!deleteTournamentTarget) {
+      return;
+    }
+    setDeleting(true);
+    const result = await deleteClubTournament(clubId, deleteTournamentTarget.tournamentRecordId);
+    setDeleting(false);
+    if (!result.ok) {
+      return;
+    }
+    setDeleteTournamentTarget(null);
+    setActiveActionKey(null);
+    setReloadKey((current) => current + 1);
+  };
+
   if (!initialLoaded && !error) {
     return <ClubBoardFeedLoadingShell />;
   }
@@ -437,6 +462,10 @@ export function ClubBoardFeedClient({ clubId }: ClubBoardFeedClientProps) {
                     setActiveActionKey(null);
                     setDetailVoteId(String(voteId));
                   }}
+                  onOpenTournament={(tournamentRecordId) => {
+                    setActiveActionKey(null);
+                    setDetailTournamentId(String(tournamentRecordId));
+                  }}
                 />
               </section>
             ) : null}
@@ -458,6 +487,8 @@ export function ClubBoardFeedClient({ clubId }: ClubBoardFeedClientProps) {
                       ? `event-${item.event.eventId}`
                     : item.contentType === "SCHEDULE_VOTE" && item.vote
                         ? `vote-${item.vote.voteId}`
+                        : item.contentType === "TOURNAMENT" && item.tournament
+                          ? `tournament-${item.tournament.tournamentRecordId}`
                         : "")
                     ? "relative z-20"
                     : "relative"
@@ -540,6 +571,32 @@ export function ClubBoardFeedClient({ clubId }: ClubBoardFeedClientProps) {
                     }}
                   />
                 ) : null}
+                {item.contentType === "TOURNAMENT" && item.tournament ? (
+                  <BoardTournamentManageCard
+                    tournament={item.tournament}
+                    canEdit={isAdmin || item.tournament.canEdit}
+                    canDelete={isAdmin || item.tournament.canDelete}
+                    showBoardShareBadge
+                    open={activeActionKey === `tournament-${item.tournament.tournamentRecordId}`}
+                    onOpenChange={(nextOpen) => {
+                      setActiveActionKey(nextOpen ? `tournament-${item.tournament!.tournamentRecordId}` : null);
+                    }}
+                    onOpen={() => {
+                      setActiveActionKey(null);
+                      setDetailTournamentId(String(item.tournament!.tournamentRecordId));
+                    }}
+                    onEdit={() => {
+                      setActiveActionKey(null);
+                      setDetailTournamentId(null);
+                      setEditingTournamentId(String(item.tournament!.tournamentRecordId));
+                    }}
+                    onDelete={() => {
+                      setActiveActionKey(null);
+                      setDetailTournamentId(null);
+                      setDeleteTournamentTarget(item.tournament!);
+                    }}
+                  />
+                ) : null}
               </motion.article>
             ))}
               </div>
@@ -613,6 +670,13 @@ export function ClubBoardFeedClient({ clubId }: ClubBoardFeedClientProps) {
               onRequestClose={() => setDetailVoteId(null)}
             />
           ) : null}
+          {detailTournamentId ? (
+            <ClubTournamentDetailModal
+              clubId={clubId}
+              tournamentRecordId={detailTournamentId}
+              onRequestClose={() => setDetailTournamentId(null)}
+            />
+          ) : null}
           {editingNoticeId ? (
             <RouteModal
               onDismiss={() => {
@@ -675,6 +739,22 @@ export function ClubBoardFeedClient({ clubId }: ClubBoardFeedClientProps) {
               />
             </RouteModal>
           ) : null}
+          {editingTournamentId ? (
+            <RouteModal onDismiss={() => setEditingTournamentId(null)} dismissOnBackdrop={false}>
+              <ClubTournamentEditorClient
+                clubId={clubId}
+                tournamentRecordId={editingTournamentId}
+                presentation="modal"
+                onRequestClose={() => setEditingTournamentId(null)}
+                onSaved={(savedTournamentId) => {
+                  setEditingTournamentId(null);
+                  setActiveActionKey(null);
+                  setReloadKey((current) => current + 1);
+                  setDetailTournamentId(String(savedTournamentId));
+                }}
+              />
+            </RouteModal>
+          ) : null}
           {deleteTarget ? (
             <ScheduleActionConfirmModal
               title="공지를 삭제할까요?"
@@ -718,6 +798,21 @@ export function ClubBoardFeedClient({ clubId }: ClubBoardFeedClientProps) {
                 }
               }}
               onConfirm={handleDeleteVote}
+            />
+          ) : null}
+          {deleteTournamentTarget ? (
+            <ScheduleActionConfirmModal
+              title="대회를 삭제할까요?"
+              description={`"${deleteTournamentTarget.title}" 대회는 삭제 후 복구할 수 없습니다.`}
+              confirmLabel="대회 삭제"
+              busyLabel="삭제 중..."
+              busy={deleting}
+              onCancel={() => {
+                if (!deleting) {
+                  setDeleteTournamentTarget(null);
+                }
+              }}
+              onConfirm={handleDeleteTournament}
             />
           ) : null}
         </AnimatePresence>

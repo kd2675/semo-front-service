@@ -4,6 +4,7 @@ import { RouteModal } from "@/app/components/RouteModal";
 import { ClubNoticeDetailClient } from "@/app/clubs/[clubId]/board/[noticeId]/ClubNoticeDetailClient";
 import { ClubScheduleDetailClient } from "@/app/clubs/[clubId]/schedule/ClubScheduleDetailClient";
 import { ClubScheduleVoteDetailClient } from "@/app/clubs/[clubId]/schedule/ClubScheduleVoteDetailClient";
+import { ClubTournamentDetailClient } from "@/app/clubs/[clubId]/more/tournaments/ClubTournamentDetailClient";
 
 type DetailMode = "user" | "admin";
 
@@ -27,12 +28,23 @@ type ClubPollDetailModalProps = {
   onRequestClose: () => void;
 };
 
+type ClubTournamentDetailModalProps = {
+  clubId: string;
+  tournamentRecordId: string;
+  mode?: DetailMode;
+  onRequestClose: () => void;
+};
+
 function getNoticeBasePath(clubId: string, mode: DetailMode) {
   return mode === "admin" ? `/clubs/${clubId}/admin/more/notices` : `/clubs/${clubId}/more/notices`;
 }
 
 function getPollBasePath(clubId: string, mode: DetailMode) {
   return mode === "admin" ? `/clubs/${clubId}/admin/more/polls` : `/clubs/${clubId}/more/polls`;
+}
+
+function getTournamentBasePath(clubId: string, mode: DetailMode) {
+  return mode === "admin" ? `/clubs/${clubId}/admin/more/tournaments` : `/clubs/${clubId}/more/tournaments`;
 }
 
 export function ClubNoticeDetailModal({
@@ -84,6 +96,25 @@ export function ClubPollDetailModal({
         voteId={voteId}
         presentation="modal"
         basePath={getPollBasePath(clubId, mode)}
+        onRequestClose={onRequestClose}
+      />
+    </RouteModal>
+  );
+}
+
+export function ClubTournamentDetailModal({
+  clubId,
+  tournamentRecordId,
+  mode = "user",
+  onRequestClose,
+}: ClubTournamentDetailModalProps) {
+  return (
+    <RouteModal onDismiss={onRequestClose}>
+      <ClubTournamentDetailClient
+        clubId={clubId}
+        tournamentRecordId={tournamentRecordId}
+        presentation="modal"
+        basePath={getTournamentBasePath(clubId, mode)}
         onRequestClose={onRequestClose}
       />
     </RouteModal>

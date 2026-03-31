@@ -5,6 +5,7 @@ import { A11y, Pagination } from "swiper/modules";
 import { Swiper, SwiperSlide } from "swiper/react";
 import type { ClubBoardFeedItem } from "@/app/lib/clubs";
 import { getLinkedContentBadge, getShareTargetBadges } from "@/app/lib/content-badge";
+import { getTournamentFormatLabel, getTournamentStatusLabel } from "@/app/lib/tournament";
 import { getVoteLifecycleLabel } from "@/app/lib/vote-status";
 
 type PinnedBoardCarouselProps = {
@@ -12,6 +13,7 @@ type PinnedBoardCarouselProps = {
   onOpenNotice: (noticeId: number) => void;
   onOpenEvent: (eventId: number) => void;
   onOpenVote: (voteId: number) => void;
+  onOpenTournament: (tournamentRecordId: number) => void;
 };
 
 function getPinnedSurface(useImageBackground: boolean) {
@@ -90,6 +92,31 @@ function getBoardItemMeta(item: ClubBoardFeedItem) {
       imageUrl: null,
     };
   }
+
+  if (item.contentType === "TOURNAMENT" && item.tournament) {
+    return {
+      title: item.tournament.title,
+      summary:
+        item.tournament.summaryText
+        ?? [
+          getTournamentFormatLabel(item.tournament.matchFormat),
+          item.tournament.tournamentPeriodLabel,
+          item.tournament.locationLabel,
+        ].filter(Boolean).join(" · "),
+      dateLabel: getTournamentStatusLabel(item.tournament.tournamentStatus),
+      typeLabel: "대회",
+      typeBadgeClassName: "bg-emerald-50 text-emerald-700",
+      shareBadges: getShareTargetBadges({
+        postedToBoard: item.tournament.postedToBoard,
+        postedToCalendar: item.tournament.postedToCalendar,
+        includeBoard: true,
+      }),
+      authorDisplayName: item.tournament.authorDisplayName,
+      authorRoleCode: getTournamentFormatLabel(item.tournament.matchFormat),
+      avatarUrl: item.tournament.authorAvatarThumbnailUrl ?? item.tournament.authorAvatarImageUrl,
+      imageUrl: null,
+    };
+  }
   return null;
 }
 
@@ -98,6 +125,7 @@ export function PinnedBoardCarousel({
   onOpenNotice,
   onOpenEvent,
   onOpenVote,
+  onOpenTournament,
 }: PinnedBoardCarouselProps) {
   if (items.length === 0) {
     return null;
@@ -130,6 +158,10 @@ export function PinnedBoardCarousel({
             }
             if (item.contentType === "SCHEDULE_VOTE" && item.vote) {
               onOpenVote(item.vote.voteId);
+              return;
+            }
+            if (item.contentType === "TOURNAMENT" && item.tournament) {
+              onOpenTournament(item.tournament.tournamentRecordId);
             }
           };
 

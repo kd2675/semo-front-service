@@ -35,17 +35,20 @@ import {
   getMyClub,
   getClubPollHome,
   getClubSchedule,
+  getClubTournamentHome,
   updateClubDashboardWidgets,
   type ClubAttendanceResponse,
   type ClubBoardResponse,
   type ClubPollHomeResponse,
   type ClubPollSummary,
+  type ClubTournamentHomeResponse,
   type ClubDashboardEditorResponse,
   type ClubDashboardWidgetSummary,
   type ClubScheduleResponse,
   type MyClubSummary,
 } from "@/app/lib/clubs";
 import { staggeredFadeUpMotion } from "@/app/lib/motion";
+import { getTournamentFeeLabel, getTournamentFormatLabel, getTournamentStatusLabel } from "@/app/lib/tournament";
 import {
   ClubDashboardLoadingShell,
   ClubDashboardWidgetGridShell,
@@ -61,6 +64,7 @@ const WIDGET_ACCENT_CLASS: Record<string, string> = {
   POLL_STATUS: "bg-amber-50 text-amber-500",
   PROFILE_SUMMARY: "bg-emerald-50 text-emerald-600",
   ATTENDANCE_STATUS: "bg-indigo-50 text-indigo-600",
+  TOURNAMENT_RECORD_LATEST: "bg-emerald-50 text-emerald-700",
 };
 
 function normalizeSortOrder(widgets: ClubDashboardWidgetSummary[]) {
@@ -246,6 +250,9 @@ function DashboardWidgetCard({
   pollData,
   pollLoading,
   pollError,
+  tournamentData,
+  tournamentLoading,
+  tournamentError,
   attendancePulseToken,
   isCheckingInAttendance,
   onRemove,
@@ -276,6 +283,9 @@ function DashboardWidgetCard({
   pollData: ClubPollHomeResponse | null;
   pollLoading: boolean;
   pollError: string | null;
+  tournamentData: ClubTournamentHomeResponse | null;
+  tournamentLoading: boolean;
+  tournamentError: string | null;
   attendancePulseToken: number;
   isCheckingInAttendance: boolean;
   onRemove: (widgetKey: string) => void;
@@ -293,6 +303,7 @@ function DashboardWidgetCard({
   const isBoardNoticeWidget = widget.widgetKey === "BOARD_NOTICE";
   const isScheduleWidget = widget.widgetKey === "SCHEDULE_OVERVIEW";
   const isPollWidget = widget.widgetKey === "POLL_STATUS";
+  const isTournamentWidget = widget.widgetKey === "TOURNAMENT_RECORD_LATEST";
   const todayAttendance = attendanceData?.todayAttendance;
   const recentLog = attendanceData?.recentLogs?.[0] ?? null;
   const latestNotice = boardData?.notices?.[0] ?? null;
@@ -332,6 +343,10 @@ function DashboardWidgetCard({
       })
       .slice(0, 3);
   }, [scheduleData]);
+  const featuredTournament = tournamentData?.featuredTournament ?? null;
+  const closestMyTournament = tournamentData?.myTournaments?.[0] ?? null;
+  const tournamentHero =
+    closestMyTournament ?? featuredTournament ?? tournamentData?.tournaments?.[0] ?? null;
   const statusLabel = todayAttendance
     ? todayAttendance.checkedIn
       ? "Checked In"
@@ -681,6 +696,55 @@ function DashboardWidgetCard({
             </>
           )}
         </div>
+      ) : isTournamentWidget ? (
+        <div className="space-y-3">
+          {tournamentLoading ? (
+            <>
+              <div className="h-4 w-28 rounded-full bg-slate-100" />
+              <div className="h-24 w-full rounded-xl bg-slate-50" />
+            </>
+          ) : tournamentError ? (
+            <p className="text-sm text-slate-500">대회 정보를 가져오지 못했습니다.</p>
+          ) : tournamentHero ? (
+            <RouterLink
+              href={`/clubs/${clubId}/more/tournaments/${tournamentHero.tournamentRecordId}`}
+              className="block rounded-xl border border-emerald-100 bg-white p-4 shadow-sm transition-all hover:border-emerald-300"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-emerald-600">
+                    {closestMyTournament ? "My Tournament" : "Featured Tournament"}
+                  </p>
+                  <p className="mt-2 line-clamp-2 text-base font-bold text-slate-900">
+                    {tournamentHero.title}
+                  </p>
+                </div>
+                <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-bold text-emerald-700">
+                  {getTournamentStatusLabel(tournamentHero.tournamentStatus)}
+                </span>
+              </div>
+              <p className="mt-2 text-sm text-slate-500">
+                {tournamentHero.tournamentPeriodLabel}
+                {tournamentHero.locationLabel ? ` · ${tournamentHero.locationLabel}` : ""}
+              </p>
+              <div className="mt-3 flex items-center justify-between rounded-lg bg-emerald-50/60 px-3 py-2">
+                <p className="text-xs font-medium text-slate-500">
+                  {getTournamentFormatLabel(tournamentHero.matchFormat)} · {tournamentHero.approvedApplicationCount}명 승인
+                </p>
+                <span className="rounded-full bg-white px-2 py-0.5 text-[11px] font-bold text-emerald-700">
+                  {getTournamentFeeLabel(tournamentHero)}
+                </span>
+              </div>
+            </RouterLink>
+          ) : (
+            <>
+              <p className="text-sm font-semibold text-slate-900">표시할 대회가 없습니다.</p>
+              <p className="text-xs text-slate-500">
+                대표 대회나 내가 참여 중인 대회가 생기면 이 위젯에 표시됩니다.
+              </p>
+            </>
+          )}
+        </div>
       ) : (
         <p className="text-sm text-slate-500">{widget.description ?? "No widget description yet."}</p>
       )}
@@ -762,6 +826,9 @@ export function ClubDashboardFallbackClient({
   const [pollData, setPollData] = useState<ClubPollHomeResponse | null>(null);
   const [pollLoading, setPollLoading] = useState(false);
   const [pollError, setPollError] = useState<string | null>(null);
+  const [tournamentData, setTournamentData] = useState<ClubTournamentHomeResponse | null>(null);
+  const [tournamentLoading, setTournamentLoading] = useState(false);
+  const [tournamentError, setTournamentError] = useState<string | null>(null);
   const [attendancePulseToken, setAttendancePulseToken] = useState(0);
   const [isCheckingInAttendance, setIsCheckingInAttendance] = useState(false);
   const { toast, showToast, clearToast } = useEphemeralToast();
@@ -931,6 +998,12 @@ export function ClubDashboardFallbackClient({
     );
   }, [dashboardWidgetSource]);
 
+  const hasTournamentWidget = useMemo(() => {
+    return dashboardWidgetSource.some(
+      (widget) => widget.widgetKey === "TOURNAMENT_RECORD_LATEST" && widget.enabled && widget.available,
+    );
+  }, [dashboardWidgetSource]);
+
   const loadAttendanceData = useCallback(async () => {
     if (!hasAttendanceWidget) {
       return;
@@ -1010,6 +1083,25 @@ export function ClubDashboardFallbackClient({
     setPollData(result.data);
     setPollLoading(false);
   }, [clubId, hasPollWidget]);
+
+  const loadTournamentData = useCallback(async () => {
+    if (!hasTournamentWidget) {
+      return;
+    }
+
+    setTournamentLoading(true);
+    setTournamentError(null);
+    const result = await getClubTournamentHome(clubId);
+    if (!result.ok || !result.data) {
+      setTournamentData(null);
+      setTournamentError(result.message ?? "대회 정보를 불러오지 못했습니다.");
+      setTournamentLoading(false);
+      return;
+    }
+
+    setTournamentData(result.data);
+    setTournamentLoading(false);
+  }, [clubId, hasTournamentWidget]);
 
   const persistEditorWidgets = useCallback(
     async (nextWidgets: ClubDashboardWidgetSummary[], successMessage: string) => {
@@ -1166,6 +1258,18 @@ export function ClubDashboardFallbackClient({
       window.clearTimeout(timerId);
     };
   }, [hasPollWidget, loadPollData]);
+
+  useEffect(() => {
+    if (!hasTournamentWidget) {
+      return;
+    }
+    const timerId = window.setTimeout(() => {
+      void loadTournamentData();
+    }, 0);
+    return () => {
+      window.clearTimeout(timerId);
+    };
+  }, [hasTournamentWidget, loadTournamentData]);
 
   const handleAttendanceCheckIn = useCallback(async () => {
     const todayAttendance = attendanceData?.todayAttendance;
@@ -1435,6 +1539,9 @@ export function ClubDashboardFallbackClient({
                     pollData={widget.widgetKey === "POLL_STATUS" ? pollData : null}
                     pollLoading={widget.widgetKey === "POLL_STATUS" && pollLoading}
                     pollError={widget.widgetKey === "POLL_STATUS" ? pollError : null}
+                    tournamentData={widget.widgetKey === "TOURNAMENT_RECORD_LATEST" ? tournamentData : null}
+                    tournamentLoading={widget.widgetKey === "TOURNAMENT_RECORD_LATEST" && tournamentLoading}
+                    tournamentError={widget.widgetKey === "TOURNAMENT_RECORD_LATEST" ? tournamentError : null}
                     attendancePulseToken={widget.widgetKey === "ATTENDANCE_STATUS" ? attendancePulseToken : 0}
                     isCheckingInAttendance={widget.widgetKey === "ATTENDANCE_STATUS" && isCheckingInAttendance}
                     onRemove={() => {}}

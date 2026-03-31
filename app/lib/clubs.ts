@@ -91,10 +91,11 @@ export type ClubNoticeFeedResponse = {
 
 export type ClubBoardFeedItem = {
   boardItemId: number;
-  contentType: "NOTICE" | "SCHEDULE_EVENT" | "SCHEDULE_VOTE";
+  contentType: "NOTICE" | "SCHEDULE_EVENT" | "SCHEDULE_VOTE" | "TOURNAMENT";
   notice: ClubNoticeListItem | null;
   event: ClubScheduleEventSummary | null;
   vote: ClubScheduleVoteSummary | null;
+  tournament: TournamentSummary | null;
 };
 
 export type ClubNoticeDetailResponse = {
@@ -185,10 +186,11 @@ export type ClubScheduleResponse = {
 
 export type ClubCalendarFeedItem = {
   calendarItemId: number;
-  contentType: "NOTICE" | "SCHEDULE_EVENT" | "SCHEDULE_VOTE";
+  contentType: "NOTICE" | "SCHEDULE_EVENT" | "SCHEDULE_VOTE" | "TOURNAMENT";
   notice: ClubNoticeListItem | null;
   event: ClubScheduleEventSummary | null;
   vote: ClubScheduleVoteSummary | null;
+  tournament: TournamentSummary | null;
 };
 
 export type ClubScheduleHomeResponse = {
@@ -263,6 +265,264 @@ export type ClubScheduleVoteSummary = {
   votingOpen: boolean;
   canEdit: boolean;
   canDelete: boolean;
+};
+
+export type TournamentEntryMember = {
+  clubProfileId: number;
+  displayName: string;
+  avatarImageUrl: string | null;
+  avatarThumbnailUrl: string | null;
+  memberRole: string;
+};
+
+export type TournamentApplicationSummary = {
+  tournamentApplicationId: number;
+  clubProfileId: number;
+  applicantDisplayName: string;
+  applicantAvatarImageUrl: string | null;
+  applicantAvatarThumbnailUrl: string | null;
+  applicationStatus: "APPLIED" | "APPROVED" | "REJECTED" | "CANCELLED";
+  applicationNote: string | null;
+  appliedAtLabel: string;
+  mine: boolean;
+  canReview: boolean;
+  canCancel: boolean;
+};
+
+export type TournamentEntrySummary = {
+  tournamentEntryId: number;
+  entryType: "INDIVIDUAL" | "PAIR" | "TEAM";
+  displayName: string;
+  entryStatus: string;
+  seedNumber: number | null;
+  sortOrder: number;
+  members: TournamentEntryMember[];
+};
+
+export type TournamentBracketSide = {
+  tournamentMatchSideId: number;
+  sideNo: number;
+  tournamentEntryId: number | null;
+  entryDisplayName: string | null;
+  seedNumber: number | null;
+  scoreSummary: string | null;
+  resultStatus: string;
+  members: TournamentEntryMember[];
+};
+
+export type TournamentBracketMatch = {
+  tournamentMatchId: number;
+  tournamentRoundId: number;
+  title: string | null;
+  matchStatus: string;
+  scheduledAt: string | null;
+  scheduledAtLabel: string | null;
+  locationLabel: string | null;
+  winnerEntryId: number | null;
+  sortOrder: number;
+  sides: TournamentBracketSide[];
+};
+
+export type TournamentBracketRound = {
+  tournamentRoundId: number;
+  roundKey: string;
+  displayName: string;
+  roundType: string;
+  sortOrder: number;
+  matches: TournamentBracketMatch[];
+};
+
+export type TournamentSummary = {
+  tournamentRecordId: number;
+  title: string;
+  summaryText: string | null;
+  tournamentStatus: "DRAFT" | "APPLICATION_OPEN" | "ENTRY_CONFIRMED" | "ONGOING" | "COMPLETED" | "CANCELLED";
+  authorDisplayName: string;
+  authorAvatarImageUrl: string | null;
+  authorAvatarThumbnailUrl: string | null;
+  applicationWindowLabel: string;
+  tournamentPeriodLabel: string;
+  startDate: string;
+  endDate: string;
+  locationLabel: string | null;
+  matchFormat: "SINGLE" | "DOUBLE" | "TEAM";
+  teamMemberLimit: number | null;
+  participantLimit: number | null;
+  approvedApplicationCount: number;
+  activeEntryCount: number;
+  feeRequired: boolean;
+  feeAmount: number | null;
+  feeCurrencyCode: string;
+  postedToBoard: boolean;
+  postedToCalendar: boolean;
+  pinned: boolean;
+  bracketMode: "RANDOM" | "MANUAL";
+  bracketConfirmed: boolean;
+  mine: boolean;
+  participating: boolean;
+  canEdit: boolean;
+  canCancel: boolean;
+  canDelete: boolean;
+};
+
+export type ClubTournamentHomeResponse = {
+  clubId: number;
+  clubName: string;
+  admin: boolean;
+  canCreate: boolean;
+  totalTournamentCount: number;
+  recruitingCount: number;
+  ongoingCount: number;
+  participatingCount: number;
+  featuredTournament: TournamentSummary | null;
+  tournaments: TournamentSummary[];
+  myTournaments: TournamentSummary[];
+  archivedTournaments: TournamentSummary[];
+};
+
+export type ClubAdminTournamentHomeResponse = {
+  clubId: number;
+  clubName: string;
+  admin: boolean;
+  canCreate: boolean;
+  totalTournamentCount: number;
+  activeTournamentCount: number;
+  completedTournamentCount: number;
+  recruitingTournamentCount: number;
+  bracketConfirmedCount: number;
+  tournaments: TournamentSummary[];
+};
+
+export type TournamentDetailResponse = {
+  clubId: number;
+  clubName: string;
+  admin: boolean;
+  tournamentRecordId: number;
+  title: string;
+  summaryText: string | null;
+  detailText: string | null;
+  tournamentStatus: "DRAFT" | "APPLICATION_OPEN" | "ENTRY_CONFIRMED" | "ONGOING" | "COMPLETED" | "CANCELLED";
+  authorDisplayName: string;
+  authorAvatarImageUrl: string | null;
+  authorAvatarThumbnailUrl: string | null;
+  applicationStartAt: string;
+  applicationEndAt: string;
+  applicationWindowLabel: string;
+  startDate: string;
+  endDate: string;
+  tournamentPeriodLabel: string;
+  locationLabel: string | null;
+  matchFormat: "SINGLE" | "DOUBLE" | "TEAM";
+  teamMemberLimit: number | null;
+  participantLimit: number | null;
+  feeRequired: boolean;
+  feeAmount: number | null;
+  feeCurrencyCode: string;
+  postedToBoard: boolean;
+  postedToCalendar: boolean;
+  pinned: boolean;
+  bracketMode: "RANDOM" | "MANUAL";
+  bracketConfirmed: boolean;
+  cancelledAtLabel: string | null;
+  cancelReason: string | null;
+  applicantCount: number;
+  approvedCount: number;
+  activeEntryCount: number;
+  applicationOpen: boolean;
+  canApply: boolean;
+  applied: boolean;
+  myApplicationStatus: "APPLIED" | "APPROVED" | "REJECTED" | "CANCELLED" | null;
+  participating: boolean;
+  canEdit: boolean;
+  canCancelTournament: boolean;
+  canDelete: boolean;
+  canReviewApplications: boolean;
+  canManageEntries: boolean;
+  canManageBracket: boolean;
+  applications: TournamentApplicationSummary[];
+  entries: TournamentEntrySummary[];
+  rounds: TournamentBracketRound[];
+};
+
+export type UpsertTournamentRequest = {
+  title: string;
+  summaryText?: string | null;
+  detailText?: string | null;
+  applicationStartAt: string;
+  applicationEndAt: string;
+  startDate: string;
+  endDate: string;
+  locationLabel?: string | null;
+  matchFormat: "SINGLE" | "DOUBLE" | "TEAM";
+  teamMemberLimit?: number | null;
+  participantLimit?: number | null;
+  feeRequired: boolean;
+  feeAmount?: number | null;
+  feeCurrencyCode?: string | null;
+  postToBoard?: boolean;
+  postToCalendar?: boolean;
+  pinned?: boolean;
+  bracketMode: "RANDOM" | "MANUAL";
+};
+
+export type TournamentUpsertResponse = {
+  tournamentRecordId: number;
+  title: string;
+  startDate: string;
+  endDate: string;
+  tournamentStatus: string;
+  bracketConfirmed: boolean;
+};
+
+export type SubmitTournamentApplicationRequest = {
+  applicationNote?: string | null;
+};
+
+export type CancelTournamentRequest = {
+  cancelReason?: string | null;
+};
+
+export type ReviewTournamentApplicationRequest = {
+  applicationStatus: "APPROVED" | "REJECTED";
+  reviewNote?: string | null;
+};
+
+export type TournamentEntryDraftMemberRequest = {
+  clubProfileId: number;
+  memberRole: string;
+};
+
+export type UpsertTournamentEntryDraftRequest = {
+  displayName: string;
+  seedNumber?: number | null;
+  members: TournamentEntryDraftMemberRequest[];
+};
+
+export type UpdateTournamentEntriesRequest = {
+  entries: UpsertTournamentEntryDraftRequest[];
+};
+
+export type GenerateTournamentBracketRequest = {
+  randomize?: boolean;
+};
+
+export type UpdateTournamentBracketDraftSideRequest = {
+  tournamentMatchSideId: number;
+  tournamentEntryId?: number | null;
+  scoreSummary?: string | null;
+  resultStatus?: string | null;
+};
+
+export type UpdateTournamentBracketDraftMatchRequest = {
+  tournamentMatchId: number;
+  title?: string | null;
+  scheduledAt?: string | null;
+  locationLabel?: string | null;
+  sides: UpdateTournamentBracketDraftSideRequest[];
+};
+
+export type UpdateTournamentBracketDraftRequest = {
+  matches: UpdateTournamentBracketDraftMatchRequest[];
 };
 
 export type ClubScheduleEventDetailResponse = {
@@ -980,6 +1240,134 @@ export function getClubPollHome(
   return getJson<ClubPollHomeResponse>(
     `/api/semo/v1/clubs/${clubId}/more/polls${queryString ? `?${queryString}` : ""}`,
   );
+}
+
+export function getClubTournamentHome(clubId: string | number) {
+  return getJson<ClubTournamentHomeResponse>(`/api/semo/v1/clubs/${clubId}/more/tournaments`);
+}
+
+export function getClubAdminTournamentHome(clubId: string | number) {
+  return getJson<ClubAdminTournamentHomeResponse>(`/api/semo/v1/clubs/${clubId}/admin/more/tournaments`);
+}
+
+export function getClubTournamentDetail(clubId: string | number, tournamentRecordId: string | number) {
+  return getJson<TournamentDetailResponse>(
+    `/api/semo/v1/clubs/${clubId}/more/tournaments/${tournamentRecordId}`,
+  );
+}
+
+export function createClubTournament(
+  clubId: string | number,
+  request: UpsertTournamentRequest,
+) {
+  return postJson<TournamentUpsertResponse>(
+    `/api/semo/v1/clubs/${clubId}/more/tournaments`,
+    request,
+  );
+}
+
+export function updateClubTournament(
+  clubId: string | number,
+  tournamentRecordId: string | number,
+  request: UpsertTournamentRequest,
+) {
+  return putJson<TournamentUpsertResponse>(
+    `/api/semo/v1/clubs/${clubId}/more/tournaments/${tournamentRecordId}`,
+    request,
+  );
+}
+
+export function cancelClubTournament(
+  clubId: string | number,
+  tournamentRecordId: string | number,
+  request: CancelTournamentRequest,
+) {
+  return putJson<TournamentDetailResponse>(
+    `/api/semo/v1/clubs/${clubId}/more/tournaments/${tournamentRecordId}/cancel`,
+    request,
+  );
+}
+
+export function applyClubTournament(
+  clubId: string | number,
+  tournamentRecordId: string | number,
+  request: SubmitTournamentApplicationRequest,
+) {
+  return postJson<TournamentDetailResponse>(
+    `/api/semo/v1/clubs/${clubId}/more/tournaments/${tournamentRecordId}/applications`,
+    request,
+  );
+}
+
+export function cancelClubTournamentApplication(
+  clubId: string | number,
+  tournamentRecordId: string | number,
+) {
+  return deleteJson<TournamentDetailResponse>(
+    `/api/semo/v1/clubs/${clubId}/more/tournaments/${tournamentRecordId}/applications/me`,
+  );
+}
+
+export function reviewClubTournamentApplication(
+  clubId: string | number,
+  tournamentRecordId: string | number,
+  tournamentApplicationId: string | number,
+  request: ReviewTournamentApplicationRequest,
+) {
+  return putJson<TournamentDetailResponse>(
+    `/api/semo/v1/clubs/${clubId}/admin/more/tournaments/${tournamentRecordId}/applications/${tournamentApplicationId}/review`,
+    request,
+  );
+}
+
+export function updateClubTournamentEntries(
+  clubId: string | number,
+  tournamentRecordId: string | number,
+  request: UpdateTournamentEntriesRequest,
+) {
+  return putJson<TournamentDetailResponse>(
+    `/api/semo/v1/clubs/${clubId}/admin/more/tournaments/${tournamentRecordId}/entries`,
+    request,
+  );
+}
+
+export function generateClubTournamentBracket(
+  clubId: string | number,
+  tournamentRecordId: string | number,
+  request: GenerateTournamentBracketRequest = {},
+) {
+  return postJson<TournamentDetailResponse>(
+    `/api/semo/v1/clubs/${clubId}/admin/more/tournaments/${tournamentRecordId}/bracket/generate`,
+    request,
+  );
+}
+
+export function updateClubTournamentBracketDraft(
+  clubId: string | number,
+  tournamentRecordId: string | number,
+  request: UpdateTournamentBracketDraftRequest,
+) {
+  return putJson<TournamentDetailResponse>(
+    `/api/semo/v1/clubs/${clubId}/admin/more/tournaments/${tournamentRecordId}/bracket/draft`,
+    request,
+  );
+}
+
+export function confirmClubTournamentBracket(
+  clubId: string | number,
+  tournamentRecordId: string | number,
+) {
+  return putJson<TournamentDetailResponse>(
+    `/api/semo/v1/clubs/${clubId}/admin/more/tournaments/${tournamentRecordId}/bracket/confirm`,
+    undefined,
+  );
+}
+
+export function deleteClubTournament(
+  clubId: string | number,
+  tournamentRecordId: string | number,
+) {
+  return deleteJson<void>(`/api/semo/v1/clubs/${clubId}/admin/more/tournaments/${tournamentRecordId}`);
 }
 
 export function getClubProfile(clubId: string | number) {

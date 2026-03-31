@@ -8,10 +8,17 @@ import {
   ClubNoticeDetailModal,
   ClubPollDetailModal,
   ClubScheduleEventDetailModal,
+  ClubTournamentDetailModal,
 } from "@/app/components/ClubDetailModals";
 import { RouteModal } from "@/app/components/RouteModal";
 import { getShareTargetBadges } from "@/app/lib/content-badge";
 import { staggeredFadeUpMotion } from "@/app/lib/motion";
+import {
+  getTournamentFeeLabel,
+  getTournamentFormatLabel,
+  getTournamentStatusBadgeClassName,
+  getTournamentStatusLabel,
+} from "@/app/lib/tournament";
 import { getVoteLifecycleLabel } from "@/app/lib/vote-status";
 import type {
   ClubCalendarFeedItem,
@@ -19,8 +26,10 @@ import type {
   ClubScheduleEventSummary,
   ClubScheduleResponse,
   ClubScheduleVoteSummary,
+  TournamentSummary,
 } from "@/app/lib/clubs";
 import {
+  deleteClubTournament,
   deleteClubScheduleEvent,
   deleteClubScheduleVote,
 } from "@/app/lib/clubs";
@@ -28,6 +37,7 @@ import { ClubScheduleEditorClient } from "./ClubScheduleEditorClient";
 import { ClubScheduleVoteEditorClient } from "./ClubScheduleVoteEditorClient";
 import { ScheduleActionConfirmModal } from "./ScheduleActionConfirmModal";
 import { ScheduleManageCard } from "./ScheduleManageCard";
+import { ClubTournamentEditorClient } from "../more/tournaments/ClubTournamentEditorClient";
 
 type ScheduleClientProps = {
   clubId: string;
@@ -70,6 +80,12 @@ type SelectedScheduleItem =
       key: string;
       sortValue: string;
       vote: ClubScheduleVoteSummary;
+    }
+  | {
+      type: "tournament";
+      key: string;
+      sortValue: string;
+      tournament: TournamentSummary;
     };
 
 const WEEKDAY_LABELS = ["일", "월", "화", "수", "목", "금", "토"];
@@ -137,6 +153,9 @@ function buildCalendarMonth(
     } else if (item.contentType === "SCHEDULE_VOTE" && item.vote) {
       startDateValue = item.vote.voteStartDate;
       endDateValue = item.vote.voteEndDate;
+    } else if (item.contentType === "TOURNAMENT" && item.tournament) {
+      startDateValue = item.tournament.startDate;
+      endDateValue = item.tournament.endDate;
     }
 
     if (!startDateValue || !endDateValue) {
@@ -471,6 +490,80 @@ function VoteCard({
   );
 }
 
+function TournamentCard({
+  tournament,
+  canEdit,
+  canDelete,
+  open,
+  onOpenChange,
+  onOpen,
+  onEdit,
+  onDelete,
+}: {
+  tournament: TournamentSummary;
+  canEdit: boolean;
+  canDelete: boolean;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onOpen: () => void;
+  onEdit: () => void;
+  onDelete: () => void;
+}) {
+  const shareBadges = getShareTargetBadges({
+    postedToBoard: tournament.postedToBoard,
+    postedToCalendar: tournament.postedToCalendar,
+  });
+
+  return (
+    <ScheduleManageCard
+      label={tournament.title}
+      canEdit={canEdit}
+      canDelete={canDelete}
+      open={open}
+      onOpenChange={onOpenChange}
+      onOpen={onOpen}
+      onEdit={onEdit}
+      onDelete={onDelete}
+    >
+      <div className="flex items-center gap-4 rounded-xl border border-slate-100 bg-white p-3 pr-7 shadow-sm transition-all hover:border-emerald-500/50">
+        <div className="flex size-12 shrink-0 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600">
+          <span className="material-symbols-outlined">emoji_events</span>
+        </div>
+        <div className="flex flex-1 flex-col justify-center">
+          <div className="mb-2 flex flex-wrap items-center gap-2">
+            <span className="rounded bg-emerald-50 px-2 py-0.5 text-[11px] font-bold uppercase text-emerald-700">
+              대회
+            </span>
+            <span className={`rounded px-2 py-0.5 text-[11px] font-bold uppercase ${getTournamentStatusBadgeClassName(tournament.tournamentStatus)}`}>
+              {getTournamentStatusLabel(tournament.tournamentStatus)}
+            </span>
+            {tournament.pinned ? (
+              <span className="rounded bg-red-50 px-2 py-0.5 text-[11px] font-bold uppercase text-red-600">
+                고정
+              </span>
+            ) : null}
+            {renderCalendarBadges(shareBadges)}
+          </div>
+          <p className="mb-1 text-base font-bold leading-none text-slate-900">{tournament.title}</p>
+          <p className="line-clamp-2 text-sm font-normal text-slate-500">
+            {tournament.summaryText
+              ?? [
+                getTournamentFormatLabel(tournament.matchFormat),
+                tournament.locationLabel,
+              ].filter(Boolean).join(" • ")}
+          </p>
+        </div>
+        <div className="shrink-0 text-right">
+          <p className="text-sm font-bold text-slate-900">{tournament.tournamentPeriodLabel}</p>
+          <p className="text-[10px] font-medium uppercase tracking-wider text-slate-400">
+            {getTournamentFeeLabel(tournament)}
+          </p>
+        </div>
+      </div>
+    </ScheduleManageCard>
+  );
+}
+
 export function ScheduleClient({
   clubId,
   payload,
@@ -490,8 +583,11 @@ export function ScheduleClient({
   const [editingEventId, setEditingEventId] = useState<string | null>(null);
   const [detailVoteId, setDetailVoteId] = useState<string | null>(null);
   const [editingVoteId, setEditingVoteId] = useState<string | null>(null);
+  const [detailTournamentId, setDetailTournamentId] = useState<string | null>(null);
+  const [editingTournamentId, setEditingTournamentId] = useState<string | null>(null);
   const [deleteEventTarget, setDeleteEventTarget] = useState<ClubScheduleEventSummary | null>(null);
   const [deleteVoteTarget, setDeleteVoteTarget] = useState<ClubScheduleVoteSummary | null>(null);
+  const [deleteTournamentTarget, setDeleteTournamentTarget] = useState<TournamentSummary | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [activeActionKey, setActiveActionKey] = useState<string | null>(null);
 
@@ -521,6 +617,14 @@ export function ScheduleClient({
           key: `vote-${item.vote.voteId}`,
           sortValue: `${item.vote.voteStartDate}T${item.vote.voteTimeLabel ?? "00:00"}`,
           vote: item.vote,
+        }];
+      }
+      if (item.contentType === "TOURNAMENT" && item.tournament) {
+        return [{
+          type: "tournament" as const,
+          key: `tournament-${item.tournament.tournamentRecordId}`,
+          sortValue: `${item.tournament.startDate}T00:00`,
+          tournament: item.tournament,
         }];
       }
       return [];
@@ -565,6 +669,21 @@ export function ScheduleClient({
       return;
     }
     setDeleteVoteTarget(null);
+    setActiveActionKey(null);
+    onReloadMonth();
+  };
+
+  const handleDeleteTournament = async () => {
+    if (!deleteTournamentTarget) {
+      return;
+    }
+    setDeleting(true);
+    const result = await deleteClubTournament(clubId, deleteTournamentTarget.tournamentRecordId);
+    setDeleting(false);
+    if (!result.ok) {
+      return;
+    }
+    setDeleteTournamentTarget(null);
     setActiveActionKey(null);
     onReloadMonth();
   };
@@ -745,6 +864,28 @@ export function ScheduleClient({
                         setDeleteVoteTarget(item.vote);
                       }}
                     />
+                  ) : item.type === "tournament" ? (
+                    <TournamentCard
+                      tournament={item.tournament}
+                      canEdit={item.tournament.canEdit}
+                      canDelete={item.tournament.canDelete}
+                      open={activeActionKey === item.key}
+                      onOpenChange={(nextOpen) => {
+                        setActiveActionKey(nextOpen ? item.key : null);
+                      }}
+                      onOpen={() => {
+                        setActiveActionKey(null);
+                        setDetailTournamentId(String(item.tournament.tournamentRecordId));
+                      }}
+                      onEdit={() => {
+                        setActiveActionKey(null);
+                        setEditingTournamentId(String(item.tournament.tournamentRecordId));
+                      }}
+                      onDelete={() => {
+                        setActiveActionKey(null);
+                        setDeleteTournamentTarget(item.tournament);
+                      }}
+                    />
                   ) : (
                     <NoticeCard
                       notice={item.notice}
@@ -812,6 +953,13 @@ export function ScheduleClient({
               onRequestClose={() => setDetailVoteId(null)}
             />
           ) : null}
+          {detailTournamentId ? (
+            <ClubTournamentDetailModal
+              clubId={clubId}
+              tournamentRecordId={detailTournamentId}
+              onRequestClose={() => setDetailTournamentId(null)}
+            />
+          ) : null}
           {editingVoteId ? (
             <RouteModal onDismiss={() => setEditingVoteId(null)} dismissOnBackdrop={false}>
               <ClubScheduleVoteEditorClient
@@ -825,6 +973,21 @@ export function ScheduleClient({
                   setEditingVoteId(null);
                   onReloadMonth();
                   setDetailVoteId(String(savedVoteId));
+                }}
+              />
+            </RouteModal>
+          ) : null}
+          {editingTournamentId ? (
+            <RouteModal onDismiss={() => setEditingTournamentId(null)} dismissOnBackdrop={false}>
+              <ClubTournamentEditorClient
+                clubId={clubId}
+                tournamentRecordId={editingTournamentId}
+                presentation="modal"
+                onRequestClose={() => setEditingTournamentId(null)}
+                onSaved={(savedTournamentId) => {
+                  setEditingTournamentId(null);
+                  onReloadMonth();
+                  setDetailTournamentId(String(savedTournamentId));
                 }}
               />
             </RouteModal>
@@ -857,6 +1020,21 @@ export function ScheduleClient({
                 }
               }}
               onConfirm={handleDeleteVote}
+            />
+          ) : null}
+          {deleteTournamentTarget ? (
+            <ScheduleActionConfirmModal
+              title="대회를 삭제할까요?"
+              description={`"${deleteTournamentTarget.title}" 대회는 삭제 후 복구할 수 없습니다.`}
+              confirmLabel="대회 삭제"
+              busyLabel="삭제 중..."
+              busy={deleting}
+              onCancel={() => {
+                if (!deleting) {
+                  setDeleteTournamentTarget(null);
+                }
+              }}
+              onConfirm={handleDeleteTournament}
             />
           ) : null}
         </AnimatePresence>
