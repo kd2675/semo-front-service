@@ -70,6 +70,7 @@ export type ClubNoticeListItem = {
   scheduleAt: string | null;
   scheduleEndAt: string | null;
   scheduleAtLabel: string | null;
+  scheduleTimeEnabled: boolean;
   locationLabel: string | null;
   postedToBoard: boolean;
   postedToCalendar: boolean;
@@ -119,6 +120,7 @@ export type ClubNoticeDetailResponse = {
   scheduleAtLabel: string | null;
   scheduleEndAt: string | null;
   scheduleEndAtLabel: string | null;
+  scheduleTimeEnabled: boolean;
   postedToBoard: boolean;
   postedToCalendar: boolean;
   canManage: boolean;
@@ -135,6 +137,7 @@ export type UpsertClubNoticeRequest = {
   locationLabel?: string | null;
   scheduleAt?: string | null;
   scheduleEndAt?: string | null;
+  scheduleTimeEnabled?: boolean;
   postToBoard?: boolean;
   postToCalendar?: boolean;
   postToSchedule?: boolean;
@@ -149,6 +152,7 @@ export type ClubNoticeUpsertResponse = {
   thumbnailUrl: string | null;
   scheduleAt: string | null;
   scheduleAtLabel: string | null;
+  scheduleTimeEnabled: boolean;
   locationLabel: string | null;
 };
 
@@ -187,7 +191,6 @@ export type ClubScheduleResponse = {
 
 export type ClubCalendarFeedItem = {
   calendarItemId: number;
-  readCount: number;
   contentType: "NOTICE" | "SCHEDULE_EVENT" | "SCHEDULE_VOTE" | "TOURNAMENT";
   notice: ClubNoticeListItem | null;
   event: ClubScheduleEventSummary | null;
@@ -209,21 +212,8 @@ export type BoardItemReadResponse = {
   readCount: number;
 };
 
-export type CalendarItemReadResponse = {
-  calendarItemId: number;
-  readCount: number;
-};
-
 export type BoardItemReadStatusResponse = {
   boardItemId: number;
-  readCount: number;
-  activeMemberCount: number;
-  unreadCount: number;
-  readers: ItemReadMember[];
-};
-
-export type CalendarItemReadStatusResponse = {
-  calendarItemId: number;
   readCount: number;
   activeMemberCount: number;
   unreadCount: number;
@@ -1050,19 +1040,6 @@ export function recordClubBoardItemRead(clubId: string | number, boardItemId: st
 export function getClubBoardItemReadStatus(clubId: string | number, boardItemId: string | number) {
   return getJson<BoardItemReadStatusResponse>(
     `/api/semo/v1/clubs/${clubId}/board/items/${boardItemId}/read-status`,
-  );
-}
-
-export function recordClubCalendarItemRead(clubId: string | number, calendarItemId: string | number) {
-  return postJson<CalendarItemReadResponse>(
-    `/api/semo/v1/clubs/${clubId}/schedule/items/${calendarItemId}/read`,
-    {},
-  );
-}
-
-export function getClubCalendarItemReadStatus(clubId: string | number, calendarItemId: string | number) {
-  return getJson<CalendarItemReadStatusResponse>(
-    `/api/semo/v1/clubs/${clubId}/schedule/items/${calendarItemId}/read-status`,
   );
 }
 

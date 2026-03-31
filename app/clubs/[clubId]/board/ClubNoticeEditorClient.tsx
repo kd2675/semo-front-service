@@ -30,6 +30,8 @@ type ClubNoticeEditorClientProps = {
   onDeleted?: () => void;
 };
 
+type NoticeScheduleDateMode = "single" | "range";
+
 function toDateTimeLocalValue(value: string | null | undefined) {
   if (!value) {
     return "";
@@ -107,8 +109,14 @@ export function ClubNoticeEditorClient({
   const [scheduleAtTime, setScheduleAtTime] = useState(toTimePart(initialScheduleAt));
   const [scheduleEndAtDate, setScheduleEndAtDate] = useState(toDatePart(initialScheduleEndAt));
   const [scheduleEndAtTime, setScheduleEndAtTime] = useState(toTimePart(initialScheduleEndAt));
+  const [scheduleDateMode, setScheduleDateMode] = useState<NoticeScheduleDateMode>(
+    initialScheduleAt && initialScheduleEndAt && toDatePart(initialScheduleAt) !== toDatePart(initialScheduleEndAt)
+      ? "range"
+      : "single",
+  );
+  const [scheduleTimeEnabled, setScheduleTimeEnabled] = useState(false);
   const [postToBoard, setPostToBoard] = useState(true);
-  const [postToCalendar, setPostToCalendar] = useState(false);
+  const [postToCalendar, setPostToCalendar] = useState(true);
   const [pinned, setPinned] = useState(false);
   const [clubName, setClubName] = useState("Notice");
   const [loading, setLoading] = useState(isEdit);
@@ -144,6 +152,12 @@ export function ClubNoticeEditorClient({
     setScheduleAtTime(toTimePart(payload.scheduleAt));
     setScheduleEndAtDate(toDatePart(payload.scheduleEndAt));
     setScheduleEndAtTime(toTimePart(payload.scheduleEndAt));
+    setScheduleDateMode(
+      payload.scheduleAt && payload.scheduleEndAt && toDatePart(payload.scheduleAt) !== toDatePart(payload.scheduleEndAt)
+        ? "range"
+        : "single",
+    );
+    setScheduleTimeEnabled(payload.scheduleTimeEnabled);
     setPostToBoard(payload.postedToBoard);
     setPostToCalendar(payload.postedToCalendar);
     setPinned(payload.pinned);
@@ -162,12 +176,47 @@ export function ClubNoticeEditorClient({
     return <ClubEditorLoadingShell presentation={presentation} />;
   }
 
+  const handleScheduleDateModeChange = (nextMode: NoticeScheduleDateMode) => {
+    setScheduleDateMode(nextMode);
+    if (nextMode === "single") {
+      setScheduleEndAtDate("");
+      return;
+    }
+    setScheduleEndAtDate((current) => current || scheduleAtDate);
+  };
+
+  const handleScheduleStartDateChange = (value: string) => {
+    setScheduleAtDate(value);
+    if (scheduleDateMode !== "range") {
+      return;
+    }
+    setScheduleEndAtDate((current) => {
+      if (!current || current < value) {
+        return value;
+      }
+      return current;
+    });
+  };
+
+  const handleScheduleTimeEnabledChange = (checked: boolean) => {
+    setScheduleTimeEnabled(checked);
+    if (!checked) {
+      setScheduleAtTime("");
+      setScheduleEndAtTime("");
+    }
+  };
+
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (isEdit && !canEdit) {
       setError("공지 수정 권한이 없습니다.");
       return;
     }
+    if (postToCalendar && (!scheduleAtDate || !scheduleEndAtDate)) {
+      setError("캘린더 공유 공지는 시작 날짜와 종료 날짜를 모두 입력해야 합니다.");
+      return;
+    }
+    const resolvedScheduleEndAtDate = scheduleDateMode === "range" ? scheduleEndAtDate : scheduleAtDate;
     setSaving(true);
     setError(null);
     const request = {
@@ -175,8 +224,12 @@ export function ClubNoticeEditorClient({
       content,
       fileName,
       locationLabel: locationLabel.trim() || null,
-      scheduleAt: postToCalendar ? combineDateTimeValue(scheduleAtDate, scheduleAtTime) || null : null,
-      scheduleEndAt: postToCalendar ? combineDateTimeValue(scheduleEndAtDate, scheduleEndAtTime) || null : null,
+      scheduleAt: postToCalendar ? combineDateTimeValue(scheduleAtDate, scheduleTimeEnabled ? scheduleAtTime : "") || null : null,
+      scheduleEndAt: postToCalendar
+        ? combineDateTimeValue(resolvedScheduleEndAtDate, scheduleTimeEnabled ? scheduleEndAtTime : "")
+          || null
+        : null,
+      scheduleTimeEnabled: postToCalendar ? scheduleTimeEnabled : false,
       postToBoard,
       postToCalendar,
       pinned,
@@ -394,45 +447,102 @@ export function ClubNoticeEditorClient({
                 </div>
 
                 {postToCalendar ? (
-                  <div className="space-y-3 rounded-2xl border border-[var(--primary)]/15 bg-[var(--primary)]/[0.03] p-4 shadow-sm">
-                    <div className="grid grid-cols-[1.35fr_1fr] gap-3">
+                  <div className="space-y-4 rounded-2xl border border-[var(--primary)]/15 bg-[var(--primary)]/[0.03] p-4 shadow-sm">
+                    <div>
+                      <span className="mb-1.5 block text-sm font-medium text-slate-700">일정 유형</span>
+                      <div className="flex h-11 items-center justify-center rounded-xl border border-[var(--primary)]/10 bg-[var(--primary)]/5 p-1">
+                        <label className="flex h-full grow cursor-pointer items-center justify-center overflow-hidden rounded-lg px-2 text-xs font-bold text-slate-500 transition-all has-[:checked]:bg-[var(--primary)] has-[:checked]:text-white">
+                          <span className="truncate">날짜 지정</span>
+                          <input
+                            checked={scheduleDateMode === "single"}
+                            className="hidden"
+                            name="notice_date_mode"
+                            type="radio"
+                            onChange={() => handleScheduleDateModeChange("single")}
+                          />
+                        </label>
+                        <label className="flex h-full grow cursor-pointer items-center justify-center overflow-hidden rounded-lg px-2 text-xs font-bold text-slate-500 transition-all has-[:checked]:bg-[var(--primary)] has-[:checked]:text-white">
+                          <span className="truncate">기간 설정</span>
+                          <input
+                            checked={scheduleDateMode === "range"}
+                            className="hidden"
+                            name="notice_date_mode"
+                            type="radio"
+                            onChange={() => handleScheduleDateModeChange("range")}
+                          />
+                        </label>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
                       <label className="block">
-                        <span className="mb-1.5 block text-sm font-medium text-slate-700">캘린더 시작 날짜</span>
+                        <span className="mb-1 block text-xs font-medium text-slate-700">
+                          {scheduleDateMode === "single" ? "날짜" : "시작 날짜"}
+                        </span>
                         <DatePopoverField
                           value={scheduleAtDate}
-                          onChange={setScheduleAtDate}
+                          onChange={handleScheduleStartDateChange}
+                          buttonClassName="rounded-2xl border-slate-200 px-4 py-3"
                           placeholder="시작 날짜를 선택하세요"
                         />
                       </label>
                       <label className="block">
-                        <span className="mb-1.5 block text-sm font-medium text-slate-700">시작 시간</span>
-                        <input
-                          type="time"
-                          value={scheduleAtTime}
-                          onChange={(event) => setScheduleAtTime(event.target.value)}
-                          className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm shadow-sm outline-none transition focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/15"
-                        />
-                      </label>
-                    </div>
-                    <div className="grid grid-cols-[1.35fr_1fr] gap-3">
-                      <label className="block">
-                        <span className="mb-1.5 block text-sm font-medium text-slate-700">캘린더 종료 날짜</span>
+                        <span className="mb-1 block text-xs font-medium text-slate-700">종료 날짜</span>
                         <DatePopoverField
-                          value={scheduleEndAtDate}
+                          value={scheduleDateMode === "range" ? scheduleEndAtDate : ""}
                           onChange={setScheduleEndAtDate}
                           minDate={scheduleAtDate || undefined}
+                          buttonClassName={`rounded-2xl border-slate-200 px-4 py-3 ${
+                            scheduleDateMode === "single" ? "cursor-not-allowed opacity-45" : ""
+                          }`}
+                          disabled={scheduleDateMode === "single"}
                           placeholder="종료 날짜를 선택하세요"
                         />
                       </label>
-                      <label className="block">
-                        <span className="mb-1.5 block text-sm font-medium text-slate-700">종료 시간</span>
-                        <input
-                          type="time"
-                          value={scheduleEndAtTime}
-                          onChange={(event) => setScheduleEndAtTime(event.target.value)}
-                          className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm shadow-sm outline-none transition focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/15"
-                        />
-                      </label>
+                    </div>
+
+                    <p className="rounded-xl bg-white px-3 py-2 text-xs leading-5 text-slate-500 shadow-sm ring-1 ring-slate-200/70">
+                      {scheduleDateMode === "single"
+                        ? "날짜 지정은 하루 공지로 저장됩니다."
+                        : "기간 설정은 시작일과 종료일이 함께 저장됩니다."}
+                    </p>
+
+                    <div className="space-y-3 border-t border-[var(--primary)]/10 pt-4">
+                      <div className="flex items-center justify-between rounded-xl border border-[var(--primary)]/10 bg-white p-4 shadow-sm">
+                        <div className="flex items-center gap-3">
+                          <span className="material-symbols-outlined text-[var(--primary)]">schedule</span>
+                          <div>
+                            <span className="block text-sm font-semibold text-slate-900">시간 입력</span>
+                            <span className="mt-0.5 block text-[11px] text-slate-500">
+                              {scheduleTimeEnabled ? "사용 중 · 시작/종료 시간을 함께 저장합니다" : "미사용 · 날짜만 저장합니다"}
+                            </span>
+                          </div>
+                        </div>
+                        <SettingSwitch checked={scheduleTimeEnabled} onChange={handleScheduleTimeEnabledChange} />
+                      </div>
+
+                      {scheduleTimeEnabled ? (
+                        <div className="grid grid-cols-2 gap-3">
+                          <label className="block">
+                            <span className="mb-1.5 block text-sm font-medium text-slate-700">시작 시간</span>
+                            <input
+                              type="time"
+                              value={scheduleAtTime}
+                              onChange={(event) => setScheduleAtTime(event.target.value)}
+                              className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm shadow-sm outline-none transition focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/15"
+                            />
+                          </label>
+                          <label className="block">
+                            <span className="mb-1.5 block text-sm font-medium text-slate-700">종료 시간</span>
+                            <input
+                              type="time"
+                              value={scheduleEndAtTime}
+                              onChange={(event) => setScheduleEndAtTime(event.target.value)}
+                              className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm shadow-sm outline-none transition focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/15"
+                            />
+                          </label>
+                        </div>
+                      ) : null}
                     </div>
                   </div>
                 ) : null}

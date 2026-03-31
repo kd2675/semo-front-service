@@ -42,8 +42,8 @@ export function ClubScheduleVoteEditorClient({
   const [voteStartTime, setVoteStartTime] = useState("");
   const [voteEndTime, setVoteEndTime] = useState("");
   const [options, setOptions] = useState(["", ""]);
-  const [postToBoard, setPostToBoard] = useState(false);
-  const [postToCalendar, setPostToCalendar] = useState(false);
+  const [postToBoard, setPostToBoard] = useState(true);
+  const [postToCalendar, setPostToCalendar] = useState(true);
   const [pinned, setPinned] = useState(false);
   const [canEdit, setCanEdit] = useState(!isEdit);
   const [loading, setLoading] = useState(isEdit);

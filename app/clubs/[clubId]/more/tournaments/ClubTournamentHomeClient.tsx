@@ -5,6 +5,7 @@ import { ClubModeSwitchFab } from "@/app/components/ClubModeSwitchFab";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import { ClubTournamentDetailClient } from "@/app/clubs/[clubId]/more/tournaments/ClubTournamentDetailClient";
 import { ClubTournamentEditorClient } from "@/app/clubs/[clubId]/more/tournaments/ClubTournamentEditorClient";
+import { ClubTournamentManageClient } from "@/app/clubs/[clubId]/more/tournaments/ClubTournamentManageClient";
 import {
   type ClubAdminTournamentHomeResponse,
   type ClubTournamentHomeResponse,
@@ -29,6 +30,7 @@ type ClubTournamentHomeClientProps = {
 };
 
 type UserTabKey = "FEATURED" | "MY" | "ARCHIVED";
+type TournamentManagementEntryPoint = "approval" | "applications" | "review";
 
 function isUserPayload(
   payload: ClubTournamentHomeResponse | ClubAdminTournamentHomeResponse,
@@ -38,10 +40,12 @@ function isUserPayload(
 
 function TournamentCard({
   tournament,
-  onOpen,
+  onOpenDetail,
+  onOpenManage,
 }: {
   tournament: TournamentSummary;
-  onOpen: () => void;
+  onOpenDetail: () => void;
+  onOpenManage?: () => void;
 }) {
   const approvalClassName = getTournamentApprovalBadgeClassName(tournament.approvalStatus);
   const approvalLabel = getTournamentApprovalLabel(tournament.approvalStatus);
@@ -49,11 +53,7 @@ function TournamentCard({
   const statusLabel = getTournamentStatusLabel(tournament.tournamentStatus);
 
   return (
-    <button
-      type="button"
-      onClick={onOpen}
-      className="group w-full rounded-[28px] bg-white p-6 text-left shadow-[0_20px_40px_rgba(0,75,202,0.06)] transition hover:-translate-y-0.5 hover:shadow-[0_24px_50px_rgba(0,75,202,0.1)]"
-    >
+    <div className="group w-full rounded-[28px] bg-white p-6 text-left shadow-[0_20px_40px_rgba(0,75,202,0.06)] transition hover:-translate-y-0.5 hover:shadow-[0_24px_50px_rgba(0,75,202,0.1)]">
       <div className="mb-5 flex items-start justify-between gap-4">
         <div>
           <div className="flex flex-wrap gap-2">
@@ -111,11 +111,26 @@ function TournamentCard({
           <p className="truncate text-sm font-semibold text-slate-700">{tournament.authorDisplayName}</p>
           <p className="mt-1 text-xs font-medium text-slate-400">{tournament.tournamentPeriodLabel}</p>
         </div>
-        <span className="rounded-full bg-[var(--primary)]/10 px-4 py-2 text-sm font-black text-[var(--primary)]">
-          {tournament.mine && tournament.approvalStatus !== "APPROVED" ? "검토 상태 보기" : "상세 보기"}
-        </span>
+        <div className="flex items-center gap-2">
+          {onOpenManage ? (
+            <button
+              type="button"
+              onClick={onOpenManage}
+              className="rounded-full border border-violet-200 bg-violet-50 px-4 py-2 text-sm font-black text-violet-700 transition hover:bg-violet-100"
+            >
+              관리하기
+            </button>
+          ) : null}
+          <button
+            type="button"
+            onClick={onOpenDetail}
+            className="rounded-full bg-[var(--primary)]/10 px-4 py-2 text-sm font-black text-[var(--primary)] transition hover:bg-[var(--primary)]/15"
+          >
+            상세 보기
+          </button>
+        </div>
       </div>
-    </button>
+    </div>
   );
 }
 
@@ -151,6 +166,10 @@ export function ClubTournamentHomeClient({
   const [activeTab, setActiveTab] = useState<UserTabKey>("FEATURED");
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [detailTournamentId, setDetailTournamentId] = useState<string | null>(null);
+  const [manageModalState, setManageModalState] = useState<{
+    tournamentRecordId: string;
+    initialSection: TournamentManagementEntryPoint;
+  } | null>(null);
   const accent = mode === "admin" ? "#855300" : "#004bca";
   const background = "#f7f9fb";
   const userPayload = isUserPayload(payload) ? payload : null;
@@ -168,6 +187,17 @@ export function ClubTournamentHomeClient({
         return userPayload.tournaments;
     }
   }, [activeTab, userPayload]);
+
+  const getUserManagementEntryPoint = (tournament: TournamentSummary): TournamentManagementEntryPoint | null => {
+    if (!tournament.mine) {
+      return null;
+    }
+    return tournament.approvalStatus === "APPROVED" ? "applications" : "approval";
+  };
+
+  const getAdminManagementEntryPoint = (tournament: TournamentSummary): TournamentManagementEntryPoint => (
+    tournament.approvalStatus === "APPROVED" ? "approval" : "review"
+  );
 
   return (
     <div
@@ -262,7 +292,19 @@ export function ClubTournamentHomeClient({
                     <motion.div key={tournament.tournamentRecordId} {...staggeredFadeUpMotion(index + 3, reduceMotion)}>
                       <TournamentCard
                         tournament={tournament}
-                        onOpen={() => setDetailTournamentId(String(tournament.tournamentRecordId))}
+                        onOpenDetail={() => setDetailTournamentId(String(tournament.tournamentRecordId))}
+                        onOpenManage={getUserManagementEntryPoint(tournament)
+                          ? () => {
+                              const initialSection = getUserManagementEntryPoint(tournament);
+                              if (!initialSection) {
+                                return;
+                              }
+                              setManageModalState({
+                                tournamentRecordId: String(tournament.tournamentRecordId),
+                                initialSection,
+                              });
+                            }
+                          : undefined}
                       />
                     </motion.div>
                   ))
@@ -303,10 +345,8 @@ export function ClubTournamentHomeClient({
 
               <section className="mt-8 space-y-4">
                 {(payload as ClubAdminTournamentHomeResponse).tournaments.map((tournament, index) => (
-                  <motion.button
+                  <motion.div
                     key={tournament.tournamentRecordId}
-                    type="button"
-                    onClick={() => setDetailTournamentId(String(tournament.tournamentRecordId))}
                     className="flex w-full flex-col gap-4 rounded-[28px] bg-white p-5 text-left shadow-sm transition hover:bg-slate-50 md:flex-row md:items-center md:justify-between"
                     {...staggeredFadeUpMotion(index + 3, reduceMotion)}
                   >
@@ -339,11 +379,26 @@ export function ClubTournamentHomeClient({
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
-                      <span className="rounded-full bg-amber-50 px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-amber-700">
-                        {tournament.approvalStatus === "PENDING" ? "검토" : "상세"}
-                      </span>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setManageModalState({
+                            tournamentRecordId: String(tournament.tournamentRecordId),
+                            initialSection: getAdminManagementEntryPoint(tournament),
+                          })}
+                        className="rounded-full border border-amber-200 bg-amber-50 px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-amber-700 transition hover:bg-amber-100"
+                      >
+                        관리하기
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setDetailTournamentId(String(tournament.tournamentRecordId))}
+                        className="rounded-full bg-slate-900 px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-white transition hover:bg-slate-800"
+                      >
+                        상세 보기
+                      </button>
                     </div>
-                  </motion.button>
+                  </motion.div>
                 ))}
               </section>
             </>
@@ -390,8 +445,21 @@ export function ClubTournamentHomeClient({
                 presentation="modal"
                 basePath={mode === "admin" ? `/clubs/${clubId}/admin/more/tournaments` : `/clubs/${clubId}/more/tournaments`}
                 onRequestClose={() => setDetailTournamentId(null)}
+              />
+            </RouteModal>
+          ) : null}
+          {manageModalState ? (
+            <RouteModal onDismiss={() => setManageModalState(null)}>
+              <ClubTournamentManageClient
+                clubId={clubId}
+                tournamentRecordId={manageModalState.tournamentRecordId}
+                mode={mode}
+                presentation="modal"
+                initialSection={manageModalState.initialSection}
+                basePath={mode === "admin" ? `/clubs/${clubId}/admin/more/tournaments` : `/clubs/${clubId}/more/tournaments`}
+                onRequestClose={() => setManageModalState(null)}
                 onDeleted={() => {
-                  setDetailTournamentId(null);
+                  setManageModalState(null);
                   onReload();
                 }}
               />

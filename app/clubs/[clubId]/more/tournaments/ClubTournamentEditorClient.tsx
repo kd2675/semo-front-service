@@ -60,7 +60,7 @@ export function ClubTournamentEditorClient({
   const [feeRequired, setFeeRequired] = useState(false);
   const [feeAmount, setFeeAmount] = useState("");
   const [feeCurrencyCode, setFeeCurrencyCode] = useState("KRW");
-  const [postToBoard, setPostToBoard] = useState(false);
+  const [postToBoard, setPostToBoard] = useState(true);
   const [postToCalendar, setPostToCalendar] = useState(true);
   const [pinned, setPinned] = useState(false);
   const [loading, setLoading] = useState(isEdit);

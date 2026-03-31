@@ -3,7 +3,6 @@
 import { startTransition, useMemo, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { ClubModeSwitchFab } from "@/app/components/ClubModeSwitchFab";
-import { ItemReadStatusModal } from "@/app/components/ItemReadStatusModal";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import {
   ClubNoticeDetailModal,
@@ -11,7 +10,6 @@ import {
   ClubScheduleEventDetailModal,
   ClubTournamentDetailModal,
 } from "@/app/components/ClubDetailModals";
-import { RouteModal } from "@/app/components/RouteModal";
 import { getShareTargetBadges } from "@/app/lib/content-badge";
 import { staggeredFadeUpMotion } from "@/app/lib/motion";
 import {
@@ -22,7 +20,6 @@ import {
 } from "@/app/lib/tournament";
 import { getVoteLifecycleLabel } from "@/app/lib/vote-status";
 import type {
-  CalendarItemReadStatusResponse,
   ClubCalendarFeedItem,
   ClubNoticeListItem,
   ClubScheduleEventSummary,
@@ -30,18 +27,6 @@ import type {
   ClubScheduleVoteSummary,
   TournamentSummary,
 } from "@/app/lib/clubs";
-import {
-  deleteClubTournament,
-  getClubCalendarItemReadStatus,
-  recordClubCalendarItemRead,
-  deleteClubScheduleEvent,
-  deleteClubScheduleVote,
-} from "@/app/lib/clubs";
-import { ClubScheduleEditorClient } from "./ClubScheduleEditorClient";
-import { ClubScheduleVoteEditorClient } from "./ClubScheduleVoteEditorClient";
-import { ScheduleActionConfirmModal } from "./ScheduleActionConfirmModal";
-import { ScheduleManageCard } from "./ScheduleManageCard";
-import { ClubTournamentEditorClient } from "../more/tournaments/ClubTournamentEditorClient";
 
 type ScheduleClientProps = {
   clubId: string;
@@ -50,7 +35,6 @@ type ScheduleClientProps = {
   activeMonth: number;
   isMonthLoading: boolean;
   onChangeMonth: (year: number, month: number) => void;
-  onReloadMonth: () => void;
 };
 
 type CalendarMonth = {
@@ -71,7 +55,6 @@ type SelectedScheduleItem =
       type: "notice";
       key: string;
       calendarItemId: number;
-      readCount: number;
       sortValue: string;
       notice: ClubNoticeListItem;
     }
@@ -79,7 +62,6 @@ type SelectedScheduleItem =
       type: "event";
       key: string;
       calendarItemId: number;
-      readCount: number;
       sortValue: string;
       event: ClubScheduleEventSummary;
     }
@@ -87,7 +69,6 @@ type SelectedScheduleItem =
       type: "vote";
       key: string;
       calendarItemId: number;
-      readCount: number;
       sortValue: string;
       vote: ClubScheduleVoteSummary;
     }
@@ -95,15 +76,9 @@ type SelectedScheduleItem =
       type: "tournament";
       key: string;
       calendarItemId: number;
-      readCount: number;
       sortValue: string;
       tournament: TournamentSummary;
     };
-
-type CalendarReadStatusModalState = {
-  title: string;
-  status: CalendarItemReadStatusResponse | null;
-};
 
 type SelectedDayState = {
   monthId: string;
@@ -258,6 +233,9 @@ function getNoticeSecondaryText(notice: ClubNoticeListItem) {
 }
 
 function getNoticeTimeLabel(notice: ClubNoticeListItem) {
+  if (!notice.scheduleTimeEnabled) {
+    return "공지";
+  }
   const startTime = formatNoticeTimeValue(notice.scheduleAt);
   const endTime = formatNoticeTimeValue(notice.scheduleEndAt);
   if (!startTime && !endTime) {
@@ -320,26 +298,10 @@ function getWeekendTextClassName(weekdayIndex: number) {
 
 function EventCard({
   event,
-  readCount,
-  canEdit,
-  canDelete,
-  open,
-  onOpenChange,
   onOpen,
-  onEdit,
-  onDelete,
-  onOpenReadStatus,
 }: {
   event: ClubScheduleEventSummary;
-  readCount: number;
-  canEdit: boolean;
-  canDelete: boolean;
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
   onOpen: () => void;
-  onEdit: () => void;
-  onDelete: () => void;
-  onOpenReadStatus?: () => void;
 }) {
   const visual = getEventVisual(event);
   const shareBadges = getShareTargetBadges({
@@ -348,75 +310,50 @@ function EventCard({
   });
 
   return (
-    <ScheduleManageCard
-      label={event.title}
-      canEdit={canEdit}
-      canDelete={canDelete}
-      open={open}
-      onOpenChange={onOpenChange}
-      onOpen={onOpen}
-      onEdit={onEdit}
-      onDelete={onDelete}
+    <button
+      type="button"
+      onClick={onOpen}
+      aria-label={`${event.title} 자세히 보기`}
+      className="block w-full text-left"
     >
-        <div className="flex items-center gap-4 rounded-xl border border-slate-100 bg-white p-3 pr-7 shadow-sm transition-all hover:border-[var(--primary)]/50">
-          <div
-            className={`flex size-12 shrink-0 items-center justify-center rounded-lg ${visual.iconSurfaceClassName} ${visual.iconClassName}`}
-          >
-            <span className="material-symbols-outlined">{visual.icon}</span>
-          </div>
-          <div className="flex flex-1 flex-col justify-center">
-            <div className="mb-2 flex flex-wrap items-center gap-2">
-              <span className="rounded bg-amber-50 px-2 py-0.5 text-[11px] font-bold uppercase text-amber-600">
-                일정
+      <div className="flex items-center gap-4 rounded-xl border border-slate-100 bg-white p-3 shadow-sm transition-all hover:border-[var(--primary)]/50 hover:bg-slate-50">
+        <div
+          className={`flex size-12 shrink-0 items-center justify-center rounded-lg ${visual.iconSurfaceClassName} ${visual.iconClassName}`}
+        >
+          <span className="material-symbols-outlined">{visual.icon}</span>
+        </div>
+        <div className="flex flex-1 flex-col justify-center">
+          <div className="mb-2 flex flex-wrap items-center gap-2">
+            <span className="rounded bg-amber-50 px-2 py-0.5 text-[11px] font-bold uppercase text-amber-600">
+              일정
+            </span>
+            {event.pinned ? (
+              <span className="rounded bg-red-50 px-2 py-0.5 text-[11px] font-bold uppercase text-red-600">
+                고정
               </span>
-              {event.pinned ? (
-                <span className="rounded bg-red-50 px-2 py-0.5 text-[11px] font-bold uppercase text-red-600">
-                  고정
-                </span>
-              ) : null}
-              {renderCalendarBadges(shareBadges)}
-            </div>
-            <p className="mb-1 text-base font-bold leading-none text-slate-900">{event.title}</p>
-            <p className="text-sm font-normal text-slate-500">{getEventSecondaryText(event)}</p>
+            ) : null}
+            {renderCalendarBadges(shareBadges)}
           </div>
+          <p className="mb-1 text-base font-bold leading-none text-slate-900">{event.title}</p>
+          <p className="text-sm font-normal text-slate-500">{getEventSecondaryText(event)}</p>
+        </div>
         <div className="shrink-0 text-right">
           <p className="text-sm font-bold text-slate-900">{event.timeLabel ?? "종일"}</p>
           <p className="text-[10px] font-medium uppercase tracking-wider text-slate-400">
             {getEventStatusLabel(event)}
           </p>
-          {onOpenReadStatus ? (
-            <button
-              type="button"
-              onClick={(eventValue) => {
-                eventValue.stopPropagation();
-                onOpenReadStatus();
-              }}
-              className="mt-2 inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-600 transition hover:bg-slate-200 hover:text-slate-900"
-            >
-              <span className="material-symbols-outlined text-[14px]">visibility</span>
-              읽음 {readCount}명
-            </button>
-          ) : null}
         </div>
       </div>
-    </ScheduleManageCard>
+    </button>
   );
 }
 
 function NoticeCard({
   notice,
-  readCount,
-  open,
-  onOpenChange,
   onOpen,
-  onOpenReadStatus,
 }: {
   notice: ClubNoticeListItem;
-  readCount: number;
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
   onOpen: () => void;
-  onOpenReadStatus?: () => void;
 }) {
   const shareBadges = getShareTargetBadges({
     postedToBoard: notice.postedToBoard,
@@ -424,17 +361,13 @@ function NoticeCard({
   });
 
   return (
-    <ScheduleManageCard
-      label={notice.title}
-      canEdit={false}
-      canDelete={false}
-      open={open}
-      onOpenChange={onOpenChange}
-      onOpen={onOpen}
-      onEdit={() => {}}
-      onDelete={() => {}}
+    <button
+      type="button"
+      onClick={onOpen}
+      aria-label={`${notice.title} 자세히 보기`}
+      className="block w-full text-left"
     >
-      <div className="flex items-center gap-4 rounded-xl border border-slate-100 bg-white p-3 pr-7 shadow-sm transition-all hover:border-sky-500/50">
+      <div className="flex items-center gap-4 rounded-xl border border-slate-100 bg-white p-3 shadow-sm transition-all hover:border-sky-500/50 hover:bg-slate-50">
         <div className="flex size-12 shrink-0 items-center justify-center rounded-lg bg-sky-500/10 text-sky-600">
           <span className="material-symbols-outlined">campaign</span>
         </div>
@@ -458,47 +391,18 @@ function NoticeCard({
           <p className="text-[10px] font-medium uppercase tracking-wider text-slate-400">
             {getNoticeStatusLabel(notice)}
           </p>
-          {onOpenReadStatus ? (
-            <button
-              type="button"
-              onClick={(event) => {
-                event.stopPropagation();
-                onOpenReadStatus();
-              }}
-              className="mt-2 inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-600 transition hover:bg-slate-200 hover:text-slate-900"
-            >
-              <span className="material-symbols-outlined text-[14px]">visibility</span>
-              읽음 {readCount}명
-            </button>
-          ) : null}
         </div>
       </div>
-    </ScheduleManageCard>
+    </button>
   );
 }
 
 function VoteCard({
   vote,
-  readCount,
-  canEdit,
-  canDelete,
-  open,
-  onOpenChange,
   onOpen,
-  onEdit,
-  onDelete,
-  onOpenReadStatus,
 }: {
   vote: ClubScheduleVoteSummary;
-  readCount: number;
-  canEdit: boolean;
-  canDelete: boolean;
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
   onOpen: () => void;
-  onEdit: () => void;
-  onDelete: () => void;
-  onOpenReadStatus?: () => void;
 }) {
   const shareBadges = getShareTargetBadges({
     postedToBoard: vote.postedToBoard,
@@ -506,17 +410,13 @@ function VoteCard({
   });
 
   return (
-    <ScheduleManageCard
-      label={vote.title}
-      canEdit={canEdit}
-      canDelete={canDelete}
-      open={open}
-      onOpenChange={onOpenChange}
-      onOpen={onOpen}
-      onEdit={onEdit}
-      onDelete={onDelete}
+    <button
+      type="button"
+      onClick={onOpen}
+      aria-label={`${vote.title} 자세히 보기`}
+      className="block w-full text-left"
     >
-      <div className="flex items-center gap-4 rounded-xl border border-slate-100 bg-white p-3 pr-7 shadow-sm transition-all hover:border-amber-500/50">
+      <div className="flex items-center gap-4 rounded-xl border border-slate-100 bg-white p-3 shadow-sm transition-all hover:border-amber-500/50 hover:bg-slate-50">
         <div className="flex size-12 shrink-0 items-center justify-center rounded-lg bg-amber-500/10 text-amber-500">
           <span className="material-symbols-outlined">poll</span>
         </div>
@@ -544,47 +444,18 @@ function VoteCard({
           <p className="text-[10px] font-medium uppercase tracking-wider text-slate-400">
             {getVoteLifecycleLabel(vote.voteStatus)}
           </p>
-          {onOpenReadStatus ? (
-            <button
-              type="button"
-              onClick={(event) => {
-                event.stopPropagation();
-                onOpenReadStatus();
-              }}
-              className="mt-2 inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-600 transition hover:bg-slate-200 hover:text-slate-900"
-            >
-              <span className="material-symbols-outlined text-[14px]">visibility</span>
-              읽음 {readCount}명
-            </button>
-          ) : null}
         </div>
       </div>
-    </ScheduleManageCard>
+    </button>
   );
 }
 
 function TournamentCard({
   tournament,
-  readCount,
-  canEdit,
-  canDelete,
-  open,
-  onOpenChange,
   onOpen,
-  onEdit,
-  onDelete,
-  onOpenReadStatus,
 }: {
   tournament: TournamentSummary;
-  readCount: number;
-  canEdit: boolean;
-  canDelete: boolean;
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
   onOpen: () => void;
-  onEdit: () => void;
-  onDelete: () => void;
-  onOpenReadStatus?: () => void;
 }) {
   const shareBadges = getShareTargetBadges({
     postedToBoard: tournament.postedToBoard,
@@ -592,17 +463,13 @@ function TournamentCard({
   });
 
   return (
-    <ScheduleManageCard
-      label={tournament.title}
-      canEdit={canEdit}
-      canDelete={canDelete}
-      open={open}
-      onOpenChange={onOpenChange}
-      onOpen={onOpen}
-      onEdit={onEdit}
-      onDelete={onDelete}
+    <button
+      type="button"
+      onClick={onOpen}
+      aria-label={`${tournament.title} 자세히 보기`}
+      className="block w-full text-left"
     >
-      <div className="flex items-center gap-4 rounded-xl border border-slate-100 bg-white p-3 pr-7 shadow-sm transition-all hover:border-emerald-500/50">
+      <div className="flex items-center gap-4 rounded-xl border border-slate-100 bg-white p-3 shadow-sm transition-all hover:border-emerald-500/50 hover:bg-slate-50">
         <div className="flex size-12 shrink-0 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600">
           <span className="material-symbols-outlined">emoji_events</span>
         </div>
@@ -635,22 +502,9 @@ function TournamentCard({
           <p className="text-[10px] font-medium uppercase tracking-wider text-slate-400">
             {getTournamentFeeLabel(tournament)}
           </p>
-          {onOpenReadStatus ? (
-            <button
-              type="button"
-              onClick={(event) => {
-                event.stopPropagation();
-                onOpenReadStatus();
-              }}
-              className="mt-2 inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-600 transition hover:bg-slate-200 hover:text-slate-900"
-            >
-              <span className="material-symbols-outlined text-[14px]">visibility</span>
-              읽음 {readCount}명
-            </button>
-          ) : null}
         </div>
       </div>
-    </ScheduleManageCard>
+    </button>
   );
 }
 
@@ -661,20 +515,11 @@ export function ScheduleClient({
   activeMonth,
   isMonthLoading,
   onChangeMonth,
-  onReloadMonth,
 }: ScheduleClientProps) {
   const prefersReducedMotion = useReducedMotion();
   const reduceMotion = Boolean(prefersReducedMotion);
   const today = new Date();
-  const [readCountOverrides, setReadCountOverrides] = useState<Record<number, number>>({});
-  const calendarItems = useMemo(
-    () => payload.items.map((item) => ({
-      ...item,
-      readCount: readCountOverrides[item.calendarItemId] ?? item.readCount,
-    })),
-    [payload.items, readCountOverrides],
-  );
-  const month = useMemo(() => buildCalendarMonth(activeYear, activeMonth, calendarItems), [activeMonth, activeYear, calendarItems]);
+  const month = useMemo(() => buildCalendarMonth(activeYear, activeMonth, payload.items), [activeMonth, activeYear, payload.items]);
   const [selectedDayState, setSelectedDayState] = useState<SelectedDayState>({
     monthId: month.id,
     day: month.defaultSelectedDay,
@@ -683,17 +528,8 @@ export function ScheduleClient({
     selectedDayState.monthId === month.id ? selectedDayState.day : month.defaultSelectedDay;
   const [detailNoticeId, setDetailNoticeId] = useState<string | null>(null);
   const [detailEventId, setDetailEventId] = useState<string | null>(null);
-  const [editingEventId, setEditingEventId] = useState<string | null>(null);
   const [detailVoteId, setDetailVoteId] = useState<string | null>(null);
-  const [editingVoteId, setEditingVoteId] = useState<string | null>(null);
   const [detailTournamentId, setDetailTournamentId] = useState<string | null>(null);
-  const [editingTournamentId, setEditingTournamentId] = useState<string | null>(null);
-  const [deleteEventTarget, setDeleteEventTarget] = useState<ClubScheduleEventSummary | null>(null);
-  const [deleteVoteTarget, setDeleteVoteTarget] = useState<ClubScheduleVoteSummary | null>(null);
-  const [deleteTournamentTarget, setDeleteTournamentTarget] = useState<TournamentSummary | null>(null);
-  const [deleting, setDeleting] = useState(false);
-  const [activeActionKey, setActiveActionKey] = useState<string | null>(null);
-  const [readStatusModal, setReadStatusModal] = useState<CalendarReadStatusModalState | null>(null);
 
   const dayItems = month.itemsByDay[selectedDay] ?? [];
   const selectedDateValue = getDateValue(month.year, month.month, selectedDay);
@@ -704,7 +540,6 @@ export function ScheduleClient({
           type: "notice" as const,
           key: `notice-${item.notice.noticeId}`,
           calendarItemId: item.calendarItemId,
-          readCount: item.readCount,
           sortValue: item.notice.scheduleAt ?? `${selectedDateValue}T00:00`,
           notice: item.notice,
         }];
@@ -714,7 +549,6 @@ export function ScheduleClient({
           type: "event" as const,
           key: `event-${item.event.eventId}`,
           calendarItemId: item.calendarItemId,
-          readCount: item.readCount,
           sortValue: `${item.event.startDate}T${item.event.timeLabel ?? "00:00"}`,
           event: item.event,
         }];
@@ -724,7 +558,6 @@ export function ScheduleClient({
           type: "vote" as const,
           key: `vote-${item.vote.voteId}`,
           calendarItemId: item.calendarItemId,
-          readCount: item.readCount,
           sortValue: `${item.vote.voteStartDate}T${item.vote.voteTimeLabel ?? "00:00"}`,
           vote: item.vote,
         }];
@@ -734,7 +567,6 @@ export function ScheduleClient({
           type: "tournament" as const,
           key: `tournament-${item.tournament.tournamentRecordId}`,
           calendarItemId: item.calendarItemId,
-          readCount: item.readCount,
           sortValue: `${item.tournament.startDate}T00:00`,
           tournament: item.tournament,
         }];
@@ -744,24 +576,7 @@ export function ScheduleClient({
     .sort((left, right) => left.sortValue.localeCompare(right.sortValue));
   const maxEventCount = Math.max(0, ...Object.values(month.scheduleItemCountByDay));
 
-  const patchCalendarItemReadCount = (calendarItemId: number, readCount: number) => {
-    startTransition(() => {
-      setReadCountOverrides((current) => ({ ...current, [calendarItemId]: readCount }));
-    });
-  };
-
-  const recordCalendarItemRead = async (calendarItemId: number) => {
-    const result = await recordClubCalendarItemRead(clubId, calendarItemId);
-    if (!result.ok || !result.data) {
-      return;
-    }
-    patchCalendarItemReadCount(calendarItemId, result.data.readCount);
-  };
-
   const openCalendarItemDetail = (item: SelectedScheduleItem) => {
-    setActiveActionKey(null);
-    void recordCalendarItemRead(item.calendarItemId);
-
     if (item.type === "notice") {
       setDetailNoticeId(String(item.notice.noticeId));
       return;
@@ -777,18 +592,8 @@ export function ScheduleClient({
     setDetailTournamentId(String(item.tournament.tournamentRecordId));
   };
 
-  const openCalendarReadStatus = async (calendarItemId: number, title: string) => {
-    setActiveActionKey(null);
-    const result = await getClubCalendarItemReadStatus(clubId, calendarItemId);
-    if (!result.ok || !result.data) {
-      return;
-    }
-    setReadStatusModal({ title, status: result.data });
-  };
-
   const handleMoveMonth = (direction: "prev" | "next") => {
     const next = shiftMonth(activeYear, activeMonth, direction === "prev" ? -1 : 1);
-    setActiveActionKey(null);
     onChangeMonth(next.year, next.month);
   };
 
@@ -796,51 +601,6 @@ export function ScheduleClient({
     startTransition(() => {
       setSelectedDayState({ monthId: month.id, day });
     });
-  };
-
-  const handleDeleteEvent = async () => {
-    if (!deleteEventTarget) {
-      return;
-    }
-    setDeleting(true);
-    const result = await deleteClubScheduleEvent(clubId, deleteEventTarget.eventId);
-    setDeleting(false);
-    if (!result.ok) {
-      return;
-    }
-    setDeleteEventTarget(null);
-    setActiveActionKey(null);
-    onReloadMonth();
-  };
-
-  const handleDeleteVote = async () => {
-    if (!deleteVoteTarget) {
-      return;
-    }
-    setDeleting(true);
-    const result = await deleteClubScheduleVote(clubId, deleteVoteTarget.voteId);
-    setDeleting(false);
-    if (!result.ok) {
-      return;
-    }
-    setDeleteVoteTarget(null);
-    setActiveActionKey(null);
-    onReloadMonth();
-  };
-
-  const handleDeleteTournament = async () => {
-    if (!deleteTournamentTarget) {
-      return;
-    }
-    setDeleting(true);
-    const result = await deleteClubTournament(clubId, deleteTournamentTarget.tournamentRecordId);
-    setDeleting(false);
-    if (!result.ok) {
-      return;
-    }
-    setDeleteTournamentTarget(null);
-    setActiveActionKey(null);
-    onReloadMonth();
   };
 
   return (
@@ -978,79 +738,27 @@ export function ScheduleClient({
                   {item.type === "event" ? (
                     <EventCard
                       event={item.event}
-                      readCount={item.readCount}
-                      canEdit={item.event.canEdit}
-                      canDelete={item.event.canDelete}
-                      onOpenReadStatus={() => openCalendarReadStatus(item.calendarItemId, item.event.title)}
-                      open={activeActionKey === item.key}
-                      onOpenChange={(nextOpen) => {
-                        setActiveActionKey(nextOpen ? item.key : null);
-                      }}
                       onOpen={() => {
                         openCalendarItemDetail(item);
-                      }}
-                      onEdit={() => {
-                        setActiveActionKey(null);
-                        setEditingEventId(String(item.event.eventId));
-                      }}
-                      onDelete={() => {
-                        setActiveActionKey(null);
-                        setDeleteEventTarget(item.event);
                       }}
                     />
                   ) : item.type === "vote" ? (
                     <VoteCard
                       vote={item.vote}
-                      readCount={item.readCount}
-                      canEdit={item.vote.canEdit}
-                      canDelete={item.vote.canDelete}
-                      onOpenReadStatus={() => openCalendarReadStatus(item.calendarItemId, item.vote.title)}
-                      open={activeActionKey === item.key}
-                      onOpenChange={(nextOpen) => {
-                        setActiveActionKey(nextOpen ? item.key : null);
-                      }}
                       onOpen={() => {
                         openCalendarItemDetail(item);
-                      }}
-                      onEdit={() => {
-                        setActiveActionKey(null);
-                        setEditingVoteId(String(item.vote.voteId));
-                      }}
-                      onDelete={() => {
-                        setActiveActionKey(null);
-                        setDeleteVoteTarget(item.vote);
                       }}
                     />
                   ) : item.type === "tournament" ? (
                     <TournamentCard
                       tournament={item.tournament}
-                      readCount={item.readCount}
-                      canEdit={item.tournament.canEdit}
-                      canDelete={item.tournament.canDelete}
-                      onOpenReadStatus={() => openCalendarReadStatus(item.calendarItemId, item.tournament.title)}
-                      open={activeActionKey === item.key}
-                      onOpenChange={(nextOpen) => {
-                        setActiveActionKey(nextOpen ? item.key : null);
-                      }}
                       onOpen={() => {
                         openCalendarItemDetail(item);
-                      }}
-                      onEdit={() => {
-                        setActiveActionKey(null);
-                        setEditingTournamentId(String(item.tournament.tournamentRecordId));
-                      }}
-                      onDelete={() => {
-                        setActiveActionKey(null);
-                        setDeleteTournamentTarget(item.tournament);
                       }}
                     />
                   ) : (
                     <NoticeCard
                       notice={item.notice}
-                      readCount={item.readCount}
-                      open={false}
-                      onOpenChange={() => {}}
-                      onOpenReadStatus={() => openCalendarReadStatus(item.calendarItemId, item.notice.title)}
                       onOpen={() => {
                         openCalendarItemDetail(item);
                       }}
@@ -1085,26 +793,6 @@ export function ScheduleClient({
               onRequestClose={() => setDetailEventId(null)}
             />
           ) : null}
-          {editingEventId ? (
-            <RouteModal onDismiss={() => setEditingEventId(null)} dismissOnBackdrop={false}>
-              <ClubScheduleEditorClient
-                clubId={clubId}
-                eventId={editingEventId}
-                clubName={payload.clubName}
-                presentation="modal"
-                onRequestClose={() => setEditingEventId(null)}
-                onSaved={(savedEventId) => {
-                  setEditingEventId(null);
-                  onReloadMonth();
-                  setDetailEventId(String(savedEventId));
-                }}
-                onDeleted={() => {
-                  setEditingEventId(null);
-                  onReloadMonth();
-                }}
-              />
-            </RouteModal>
-          ) : null}
           {detailVoteId ? (
             <ClubPollDetailModal
               clubId={clubId}
@@ -1117,91 +805,6 @@ export function ScheduleClient({
               clubId={clubId}
               tournamentRecordId={detailTournamentId}
               onRequestClose={() => setDetailTournamentId(null)}
-            />
-          ) : null}
-          {editingVoteId ? (
-            <RouteModal onDismiss={() => setEditingVoteId(null)} dismissOnBackdrop={false}>
-              <ClubScheduleVoteEditorClient
-                clubId={clubId}
-                voteId={editingVoteId}
-                clubName={payload.clubName}
-                presentation="modal"
-                basePath={`/clubs/${clubId}/more/polls`}
-                onRequestClose={() => setEditingVoteId(null)}
-                onSaved={(savedVoteId) => {
-                  setEditingVoteId(null);
-                  onReloadMonth();
-                  setDetailVoteId(String(savedVoteId));
-                }}
-              />
-            </RouteModal>
-          ) : null}
-          {editingTournamentId ? (
-            <RouteModal onDismiss={() => setEditingTournamentId(null)} dismissOnBackdrop={false}>
-              <ClubTournamentEditorClient
-                clubId={clubId}
-                tournamentRecordId={editingTournamentId}
-                presentation="modal"
-                onRequestClose={() => setEditingTournamentId(null)}
-                onSaved={(savedTournamentId) => {
-                  setEditingTournamentId(null);
-                  onReloadMonth();
-                  setDetailTournamentId(String(savedTournamentId));
-                }}
-              />
-            </RouteModal>
-          ) : null}
-          {deleteEventTarget ? (
-            <ScheduleActionConfirmModal
-              title="일정을 삭제할까요?"
-              description={`"${deleteEventTarget.title}" 일정은 삭제 후 복구할 수 없습니다.`}
-              confirmLabel="일정 삭제"
-              busyLabel="삭제 중..."
-              busy={deleting}
-              onCancel={() => {
-                if (!deleting) {
-                  setDeleteEventTarget(null);
-                }
-              }}
-              onConfirm={handleDeleteEvent}
-            />
-          ) : null}
-          {deleteVoteTarget ? (
-            <ScheduleActionConfirmModal
-              title="투표를 삭제할까요?"
-              description={`"${deleteVoteTarget.title}" 투표는 삭제 후 복구할 수 없습니다.`}
-              confirmLabel="투표 삭제"
-              busyLabel="삭제 중..."
-              busy={deleting}
-              onCancel={() => {
-                if (!deleting) {
-                  setDeleteVoteTarget(null);
-                }
-              }}
-              onConfirm={handleDeleteVote}
-            />
-          ) : null}
-          {deleteTournamentTarget ? (
-            <ScheduleActionConfirmModal
-              title="대회를 삭제할까요?"
-              description={`"${deleteTournamentTarget.title}" 대회는 삭제 후 복구할 수 없습니다.`}
-              confirmLabel="대회 삭제"
-              busyLabel="삭제 중..."
-              busy={deleting}
-              onCancel={() => {
-                if (!deleting) {
-                  setDeleteTournamentTarget(null);
-                }
-              }}
-              onConfirm={handleDeleteTournament}
-            />
-          ) : null}
-          {readStatusModal ? (
-            <ItemReadStatusModal
-              title={readStatusModal.title}
-              readCount={readStatusModal.status?.readCount ?? null}
-              readers={readStatusModal.status?.readers ?? []}
-              onClose={() => setReadStatusModal(null)}
             />
           ) : null}
         </AnimatePresence>

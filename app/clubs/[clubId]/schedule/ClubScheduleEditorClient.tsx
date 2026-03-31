@@ -62,7 +62,7 @@ export function ClubScheduleEditorClient({
   const [feeAmount, setFeeAmount] = useState("");
   const [feeAmountUndecided, setFeeAmountUndecided] = useState(false);
   const [feeNWaySplit, setFeeNWaySplit] = useState(false);
-  const [postToBoard, setPostToBoard] = useState(false);
+  const [postToBoard, setPostToBoard] = useState(true);
   const [postToCalendar, setPostToCalendar] = useState(true);
   const [pinned, setPinned] = useState(false);
   const [clubName, setClubName] = useState(initialClubName ?? "일정 스튜디오");
