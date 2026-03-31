@@ -63,7 +63,6 @@ export function ClubTournamentEditorClient({
   const [postToBoard, setPostToBoard] = useState(false);
   const [postToCalendar, setPostToCalendar] = useState(true);
   const [pinned, setPinned] = useState(false);
-  const [bracketMode, setBracketMode] = useState<"RANDOM" | "MANUAL">("RANDOM");
   const [loading, setLoading] = useState(isEdit);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -111,7 +110,6 @@ export function ClubTournamentEditorClient({
       setPostToBoard(payload.postedToBoard);
       setPostToCalendar(payload.postedToCalendar);
       setPinned(payload.pinned);
-      setBracketMode(payload.bracketMode);
     })();
 
     return () => {
@@ -185,7 +183,6 @@ export function ClubTournamentEditorClient({
       postToBoard,
       postToCalendar,
       pinned,
-      bracketMode,
     };
 
     const result = isEdit && tournamentRecordId
@@ -431,12 +428,6 @@ export function ClubTournamentEditorClient({
                     <input type="checkbox" checked={item.checked} onChange={(event) => item.setChecked(event.target.checked)} className="rounded border-slate-300 text-sky-600" />
                   </label>
                 ))}
-                <div className="rounded-[18px] border border-dashed border-slate-200 bg-slate-50 px-4 py-3">
-                  <p className="text-sm font-semibold text-slate-700">대진표는 대회 상세에서 생성합니다.</p>
-                  <p className="mt-1 text-xs font-medium text-slate-500">
-                    생성 후 상세 화면에서 랜덤 생성, 직접 배치, 초안 저장, 대진 확정을 진행할 수 있습니다.
-                  </p>
-                </div>
               </div>
             </section>
           </form>

@@ -10,7 +10,7 @@ export function getTournamentStatusLabel(status: TournamentLike["tournamentStatu
     case "APPLICATION_OPEN":
       return "모집 중";
     case "ENTRY_CONFIRMED":
-      return "대진 확정";
+      return "준비 중";
     case "ONGOING":
       return "진행 중";
     case "COMPLETED":

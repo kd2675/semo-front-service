@@ -336,39 +336,6 @@ export type TournamentEntrySummary = {
   members: TournamentEntryMember[];
 };
 
-export type TournamentBracketSide = {
-  tournamentMatchSideId: number;
-  sideNo: number;
-  tournamentEntryId: number | null;
-  entryDisplayName: string | null;
-  seedNumber: number | null;
-  scoreSummary: string | null;
-  resultStatus: string;
-  members: TournamentEntryMember[];
-};
-
-export type TournamentBracketMatch = {
-  tournamentMatchId: number;
-  tournamentRoundId: number;
-  title: string | null;
-  matchStatus: string;
-  scheduledAt: string | null;
-  scheduledAtLabel: string | null;
-  locationLabel: string | null;
-  winnerEntryId: number | null;
-  sortOrder: number;
-  sides: TournamentBracketSide[];
-};
-
-export type TournamentBracketRound = {
-  tournamentRoundId: number;
-  roundKey: string;
-  displayName: string;
-  roundType: string;
-  sortOrder: number;
-  matches: TournamentBracketMatch[];
-};
-
 export type TournamentSummary = {
   tournamentRecordId: number;
   title: string;
@@ -393,8 +360,6 @@ export type TournamentSummary = {
   postedToBoard: boolean;
   postedToCalendar: boolean;
   pinned: boolean;
-  bracketMode: "RANDOM" | "MANUAL";
-  bracketConfirmed: boolean;
   mine: boolean;
   participating: boolean;
   canEdit: boolean;
@@ -426,7 +391,6 @@ export type ClubAdminTournamentHomeResponse = {
   activeTournamentCount: number;
   completedTournamentCount: number;
   recruitingTournamentCount: number;
-  bracketConfirmedCount: number;
   tournaments: TournamentSummary[];
 };
 
@@ -458,8 +422,6 @@ export type TournamentDetailResponse = {
   postedToBoard: boolean;
   postedToCalendar: boolean;
   pinned: boolean;
-  bracketMode: "RANDOM" | "MANUAL";
-  bracketConfirmed: boolean;
   cancelledAtLabel: string | null;
   cancelReason: string | null;
   applicantCount: number;
@@ -475,10 +437,8 @@ export type TournamentDetailResponse = {
   canDelete: boolean;
   canReviewApplications: boolean;
   canManageEntries: boolean;
-  canManageBracket: boolean;
   applications: TournamentApplicationSummary[];
   entries: TournamentEntrySummary[];
-  rounds: TournamentBracketRound[];
 };
 
 export type UpsertTournamentRequest = {
@@ -499,7 +459,6 @@ export type UpsertTournamentRequest = {
   postToBoard?: boolean;
   postToCalendar?: boolean;
   pinned?: boolean;
-  bracketMode: "RANDOM" | "MANUAL";
 };
 
 export type TournamentUpsertResponse = {
@@ -508,7 +467,6 @@ export type TournamentUpsertResponse = {
   startDate: string;
   endDate: string;
   tournamentStatus: string;
-  bracketConfirmed: boolean;
 };
 
 export type SubmitTournamentApplicationRequest = {
@@ -537,29 +495,6 @@ export type UpsertTournamentEntryDraftRequest = {
 
 export type UpdateTournamentEntriesRequest = {
   entries: UpsertTournamentEntryDraftRequest[];
-};
-
-export type GenerateTournamentBracketRequest = {
-  randomize?: boolean;
-};
-
-export type UpdateTournamentBracketDraftSideRequest = {
-  tournamentMatchSideId: number;
-  tournamentEntryId?: number | null;
-  scoreSummary?: string | null;
-  resultStatus?: string | null;
-};
-
-export type UpdateTournamentBracketDraftMatchRequest = {
-  tournamentMatchId: number;
-  title?: string | null;
-  scheduledAt?: string | null;
-  locationLabel?: string | null;
-  sides: UpdateTournamentBracketDraftSideRequest[];
-};
-
-export type UpdateTournamentBracketDraftRequest = {
-  matches: UpdateTournamentBracketDraftMatchRequest[];
 };
 
 export type ClubScheduleEventDetailResponse = {
@@ -1343,38 +1278,6 @@ export function updateClubTournamentEntries(
   return putJson<TournamentDetailResponse>(
     `/api/semo/v1/clubs/${clubId}/admin/more/tournaments/${tournamentRecordId}/entries`,
     request,
-  );
-}
-
-export function generateClubTournamentBracket(
-  clubId: string | number,
-  tournamentRecordId: string | number,
-  request: GenerateTournamentBracketRequest = {},
-) {
-  return postJson<TournamentDetailResponse>(
-    `/api/semo/v1/clubs/${clubId}/admin/more/tournaments/${tournamentRecordId}/bracket/generate`,
-    request,
-  );
-}
-
-export function updateClubTournamentBracketDraft(
-  clubId: string | number,
-  tournamentRecordId: string | number,
-  request: UpdateTournamentBracketDraftRequest,
-) {
-  return putJson<TournamentDetailResponse>(
-    `/api/semo/v1/clubs/${clubId}/admin/more/tournaments/${tournamentRecordId}/bracket/draft`,
-    request,
-  );
-}
-
-export function confirmClubTournamentBracket(
-  clubId: string | number,
-  tournamentRecordId: string | number,
-) {
-  return putJson<TournamentDetailResponse>(
-    `/api/semo/v1/clubs/${clubId}/admin/more/tournaments/${tournamentRecordId}/bracket/confirm`,
-    undefined,
   );
 }
 

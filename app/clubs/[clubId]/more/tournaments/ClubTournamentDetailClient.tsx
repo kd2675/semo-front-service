@@ -9,12 +9,9 @@ import {
   applyClubTournament,
   cancelClubTournament,
   cancelClubTournamentApplication,
-  confirmClubTournamentBracket,
   deleteClubTournament,
-  generateClubTournamentBracket,
   getClubTournamentDetail,
   reviewClubTournamentApplication,
-  updateClubTournamentBracketDraft,
   updateClubTournamentEntries,
   type TournamentApplicationSummary,
   type TournamentDetailResponse,
@@ -31,7 +28,6 @@ import {
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ClubDetailLoadingShell } from "../../ClubRouteLoadingShells";
-import { TournamentBracketBoard } from "./TournamentBracketBoard";
 
 type ClubTournamentDetailClientProps = {
   clubId: string;
@@ -69,23 +65,6 @@ function buildInitialEntryDrafts(payload: TournamentDetailResponse): EntryDraft[
     }));
   }
   return [];
-}
-
-function buildBracketDraft(payload: TournamentDetailResponse) {
-  return payload.rounds.flatMap((round) =>
-    round.matches.map((match) => ({
-      tournamentMatchId: match.tournamentMatchId,
-      title: match.title ?? "",
-      scheduledAt: match.scheduledAt ?? "",
-      locationLabel: match.locationLabel ?? "",
-      sides: match.sides.map((side) => ({
-        tournamentMatchSideId: side.tournamentMatchSideId,
-        tournamentEntryId: side.tournamentEntryId,
-        scoreSummary: side.scoreSummary ?? "",
-        resultStatus: side.resultStatus,
-      })),
-    })),
-  );
 }
 
 function buildAutoEntryDrafts(payload: TournamentDetailResponse): EntryDraft[] {
@@ -156,7 +135,6 @@ export function ClubTournamentDetailClient({
   const [showCancelTournament, setShowCancelTournament] = useState(false);
   const [showDeleteTournament, setShowDeleteTournament] = useState(false);
   const [entryDrafts, setEntryDrafts] = useState<EntryDraft[]>([]);
-  const [bracketDraft, setBracketDraft] = useState<ReturnType<typeof buildBracketDraft>>([]);
 
   const isModal = presentation === "modal";
   const fallbackBasePath = basePath ?? `/clubs/${clubId}/more/tournaments`;
@@ -180,7 +158,6 @@ export function ClubTournamentDetailClient({
     }
     setPayload(result.data);
     setEntryDrafts(buildInitialEntryDrafts(result.data));
-    setBracketDraft(buildBracketDraft(result.data));
   }, [clubId, tournamentRecordId]);
 
   useEffect(() => {
@@ -200,7 +177,6 @@ export function ClubTournamentDetailClient({
       }
       setPayload(result.data);
       setEntryDrafts(buildInitialEntryDrafts(result.data));
-      setBracketDraft(buildBracketDraft(result.data));
     })();
 
     return () => {
@@ -276,7 +252,6 @@ export function ClubTournamentDetailClient({
     }
     setPayload(result.data);
     setEntryDrafts(buildInitialEntryDrafts(result.data));
-    setBracketDraft(buildBracketDraft(result.data));
   };
 
   const handleSaveEntries = async () => {
@@ -295,45 +270,6 @@ export function ClubTournamentDetailClient({
     }
     setPayload(result.data);
     setEntryDrafts(buildInitialEntryDrafts(result.data));
-    setBracketDraft(buildBracketDraft(result.data));
-  };
-
-  const handleGenerateBracket = async (randomize: boolean) => {
-    setSaving(true);
-    const result = await generateClubTournamentBracket(clubId, tournamentRecordId, { randomize });
-    setSaving(false);
-    if (!result.ok || !result.data) {
-      setError(result.message ?? "대진표 생성에 실패했습니다.");
-      return;
-    }
-    setPayload(result.data);
-    setBracketDraft(buildBracketDraft(result.data));
-  };
-
-  const handleSaveBracketDraft = async () => {
-    setSaving(true);
-    const result = await updateClubTournamentBracketDraft(clubId, tournamentRecordId, {
-      matches: bracketDraft,
-    });
-    setSaving(false);
-    if (!result.ok || !result.data) {
-      setError(result.message ?? "대진표 초안 저장에 실패했습니다.");
-      return;
-    }
-    setPayload(result.data);
-    setBracketDraft(buildBracketDraft(result.data));
-  };
-
-  const handleConfirmBracket = async () => {
-    setSaving(true);
-    const result = await confirmClubTournamentBracket(clubId, tournamentRecordId);
-    setSaving(false);
-    if (!result.ok || !result.data) {
-      setError(result.message ?? "대진표 확정에 실패했습니다.");
-      return;
-    }
-    setPayload(result.data);
-    setBracketDraft(buildBracketDraft(result.data));
   };
 
   if (loading && !payload) {
@@ -349,8 +285,6 @@ export function ClubTournamentDetailClient({
   }
 
   const statusBadgeClassName = getTournamentStatusBadgeClassName(payload.tournamentStatus);
-  const entryOptions = payload.entries.map((entry) => ({ value: entry.tournamentEntryId, label: entry.displayName }));
-
   return (
     <div className={isModal ? "flex min-h-0 flex-1 flex-col bg-white font-display text-slate-900" : "min-h-full bg-white font-display text-slate-900"}>
       <div className={isModal ? "flex min-h-0 flex-1 flex-col bg-white" : "mx-auto flex min-h-full max-w-md flex-col bg-white"}>
@@ -484,7 +418,7 @@ export function ClubTournamentDetailClient({
                   참가 신청
                 </button>
               ) : null}
-              {payload.applied && payload.myApplicationStatus !== "CANCELLED" && !payload.bracketConfirmed ? (
+              {payload.applied && payload.myApplicationStatus !== "CANCELLED" ? (
                 <button
                   type="button"
                   onClick={handleCancelApplication}
@@ -676,55 +610,6 @@ export function ClubTournamentDetailClient({
             </motion.section>
           ) : null}
 
-          <motion.section className="mt-8 space-y-4" {...staggeredFadeUpMotion(6, reduceMotion)}>
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <p className="text-[11px] font-black uppercase tracking-[0.24em] text-slate-400">Bracket Stage</p>
-                <h3 className="mt-2 text-xl font-black tracking-tight text-slate-900">
-                  {payload.bracketConfirmed ? "확정된 대진표" : "대진표 초안"}
-                </h3>
-              </div>
-              {payload.canManageBracket ? (
-                <div className="flex flex-wrap gap-2">
-                  <button type="button" onClick={() => handleGenerateBracket(true)} className="rounded-full border border-sky-200 bg-sky-50 px-4 py-2 text-xs font-black text-sky-700">
-                    랜덤 생성
-                  </button>
-                  <button type="button" onClick={() => handleGenerateBracket(false)} className="rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-black text-slate-700">
-                    시드 순 생성
-                  </button>
-                  {!payload.bracketConfirmed && payload.rounds.length > 0 ? (
-                    <>
-                      <button type="button" onClick={handleSaveBracketDraft} className="rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-black text-slate-700">
-                        초안 저장
-                      </button>
-                      <button type="button" onClick={handleConfirmBracket} className="rounded-full bg-slate-900 px-4 py-2 text-xs font-black text-white">
-                        대진 확정
-                      </button>
-                    </>
-                  ) : null}
-                </div>
-              ) : null}
-            </div>
-
-            <TournamentBracketBoard
-              rounds={payload.rounds}
-              editable={payload.canManageBracket && !payload.bracketConfirmed}
-              entryOptions={entryOptions}
-              onSideEntryChange={(tournamentMatchId, tournamentMatchSideId, tournamentEntryId) => {
-                void tournamentMatchId;
-                setBracketDraft((current) =>
-                  current.map((match) => ({
-                    ...match,
-                    sides: match.sides.map((side) =>
-                      side.tournamentMatchSideId === tournamentMatchSideId
-                        ? { ...side, tournamentEntryId }
-                        : side,
-                    ),
-                  })),
-                );
-              }}
-            />
-          </motion.section>
         </main>
 
         <AnimatePresence>
@@ -762,7 +647,7 @@ export function ClubTournamentDetailClient({
         {showDeleteTournament ? (
           <ScheduleActionConfirmModal
             title="대회를 삭제할까요?"
-            description="삭제는 관리자 전용 액션이며, 관련 신청/엔트리/브래킷도 함께 정리됩니다."
+            description="삭제는 관리자 전용 액션이며, 관련 신청과 엔트리도 함께 정리됩니다."
             confirmLabel="대회 삭제"
             busyLabel="삭제 중..."
             busy={saving}
