@@ -10,10 +10,7 @@ import { getVoteLifecycleLabel } from "@/app/lib/vote-status";
 
 type PinnedBoardCarouselProps = {
   items: ClubBoardFeedItem[];
-  onOpenNotice: (noticeId: number) => void;
-  onOpenEvent: (eventId: number) => void;
-  onOpenVote: (voteId: number) => void;
-  onOpenTournament: (tournamentRecordId: number) => void;
+  onOpenItem: (item: ClubBoardFeedItem) => void;
 };
 
 function getPinnedSurface(useImageBackground: boolean) {
@@ -122,10 +119,7 @@ function getBoardItemMeta(item: ClubBoardFeedItem) {
 
 export function PinnedBoardCarousel({
   items,
-  onOpenNotice,
-  onOpenEvent,
-  onOpenVote,
-  onOpenTournament,
+  onOpenItem,
 }: PinnedBoardCarouselProps) {
   if (items.length === 0) {
     return null;
@@ -147,29 +141,11 @@ export function PinnedBoardCarousel({
           }
           const useImageBackground = item.contentType === "NOTICE" && Boolean(meta.imageUrl);
           const surface = getPinnedSurface(useImageBackground);
-          const handleOpen = () => {
-            if (item.contentType === "NOTICE" && item.notice) {
-              onOpenNotice(item.notice.noticeId);
-              return;
-            }
-            if (item.contentType === "SCHEDULE_EVENT" && item.event) {
-              onOpenEvent(item.event.eventId);
-              return;
-            }
-            if (item.contentType === "SCHEDULE_VOTE" && item.vote) {
-              onOpenVote(item.vote.voteId);
-              return;
-            }
-            if (item.contentType === "TOURNAMENT" && item.tournament) {
-              onOpenTournament(item.tournament.tournamentRecordId);
-            }
-          };
-
           return (
             <SwiperSlide key={`${item.contentType}-${item.boardItemId}`}>
               <button
                 type="button"
-                onClick={handleOpen}
+                onClick={() => onOpenItem(item)}
                 className={`relative block min-h-[204px] w-full overflow-hidden rounded-[12px] p-5 text-left shadow-sm transition-transform active:scale-[0.985] ${surface.cardClassName}`}
                 aria-label={`${meta.title} 자세히 보기`}
               >

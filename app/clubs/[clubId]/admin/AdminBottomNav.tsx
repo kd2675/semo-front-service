@@ -448,14 +448,14 @@ export function AdminBottomNav({ clubId }: AdminBottomNavProps) {
     });
 
   const FloatingMenu = (
-    <nav className="flex w-[clamp(280px,33vw,460px)] max-w-[calc(100vw-2rem)] items-center justify-center gap-4 rounded-full border border-white/70 bg-white/82 px-5 py-3 shadow-[0_18px_42px_rgba(15,23,42,0.12)] backdrop-blur-md">
+    <nav className="flex w-[clamp(280px,33vw,460px)] max-w-[calc(100vw-2.5rem)] items-center justify-center gap-3 rounded-full border border-white/70 bg-white/82 px-4 py-3 shadow-[0_18px_42px_rgba(15,23,42,0.12)] backdrop-blur-md">
       {renderButtons()}
     </nav>
   );
 
   const DockedMenu = (
     <nav className="flex w-full items-center justify-center border-t border-slate-200/70 bg-white/88 px-4 pt-3 pb-[calc(env(safe-area-inset-bottom)+12px)] backdrop-blur-md">
-      <div className="flex w-[clamp(360px,44vw,640px)] max-w-[calc(100vw-1rem)] items-center justify-center gap-6">
+      <div className="flex w-[clamp(360px,44vw,640px)] max-w-[calc(100vw-1.5rem)] items-center justify-center gap-6">
         {renderButtons()}
       </div>
     </nav>

@@ -7,6 +7,7 @@ import { getLinkedContentBadge, getShareTargetBadges } from "@/app/lib/content-b
 
 type NoticeManageCardProps = {
   notice: ClubNoticeListItem;
+  readCount?: number;
   canEdit: boolean;
   canDelete: boolean;
   open: boolean;
@@ -14,11 +15,13 @@ type NoticeManageCardProps = {
   onOpen: () => void;
   onEdit: () => void;
   onDelete: () => void;
+  onOpenReadStatus?: () => void;
   showBoardShareBadge?: boolean;
 };
 
 export function NoticeManageCard({
   notice,
+  readCount = 0,
   canEdit,
   canDelete,
   open,
@@ -26,6 +29,7 @@ export function NoticeManageCard({
   onOpen,
   onEdit,
   onDelete,
+  onOpenReadStatus,
   showBoardShareBadge = false,
 }: NoticeManageCardProps) {
   const prefersReducedMotion = useReducedMotion();
@@ -94,23 +98,38 @@ export function NoticeManageCard({
             <p className="line-clamp-2 text-sm leading-6 text-slate-500">{notice.summary}</p>
 
             <div className="mt-4 flex items-center justify-between gap-3 border-t border-slate-100 pt-3">
-              <div className="flex min-w-0 items-center gap-3">
-                {metaAuthorAvatarUrl ? (
-                  <div className="relative h-8 w-8 overflow-hidden rounded-full bg-slate-100">
-                    <Image
-                      src={metaAuthorAvatarUrl}
-                      alt={metaAuthorLabel}
-                      fill
-                      sizes="32px"
-                      className="object-cover"
-                    />
-                  </div>
-                ) : (
-                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--primary)]/10 text-xs font-bold text-[var(--primary)]">
-                    {metaAuthorLabel.slice(0, 1)}
-                  </div>
-                )}
-                <p className="min-w-0 truncate text-sm font-semibold text-slate-600">{metaAuthorLabel}</p>
+              <div className="min-w-0">
+                <div className="flex min-w-0 items-center gap-3">
+                  {metaAuthorAvatarUrl ? (
+                    <div className="relative h-8 w-8 overflow-hidden rounded-full bg-slate-100">
+                      <Image
+                        src={metaAuthorAvatarUrl}
+                        alt={metaAuthorLabel}
+                        fill
+                        sizes="32px"
+                        className="object-cover"
+                      />
+                    </div>
+                  ) : (
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--primary)]/10 text-xs font-bold text-[var(--primary)]">
+                      {metaAuthorLabel.slice(0, 1)}
+                    </div>
+                  )}
+                  <p className="min-w-0 truncate text-sm font-semibold text-slate-600">{metaAuthorLabel}</p>
+                </div>
+                {onOpenReadStatus ? (
+                  <button
+                    type="button"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      onOpenReadStatus();
+                    }}
+                    className="mt-2 inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-600 transition hover:bg-slate-200 hover:text-slate-900"
+                  >
+                    <span className="material-symbols-outlined text-[14px]">visibility</span>
+                    읽음 {readCount}명
+                  </button>
+                ) : null}
               </div>
 
               {manageable ? (

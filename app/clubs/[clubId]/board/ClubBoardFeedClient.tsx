@@ -2,12 +2,14 @@
 
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import {
+  startTransition,
   useEffect,
   useEffectEvent,
   useRef,
   useState,
 } from "react";
 import { ClubModeSwitchFab } from "@/app/components/ClubModeSwitchFab";
+import { ItemReadStatusModal } from "@/app/components/ItemReadStatusModal";
 import { RouteModal } from "@/app/components/RouteModal";
 import {
   ClubNoticeDetailModal,
@@ -16,17 +18,20 @@ import {
   ClubTournamentDetailModal,
 } from "@/app/components/ClubDetailModals";
 import {
+  type BoardItemReadStatusResponse,
   type ClubBoardFeedItem,
   type TournamentSummary,
   deleteClubTournament,
   deleteClubNotice,
   deleteClubScheduleEvent,
   deleteClubScheduleVote,
+  getClubBoardItemReadStatus,
   getClubNoticeFeed,
   type ClubNoticeFeedResponse,
   type ClubNoticeListItem,
   type ClubScheduleEventSummary,
   type ClubScheduleVoteSummary,
+  recordClubBoardItemRead,
 } from "@/app/lib/clubs";
 import { staggeredFadeUpMotion } from "@/app/lib/motion";
 import { getShareTargetBadges } from "@/app/lib/content-badge";
@@ -50,6 +55,11 @@ type CursorState = {
 
 type ClubBoardFeedClientProps = {
   clubId: string;
+};
+
+type BoardReadStatusModalState = {
+  title: string;
+  status: BoardItemReadStatusResponse | null;
 };
 
 function isPinnedBoardItem(item: ClubBoardFeedItem) {
@@ -86,6 +96,7 @@ function BoardAuthorMeta({
 
 function BoardVoteCard({
   vote,
+  readCount,
   canEdit,
   canDelete,
   open,
@@ -93,8 +104,10 @@ function BoardVoteCard({
   onOpen,
   onEdit,
   onDelete,
+  onOpenReadStatus,
 }: {
   vote: ClubScheduleVoteSummary;
+  readCount: number;
   canEdit: boolean;
   canDelete: boolean;
   open: boolean;
@@ -102,6 +115,7 @@ function BoardVoteCard({
   onOpen: () => void;
   onEdit: () => void;
   onDelete: () => void;
+  onOpenReadStatus?: () => void;
 }) {
   const prefersReducedMotion = useReducedMotion();
   const reduceMotion = Boolean(prefersReducedMotion);
@@ -152,10 +166,25 @@ function BoardVoteCard({
         </p>
 
         <div className="mt-4 flex items-center justify-between gap-3 border-t border-slate-100 pt-3">
-          <BoardAuthorMeta
-            name={vote.authorDisplayName}
-            avatarUrl={vote.authorAvatarThumbnailUrl ?? vote.authorAvatarImageUrl}
-          />
+          <div className="min-w-0">
+            <BoardAuthorMeta
+              name={vote.authorDisplayName}
+              avatarUrl={vote.authorAvatarThumbnailUrl ?? vote.authorAvatarImageUrl}
+            />
+            {onOpenReadStatus ? (
+              <button
+                type="button"
+                onClick={(targetEvent) => {
+                  targetEvent.stopPropagation();
+                  onOpenReadStatus();
+                }}
+                className="mt-2 inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-600 transition hover:bg-slate-200 hover:text-slate-900"
+              >
+                <span className="material-symbols-outlined text-[14px]">visibility</span>
+                읽음 {readCount}명
+              </button>
+            ) : null}
+          </div>
           {manageable ? (
             <div className="relative">
               <button
@@ -243,6 +272,7 @@ export function ClubBoardFeedClient({ clubId }: ClubBoardFeedClientProps) {
   const [deleteTournamentTarget, setDeleteTournamentTarget] = useState<TournamentSummary | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [activeActionKey, setActiveActionKey] = useState<string | null>(null);
+  const [readStatusModal, setReadStatusModal] = useState<BoardReadStatusModalState | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
   const [pinnedOnly, setPinnedOnly] = useState(false);
   const [cursor, setCursor] = useState<CursorState>({ boardItemId: null });
@@ -393,6 +423,55 @@ export function ClubBoardFeedClient({ clubId }: ClubBoardFeedClientProps) {
     setReloadKey((current) => current + 1);
   };
 
+  const patchBoardItemReadCount = (boardItemId: number, readCount: number) => {
+    startTransition(() => {
+      setItems((current) => current.map((item) => (
+        item.boardItemId === boardItemId
+          ? { ...item, readCount }
+          : item
+      )));
+    });
+  };
+
+  const recordBoardItemRead = async (boardItemId: number) => {
+    const result = await recordClubBoardItemRead(clubId, boardItemId);
+    if (!result.ok || !result.data) {
+      return;
+    }
+    patchBoardItemReadCount(boardItemId, result.data.readCount);
+  };
+
+  const openBoardItemDetail = (item: ClubBoardFeedItem) => {
+    setActiveActionKey(null);
+    void recordBoardItemRead(item.boardItemId);
+
+    if (item.contentType === "NOTICE" && item.notice) {
+      setDetailNoticeId(String(item.notice.noticeId));
+      return;
+    }
+    if (item.contentType === "SCHEDULE_EVENT" && item.event) {
+      setDetailEventId(String(item.event.eventId));
+      return;
+    }
+    if (item.contentType === "SCHEDULE_VOTE" && item.vote) {
+      setDetailVoteId(String(item.vote.voteId));
+      return;
+    }
+    if (item.contentType === "TOURNAMENT" && item.tournament) {
+      setDetailTournamentId(String(item.tournament.tournamentRecordId));
+    }
+  };
+
+  const openBoardReadStatus = async (boardItemId: number, title: string) => {
+    setActiveActionKey(null);
+    const result = await getClubBoardItemReadStatus(clubId, boardItemId);
+    if (!result.ok || !result.data) {
+      setError(result.message ?? "읽음 현황을 불러오지 못했습니다.");
+      return;
+    }
+    setReadStatusModal({ title, status: result.data });
+  };
+
   if (!initialLoaded && !error) {
     return <ClubBoardFeedLoadingShell />;
   }
@@ -450,22 +529,7 @@ export function ClubBoardFeedClient({ clubId }: ClubBoardFeedClientProps) {
                 </div>
                 <PinnedBoardCarousel
                   items={pinnedItems}
-                  onOpenNotice={(noticeId) => {
-                    setActiveActionKey(null);
-                    setDetailNoticeId(String(noticeId));
-                  }}
-                  onOpenEvent={(eventId) => {
-                    setActiveActionKey(null);
-                    setDetailEventId(String(eventId));
-                  }}
-                  onOpenVote={(voteId) => {
-                    setActiveActionKey(null);
-                    setDetailVoteId(String(voteId));
-                  }}
-                  onOpenTournament={(tournamentRecordId) => {
-                    setActiveActionKey(null);
-                    setDetailTournamentId(String(tournamentRecordId));
-                  }}
+                  onOpenItem={openBoardItemDetail}
                 />
               </section>
             ) : null}
@@ -497,16 +561,17 @@ export function ClubBoardFeedClient({ clubId }: ClubBoardFeedClientProps) {
                 {item.contentType === "NOTICE" && item.notice ? (
                   <NoticeManageCard
                     notice={item.notice}
+                    readCount={item.readCount}
                     canEdit={isAdmin || item.notice.canEdit}
                     canDelete={isAdmin || item.notice.canDelete}
+                    onOpenReadStatus={() => openBoardReadStatus(item.boardItemId, item.notice!.title)}
                     showBoardShareBadge
                     open={activeActionKey === `notice-${item.notice.noticeId}`}
                     onOpenChange={(nextOpen) => {
                       setActiveActionKey(nextOpen ? `notice-${item.notice!.noticeId}` : null);
                     }}
                     onOpen={() => {
-                      setActiveActionKey(null);
-                      setDetailNoticeId(String(item.notice!.noticeId));
+                      openBoardItemDetail(item);
                     }}
                     onEdit={() => {
                       setActiveActionKey(null);
@@ -523,16 +588,17 @@ export function ClubBoardFeedClient({ clubId }: ClubBoardFeedClientProps) {
                 {item.contentType === "SCHEDULE_EVENT" && item.event ? (
                   <BoardScheduleManageCard
                     event={item.event}
+                    readCount={item.readCount}
                     canEdit={isAdmin || item.event.canEdit}
                     canDelete={isAdmin || item.event.canDelete}
+                    onOpenReadStatus={() => openBoardReadStatus(item.boardItemId, item.event!.title)}
                     showBoardShareBadge
                     open={activeActionKey === `event-${item.event.eventId}`}
                     onOpenChange={(nextOpen) => {
                       setActiveActionKey(nextOpen ? `event-${item.event!.eventId}` : null);
                     }}
                     onOpen={() => {
-                      setActiveActionKey(null);
-                      setDetailEventId(String(item.event!.eventId));
+                      openBoardItemDetail(item);
                     }}
                     onEdit={() => {
                       setActiveActionKey(null);
@@ -549,15 +615,16 @@ export function ClubBoardFeedClient({ clubId }: ClubBoardFeedClientProps) {
                 {item.contentType === "SCHEDULE_VOTE" && item.vote ? (
                   <BoardVoteCard
                     vote={item.vote}
+                    readCount={item.readCount}
                     canEdit={isAdmin || item.vote.canEdit}
                     canDelete={isAdmin || item.vote.canDelete}
+                    onOpenReadStatus={() => openBoardReadStatus(item.boardItemId, item.vote!.title)}
                     open={activeActionKey === `vote-${item.vote.voteId}`}
                     onOpenChange={(nextOpen) => {
                       setActiveActionKey(nextOpen ? `vote-${item.vote!.voteId}` : null);
                     }}
                     onOpen={() => {
-                      setActiveActionKey(null);
-                      setDetailVoteId(String(item.vote!.voteId));
+                      openBoardItemDetail(item);
                     }}
                     onEdit={() => {
                       setActiveActionKey(null);
@@ -574,16 +641,17 @@ export function ClubBoardFeedClient({ clubId }: ClubBoardFeedClientProps) {
                 {item.contentType === "TOURNAMENT" && item.tournament ? (
                   <BoardTournamentManageCard
                     tournament={item.tournament}
+                    readCount={item.readCount}
                     canEdit={isAdmin || item.tournament.canEdit}
                     canDelete={isAdmin || item.tournament.canDelete}
+                    onOpenReadStatus={() => openBoardReadStatus(item.boardItemId, item.tournament!.title)}
                     showBoardShareBadge
                     open={activeActionKey === `tournament-${item.tournament.tournamentRecordId}`}
                     onOpenChange={(nextOpen) => {
                       setActiveActionKey(nextOpen ? `tournament-${item.tournament!.tournamentRecordId}` : null);
                     }}
                     onOpen={() => {
-                      setActiveActionKey(null);
-                      setDetailTournamentId(String(item.tournament!.tournamentRecordId));
+                      openBoardItemDetail(item);
                     }}
                     onEdit={() => {
                       setActiveActionKey(null);
@@ -813,6 +881,14 @@ export function ClubBoardFeedClient({ clubId }: ClubBoardFeedClientProps) {
                 }
               }}
               onConfirm={handleDeleteTournament}
+            />
+          ) : null}
+          {readStatusModal ? (
+            <ItemReadStatusModal
+              title={readStatusModal.title}
+              readCount={readStatusModal.status?.readCount ?? null}
+              readers={readStatusModal.status?.readers ?? []}
+              onClose={() => setReadStatusModal(null)}
             />
           ) : null}
         </AnimatePresence>

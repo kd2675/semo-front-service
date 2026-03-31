@@ -91,6 +91,7 @@ export type ClubNoticeFeedResponse = {
 
 export type ClubBoardFeedItem = {
   boardItemId: number;
+  readCount: number;
   contentType: "NOTICE" | "SCHEDULE_EVENT" | "SCHEDULE_VOTE" | "TOURNAMENT";
   notice: ClubNoticeListItem | null;
   event: ClubScheduleEventSummary | null;
@@ -186,11 +187,47 @@ export type ClubScheduleResponse = {
 
 export type ClubCalendarFeedItem = {
   calendarItemId: number;
+  readCount: number;
   contentType: "NOTICE" | "SCHEDULE_EVENT" | "SCHEDULE_VOTE" | "TOURNAMENT";
   notice: ClubNoticeListItem | null;
   event: ClubScheduleEventSummary | null;
   vote: ClubScheduleVoteSummary | null;
   tournament: TournamentSummary | null;
+};
+
+export type ItemReadMember = {
+  clubProfileId: number;
+  displayName: string;
+  avatarImageUrl: string | null;
+  avatarThumbnailUrl: string | null;
+  roleCode: string | null;
+  lastReadAtLabel: string;
+};
+
+export type BoardItemReadResponse = {
+  boardItemId: number;
+  readCount: number;
+};
+
+export type CalendarItemReadResponse = {
+  calendarItemId: number;
+  readCount: number;
+};
+
+export type BoardItemReadStatusResponse = {
+  boardItemId: number;
+  readCount: number;
+  activeMemberCount: number;
+  unreadCount: number;
+  readers: ItemReadMember[];
+};
+
+export type CalendarItemReadStatusResponse = {
+  calendarItemId: number;
+  readCount: number;
+  activeMemberCount: number;
+  unreadCount: number;
+  readers: ItemReadMember[];
 };
 
 export type ClubScheduleHomeResponse = {
@@ -850,54 +887,6 @@ export type ClubAdminTimelineResponse = {
   clubName: string;
 };
 
-export type ClubAdminNoticeSettingsResponse = {
-  clubId: number;
-  clubName: string;
-  admin: boolean;
-  roleManagementEnabled: boolean;
-  allowMemberCreate: boolean;
-  allowMemberUpdate: boolean;
-  allowMemberDelete: boolean;
-};
-
-export type UpdateClubAdminNoticeSettingsRequest = {
-  allowMemberCreate: boolean;
-  allowMemberUpdate: boolean;
-  allowMemberDelete: boolean;
-};
-
-export type ClubAdminScheduleSettingsResponse = {
-  clubId: number;
-  clubName: string;
-  admin: boolean;
-  roleManagementEnabled: boolean;
-  allowMemberCreate: boolean;
-  allowMemberUpdate: boolean;
-  allowMemberDelete: boolean;
-};
-
-export type UpdateClubAdminScheduleSettingsRequest = {
-  allowMemberCreate: boolean;
-  allowMemberUpdate: boolean;
-  allowMemberDelete: boolean;
-};
-
-export type ClubAdminPollSettingsResponse = {
-  clubId: number;
-  clubName: string;
-  admin: boolean;
-  roleManagementEnabled: boolean;
-  allowMemberCreate: boolean;
-  allowMemberUpdate: boolean;
-  allowMemberDelete: boolean;
-};
-
-export type UpdateClubAdminPollSettingsRequest = {
-  allowMemberCreate: boolean;
-  allowMemberUpdate: boolean;
-  allowMemberDelete: boolean;
-};
-
 export type DashboardScope = "USER_HOME" | "ADMIN_HOME";
 
 export type ClubDashboardWidgetSummary = {
@@ -1128,6 +1117,32 @@ export function getClubSchedule(
   const queryString = searchParams.toString();
   return getJson<ClubScheduleResponse>(
     `/api/semo/v1/clubs/${clubId}/schedule${queryString ? `?${queryString}` : ""}`,
+  );
+}
+
+export function recordClubBoardItemRead(clubId: string | number, boardItemId: string | number) {
+  return postJson<BoardItemReadResponse>(
+    `/api/semo/v1/clubs/${clubId}/board/items/${boardItemId}/read`,
+    {},
+  );
+}
+
+export function getClubBoardItemReadStatus(clubId: string | number, boardItemId: string | number) {
+  return getJson<BoardItemReadStatusResponse>(
+    `/api/semo/v1/clubs/${clubId}/board/items/${boardItemId}/read-status`,
+  );
+}
+
+export function recordClubCalendarItemRead(clubId: string | number, calendarItemId: string | number) {
+  return postJson<CalendarItemReadResponse>(
+    `/api/semo/v1/clubs/${clubId}/schedule/items/${calendarItemId}/read`,
+    {},
+  );
+}
+
+export function getClubCalendarItemReadStatus(clubId: string | number, calendarItemId: string | number) {
+  return getJson<CalendarItemReadStatusResponse>(
+    `/api/semo/v1/clubs/${clubId}/schedule/items/${calendarItemId}/read-status`,
   );
 }
 
@@ -1571,46 +1586,4 @@ export function deleteClubAdminRole(
   clubPositionId: string | number,
 ) {
   return deleteJson<boolean>(`/api/semo/v1/clubs/${clubId}/admin/more/roles/${clubPositionId}`);
-}
-
-export function getClubAdminNoticeSettings(clubId: string | number) {
-  return getJson<ClubAdminNoticeSettingsResponse>(`/api/semo/v1/clubs/${clubId}/admin/more/notices`);
-}
-
-export function updateClubAdminNoticeSettings(
-  clubId: string | number,
-  request: UpdateClubAdminNoticeSettingsRequest,
-) {
-  return putJson<ClubAdminNoticeSettingsResponse>(
-    `/api/semo/v1/clubs/${clubId}/admin/more/notices`,
-    request,
-  );
-}
-
-export function getClubAdminScheduleSettings(clubId: string | number) {
-  return getJson<ClubAdminScheduleSettingsResponse>(`/api/semo/v1/clubs/${clubId}/admin/more/schedules`);
-}
-
-export function updateClubAdminScheduleSettings(
-  clubId: string | number,
-  request: UpdateClubAdminScheduleSettingsRequest,
-) {
-  return putJson<ClubAdminScheduleSettingsResponse>(
-    `/api/semo/v1/clubs/${clubId}/admin/more/schedules`,
-    request,
-  );
-}
-
-export function getClubAdminPollSettings(clubId: string | number) {
-  return getJson<ClubAdminPollSettingsResponse>(`/api/semo/v1/clubs/${clubId}/admin/more/polls`);
-}
-
-export function updateClubAdminPollSettings(
-  clubId: string | number,
-  request: UpdateClubAdminPollSettingsRequest,
-) {
-  return putJson<ClubAdminPollSettingsResponse>(
-    `/api/semo/v1/clubs/${clubId}/admin/more/polls`,
-    request,
-  );
 }

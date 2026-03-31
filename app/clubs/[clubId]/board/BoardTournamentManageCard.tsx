@@ -13,6 +13,7 @@ import {
 
 type BoardTournamentManageCardProps = {
   tournament: TournamentSummary;
+  readCount?: number;
   canEdit: boolean;
   canDelete: boolean;
   open: boolean;
@@ -20,6 +21,7 @@ type BoardTournamentManageCardProps = {
   onOpen: () => void;
   onEdit: () => void;
   onDelete: () => void;
+  onOpenReadStatus?: () => void;
   showBoardShareBadge?: boolean;
 };
 
@@ -58,6 +60,7 @@ function BoardAuthorMeta({
 
 export function BoardTournamentManageCard({
   tournament,
+  readCount = 0,
   canEdit,
   canDelete,
   open,
@@ -65,6 +68,7 @@ export function BoardTournamentManageCard({
   onOpen,
   onEdit,
   onDelete,
+  onOpenReadStatus,
   showBoardShareBadge = false,
 }: BoardTournamentManageCardProps) {
   const prefersReducedMotion = useReducedMotion();
@@ -127,10 +131,25 @@ export function BoardTournamentManageCard({
         </p>
 
         <div className="mt-4 flex items-center justify-between gap-3 border-t border-slate-100 pt-3">
-          <BoardAuthorMeta
-            name={tournament.authorDisplayName}
-            avatarUrl={tournament.authorAvatarThumbnailUrl ?? tournament.authorAvatarImageUrl}
-          />
+          <div className="min-w-0">
+            <BoardAuthorMeta
+              name={tournament.authorDisplayName}
+              avatarUrl={tournament.authorAvatarThumbnailUrl ?? tournament.authorAvatarImageUrl}
+            />
+            {onOpenReadStatus ? (
+              <button
+                type="button"
+                onClick={(targetEvent) => {
+                  targetEvent.stopPropagation();
+                  onOpenReadStatus();
+                }}
+                className="mt-2 inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-600 transition hover:bg-slate-200 hover:text-slate-900"
+              >
+                <span className="material-symbols-outlined text-[14px]">visibility</span>
+                읽음 {readCount}명
+              </button>
+            ) : null}
+          </div>
           {manageable ? (
             <div className="relative">
               <button

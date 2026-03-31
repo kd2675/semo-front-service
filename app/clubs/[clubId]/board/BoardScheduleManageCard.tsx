@@ -7,6 +7,7 @@ import { getShareTargetBadges } from "@/app/lib/content-badge";
 
 type BoardScheduleManageCardProps = {
   event: ClubScheduleEventSummary;
+  readCount?: number;
   canEdit: boolean;
   canDelete: boolean;
   open: boolean;
@@ -14,6 +15,7 @@ type BoardScheduleManageCardProps = {
   onOpen: () => void;
   onEdit: () => void;
   onDelete: () => void;
+  onOpenReadStatus?: () => void;
   showBoardShareBadge?: boolean;
 };
 
@@ -69,6 +71,7 @@ function BoardAuthorMeta({
 
 export function BoardScheduleManageCard({
   event,
+  readCount = 0,
   canEdit,
   canDelete,
   open,
@@ -76,6 +79,7 @@ export function BoardScheduleManageCard({
   onOpen,
   onEdit,
   onDelete,
+  onOpenReadStatus,
   showBoardShareBadge = false,
 }: BoardScheduleManageCardProps) {
   const prefersReducedMotion = useReducedMotion();
@@ -131,10 +135,25 @@ export function BoardScheduleManageCard({
         <p className="line-clamp-2 text-sm leading-6 text-slate-500">{getEventSecondaryText(event)}</p>
 
         <div className="mt-4 flex items-center justify-between gap-3 border-t border-slate-100 pt-3">
-          <BoardAuthorMeta
-            name={event.authorDisplayName}
-            avatarUrl={event.authorAvatarThumbnailUrl ?? event.authorAvatarImageUrl}
-          />
+          <div className="min-w-0">
+            <BoardAuthorMeta
+              name={event.authorDisplayName}
+              avatarUrl={event.authorAvatarThumbnailUrl ?? event.authorAvatarImageUrl}
+            />
+            {onOpenReadStatus ? (
+              <button
+                type="button"
+                onClick={(targetEvent) => {
+                  targetEvent.stopPropagation();
+                  onOpenReadStatus();
+                }}
+                className="mt-2 inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-600 transition hover:bg-slate-200 hover:text-slate-900"
+              >
+                <span className="material-symbols-outlined text-[14px]">visibility</span>
+                읽음 {readCount}명
+              </button>
+            ) : null}
+          </div>
           {manageable ? (
             <div className="relative">
               <button
