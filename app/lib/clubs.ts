@@ -304,14 +304,6 @@ export type ClubScheduleVoteSummary = {
   canDelete: boolean;
 };
 
-export type TournamentEntryMember = {
-  clubProfileId: number;
-  displayName: string;
-  avatarImageUrl: string | null;
-  avatarThumbnailUrl: string | null;
-  memberRole: string;
-};
-
 export type TournamentApplicationSummary = {
   tournamentApplicationId: number;
   clubProfileId: number;
@@ -326,20 +318,19 @@ export type TournamentApplicationSummary = {
   canCancel: boolean;
 };
 
-export type TournamentEntrySummary = {
-  tournamentEntryId: number;
-  entryType: "INDIVIDUAL" | "PAIR" | "TEAM";
+export type TournamentParticipantSummary = {
+  clubProfileId: number;
   displayName: string;
-  entryStatus: string;
-  seedNumber: number | null;
-  sortOrder: number;
-  members: TournamentEntryMember[];
+  avatarImageUrl: string | null;
+  avatarThumbnailUrl: string | null;
+  approvedAtLabel: string | null;
 };
 
 export type TournamentSummary = {
   tournamentRecordId: number;
   title: string;
   summaryText: string | null;
+  approvalStatus: "PENDING" | "APPROVED" | "REJECTED";
   tournamentStatus: "DRAFT" | "APPLICATION_OPEN" | "ENTRY_CONFIRMED" | "ONGOING" | "COMPLETED" | "CANCELLED";
   authorDisplayName: string;
   authorAvatarImageUrl: string | null;
@@ -353,7 +344,7 @@ export type TournamentSummary = {
   teamMemberLimit: number | null;
   participantLimit: number | null;
   approvedApplicationCount: number;
-  activeEntryCount: number;
+  participantCount: number;
   feeRequired: boolean;
   feeAmount: number | null;
   feeCurrencyCode: string;
@@ -386,11 +377,10 @@ export type ClubAdminTournamentHomeResponse = {
   clubId: number;
   clubName: string;
   admin: boolean;
-  canCreate: boolean;
   totalTournamentCount: number;
-  activeTournamentCount: number;
-  completedTournamentCount: number;
-  recruitingTournamentCount: number;
+  pendingTournamentCount: number;
+  approvedTournamentCount: number;
+  rejectedTournamentCount: number;
   tournaments: TournamentSummary[];
 };
 
@@ -402,10 +392,14 @@ export type TournamentDetailResponse = {
   title: string;
   summaryText: string | null;
   detailText: string | null;
+  approvalStatus: "PENDING" | "APPROVED" | "REJECTED";
   tournamentStatus: "DRAFT" | "APPLICATION_OPEN" | "ENTRY_CONFIRMED" | "ONGOING" | "COMPLETED" | "CANCELLED";
   authorDisplayName: string;
   authorAvatarImageUrl: string | null;
   authorAvatarThumbnailUrl: string | null;
+  reviewedByDisplayName: string | null;
+  reviewedAtLabel: string | null;
+  rejectionReason: string | null;
   applicationStartAt: string;
   applicationEndAt: string;
   applicationWindowLabel: string;
@@ -426,19 +420,19 @@ export type TournamentDetailResponse = {
   cancelReason: string | null;
   applicantCount: number;
   approvedCount: number;
-  activeEntryCount: number;
+  participantCount: number;
   applicationOpen: boolean;
   canApply: boolean;
   applied: boolean;
   myApplicationStatus: "APPLIED" | "APPROVED" | "REJECTED" | "CANCELLED" | null;
   participating: boolean;
+  canReviewTournament: boolean;
   canEdit: boolean;
   canCancelTournament: boolean;
   canDelete: boolean;
-  canReviewApplications: boolean;
-  canManageEntries: boolean;
+  canManageApplications: boolean;
   applications: TournamentApplicationSummary[];
-  entries: TournamentEntrySummary[];
+  participants: TournamentParticipantSummary[];
 };
 
 export type UpsertTournamentRequest = {
@@ -466,6 +460,7 @@ export type TournamentUpsertResponse = {
   title: string;
   startDate: string;
   endDate: string;
+  approvalStatus: "PENDING" | "APPROVED" | "REJECTED";
   tournamentStatus: string;
 };
 
@@ -482,19 +477,9 @@ export type ReviewTournamentApplicationRequest = {
   reviewNote?: string | null;
 };
 
-export type TournamentEntryDraftMemberRequest = {
-  clubProfileId: number;
-  memberRole: string;
-};
-
-export type UpsertTournamentEntryDraftRequest = {
-  displayName: string;
-  seedNumber?: number | null;
-  members: TournamentEntryDraftMemberRequest[];
-};
-
-export type UpdateTournamentEntriesRequest = {
-  entries: UpsertTournamentEntryDraftRequest[];
+export type ReviewTournamentRecordRequest = {
+  approvalStatus: "APPROVED" | "REJECTED";
+  rejectionReason?: string | null;
 };
 
 export type ClubScheduleEventDetailResponse = {
@@ -1265,18 +1250,18 @@ export function reviewClubTournamentApplication(
   request: ReviewTournamentApplicationRequest,
 ) {
   return putJson<TournamentDetailResponse>(
-    `/api/semo/v1/clubs/${clubId}/admin/more/tournaments/${tournamentRecordId}/applications/${tournamentApplicationId}/review`,
+    `/api/semo/v1/clubs/${clubId}/more/tournaments/${tournamentRecordId}/applications/${tournamentApplicationId}/review`,
     request,
   );
 }
 
-export function updateClubTournamentEntries(
+export function reviewClubTournament(
   clubId: string | number,
   tournamentRecordId: string | number,
-  request: UpdateTournamentEntriesRequest,
+  request: ReviewTournamentRecordRequest,
 ) {
   return putJson<TournamentDetailResponse>(
-    `/api/semo/v1/clubs/${clubId}/admin/more/tournaments/${tournamentRecordId}/entries`,
+    `/api/semo/v1/clubs/${clubId}/admin/more/tournaments/${tournamentRecordId}/review`,
     request,
   );
 }

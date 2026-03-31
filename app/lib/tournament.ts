@@ -2,8 +2,30 @@ import type { TournamentSummary, TournamentDetailResponse } from "@/app/lib/club
 
 type TournamentLike = Pick<
   TournamentSummary | TournamentDetailResponse,
-  "tournamentStatus" | "matchFormat" | "feeRequired" | "feeAmount" | "feeCurrencyCode"
+  "approvalStatus" | "tournamentStatus" | "matchFormat" | "feeRequired" | "feeAmount" | "feeCurrencyCode"
 >;
+
+export function getTournamentApprovalLabel(status: TournamentLike["approvalStatus"]) {
+  switch (status) {
+    case "APPROVED":
+      return "승인됨";
+    case "REJECTED":
+      return "거절됨";
+    default:
+      return "승인 대기";
+  }
+}
+
+export function getTournamentApprovalBadgeClassName(status: TournamentLike["approvalStatus"]) {
+  switch (status) {
+    case "APPROVED":
+      return "bg-emerald-50 text-emerald-700";
+    case "REJECTED":
+      return "bg-rose-50 text-rose-600";
+    default:
+      return "bg-violet-50 text-violet-700";
+  }
+}
 
 export function getTournamentStatusLabel(status: TournamentLike["tournamentStatus"]) {
   switch (status) {

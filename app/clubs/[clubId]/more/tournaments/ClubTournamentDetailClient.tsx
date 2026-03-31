@@ -11,115 +11,39 @@ import {
   cancelClubTournamentApplication,
   deleteClubTournament,
   getClubTournamentDetail,
+  reviewClubTournament,
   reviewClubTournamentApplication,
-  updateClubTournamentEntries,
   type TournamentApplicationSummary,
   type TournamentDetailResponse,
-  type TournamentEntryDraftMemberRequest,
 } from "@/app/lib/clubs";
 import { getShareTargetBadges } from "@/app/lib/content-badge";
 import { staggeredFadeUpMotion } from "@/app/lib/motion";
 import {
+  getTournamentApprovalBadgeClassName,
+  getTournamentApprovalLabel,
   getTournamentFeeLabel,
   getTournamentFormatLabel,
   getTournamentStatusBadgeClassName,
   getTournamentStatusLabel,
 } from "@/app/lib/tournament";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { ClubDetailLoadingShell } from "../../ClubRouteLoadingShells";
 
 type ClubTournamentDetailClientProps = {
   clubId: string;
   tournamentRecordId: string;
+  mode?: "user" | "admin";
   presentation?: "page" | "modal";
   basePath?: string;
   onRequestClose?: () => void;
   onDeleted?: () => void;
 };
 
-type EntryDraft = {
-  displayName: string;
-  seedNumber: string;
-  members: TournamentEntryDraftMemberRequest[];
-};
-
-function buildInitialEntryDrafts(payload: TournamentDetailResponse): EntryDraft[] {
-  if (payload.entries.length > 0) {
-    return payload.entries.map((entry) => ({
-      displayName: entry.displayName,
-      seedNumber: entry.seedNumber ? String(entry.seedNumber) : "",
-      members: entry.members.map((member) => ({
-        clubProfileId: member.clubProfileId,
-        memberRole: member.memberRole,
-      })),
-    }));
-  }
-
-  const approved = payload.applications.filter((application) => application.applicationStatus === "APPROVED");
-  if (payload.matchFormat === "SINGLE") {
-    return approved.map((application, index) => ({
-      displayName: application.applicantDisplayName,
-      seedNumber: String(index + 1),
-      members: [{ clubProfileId: application.clubProfileId, memberRole: "PLAYER" }],
-    }));
-  }
-  return [];
-}
-
-function buildAutoEntryDrafts(payload: TournamentDetailResponse): EntryDraft[] {
-  const approved = payload.applications.filter((application) => application.applicationStatus === "APPROVED");
-  if (payload.matchFormat === "SINGLE") {
-    return approved.map((application, index) => ({
-      displayName: application.applicantDisplayName,
-      seedNumber: String(index + 1),
-      members: [{ clubProfileId: application.clubProfileId, memberRole: "PLAYER" }],
-    }));
-  }
-  if (payload.matchFormat === "DOUBLE") {
-    const drafts: EntryDraft[] = [];
-    for (let index = 0; index < approved.length; index += 2) {
-      const pair = approved.slice(index, index + 2);
-      if (pair.length === 0) {
-        continue;
-      }
-      drafts.push({
-        displayName: pair.map((member) => member.applicantDisplayName).join(" / "),
-        seedNumber: String(drafts.length + 1),
-        members: pair.map((member) => ({
-          clubProfileId: member.clubProfileId,
-          memberRole: "PLAYER",
-        })),
-      });
-    }
-    return drafts;
-  }
-  const unitSize = Math.max(payload.teamMemberLimit ?? 3, 3);
-  const drafts: EntryDraft[] = [];
-  for (let index = 0; index < approved.length; index += unitSize) {
-    const team = approved.slice(index, index + unitSize);
-    if (team.length === 0) {
-      continue;
-    }
-    drafts.push({
-      displayName: `팀 ${drafts.length + 1}`,
-      seedNumber: String(drafts.length + 1),
-      members: team.map((member, memberIndex) => ({
-        clubProfileId: member.clubProfileId,
-        memberRole: memberIndex === 0 ? "CAPTAIN" : "PLAYER",
-      })),
-    });
-  }
-  return drafts;
-}
-
-function memberSelected(members: TournamentEntryDraftMemberRequest[], clubProfileId: number) {
-  return members.some((member) => member.clubProfileId === clubProfileId);
-}
-
 export function ClubTournamentDetailClient({
   clubId,
   tournamentRecordId,
+  mode = "user",
   presentation = "page",
   basePath,
   onRequestClose,
@@ -134,14 +58,11 @@ export function ClubTournamentDetailClient({
   const [showEditModal, setShowEditModal] = useState(false);
   const [showCancelTournament, setShowCancelTournament] = useState(false);
   const [showDeleteTournament, setShowDeleteTournament] = useState(false);
-  const [entryDrafts, setEntryDrafts] = useState<EntryDraft[]>([]);
+  const [tournamentReviewStatus, setTournamentReviewStatus] = useState<"APPROVED" | "REJECTED">("APPROVED");
+  const [tournamentRejectionReason, setTournamentRejectionReason] = useState("");
 
   const isModal = presentation === "modal";
   const fallbackBasePath = basePath ?? `/clubs/${clubId}/more/tournaments`;
-  const approvedApplications = useMemo(
-    () => payload?.applications.filter((application) => application.applicationStatus === "APPROVED") ?? [],
-    [payload],
-  );
   const shareBadges = getShareTargetBadges({
     postedToBoard: payload?.postedToBoard,
     postedToCalendar: payload?.postedToCalendar,
@@ -157,7 +78,6 @@ export function ClubTournamentDetailClient({
       return;
     }
     setPayload(result.data);
-    setEntryDrafts(buildInitialEntryDrafts(result.data));
   }, [clubId, tournamentRecordId]);
 
   useEffect(() => {
@@ -176,7 +96,6 @@ export function ClubTournamentDetailClient({
         return;
       }
       setPayload(result.data);
-      setEntryDrafts(buildInitialEntryDrafts(result.data));
     })();
 
     return () => {
@@ -251,25 +170,37 @@ export function ClubTournamentDetailClient({
       return;
     }
     setPayload(result.data);
-    setEntryDrafts(buildInitialEntryDrafts(result.data));
   };
 
-  const handleSaveEntries = async () => {
+  const handleReviewTournament = async () => {
     setSaving(true);
-    const result = await updateClubTournamentEntries(clubId, tournamentRecordId, {
-      entries: entryDrafts.map((draft) => ({
-        displayName: draft.displayName,
-        seedNumber: draft.seedNumber ? Number(draft.seedNumber) : null,
-        members: draft.members,
-      })),
+    const result = await reviewClubTournament(clubId, tournamentRecordId, {
+      approvalStatus: tournamentReviewStatus,
+      rejectionReason: tournamentReviewStatus === "REJECTED"
+        ? tournamentRejectionReason.trim() || null
+        : null,
     });
     setSaving(false);
     if (!result.ok || !result.data) {
-      setError(result.message ?? "엔트리 편성 저장에 실패했습니다.");
+      setError(result.message ?? "대회 승인 검토에 실패했습니다.");
       return;
     }
     setPayload(result.data);
-    setEntryDrafts(buildInitialEntryDrafts(result.data));
+    if (result.data.approvalStatus !== "REJECTED") {
+      setTournamentRejectionReason("");
+      setTournamentReviewStatus("APPROVED");
+    }
+  };
+
+  const moveToManagement = () => {
+    const section = document.getElementById("tournament-management-section");
+    if (!section) {
+      return;
+    }
+    section.scrollIntoView({
+      behavior: reduceMotion ? "auto" : "smooth",
+      block: "start",
+    });
   };
 
   if (loading && !payload) {
@@ -285,6 +216,7 @@ export function ClubTournamentDetailClient({
   }
 
   const statusBadgeClassName = getTournamentStatusBadgeClassName(payload.tournamentStatus);
+  const approvalBadgeClassName = getTournamentApprovalBadgeClassName(payload.approvalStatus);
   return (
     <div className={isModal ? "flex min-h-0 flex-1 flex-col bg-white font-display text-slate-900" : "min-h-full bg-white font-display text-slate-900"}>
       <div className={isModal ? "flex min-h-0 flex-1 flex-col bg-white" : "mx-auto flex min-h-full max-w-md flex-col bg-white"}>
@@ -329,12 +261,15 @@ export function ClubTournamentDetailClient({
             <div className="flex items-start justify-between gap-4">
               <div className="max-w-[72%]">
                 <div className="mb-3 flex flex-wrap gap-2">
-                  <span className="rounded-full bg-blue-600 px-3 py-1 text-[10px] font-black uppercase tracking-[0.22em] text-white">
-                    대회
+                  <span className="rounded-full bg-blue-600 px-3 py-1 text-[10px] font-black uppercase tracking-[0.22em] text-white">대회</span>
+                  <span className={`rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-[0.22em] ${approvalBadgeClassName}`}>
+                    {getTournamentApprovalLabel(payload.approvalStatus)}
                   </span>
-                  <span className={`rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-[0.22em] ${statusBadgeClassName}`}>
-                    {getTournamentStatusLabel(payload.tournamentStatus)}
-                  </span>
+                  {payload.approvalStatus === "APPROVED" ? (
+                    <span className={`rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-[0.22em] ${statusBadgeClassName}`}>
+                      {getTournamentStatusLabel(payload.tournamentStatus)}
+                    </span>
+                  ) : null}
                   {payload.pinned ? (
                     <span className="rounded-full bg-red-50 px-3 py-1 text-[10px] font-black uppercase tracking-[0.22em] text-red-600">
                       고정
@@ -383,11 +318,11 @@ export function ClubTournamentDetailClient({
                 </p>
               </div>
               <div className="rounded-[22px] border border-slate-200 bg-white p-4 shadow-sm">
-                <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">엔트리 / 제한</p>
+                <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">참가 선수 / 제한</p>
                 <p className="mt-2 text-xl font-black tracking-tight text-slate-900">
-                  {payload.activeEntryCount}
+                  {payload.participantCount}
                   <span className="ml-2 text-xs font-semibold text-slate-400">
-                    엔트리{payload.participantLimit ? ` / ${payload.participantLimit}` : ""}
+                    참가 선수{payload.participantLimit ? ` / ${payload.participantLimit}` : ""}
                   </span>
                 </p>
               </div>
@@ -407,8 +342,34 @@ export function ClubTournamentDetailClient({
               </div>
             ) : null}
 
+            {payload.approvalStatus !== "APPROVED" || payload.reviewedAtLabel || payload.rejectionReason ? (
+              <div className={`rounded-[22px] border p-4 shadow-sm ${
+                payload.approvalStatus === "REJECTED"
+                  ? "border-rose-200 bg-rose-50/70"
+                  : "border-violet-200 bg-violet-50/70"
+              }`}>
+                <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">승인 상태</p>
+                <p className="mt-2 text-base font-black text-slate-900">
+                  {getTournamentApprovalLabel(payload.approvalStatus)}
+                </p>
+                {payload.reviewedAtLabel ? (
+                  <p className="mt-2 text-sm font-medium text-slate-600">
+                    {payload.reviewedByDisplayName ? `${payload.reviewedByDisplayName} · ` : ""}
+                    {payload.reviewedAtLabel}
+                  </p>
+                ) : null}
+                {payload.rejectionReason ? (
+                  <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-rose-700">{payload.rejectionReason}</p>
+                ) : payload.approvalStatus === "PENDING" ? (
+                  <p className="mt-3 text-sm leading-6 text-violet-700">
+                    관리자 승인 후에만 모임 멤버가 참가 신청할 수 있습니다.
+                  </p>
+                ) : null}
+              </div>
+            ) : null}
+
             <div className="flex flex-wrap gap-3">
-              {payload.canApply ? (
+              {mode !== "admin" && payload.canApply ? (
                 <button
                   type="button"
                   onClick={handleApply}
@@ -418,7 +379,7 @@ export function ClubTournamentDetailClient({
                   참가 신청
                 </button>
               ) : null}
-              {payload.applied && payload.myApplicationStatus !== "CANCELLED" ? (
+              {mode !== "admin" && payload.applied && payload.myApplicationStatus !== "CANCELLED" ? (
                 <button
                   type="button"
                   onClick={handleCancelApplication}
@@ -428,7 +389,16 @@ export function ClubTournamentDetailClient({
                   신청 취소
                 </button>
               ) : null}
-              {payload.canEdit ? (
+              {mode !== "admin" && payload.canManageApplications ? (
+                <button
+                  type="button"
+                  onClick={moveToManagement}
+                  className="rounded-full border border-violet-200 bg-violet-50 px-5 py-3 text-sm font-black text-violet-700 transition hover:bg-violet-100"
+                >
+                  신청 관리
+                </button>
+              ) : null}
+              {mode !== "admin" && payload.canEdit ? (
                 <button
                   type="button"
                   onClick={() => setShowEditModal(true)}
@@ -437,7 +407,7 @@ export function ClubTournamentDetailClient({
                   대회 수정
                 </button>
               ) : null}
-              {payload.canCancelTournament ? (
+              {mode !== "admin" && payload.canCancelTournament ? (
                 <button
                   type="button"
                   onClick={() => setShowCancelTournament(true)}
@@ -458,8 +428,58 @@ export function ClubTournamentDetailClient({
             </div>
           </motion.section>
 
-          {payload.canReviewApplications ? (
-            <motion.section className="mt-8 rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm" {...staggeredFadeUpMotion(4, reduceMotion)}>
+          {mode === "admin" && payload.canReviewTournament && payload.approvalStatus !== "APPROVED" ? (
+            <motion.section className="mt-8 rounded-[28px] border border-amber-200 bg-white p-5 shadow-sm" {...staggeredFadeUpMotion(4, reduceMotion)}>
+              <div className="mb-4">
+                <p className="text-[11px] font-black uppercase tracking-[0.24em] text-amber-700">Tournament Review</p>
+                <h3 className="mt-2 text-xl font-black tracking-tight text-slate-900">대회 승인 검토</h3>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                {[
+                  { value: "APPROVED", label: "승인", className: "border-emerald-200 bg-emerald-50 text-emerald-700" },
+                  { value: "REJECTED", label: "거절", className: "border-rose-200 bg-rose-50 text-rose-700" },
+                ].map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => setTournamentReviewStatus(option.value as "APPROVED" | "REJECTED")}
+                    className={`rounded-[18px] border px-4 py-3 text-sm font-black transition ${
+                      tournamentReviewStatus === option.value
+                        ? option.className
+                        : "border-slate-200 bg-slate-50 text-slate-500"
+                    }`}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+              {tournamentReviewStatus === "REJECTED" ? (
+                <textarea
+                  value={tournamentRejectionReason}
+                  onChange={(event) => setTournamentRejectionReason(event.target.value)}
+                  className="mt-4 block min-h-28 w-full rounded-[18px] border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900"
+                  placeholder="거절 사유를 입력하세요."
+                />
+              ) : null}
+              <div className="mt-4 flex justify-end">
+                <button
+                  type="button"
+                  onClick={handleReviewTournament}
+                  disabled={saving || (tournamentReviewStatus === "REJECTED" && !tournamentRejectionReason.trim())}
+                  className="rounded-full bg-slate-900 px-5 py-3 text-sm font-black text-white disabled:opacity-60"
+                >
+                  {saving ? "저장 중..." : tournamentReviewStatus === "APPROVED" ? "승인 처리" : "거절 처리"}
+                </button>
+              </div>
+            </motion.section>
+          ) : null}
+
+          {mode !== "admin" && payload.canManageApplications ? (
+            <motion.section
+              id="tournament-management-section"
+              className="mt-8 rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm"
+              {...staggeredFadeUpMotion(4, reduceMotion)}
+            >
               <div className="mb-4 flex items-center justify-between">
                 <div>
                   <p className="text-[11px] font-black uppercase tracking-[0.24em] text-slate-400">Applications</p>
@@ -509,106 +529,36 @@ export function ClubTournamentDetailClient({
             </motion.section>
           ) : null}
 
-          {payload.canManageEntries ? (
-            <motion.section className="mt-8 rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm" {...staggeredFadeUpMotion(5, reduceMotion)}>
-              <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-                <div>
-                  <p className="text-[11px] font-black uppercase tracking-[0.24em] text-slate-400">Entries</p>
-                  <h3 className="mt-2 text-xl font-black tracking-tight text-slate-900">엔트리 편성</h3>
+          <motion.section
+            className="mt-8 rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm"
+            {...staggeredFadeUpMotion(mode !== "admin" && payload.canManageApplications ? 5 : 4, reduceMotion)}
+          >
+            <div className="mb-4">
+              <p className="text-[11px] font-black uppercase tracking-[0.24em] text-slate-400">Participants</p>
+              <h3 className="mt-2 text-xl font-black tracking-tight text-slate-900">참가 선수</h3>
+            </div>
+            <div className="space-y-3">
+              {payload.participants.length === 0 ? (
+                <div className="rounded-2xl border border-dashed border-slate-300 px-4 py-8 text-center text-sm text-slate-500">
+                  아직 확정된 참가 선수가 없습니다.
                 </div>
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setEntryDrafts((current) => [...current, { displayName: "", seedNumber: "", members: [] }])}
-                    className="rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-black text-slate-700"
-                  >
-                    엔트리 추가
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setEntryDrafts(buildAutoEntryDrafts(payload))}
-                    className="rounded-full border border-sky-200 bg-sky-50 px-4 py-2 text-xs font-black text-sky-700"
-                  >
-                    승인자 기준 자동 편성
-                  </button>
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                {entryDrafts.length === 0 ? (
-                  <div className="rounded-2xl border border-dashed border-slate-300 px-4 py-8 text-center text-sm text-slate-500">
-                    엔트리를 추가하거나 자동 편성을 사용하세요.
-                  </div>
-                ) : (
-                  entryDrafts.map((draft, index) => (
-                    <div key={`entry-draft-${index}`} className="rounded-[24px] border border-slate-200 bg-slate-50 p-4">
-                      <div className="grid grid-cols-[1fr_88px] gap-3">
-                        <input
-                          value={draft.displayName}
-                          onChange={(event) =>
-                            setEntryDrafts((current) =>
-                              current.map((item, itemIndex) =>
-                                itemIndex === index ? { ...item, displayName: event.target.value } : item,
-                              ),
-                            )
-                          }
-                          className="rounded-[16px] border-slate-200 bg-white text-sm"
-                          placeholder="엔트리 이름"
-                        />
-                        <input
-                          type="number"
-                          min={1}
-                          value={draft.seedNumber}
-                          onChange={(event) =>
-                            setEntryDrafts((current) =>
-                              current.map((item, itemIndex) =>
-                                itemIndex === index ? { ...item, seedNumber: event.target.value } : item,
-                              ),
-                            )
-                          }
-                          className="rounded-[16px] border-slate-200 bg-white text-sm"
-                          placeholder="시드"
-                        />
-                      </div>
-                      <div className="mt-3 grid grid-cols-1 gap-2">
-                        {approvedApplications.map((application) => (
-                          <label key={application.tournamentApplicationId} className="flex items-center justify-between rounded-[16px] border border-slate-200 bg-white px-3 py-2">
-                            <span className="text-sm font-semibold text-slate-700">{application.applicantDisplayName}</span>
-                            <input
-                              type="checkbox"
-                              checked={memberSelected(draft.members, application.clubProfileId)}
-                              onChange={(event) =>
-                                setEntryDrafts((current) =>
-                                  current.map((item, itemIndex) => {
-                                    if (itemIndex !== index) {
-                                      return item;
-                                    }
-                                    return {
-                                      ...item,
-                                      members: event.target.checked
-                                        ? [...item.members, { clubProfileId: application.clubProfileId, memberRole: item.members.length === 0 && payload.matchFormat === "TEAM" ? "CAPTAIN" : "PLAYER" }]
-                                        : item.members.filter((member) => member.clubProfileId !== application.clubProfileId),
-                                    };
-                                  }),
-                                )
-                              }
-                              className="rounded border-slate-300 text-sky-600"
-                            />
-                          </label>
-                        ))}
-                      </div>
+              ) : (
+                payload.participants.map((participant) => (
+                  <div key={participant.clubProfileId} className="flex items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-bold text-slate-900">{participant.displayName}</p>
+                      {participant.approvedAtLabel ? (
+                        <p className="mt-1 text-xs font-medium text-slate-400">{participant.approvedAtLabel} 승인</p>
+                      ) : null}
                     </div>
-                  ))
-                )}
-              </div>
-
-              <div className="mt-4 flex justify-end">
-                <button type="button" onClick={handleSaveEntries} disabled={saving} className="rounded-full bg-slate-900 px-5 py-3 text-sm font-black text-white disabled:opacity-60">
-                  엔트리 저장
-                </button>
-              </div>
-            </motion.section>
-          ) : null}
+                    <span className="rounded-full bg-emerald-50 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-emerald-700">
+                      참가 확정
+                    </span>
+                  </div>
+                ))
+              )}
+            </div>
+          </motion.section>
 
         </main>
 
@@ -647,7 +597,7 @@ export function ClubTournamentDetailClient({
         {showDeleteTournament ? (
           <ScheduleActionConfirmModal
             title="대회를 삭제할까요?"
-            description="삭제는 관리자 전용 액션이며, 관련 신청과 엔트리도 함께 정리됩니다."
+            description="삭제는 관리자 전용 액션이며, 관련 신청 데이터와 공유 상태도 함께 정리됩니다."
             confirmLabel="대회 삭제"
             busyLabel="삭제 중..."
             busy={saving}

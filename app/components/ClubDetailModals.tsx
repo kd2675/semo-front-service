@@ -113,6 +113,7 @@ export function ClubTournamentDetailModal({
       <ClubTournamentDetailClient
         clubId={clubId}
         tournamentRecordId={tournamentRecordId}
+        mode={mode}
         presentation="modal"
         basePath={getTournamentBasePath(clubId, mode)}
         onRequestClose={onRequestClose}
