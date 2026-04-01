@@ -1041,25 +1041,64 @@ export type AttendanceDailyLog = {
   checkedInAtLabel: string | null;
 };
 
-export type ClubDuesSummary = {
+export type ClubDuesInvoice = {
   invoiceId: number;
   clubProfileId: number;
   memberDisplayName: string;
   memberRoleCode: string | null;
-  billingYear: number;
-  billingMonth: number;
-  billingMonthLabel: string;
   amount: number;
   amountLabel: string;
   currencyCode: string;
   paymentStatus: "PENDING" | "OVERDUE" | "PAID" | "WAIVED" | string;
   paymentStatusLabel: string;
   overdue: boolean;
-  dueAt: string | null;
-  dueAtLabel: string | null;
   paidAt: string | null;
   paidAtLabel: string | null;
   note: string | null;
+};
+
+export type ClubDuesMemberOption = {
+  clubProfileId: number;
+  memberDisplayName: string;
+  memberRoleCode: string | null;
+};
+
+export type ClubAdminDuesCharge = {
+  chargeId: number;
+  title: string;
+  targetScope: "ALL_ACTIVE_MEMBERS" | "SELECTED_MEMBERS" | string;
+  targetScopeLabel: string;
+  amount: number;
+  amountLabel: string;
+  currencyCode: string;
+  dueAt: string | null;
+  dueAtLabel: string | null;
+  issuedAt: string | null;
+  issuedAtLabel: string | null;
+  issuedByDisplayName: string;
+  note: string | null;
+  canDelete: boolean;
+  totalInvoiceCount: number;
+  pendingInvoiceCount: number;
+  paidInvoiceCount: number;
+  waivedInvoiceCount: number;
+  overdueInvoiceCount: number;
+  collectionRate: number;
+  invoices: ClubDuesInvoice[];
+};
+
+export type ClubDuesUserCharge = {
+  chargeId: number;
+  title: string;
+  amount: number;
+  amountLabel: string;
+  currencyCode: string;
+  dueAt: string | null;
+  dueAtLabel: string | null;
+  issuedAt: string | null;
+  issuedAtLabel: string | null;
+  note: string | null;
+  invoice: ClubDuesInvoice;
 };
 
 export type ClubDuesHomeResponse = {
@@ -1070,8 +1109,9 @@ export type ClubDuesHomeResponse = {
   paidInvoiceCount: number;
   overdueInvoiceCount: number;
   totalPendingAmountLabel: string;
-  nextInvoice: ClubDuesSummary | null;
-  myInvoices: ClubDuesSummary[];
+  nextPayableCharge: ClubDuesUserCharge | null;
+  openCharges: ClubDuesUserCharge[];
+  chargeHistory: ClubDuesUserCharge[];
 };
 
 export type ClubAdminDuesHomeResponse = {
@@ -1082,30 +1122,32 @@ export type ClubAdminDuesHomeResponse = {
   canMarkPaid: boolean;
   canMarkWaive: boolean;
   activeMemberCount: number;
+  totalChargeCount: number;
   totalInvoiceCount: number;
   pendingInvoiceCount: number;
   paidInvoiceCount: number;
   waivedInvoiceCount: number;
   overdueInvoiceCount: number;
   collectionRate: number;
-  invoices: ClubDuesSummary[];
+  availableMembers: ClubDuesMemberOption[];
+  charges: ClubAdminDuesCharge[];
 };
 
-export type IssueClubDuesInvoicesRequest = {
-  billingYear: number;
-  billingMonth: number;
+export type CreateClubDuesChargeRequest = {
+  title: string;
   amount: number;
   dueAt?: string | null;
   note?: string | null;
+  targetScope?: "ALL_ACTIVE_MEMBERS" | "SELECTED_MEMBERS" | string;
   clubProfileIds?: number[];
 };
 
-export type IssueClubDuesInvoicesResponse = {
-  billingYear: number;
-  billingMonth: number;
-  billingMonthLabel: string;
+export type CreateClubDuesChargeResponse = {
+  chargeId: number;
+  title: string;
+  targetScope: string;
+  targetScopeLabel: string;
   createdCount: number;
-  skippedCount: number;
 };
 
 export type UpdateClubDuesPaymentStatusRequest = {
@@ -1586,14 +1628,21 @@ export function getClubAdminDues(clubId: string | number) {
   return getJson<ClubAdminDuesHomeResponse>(`/api/semo/v1/clubs/${clubId}/admin/more/dues`);
 }
 
-export function issueClubDuesInvoices(
+export function createClubDuesCharge(
   clubId: string | number,
-  request: IssueClubDuesInvoicesRequest,
+  request: CreateClubDuesChargeRequest,
 ) {
-  return postJson<IssueClubDuesInvoicesResponse>(
-    `/api/semo/v1/clubs/${clubId}/admin/more/dues/invoices`,
+  return postJson<CreateClubDuesChargeResponse>(
+    `/api/semo/v1/clubs/${clubId}/admin/more/dues/charges`,
     request,
   );
+}
+
+export function deleteClubDuesCharge(
+  clubId: string | number,
+  chargeId: string | number,
+) {
+  return deleteJson<void>(`/api/semo/v1/clubs/${clubId}/admin/more/dues/charges/${chargeId}`);
 }
 
 export function updateClubDuesPaymentStatus(
@@ -1601,8 +1650,8 @@ export function updateClubDuesPaymentStatus(
   invoiceId: string | number,
   request: UpdateClubDuesPaymentStatusRequest,
 ) {
-  return putJson<ClubDuesSummary>(
-    `/api/semo/v1/clubs/${clubId}/admin/more/dues/${invoiceId}/payment-status`,
+  return putJson<ClubDuesInvoice>(
+    `/api/semo/v1/clubs/${clubId}/admin/more/dues/invoices/${invoiceId}/payment-status`,
     request,
   );
 }

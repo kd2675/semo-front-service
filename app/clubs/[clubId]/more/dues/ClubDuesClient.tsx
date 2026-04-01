@@ -3,7 +3,7 @@
 import { motion, useReducedMotion } from "motion/react";
 import { ClubModeSwitchFab } from "@/app/components/ClubModeSwitchFab";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
-import { type ClubDuesHomeResponse, type ClubDuesSummary } from "@/app/lib/clubs";
+import { type ClubDuesHomeResponse, type ClubDuesInvoice, type ClubDuesUserCharge } from "@/app/lib/clubs";
 import { staggeredFadeUpMotion } from "@/app/lib/motion";
 
 type ClubDuesClientProps = {
@@ -12,7 +12,7 @@ type ClubDuesClientProps = {
   isAdmin: boolean;
 };
 
-function getStatusClassName(invoice: ClubDuesSummary) {
+function getStatusClassName(invoice: ClubDuesInvoice) {
   if (invoice.paymentStatus === "PAID") {
     return "bg-emerald-50 text-emerald-700";
   }
@@ -46,27 +46,18 @@ export function ClubDuesClient({ clubId, initialData, isAdmin }: ClubDuesClientP
             {...staggeredFadeUpMotion(0, reduceMotion)}
           >
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
-              내 회비
+              My Dues
             </p>
             <h2 className="mt-3 text-xl font-bold">
-              {dues.nextInvoice ? `${dues.nextInvoice.billingMonthLabel} 청구가 있습니다.` : "현재 청구된 회비가 없습니다."}
+              {dues.nextPayableCharge ? `${dues.nextPayableCharge.title} 납부가 필요합니다.` : "현재 납부할 회비 항목이 없습니다."}
             </h2>
             <p className="mt-2 text-sm text-slate-500">
-              납부 처리는 운영자가 확인 후 반영합니다. 회비 상태와 마감일을 여기서 확인할 수 있습니다.
+              운영자가 발행한 회비 항목을 확인하고, 미납 상태와 마감일을 한 번에 볼 수 있습니다.
             </p>
             <div className="mt-5 grid grid-cols-3 gap-3">
-              <div className="rounded-xl bg-slate-50 p-4">
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">미납</p>
-                <p className="mt-2 text-lg font-bold text-slate-900">{dues.pendingInvoiceCount}</p>
-              </div>
-              <div className="rounded-xl bg-slate-50 p-4">
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">완납</p>
-                <p className="mt-2 text-lg font-bold text-slate-900">{dues.paidInvoiceCount}</p>
-              </div>
-              <div className="rounded-xl bg-slate-50 p-4">
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">연체</p>
-                <p className="mt-2 text-lg font-bold text-slate-900">{dues.overdueInvoiceCount}</p>
-              </div>
+              <SummaryCard label="미납" value={dues.pendingInvoiceCount} />
+              <SummaryCard label="완납" value={dues.paidInvoiceCount} />
+              <SummaryCard label="연체" value={dues.overdueInvoiceCount} />
             </div>
             <div className="mt-4 rounded-xl bg-blue-50 px-4 py-3 text-sm font-semibold text-[#135bec]">
               현재 미납 합계 {dues.totalPendingAmountLabel}
@@ -78,30 +69,16 @@ export function ClubDuesClient({ clubId, initialData, isAdmin }: ClubDuesClientP
             {...staggeredFadeUpMotion(1, reduceMotion)}
           >
             <div className="mb-4 flex items-center justify-between">
-              <h3 className="text-base font-bold">가장 가까운 청구</h3>
+              <h3 className="text-base font-bold">가장 가까운 회비 항목</h3>
               <span className="text-xs font-medium text-slate-400">
-                {dues.nextInvoice ? dues.nextInvoice.billingMonthLabel : "없음"}
+                {dues.nextPayableCharge ? "열림" : "없음"}
               </span>
             </div>
-            {dues.nextInvoice ? (
-              <article className="rounded-2xl border border-slate-100 bg-slate-50 p-4">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <p className="text-sm font-bold text-slate-900">{dues.nextInvoice.billingMonthLabel}</p>
-                    <p className="mt-1 text-xl font-bold text-slate-900">{dues.nextInvoice.amountLabel}</p>
-                  </div>
-                  <span className={`rounded-full px-3 py-1 text-[11px] font-bold ${getStatusClassName(dues.nextInvoice)}`}>
-                    {dues.nextInvoice.paymentStatusLabel}
-                  </span>
-                </div>
-                <div className="mt-4 space-y-2 text-xs text-slate-500">
-                  <p>마감일: {dues.nextInvoice.dueAtLabel ?? "미정"}</p>
-                  <p>비고: {dues.nextInvoice.note ?? "운영 메모 없음"}</p>
-                </div>
-              </article>
+            {dues.nextPayableCharge ? (
+              <ChargeCard charge={dues.nextPayableCharge} emphasize />
             ) : (
               <div className="rounded-2xl bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">
-                아직 발행된 회비가 없습니다.
+                현재 열려 있는 회비 항목이 없습니다.
               </div>
             )}
           </motion.section>
@@ -111,42 +88,48 @@ export function ClubDuesClient({ clubId, initialData, isAdmin }: ClubDuesClientP
             {...staggeredFadeUpMotion(2, reduceMotion)}
           >
             <div className="mb-4 flex items-center justify-between">
-              <h3 className="text-base font-bold">청구 내역</h3>
-              <span className="text-xs font-medium text-slate-400">{dues.myInvoices.length}건</span>
+              <h3 className="text-base font-bold">납부 필요 항목</h3>
+              <span className="text-xs font-medium text-slate-400">{dues.openCharges.length}건</span>
             </div>
             <div className="space-y-3">
-              {dues.myInvoices.length === 0 ? (
+              {dues.openCharges.length === 0 ? (
+                <div className="rounded-2xl bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">
+                  현재 납부할 회비 항목이 없습니다.
+                </div>
+              ) : (
+                dues.openCharges.map((charge, index) => (
+                  <motion.div
+                    key={charge.chargeId}
+                    {...staggeredFadeUpMotion(index + 3, reduceMotion)}
+                  >
+                    <ChargeCard charge={charge} />
+                  </motion.div>
+                ))
+              )}
+            </div>
+          </motion.section>
+
+          <motion.section
+            className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
+            {...staggeredFadeUpMotion(3, reduceMotion)}
+          >
+            <div className="mb-4 flex items-center justify-between">
+              <h3 className="text-base font-bold">전체 회비 이력</h3>
+              <span className="text-xs font-medium text-slate-400">{dues.chargeHistory.length}건</span>
+            </div>
+            <div className="space-y-3">
+              {dues.chargeHistory.length === 0 ? (
                 <div className="rounded-2xl bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">
                   표시할 회비 기록이 없습니다.
                 </div>
               ) : (
-                dues.myInvoices.map((invoice, index) => (
-                  <motion.article
-                    key={invoice.invoiceId}
-                    className="rounded-2xl border border-slate-100 bg-slate-50 p-4"
-                    {...staggeredFadeUpMotion(index + 3, reduceMotion)}
+                dues.chargeHistory.map((charge, index) => (
+                  <motion.div
+                    key={`${charge.chargeId}-history`}
+                    {...staggeredFadeUpMotion(index + 6, reduceMotion)}
                   >
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <p className="text-sm font-bold text-slate-900">{invoice.billingMonthLabel}</p>
-                        <p className="mt-1 text-lg font-bold text-slate-900">{invoice.amountLabel}</p>
-                      </div>
-                      <span className={`rounded-full px-3 py-1 text-[11px] font-bold ${getStatusClassName(invoice)}`}>
-                        {invoice.paymentStatusLabel}
-                      </span>
-                    </div>
-                    <div className="mt-4 grid grid-cols-2 gap-3 text-xs text-slate-500">
-                      <div>
-                        <p className="font-semibold text-slate-400">마감일</p>
-                        <p className="mt-1">{invoice.dueAtLabel ?? "미정"}</p>
-                      </div>
-                      <div>
-                        <p className="font-semibold text-slate-400">납부일</p>
-                        <p className="mt-1">{invoice.paidAtLabel ?? "미납"}</p>
-                      </div>
-                    </div>
-                    <p className="mt-3 text-xs text-slate-500">{invoice.note ?? "운영 메모가 없습니다."}</p>
-                  </motion.article>
+                    <ChargeCard charge={charge} muted />
+                  </motion.div>
                 ))
               )}
             </div>
@@ -155,6 +138,64 @@ export function ClubDuesClient({ clubId, initialData, isAdmin }: ClubDuesClientP
 
         {isAdmin ? <ClubModeSwitchFab clubId={clubId} mode="user" /> : null}
       </div>
+    </div>
+  );
+}
+
+function ChargeCard({
+  charge,
+  emphasize = false,
+  muted = false,
+}: {
+  charge: ClubDuesUserCharge;
+  emphasize?: boolean;
+  muted?: boolean;
+}) {
+  return (
+    <article
+      className={`rounded-2xl border p-4 ${
+        emphasize
+          ? "border-[#135bec]/15 bg-blue-50/60"
+          : muted
+            ? "border-slate-100 bg-slate-50"
+            : "border-amber-100 bg-amber-50/30"
+      }`}
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className={`rounded-full px-3 py-1 text-[11px] font-bold ${getStatusClassName(charge.invoice)}`}>
+              {charge.invoice.paymentStatusLabel}
+            </span>
+          </div>
+          <p className="mt-3 text-base font-bold text-slate-900">{charge.title}</p>
+          <p className="mt-1 text-lg font-bold text-slate-900">{charge.amountLabel}</p>
+        </div>
+      </div>
+      <div className="mt-4 grid grid-cols-2 gap-3 text-xs text-slate-500">
+        <InfoItem label="마감일" value={charge.dueAtLabel ?? "미정"} />
+        <InfoItem label="발행일" value={charge.issuedAtLabel ?? "미정"} />
+        <InfoItem label="납부일" value={charge.invoice.paidAtLabel ?? "미납"} />
+        <InfoItem label="메모" value={charge.note ?? charge.invoice.note ?? "없음"} />
+      </div>
+    </article>
+  );
+}
+
+function SummaryCard({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="rounded-xl bg-slate-50 p-4">
+      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">{label}</p>
+      <p className="mt-2 text-lg font-bold text-slate-900">{value}</p>
+    </div>
+  );
+}
+
+function InfoItem({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <p className="font-semibold text-slate-400">{label}</p>
+      <p className="mt-1 text-slate-600">{value}</p>
     </div>
   );
 }

@@ -3,6 +3,7 @@
 import { EphemeralToast } from "@/app/components/EphemeralToast";
 import { RouterLink } from "@/app/components/RouterLink";
 import { useEphemeralToast } from "@/app/components/useEphemeralToast";
+import { ScheduleActionConfirmModal } from "@/app/clubs/[clubId]/schedule/ScheduleActionConfirmModal";
 import { staggeredFadeUpMotion } from "@/app/lib/motion";
 import type {
   ClubPermissionGroup,
@@ -181,6 +182,7 @@ export function RoleEditorForm({
   const reduceMotion = Boolean(prefersReducedMotion);
   const [form, setForm] = useState(() => buildInitialValue(initialPosition));
   const [submitting, setSubmitting] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const { toast, showToast, clearToast } = useEphemeralToast();
 
   const generatedPositionCode = useMemo(
@@ -230,10 +232,6 @@ export function RoleEditorForm({
 
   const handleDelete = async () => {
     if (!onDelete) {
-      return;
-    }
-    const confirmed = window.confirm("이 직책을 삭제할까요?");
-    if (!confirmed) {
       return;
     }
     setSubmitting(true);
@@ -417,6 +415,25 @@ export function RoleEditorForm({
           </main>
 
           <EphemeralToast message={toast?.message ?? null} tone={toast?.tone} />
+          {showDeleteConfirm && onDelete ? (
+            <ScheduleActionConfirmModal
+              title="직책 삭제"
+              description="이 직책을 삭제할까요?"
+              confirmLabel="직책 삭제"
+              busyLabel="삭제 중..."
+              busy={submitting}
+              onCancel={() => {
+                if (!submitting) {
+                  setShowDeleteConfirm(false);
+                }
+              }}
+              onConfirm={() =>
+                void handleDelete().finally(() => {
+                  setShowDeleteConfirm(false);
+                })
+              }
+            />
+          ) : null}
         </div>
       </div>
     );
@@ -596,7 +613,7 @@ export function RoleEditorForm({
             <motion.div className="flex justify-end" {...staggeredFadeUpMotion(4, reduceMotion)}>
               <button
                 type="button"
-                onClick={() => void handleDelete()}
+                onClick={() => setShowDeleteConfirm(true)}
                 disabled={submitting}
                 className="rounded-xl border border-red-200 bg-white px-5 py-3 text-sm font-bold text-red-600 shadow-sm disabled:opacity-60"
               >
@@ -607,6 +624,25 @@ export function RoleEditorForm({
         </main>
 
         <EphemeralToast message={toast?.message ?? null} tone={toast?.tone} />
+        {showDeleteConfirm && onDelete ? (
+          <ScheduleActionConfirmModal
+            title="직책 삭제"
+            description="이 직책을 삭제할까요?"
+            confirmLabel="직책 삭제"
+            busyLabel="삭제 중..."
+            busy={submitting}
+            onCancel={() => {
+              if (!submitting) {
+                setShowDeleteConfirm(false);
+              }
+            }}
+            onConfirm={() =>
+              void handleDelete().finally(() => {
+                setShowDeleteConfirm(false);
+              })
+            }
+          />
+        ) : null}
       </div>
     </div>
   );

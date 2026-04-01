@@ -5,6 +5,7 @@ import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import { motion, useReducedMotion } from "motion/react";
 import { useEffect, useEffectEvent, useState } from "react";
 import { ClubModeSwitchFab } from "@/app/components/ClubModeSwitchFab";
+import { ScheduleActionConfirmModal } from "./ScheduleActionConfirmModal";
 import {
   closeClubScheduleVote,
   getClubScheduleVoteDetail,
@@ -66,6 +67,7 @@ export function ClubScheduleVoteDetailClient({
   const [payload, setPayload] = useState<ClubScheduleVoteDetailResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [closing, setClosing] = useState(false);
+  const [showCloseConfirm, setShowCloseConfirm] = useState(false);
   const [submittingVoteOptionId, setSubmittingVoteOptionId] = useState<number | null>(null);
   const [selectedOptionId, setSelectedOptionId] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -110,9 +112,6 @@ export function ClubScheduleVoteDetailClient({
 
   const handleCloseVote = async () => {
     if (!payload || !payload.canEdit || payload.voteStatus === "CLOSED") {
-      return;
-    }
-    if (!window.confirm("이 투표를 지금 종료하시겠습니까?")) {
       return;
     }
 
@@ -299,7 +298,7 @@ export function ClubScheduleVoteDetailClient({
                     {showAdminCloseAction ? (
                       <button
                         type="button"
-                        onClick={handleCloseVote}
+                        onClick={() => setShowCloseConfirm(true)}
                         disabled={closing}
                         className="w-full rounded-xl border border-amber-100 bg-white py-3 text-sm font-semibold text-amber-600 transition-colors hover:bg-amber-50 disabled:opacity-60"
                       >
@@ -314,6 +313,25 @@ export function ClubScheduleVoteDetailClient({
         </main>
 
         {!isModal && payload?.admin ? <ClubModeSwitchFab clubId={clubId} mode="user" className="bottom-44" /> : null}
+        {showCloseConfirm ? (
+          <ScheduleActionConfirmModal
+            title="투표 종료"
+            description="이 투표를 지금 종료하시겠습니까?"
+            confirmLabel="투표 종료"
+            busyLabel="종료 중..."
+            busy={closing}
+            onCancel={() => {
+              if (!closing) {
+                setShowCloseConfirm(false);
+              }
+            }}
+            onConfirm={() =>
+              void handleCloseVote().finally(() => {
+                setShowCloseConfirm(false);
+              })
+            }
+          />
+        ) : null}
       </div>
     </div>
   );

@@ -6,6 +6,7 @@ import { ClubModeSwitchFab } from "@/app/components/ClubModeSwitchFab";
 import { ClubBracketDetailModal } from "@/app/components/ClubDetailModals";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import { RouteModal } from "@/app/components/RouteModal";
+import { ScheduleActionConfirmModal } from "@/app/clubs/[clubId]/schedule/ScheduleActionConfirmModal";
 import {
   createClubBracket,
   deleteClubBracket,
@@ -194,6 +195,7 @@ export function ClubBracketHomeClient({
   const userPayload = !isAdminMode ? (payload as ClubBracketHomeResponse) : null;
   const adminPayload = isAdminMode ? (payload as ClubAdminBracketHomeResponse) : null;
   const [detailBracketId, setDetailBracketId] = useState<string | null>(null);
+  const [pendingDeleteBracketId, setPendingDeleteBracketId] = useState<number | null>(null);
   const [formOpen, setFormOpen] = useState(false);
   const [editingBracketId, setEditingBracketId] = useState<number | null>(null);
   const [form, setForm] = useState<FormState>(createEmptyForm());
@@ -331,9 +333,6 @@ export function ClubBracketHomeClient({
   };
 
   const handleDelete = async (bracketRecordId: number) => {
-    if (!window.confirm("이 대진표를 삭제하시겠습니까?")) {
-      return;
-    }
     setSubmitting(true);
     setFeedback(null);
     setError(null);
@@ -470,7 +469,7 @@ export function ClubBracketHomeClient({
                       onSubmit={() => void handleSubmit(bracket.bracketRecordId)}
                       onApprove={null}
                       onReject={null}
-                      onDelete={bracket.canDelete ? () => void handleDelete(bracket.bracketRecordId) : null}
+                      onDelete={bracket.canDelete ? () => setPendingDeleteBracketId(bracket.bracketRecordId) : null}
                     />
                   )) : (
                     <EmptyState
@@ -527,7 +526,7 @@ export function ClubBracketHomeClient({
                     onReject={bracket.approvalStatus === "PENDING"
                       ? () => void handleReview(bracket.bracketRecordId, "REJECTED")
                       : null}
-                    onDelete={bracket.canDelete ? () => void handleDelete(bracket.bracketRecordId) : null}
+                    onDelete={bracket.canDelete ? () => setPendingDeleteBracketId(bracket.bracketRecordId) : null}
                   />
                 )) : (
                   <EmptyState
@@ -832,13 +831,32 @@ export function ClubBracketHomeClient({
             </RouteModal>
           ) : null}
 
-          {detailBracketId ? (
-            <ClubBracketDetailModal
-              clubId={clubId}
+        {detailBracketId ? (
+          <ClubBracketDetailModal
+            clubId={clubId}
               bracketRecordId={detailBracketId}
               mode={mode}
               onRequestClose={() => setDetailBracketId(null)}
               onReload={onReload}
+            />
+          ) : null}
+          {pendingDeleteBracketId != null ? (
+            <ScheduleActionConfirmModal
+              title="대진표 삭제"
+              description="이 대진표를 삭제할까요?"
+              confirmLabel="대진표 삭제"
+              busyLabel="삭제 중..."
+              busy={submitting}
+              onCancel={() => {
+                if (!submitting) {
+                  setPendingDeleteBracketId(null);
+                }
+              }}
+              onConfirm={() =>
+                void handleDelete(pendingDeleteBracketId).finally(() => {
+                  setPendingDeleteBracketId(null);
+                })
+              }
             />
           ) : null}
         </AnimatePresence>

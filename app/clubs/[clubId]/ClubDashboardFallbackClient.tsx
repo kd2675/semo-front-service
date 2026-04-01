@@ -339,7 +339,7 @@ function DashboardWidgetCard({
   const isBracketWidget = widget.widgetKey === "BRACKET_LATEST";
   const todayAttendance = attendanceData?.todayAttendance;
   const recentLog = attendanceData?.recentLogs?.[0] ?? null;
-  const nextDueInvoice = duesData?.nextInvoice ?? null;
+  const nextDueCharge = duesData?.nextPayableCharge ?? null;
   const latestNotice = boardData?.notices?.[0] ?? null;
   const latestOngoingPoll = useMemo<ClubPollSummary | null>(() => {
     if (!pollData) {
@@ -558,7 +558,7 @@ function DashboardWidgetCard({
             </>
           ) : duesError ? (
             <p className="text-sm text-slate-500">회비 정보를 가져오지 못했습니다.</p>
-          ) : nextDueInvoice ? (
+          ) : nextDueCharge ? (
             <RouterLink
               href={`/clubs/${clubId}/more/dues`}
               className="block rounded-xl border border-emerald-100 bg-white p-4 shadow-sm transition-all hover:border-emerald-300"
@@ -569,20 +569,21 @@ function DashboardWidgetCard({
                     My Dues
                   </p>
                   <p className="mt-2 line-clamp-2 text-base font-bold text-slate-900">
-                    {nextDueInvoice.billingMonthLabel}
+                    {nextDueCharge.title}
                   </p>
                 </div>
-                <span className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${getDuesStatusClassName(nextDueInvoice.paymentStatus)}`}>
-                  {nextDueInvoice.paymentStatusLabel}
+                <span className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${getDuesStatusClassName(nextDueCharge.invoice.paymentStatus)}`}>
+                  {nextDueCharge.invoice.paymentStatusLabel}
                 </span>
               </div>
-              <p className="mt-2 text-sm font-semibold text-slate-900">{nextDueInvoice.amountLabel}</p>
+              <p className="mt-1 text-xs font-medium text-slate-500">{nextDueCharge.dueAtLabel ?? "회비 항목"}</p>
+              <p className="mt-2 text-sm font-semibold text-slate-900">{nextDueCharge.amountLabel}</p>
               <div className="mt-3 flex items-center justify-between rounded-lg bg-emerald-50/60 px-3 py-2">
                 <p className="text-xs font-medium text-slate-500">
                   미납 {duesData?.pendingInvoiceCount ?? 0}건 · 연체 {duesData?.overdueInvoiceCount ?? 0}건
                 </p>
                 <span className="rounded-full bg-white px-2 py-0.5 text-[11px] font-bold text-emerald-700">
-                  {duesData?.totalPendingAmountLabel ?? nextDueInvoice.amountLabel}
+                  {duesData?.totalPendingAmountLabel ?? nextDueCharge.amountLabel}
                 </span>
               </div>
             </RouterLink>
