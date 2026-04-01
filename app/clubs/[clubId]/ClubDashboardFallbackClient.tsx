@@ -29,6 +29,7 @@ import { useEphemeralToast } from "@/app/components/useEphemeralToast";
 import {
   checkInClubAttendance,
   getClubAttendance,
+  getClubDues,
   getClubBoard,
   getClubBracketHome,
   getClubDashboardWidgetEditor,
@@ -41,6 +42,7 @@ import {
   type ClubAttendanceResponse,
   type ClubBoardResponse,
   type ClubBracketHomeResponse,
+  type ClubDuesHomeResponse,
   type ClubPollHomeResponse,
   type ClubPollSummary,
   type ClubTournamentHomeResponse,
@@ -66,9 +68,23 @@ const WIDGET_ACCENT_CLASS: Record<string, string> = {
   POLL_STATUS: "bg-amber-50 text-amber-500",
   PROFILE_SUMMARY: "bg-emerald-50 text-emerald-600",
   ATTENDANCE_STATUS: "bg-indigo-50 text-indigo-600",
+  DUES_STATUS: "bg-emerald-50 text-emerald-700",
   TOURNAMENT_RECORD_LATEST: "bg-emerald-50 text-emerald-700",
   BRACKET_LATEST: "bg-amber-50 text-amber-700",
 };
+
+function getDuesStatusClassName(paymentStatus: string) {
+  if (paymentStatus === "PAID") {
+    return "bg-emerald-50 text-emerald-700";
+  }
+  if (paymentStatus === "WAIVED") {
+    return "bg-slate-200 text-slate-600";
+  }
+  if (paymentStatus === "OVERDUE") {
+    return "bg-rose-50 text-rose-600";
+  }
+  return "bg-amber-50 text-amber-700";
+}
 
 function normalizeSortOrder(widgets: ClubDashboardWidgetSummary[]) {
   const enabledKeys = widgets
@@ -244,6 +260,9 @@ function DashboardWidgetCard({
   attendanceData,
   attendanceLoading,
   attendanceError,
+  duesData,
+  duesLoading,
+  duesError,
   boardData,
   boardLoading,
   boardError,
@@ -280,6 +299,9 @@ function DashboardWidgetCard({
   attendanceData: ClubAttendanceResponse | null;
   attendanceLoading: boolean;
   attendanceError: string | null;
+  duesData: ClubDuesHomeResponse | null;
+  duesLoading: boolean;
+  duesError: string | null;
   boardData: ClubBoardResponse | null;
   boardLoading: boolean;
   boardError: string | null;
@@ -309,6 +331,7 @@ function DashboardWidgetCard({
   const accentClass = WIDGET_ACCENT_CLASS[widget.widgetKey] ?? "bg-slate-100 text-slate-600";
   const isEditMode = isAdmin && editMode;
   const isAttendanceWidget = widget.widgetKey === "ATTENDANCE_STATUS";
+  const isDuesWidget = widget.widgetKey === "DUES_STATUS";
   const isBoardNoticeWidget = widget.widgetKey === "BOARD_NOTICE";
   const isScheduleWidget = widget.widgetKey === "SCHEDULE_OVERVIEW";
   const isPollWidget = widget.widgetKey === "POLL_STATUS";
@@ -316,6 +339,7 @@ function DashboardWidgetCard({
   const isBracketWidget = widget.widgetKey === "BRACKET_LATEST";
   const todayAttendance = attendanceData?.todayAttendance;
   const recentLog = attendanceData?.recentLogs?.[0] ?? null;
+  const nextDueInvoice = duesData?.nextInvoice ?? null;
   const latestNotice = boardData?.notices?.[0] ?? null;
   const latestOngoingPoll = useMemo<ClubPollSummary | null>(() => {
     if (!pollData) {
@@ -522,6 +546,50 @@ function DashboardWidgetCard({
                   최근: {recentLog.attendanceDateLabel} · {recentLog.checkedInCount}/{recentLog.memberCount}명 출석
                 </p>
               ) : null}
+            </>
+          )}
+        </div>
+      ) : isDuesWidget ? (
+        <div className="space-y-3">
+          {duesLoading ? (
+            <>
+              <div className="h-4 w-24 rounded-full bg-slate-100" />
+              <div className="h-20 w-full rounded-xl bg-slate-50" />
+            </>
+          ) : duesError ? (
+            <p className="text-sm text-slate-500">회비 정보를 가져오지 못했습니다.</p>
+          ) : nextDueInvoice ? (
+            <RouterLink
+              href={`/clubs/${clubId}/more/dues`}
+              className="block rounded-xl border border-emerald-100 bg-white p-4 shadow-sm transition-all hover:border-emerald-300"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-emerald-600">
+                    My Dues
+                  </p>
+                  <p className="mt-2 line-clamp-2 text-base font-bold text-slate-900">
+                    {nextDueInvoice.billingMonthLabel}
+                  </p>
+                </div>
+                <span className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${getDuesStatusClassName(nextDueInvoice.paymentStatus)}`}>
+                  {nextDueInvoice.paymentStatusLabel}
+                </span>
+              </div>
+              <p className="mt-2 text-sm font-semibold text-slate-900">{nextDueInvoice.amountLabel}</p>
+              <div className="mt-3 flex items-center justify-between rounded-lg bg-emerald-50/60 px-3 py-2">
+                <p className="text-xs font-medium text-slate-500">
+                  미납 {duesData?.pendingInvoiceCount ?? 0}건 · 연체 {duesData?.overdueInvoiceCount ?? 0}건
+                </p>
+                <span className="rounded-full bg-white px-2 py-0.5 text-[11px] font-bold text-emerald-700">
+                  {duesData?.totalPendingAmountLabel ?? nextDueInvoice.amountLabel}
+                </span>
+              </div>
+            </RouterLink>
+          ) : (
+            <>
+              <p className="text-sm font-semibold text-slate-900">현재 확인할 회비가 없습니다.</p>
+              <p className="text-xs text-slate-500">새 회비가 발행되면 이 위젯에서 바로 확인할 수 있습니다.</p>
             </>
           )}
         </div>
@@ -901,6 +969,9 @@ export function ClubDashboardFallbackClient({
   const [attendanceData, setAttendanceData] = useState<ClubAttendanceResponse | null>(null);
   const [attendanceLoading, setAttendanceLoading] = useState(false);
   const [attendanceError, setAttendanceError] = useState<string | null>(null);
+  const [duesData, setDuesData] = useState<ClubDuesHomeResponse | null>(null);
+  const [duesLoading, setDuesLoading] = useState(false);
+  const [duesError, setDuesError] = useState<string | null>(null);
   const [boardData, setBoardData] = useState<ClubBoardResponse | null>(null);
   const [boardLoading, setBoardLoading] = useState(false);
   const [boardError, setBoardError] = useState<string | null>(null);
@@ -1097,6 +1168,12 @@ export function ClubDashboardFallbackClient({
     );
   }, [dashboardWidgetSource]);
 
+  const hasDuesWidget = useMemo(() => {
+    return dashboardWidgetSource.some(
+      (widget) => widget.widgetKey === "DUES_STATUS" && widget.enabled && widget.available,
+    );
+  }, [dashboardWidgetSource]);
+
   const loadAttendanceData = useCallback(async () => {
     if (!hasAttendanceWidget) {
       return;
@@ -1134,6 +1211,25 @@ export function ClubDashboardFallbackClient({
     setBoardData(result.data);
     setBoardLoading(false);
   }, [clubId, hasBoardNoticeWidget]);
+
+  const loadDuesData = useCallback(async () => {
+    if (!hasDuesWidget) {
+      return;
+    }
+
+    setDuesLoading(true);
+    setDuesError(null);
+    const result = await getClubDues(clubId);
+    if (!result.ok || !result.data) {
+      setDuesData(null);
+      setDuesError(result.message ?? "회비 정보를 불러오지 못했습니다.");
+      setDuesLoading(false);
+      return;
+    }
+
+    setDuesData(result.data);
+    setDuesLoading(false);
+  }, [clubId, hasDuesWidget]);
 
   const loadScheduleData = useCallback(async () => {
     if (!hasScheduleWidget) {
@@ -1346,6 +1442,18 @@ export function ClubDashboardFallbackClient({
       window.clearTimeout(timerId);
     };
   }, [hasBoardNoticeWidget, loadBoardData]);
+
+  useEffect(() => {
+    if (!hasDuesWidget) {
+      return;
+    }
+    const timerId = window.setTimeout(() => {
+      void loadDuesData();
+    }, 0);
+    return () => {
+      window.clearTimeout(timerId);
+    };
+  }, [hasDuesWidget, loadDuesData]);
 
   useEffect(() => {
     if (!hasScheduleWidget) {
@@ -1654,6 +1762,9 @@ export function ClubDashboardFallbackClient({
                     attendanceData={widget.widgetKey === "ATTENDANCE_STATUS" ? attendanceData : null}
                     attendanceLoading={widget.widgetKey === "ATTENDANCE_STATUS" && attendanceLoading}
                     attendanceError={widget.widgetKey === "ATTENDANCE_STATUS" ? attendanceError : null}
+                    duesData={widget.widgetKey === "DUES_STATUS" ? duesData : null}
+                    duesLoading={widget.widgetKey === "DUES_STATUS" && duesLoading}
+                    duesError={widget.widgetKey === "DUES_STATUS" ? duesError : null}
                     boardData={widget.widgetKey === "BOARD_NOTICE" ? boardData : null}
                     boardLoading={widget.widgetKey === "BOARD_NOTICE" && boardLoading}
                     boardError={widget.widgetKey === "BOARD_NOTICE" ? boardError : null}
