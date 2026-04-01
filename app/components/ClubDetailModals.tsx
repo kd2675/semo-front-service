@@ -2,6 +2,7 @@
 
 import { RouteModal } from "@/app/components/RouteModal";
 import { ClubNoticeDetailClient } from "@/app/clubs/[clubId]/board/[noticeId]/ClubNoticeDetailClient";
+import { ClubBracketDetailClient } from "@/app/clubs/[clubId]/more/brackets/ClubBracketDetailClient";
 import { ClubScheduleDetailClient } from "@/app/clubs/[clubId]/schedule/ClubScheduleDetailClient";
 import { ClubScheduleVoteDetailClient } from "@/app/clubs/[clubId]/schedule/ClubScheduleVoteDetailClient";
 import { ClubTournamentDetailClient } from "@/app/clubs/[clubId]/more/tournaments/ClubTournamentDetailClient";
@@ -35,6 +36,14 @@ type ClubTournamentDetailModalProps = {
   onRequestClose: () => void;
 };
 
+type ClubBracketDetailModalProps = {
+  clubId: string;
+  bracketRecordId: string;
+  mode?: DetailMode;
+  onRequestClose: () => void;
+  onReload?: () => void;
+};
+
 function getNoticeBasePath(clubId: string, mode: DetailMode) {
   return mode === "admin" ? `/clubs/${clubId}/admin/more/notices` : `/clubs/${clubId}/more/notices`;
 }
@@ -45,6 +54,10 @@ function getPollBasePath(clubId: string, mode: DetailMode) {
 
 function getTournamentBasePath(clubId: string, mode: DetailMode) {
   return mode === "admin" ? `/clubs/${clubId}/admin/more/tournaments` : `/clubs/${clubId}/more/tournaments`;
+}
+
+function getBracketBasePath(clubId: string, mode: DetailMode) {
+  return mode === "admin" ? `/clubs/${clubId}/admin/more/brackets` : `/clubs/${clubId}/more/brackets`;
 }
 
 export function ClubNoticeDetailModal({
@@ -117,6 +130,28 @@ export function ClubTournamentDetailModal({
         presentation="modal"
         basePath={getTournamentBasePath(clubId, mode)}
         onRequestClose={onRequestClose}
+      />
+    </RouteModal>
+  );
+}
+
+export function ClubBracketDetailModal({
+  clubId,
+  bracketRecordId,
+  mode = "user",
+  onRequestClose,
+  onReload,
+}: ClubBracketDetailModalProps) {
+  return (
+    <RouteModal onDismiss={onRequestClose}>
+      <ClubBracketDetailClient
+        clubId={clubId}
+        bracketRecordId={bracketRecordId}
+        mode={mode}
+        presentation="modal"
+        basePath={getBracketBasePath(clubId, mode)}
+        onRequestClose={onRequestClose}
+        onReload={onReload}
       />
     </RouteModal>
   );

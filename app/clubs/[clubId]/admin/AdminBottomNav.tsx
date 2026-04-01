@@ -59,6 +59,7 @@ const FEATURE_ACCENT_CLASS: Record<string, string> = {
   POLL: "bg-amber-50 text-[#ec5b13]",
   SCHEDULE_MANAGE: "bg-cyan-50 text-cyan-600",
   TOURNAMENT_RECORD: "bg-emerald-50 text-emerald-700",
+  BRACKET: "bg-amber-50 text-amber-700",
 };
 
 function getFeatureDisplayName(feature: ClubFeatureSummary) {

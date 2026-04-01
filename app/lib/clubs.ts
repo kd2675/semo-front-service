@@ -472,6 +472,150 @@ export type ReviewTournamentRecordRequest = {
   rejectionReason?: string | null;
 };
 
+export type BracketImportParticipantCandidate = {
+  tournamentApplicationId: number;
+  clubProfileId: number | null;
+  displayName: string;
+};
+
+export type BracketImportTournament = {
+  tournamentRecordId: number;
+  title: string;
+  summaryText: string | null;
+  tournamentPeriodLabel: string | null;
+  participantCount: number;
+  participants: BracketImportParticipantCandidate[];
+};
+
+export type BracketParticipant = {
+  bracketParticipantId: number | null;
+  seedNumber: number;
+  clubProfileId: number | null;
+  displayName: string;
+  guestEntry: boolean;
+  participantRole: string;
+  entrySourceType: "DIRECT" | "TOURNAMENT" | string;
+  sourceTournamentApplicationId: number | null;
+};
+
+export type BracketMatch = {
+  matchNumber: number;
+  homeParticipantName: string | null;
+  awayParticipantName: string | null;
+};
+
+export type BracketRound = {
+  roundNumber: number;
+  title: string;
+  matches: BracketMatch[];
+};
+
+export type BracketSummary = {
+  bracketRecordId: number;
+  title: string;
+  summaryText: string | null;
+  approvalStatus: "DRAFT" | "PENDING" | "APPROVED" | "REJECTED" | string;
+  bracketType: "SINGLE_ELIMINATION" | string;
+  participantType: "MEMBER" | "GUEST" | "MIXED" | string;
+  sourceType: "DIRECT" | "TOURNAMENT" | string;
+  sourceTournamentRecordId: number | null;
+  sourceTournamentTitle: string | null;
+  authorDisplayName: string | null;
+  authorAvatarImageUrl: string | null;
+  authorAvatarThumbnailUrl: string | null;
+  reviewedByDisplayName: string | null;
+  reviewedAtLabel: string | null;
+  rejectionReason: string | null;
+  participantCount: number;
+  mine: boolean;
+  canEdit: boolean;
+  canSubmit: boolean;
+  canDelete: boolean;
+};
+
+export type ClubBracketHomeResponse = {
+  clubId: number;
+  clubName: string;
+  admin: boolean;
+  canCreate: boolean;
+  approvedBracketCount: number;
+  pendingBracketCount: number;
+  featuredBracket: BracketSummary | null;
+  publishedBrackets: BracketSummary[];
+  myBrackets: BracketSummary[];
+  importableTournaments: BracketImportTournament[];
+};
+
+export type ClubAdminBracketHomeResponse = {
+  clubId: number;
+  clubName: string;
+  admin: boolean;
+  totalBracketCount: number;
+  draftBracketCount: number;
+  pendingBracketCount: number;
+  approvedBracketCount: number;
+  rejectedBracketCount: number;
+  brackets: BracketSummary[];
+};
+
+export type BracketDetailResponse = {
+  clubId: number;
+  clubName: string;
+  admin: boolean;
+  bracketRecordId: number;
+  title: string;
+  summaryText: string | null;
+  approvalStatus: "DRAFT" | "PENDING" | "APPROVED" | "REJECTED" | string;
+  bracketType: "SINGLE_ELIMINATION" | string;
+  participantType: "MEMBER" | "GUEST" | "MIXED" | string;
+  sourceType: "DIRECT" | "TOURNAMENT" | string;
+  sourceTournamentRecordId: number | null;
+  sourceTournamentTitle: string | null;
+  authorDisplayName: string | null;
+  authorAvatarImageUrl: string | null;
+  authorAvatarThumbnailUrl: string | null;
+  reviewedByDisplayName: string | null;
+  reviewedAtLabel: string | null;
+  rejectionReason: string | null;
+  participantCount: number;
+  mine: boolean;
+  canEdit: boolean;
+  canSubmit: boolean;
+  canDelete: boolean;
+  canReview: boolean;
+  participants: BracketParticipant[];
+  rounds: BracketRound[];
+};
+
+export type UpsertBracketParticipantRequest = {
+  clubProfileId?: number | null;
+  displayName: string;
+  seedNumber?: number | null;
+  sourceTournamentApplicationId?: number | null;
+};
+
+export type UpsertBracketRequest = {
+  title: string;
+  summaryText?: string | null;
+  bracketType: "SINGLE_ELIMINATION" | string;
+  participantType: "MEMBER" | "GUEST" | "MIXED" | string;
+  sourceType: "DIRECT" | "TOURNAMENT" | string;
+  sourceTournamentRecordId?: number | null;
+  participants: UpsertBracketParticipantRequest[];
+};
+
+export type BracketUpsertResponse = {
+  bracketRecordId: number;
+  title: string;
+  approvalStatus: "DRAFT" | "PENDING" | "APPROVED" | "REJECTED" | string;
+  participantCount: number;
+};
+
+export type ReviewBracketRequest = {
+  approvalStatus: "APPROVED" | "REJECTED";
+  rejectionReason?: string | null;
+};
+
 export type ClubScheduleEventDetailResponse = {
   clubId: number;
   clubName: string;
@@ -1248,6 +1392,64 @@ export function deleteClubTournament(
   tournamentRecordId: string | number,
 ) {
   return deleteJson<void>(`/api/semo/v1/clubs/${clubId}/admin/more/tournaments/${tournamentRecordId}`);
+}
+
+export function getClubBracketHome(clubId: string | number) {
+  return getJson<ClubBracketHomeResponse>(`/api/semo/v1/clubs/${clubId}/more/brackets`);
+}
+
+export function getClubAdminBracketHome(clubId: string | number) {
+  return getJson<ClubAdminBracketHomeResponse>(`/api/semo/v1/clubs/${clubId}/admin/more/brackets`);
+}
+
+export function getClubBracketDetail(clubId: string | number, bracketRecordId: string | number) {
+  return getJson<BracketDetailResponse>(`/api/semo/v1/clubs/${clubId}/more/brackets/${bracketRecordId}`);
+}
+
+export function createClubBracket(
+  clubId: string | number,
+  request: UpsertBracketRequest,
+) {
+  return postJson<BracketUpsertResponse>(`/api/semo/v1/clubs/${clubId}/more/brackets`, request);
+}
+
+export function updateClubBracket(
+  clubId: string | number,
+  bracketRecordId: string | number,
+  request: UpsertBracketRequest,
+) {
+  return putJson<BracketUpsertResponse>(
+    `/api/semo/v1/clubs/${clubId}/more/brackets/${bracketRecordId}`,
+    request,
+  );
+}
+
+export function submitClubBracket(
+  clubId: string | number,
+  bracketRecordId: string | number,
+) {
+  return putJson<BracketDetailResponse>(
+    `/api/semo/v1/clubs/${clubId}/more/brackets/${bracketRecordId}/submit`,
+    undefined,
+  );
+}
+
+export function reviewClubBracket(
+  clubId: string | number,
+  bracketRecordId: string | number,
+  request: ReviewBracketRequest,
+) {
+  return putJson<BracketDetailResponse>(
+    `/api/semo/v1/clubs/${clubId}/admin/more/brackets/${bracketRecordId}/review`,
+    request,
+  );
+}
+
+export function deleteClubBracket(
+  clubId: string | number,
+  bracketRecordId: string | number,
+) {
+  return deleteJson<void>(`/api/semo/v1/clubs/${clubId}/admin/more/brackets/${bracketRecordId}`);
 }
 
 export function getClubProfile(clubId: string | number) {
