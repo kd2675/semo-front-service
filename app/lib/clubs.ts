@@ -1003,6 +1003,56 @@ export type ClubAdminTimelineResponse = {
   clubName: string;
 };
 
+export type ClubMemberDirectorySettings = {
+  showPositions: boolean;
+  showTagline: boolean;
+  showRecentActivity: boolean;
+};
+
+export type ClubMemberDirectoryActivity = {
+  subject: string;
+  detail: string;
+  createdAt: string | null;
+  createdAtLabel: string | null;
+};
+
+export type ClubMemberDirectoryMember = {
+  clubMemberId: number;
+  clubProfileId: number;
+  displayName: string;
+  avatarImageUrl: string | null;
+  roleLabel: string | null;
+  tagline: string | null;
+  positions: ClubPositionSummary[];
+  recentActivity: ClubMemberDirectoryActivity | null;
+};
+
+export type ClubMemberDirectoryResponse = {
+  clubId: number;
+  clubName: string;
+  admin: boolean;
+  featureEnabled: boolean;
+  totalMemberCount: number;
+  settings: ClubMemberDirectorySettings;
+  members: ClubMemberDirectoryMember[];
+};
+
+export type ClubAdminMemberDirectorySettingsResponse = {
+  clubId: number;
+  clubName: string;
+  admin: boolean;
+  featureEnabled: boolean;
+  totalMemberCount: number;
+  settings: ClubMemberDirectorySettings;
+  previewMembers: ClubMemberDirectoryMember[];
+};
+
+export type UpdateClubAdminMemberDirectorySettingsRequest = {
+  showPositions: boolean;
+  showTagline: boolean;
+  showRecentActivity: boolean;
+};
+
 export type DashboardScope = "USER_HOME" | "ADMIN_HOME";
 
 export type ClubDashboardWidgetSummary = {
@@ -1884,6 +1934,10 @@ export function getClubAdminAttendance(clubId: string | number) {
   return getJson<ClubAdminAttendanceResponse>(`/api/semo/v1/clubs/${clubId}/admin/more/attendance`);
 }
 
+export function getClubMemberDirectory(clubId: string | number) {
+  return getJson<ClubMemberDirectoryResponse>(`/api/semo/v1/clubs/${clubId}/more/members`);
+}
+
 export function getClubTimeline(
   clubId: string | number,
   options: {
@@ -1910,6 +1964,22 @@ export function getClubTimeline(
 
 export function getClubAdminTimeline(clubId: string | number) {
   return getJson<ClubAdminTimelineResponse>(`/api/semo/v1/clubs/${clubId}/admin/more/timeline`);
+}
+
+export function getClubAdminMemberDirectorySettings(clubId: string | number) {
+  return getJson<ClubAdminMemberDirectorySettingsResponse>(
+    `/api/semo/v1/clubs/${clubId}/admin/more/members`,
+  );
+}
+
+export function updateClubAdminMemberDirectorySettings(
+  clubId: string | number,
+  request: UpdateClubAdminMemberDirectorySettingsRequest,
+) {
+  return putJson<ClubAdminMemberDirectorySettingsResponse>(
+    `/api/semo/v1/clubs/${clubId}/admin/more/members`,
+    request,
+  );
 }
 
 export function getClubAdminRoleManagement(clubId: string | number) {

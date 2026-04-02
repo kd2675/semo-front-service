@@ -34,6 +34,7 @@ import {
   getClubBracketHome,
   getClubDashboardWidgetEditor,
   getClubDashboardWidgets,
+  getClubMemberDirectory,
   getMyClub,
   getClubPollHome,
   getClubSchedule,
@@ -43,6 +44,7 @@ import {
   type ClubBoardResponse,
   type ClubBracketHomeResponse,
   type ClubDuesHomeResponse,
+  type ClubMemberDirectoryResponse,
   type ClubPollHomeResponse,
   type ClubPollSummary,
   type ClubTournamentHomeResponse,
@@ -69,6 +71,7 @@ const WIDGET_ACCENT_CLASS: Record<string, string> = {
   PROFILE_SUMMARY: "bg-emerald-50 text-emerald-600",
   ATTENDANCE_STATUS: "bg-indigo-50 text-indigo-600",
   DUES_STATUS: "bg-emerald-50 text-emerald-700",
+  MEMBER_DIRECTORY_HIGHLIGHT: "bg-rose-50 text-rose-600",
   TOURNAMENT_RECORD_LATEST: "bg-emerald-50 text-emerald-700",
   BRACKET_LATEST: "bg-amber-50 text-amber-700",
 };
@@ -260,6 +263,9 @@ function DashboardWidgetCard({
   attendanceData,
   attendanceLoading,
   attendanceError,
+  memberDirectoryData,
+  memberDirectoryLoading,
+  memberDirectoryError,
   duesData,
   duesLoading,
   duesError,
@@ -299,6 +305,9 @@ function DashboardWidgetCard({
   attendanceData: ClubAttendanceResponse | null;
   attendanceLoading: boolean;
   attendanceError: string | null;
+  memberDirectoryData: ClubMemberDirectoryResponse | null;
+  memberDirectoryLoading: boolean;
+  memberDirectoryError: string | null;
   duesData: ClubDuesHomeResponse | null;
   duesLoading: boolean;
   duesError: string | null;
@@ -331,6 +340,7 @@ function DashboardWidgetCard({
   const accentClass = WIDGET_ACCENT_CLASS[widget.widgetKey] ?? "bg-slate-100 text-slate-600";
   const isEditMode = isAdmin && editMode;
   const isAttendanceWidget = widget.widgetKey === "ATTENDANCE_STATUS";
+  const isMemberDirectoryWidget = widget.widgetKey === "MEMBER_DIRECTORY_HIGHLIGHT";
   const isDuesWidget = widget.widgetKey === "DUES_STATUS";
   const isBoardNoticeWidget = widget.widgetKey === "BOARD_NOTICE";
   const isScheduleWidget = widget.widgetKey === "SCHEDULE_OVERVIEW";
@@ -339,6 +349,7 @@ function DashboardWidgetCard({
   const isBracketWidget = widget.widgetKey === "BRACKET_LATEST";
   const todayAttendance = attendanceData?.todayAttendance;
   const recentLog = attendanceData?.recentLogs?.[0] ?? null;
+  const featuredMembers = memberDirectoryData?.members.slice(0, 3) ?? [];
   const nextDueCharge = duesData?.nextPayableCharge ?? null;
   const latestNotice = boardData?.notices?.[0] ?? null;
   const latestOngoingPoll = useMemo<ClubPollSummary | null>(() => {
@@ -400,7 +411,11 @@ function DashboardWidgetCard({
 
   return (
     <motion.article
-      key={isAttendanceWidget ? `${widget.widgetKey}-${attendancePulseToken}` : widget.widgetKey}
+      key={
+        isAttendanceWidget
+          ? `${widget.widgetKey}-${attendancePulseToken}`
+          : widget.widgetKey
+      }
       data-widget-key={widget.widgetKey}
       onDragOver={(event) => {
         if (!isEditMode) {
@@ -547,6 +562,81 @@ function DashboardWidgetCard({
                 </p>
               ) : null}
             </>
+          )}
+        </div>
+      ) : isMemberDirectoryWidget ? (
+        <div className="space-y-3">
+          {memberDirectoryLoading ? (
+            <>
+              <div className="h-4 w-28 rounded-full bg-slate-100" />
+              <div className="h-20 w-full rounded-xl bg-slate-50" />
+            </>
+          ) : memberDirectoryError ? (
+            <p className="text-sm text-slate-500">회원 디렉터리 정보를 가져오지 못했습니다.</p>
+          ) : memberDirectoryData ? (
+            <RouterLink
+              href={`/clubs/${clubId}/more/members`}
+              className="block rounded-xl border border-rose-100 bg-white p-4 shadow-sm transition-all hover:border-rose-300"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-rose-600">
+                    Member Directory
+                  </p>
+                  <p className="mt-2 text-base font-bold text-slate-900">
+                    활동 멤버 {memberDirectoryData.totalMemberCount}명
+                  </p>
+                </div>
+                <span className="rounded-full bg-rose-50 px-2 py-0.5 text-[11px] font-bold text-rose-700">
+                  More
+                </span>
+              </div>
+              <div className="mt-4 space-y-2">
+                {featuredMembers.length > 0 ? (
+                  featuredMembers.map((member) => (
+                    <div
+                      key={member.clubProfileId}
+                      className="flex items-center justify-between gap-3 rounded-2xl bg-slate-50 px-3 py-2"
+                    >
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-semibold text-slate-900">{member.displayName}</p>
+                          <p className="truncate text-xs text-slate-500">
+                          {memberDirectoryData.settings.showRecentActivity
+                            ? member.recentActivity?.createdAtLabel
+                            : memberDirectoryData.settings.showTagline
+                              ? member.tagline
+                              : null}
+                          {!(memberDirectoryData.settings.showRecentActivity
+                            ? member.recentActivity?.createdAtLabel
+                            : memberDirectoryData.settings.showTagline
+                              ? member.tagline
+                              : null)
+                            ? "회원 디렉터리 바로가기"
+                            : ""}
+                        </p>
+                      </div>
+                      {memberDirectoryData.settings.showPositions && member.positions[0] ? (
+                        <span
+                          className="shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold"
+                          style={{
+                            backgroundColor: member.positions[0].colorHex
+                              ? `${member.positions[0].colorHex}1A`
+                              : "#ffe4e6",
+                            color: member.positions[0].colorHex ?? "#be123c",
+                          }}
+                        >
+                          {member.positions[0].displayName}
+                        </span>
+                      ) : null}
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-sm text-slate-500">표시할 회원이 없습니다.</p>
+                )}
+              </div>
+            </RouterLink>
+          ) : (
+            <p className="text-sm text-slate-500">회원 디렉터리 위젯 데이터를 준비 중입니다.</p>
           )}
         </div>
       ) : isDuesWidget ? (
@@ -970,6 +1060,9 @@ export function ClubDashboardFallbackClient({
   const [attendanceData, setAttendanceData] = useState<ClubAttendanceResponse | null>(null);
   const [attendanceLoading, setAttendanceLoading] = useState(false);
   const [attendanceError, setAttendanceError] = useState<string | null>(null);
+  const [memberDirectoryData, setMemberDirectoryData] = useState<ClubMemberDirectoryResponse | null>(null);
+  const [memberDirectoryLoading, setMemberDirectoryLoading] = useState(false);
+  const [memberDirectoryError, setMemberDirectoryError] = useState<string | null>(null);
   const [duesData, setDuesData] = useState<ClubDuesHomeResponse | null>(null);
   const [duesLoading, setDuesLoading] = useState(false);
   const [duesError, setDuesError] = useState<string | null>(null);
@@ -1139,6 +1232,13 @@ export function ClubDashboardFallbackClient({
     );
   }, [dashboardWidgetSource]);
 
+  const hasMemberDirectoryWidget = useMemo(() => {
+    return dashboardWidgetSource.some(
+      (widget) =>
+        widget.widgetKey === "MEMBER_DIRECTORY_HIGHLIGHT" && widget.enabled && widget.available,
+    );
+  }, [dashboardWidgetSource]);
+
   const hasBoardNoticeWidget = useMemo(() => {
     return dashboardWidgetSource.some(
       (widget) => widget.widgetKey === "BOARD_NOTICE" && widget.enabled && widget.available,
@@ -1212,6 +1312,25 @@ export function ClubDashboardFallbackClient({
     setBoardData(result.data);
     setBoardLoading(false);
   }, [clubId, hasBoardNoticeWidget]);
+
+  const loadMemberDirectoryData = useCallback(async () => {
+    if (!hasMemberDirectoryWidget) {
+      return;
+    }
+
+    setMemberDirectoryLoading(true);
+    setMemberDirectoryError(null);
+    const result = await getClubMemberDirectory(clubId);
+    if (!result.ok || !result.data) {
+      setMemberDirectoryData(null);
+      setMemberDirectoryError(result.message ?? "회원 디렉터리 정보를 불러오지 못했습니다.");
+      setMemberDirectoryLoading(false);
+      return;
+    }
+
+    setMemberDirectoryData(result.data);
+    setMemberDirectoryLoading(false);
+  }, [clubId, hasMemberDirectoryWidget]);
 
   const loadDuesData = useCallback(async () => {
     if (!hasDuesWidget) {
@@ -1443,6 +1562,18 @@ export function ClubDashboardFallbackClient({
       window.clearTimeout(timerId);
     };
   }, [hasBoardNoticeWidget, loadBoardData]);
+
+  useEffect(() => {
+    if (!hasMemberDirectoryWidget) {
+      return;
+    }
+    const timerId = window.setTimeout(() => {
+      void loadMemberDirectoryData();
+    }, 0);
+    return () => {
+      window.clearTimeout(timerId);
+    };
+  }, [hasMemberDirectoryWidget, loadMemberDirectoryData]);
 
   useEffect(() => {
     if (!hasDuesWidget) {
@@ -1763,6 +1894,9 @@ export function ClubDashboardFallbackClient({
                     attendanceData={widget.widgetKey === "ATTENDANCE_STATUS" ? attendanceData : null}
                     attendanceLoading={widget.widgetKey === "ATTENDANCE_STATUS" && attendanceLoading}
                     attendanceError={widget.widgetKey === "ATTENDANCE_STATUS" ? attendanceError : null}
+                    memberDirectoryData={widget.widgetKey === "MEMBER_DIRECTORY_HIGHLIGHT" ? memberDirectoryData : null}
+                    memberDirectoryLoading={widget.widgetKey === "MEMBER_DIRECTORY_HIGHLIGHT" && memberDirectoryLoading}
+                    memberDirectoryError={widget.widgetKey === "MEMBER_DIRECTORY_HIGHLIGHT" ? memberDirectoryError : null}
                     duesData={widget.widgetKey === "DUES_STATUS" ? duesData : null}
                     duesLoading={widget.widgetKey === "DUES_STATUS" && duesLoading}
                     duesError={widget.widgetKey === "DUES_STATUS" ? duesError : null}

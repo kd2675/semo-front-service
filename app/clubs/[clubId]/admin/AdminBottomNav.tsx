@@ -58,6 +58,7 @@ const FEATURE_ACCENT_CLASS: Record<string, string> = {
   NOTICE: "bg-orange-50 text-[#ec5b13]",
   POLL: "bg-amber-50 text-[#ec5b13]",
   SCHEDULE_MANAGE: "bg-cyan-50 text-cyan-600",
+  MEMBER_DIRECTORY: "bg-rose-50 text-rose-600",
   TOURNAMENT_RECORD: "bg-emerald-50 text-emerald-700",
   BRACKET: "bg-amber-50 text-amber-700",
   DUES: "bg-emerald-50 text-emerald-700",
