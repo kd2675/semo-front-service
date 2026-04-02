@@ -1146,6 +1146,18 @@ export type ClubAdminDuesCharge = {
   waivedInvoiceCount: number;
   overdueInvoiceCount: number;
   collectionRate: number;
+};
+
+export type ClubAdminDuesChargeFeedResponse = {
+  clubId: number;
+  clubName: string;
+  items: ClubAdminDuesCharge[];
+  nextCursorChargeId: number | null;
+  hasNext: boolean;
+};
+
+export type ClubAdminDuesChargeDetailResponse = {
+  charge: ClubAdminDuesCharge;
   invoices: ClubDuesInvoice[];
 };
 
@@ -1192,7 +1204,6 @@ export type ClubAdminDuesHomeResponse = {
   overdueInvoiceCount: number;
   collectionRate: number;
   availableMembers: ClubDuesMemberOption[];
-  charges: ClubAdminDuesCharge[];
 };
 
 export type CreateClubDuesChargeRequest = {
@@ -1697,6 +1708,43 @@ export function getClubDues(clubId: string | number) {
 
 export function getClubAdminDues(clubId: string | number) {
   return getJson<ClubAdminDuesHomeResponse>(`/api/semo/v1/clubs/${clubId}/admin/more/dues`);
+}
+
+export function getClubAdminDuesCharges(
+  clubId: string | number,
+  options: {
+    query?: string;
+    chargeFilter?: "ALL" | "OPEN" | "SETTLED" | string;
+    cursorChargeId?: number | null;
+    size?: number;
+  } = {},
+) {
+  const params = new URLSearchParams();
+  if (options.query?.trim()) {
+    params.set("query", options.query.trim());
+  }
+  if (options.chargeFilter && options.chargeFilter !== "ALL") {
+    params.set("chargeFilter", options.chargeFilter);
+  }
+  if (options.cursorChargeId != null) {
+    params.set("cursorChargeId", String(options.cursorChargeId));
+  }
+  if (options.size != null) {
+    params.set("size", String(options.size));
+  }
+  const queryString = params.toString();
+  return getJson<ClubAdminDuesChargeFeedResponse>(
+    `/api/semo/v1/clubs/${clubId}/admin/more/dues/charges${queryString ? `?${queryString}` : ""}`,
+  );
+}
+
+export function getClubAdminDuesChargeDetail(
+  clubId: string | number,
+  chargeId: string | number,
+) {
+  return getJson<ClubAdminDuesChargeDetailResponse>(
+    `/api/semo/v1/clubs/${clubId}/admin/more/dues/charges/${chargeId}/invoices`,
+  );
 }
 
 export function createClubDuesCharge(

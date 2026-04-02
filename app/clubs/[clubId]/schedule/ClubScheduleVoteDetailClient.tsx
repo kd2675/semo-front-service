@@ -312,7 +312,7 @@ export function ClubScheduleVoteDetailClient({
           ) : null}
         </main>
 
-        {!isModal && payload?.admin ? <ClubModeSwitchFab clubId={clubId} mode="user" className="bottom-44" /> : null}
+        {!isModal && payload?.admin ? <ClubModeSwitchFab clubId={clubId} mode="user" /> : null}
         {showCloseConfirm ? (
           <ScheduleActionConfirmModal
             title="투표 종료"

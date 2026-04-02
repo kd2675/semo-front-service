@@ -11,6 +11,7 @@ import {
   type ClubTournamentHomeResponse,
   type TournamentSummary,
 } from "@/app/lib/clubs";
+import { FAB_RIGHT_OFFSET_CLASS_NAME, getActionFabBottomClass } from "@/app/lib/fab";
 import { staggeredFadeUpMotion } from "@/app/lib/motion";
 import {
   getTournamentApprovalBadgeClassName,
@@ -173,6 +174,7 @@ export function ClubTournamentHomeClient({
   const accent = mode === "admin" ? "#855300" : "#004bca";
   const background = "#f7f9fb";
   const userPayload = isUserPayload(payload) ? payload : null;
+  const hasModeSwitchFab = mode === "user" && payload.admin;
 
   const activeUserList = useMemo(() => {
     if (!userPayload) {
@@ -410,16 +412,14 @@ export function ClubTournamentHomeClient({
             type="button"
             aria-label="대회 생성"
             onClick={() => setShowCreateModal(true)}
-            className={`fixed right-6 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-[var(--primary)] text-white transition-transform active:scale-95 ${
-              payload.admin ? "bottom-40" : "bottom-24"
-            }`}
+            className={`fixed ${FAB_RIGHT_OFFSET_CLASS_NAME} ${getActionFabBottomClass(hasModeSwitchFab)} z-40 flex h-14 w-14 items-center justify-center rounded-full bg-[var(--primary)] text-white transition-transform active:scale-95`}
             style={{ boxShadow: "0 10px 24px rgba(0,75,202,0.28)" }}
           >
             <span className="material-symbols-outlined text-[28px]">add</span>
           </button>
         ) : null}
 
-        {mode === "user" && payload.admin ? <ClubModeSwitchFab clubId={clubId} mode="user" /> : null}
+        {hasModeSwitchFab ? <ClubModeSwitchFab clubId={clubId} mode="user" /> : null}
 
         <AnimatePresence>
           {showCreateModal ? (

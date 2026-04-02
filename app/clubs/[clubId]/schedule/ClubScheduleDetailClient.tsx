@@ -418,7 +418,7 @@ export function ClubScheduleDetailClient({
           </RouteModal>
         ) : null}
 
-        {!isModal && payload?.admin ? <ClubModeSwitchFab clubId={clubId} mode="user" className="bottom-32" /> : null}
+        {!isModal && payload?.admin ? <ClubModeSwitchFab clubId={clubId} mode="user" /> : null}
       </div>
     </div>
   );

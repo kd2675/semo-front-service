@@ -1,6 +1,10 @@
 "use client";
 
 import { RouterLink } from "@/app/components/RouterLink";
+import {
+  FAB_RIGHT_OFFSET_CLASS_NAME,
+  MODE_SWITCH_FAB_BOTTOM_CLASS_NAME,
+} from "@/app/lib/fab";
 import { motion, useReducedMotion } from "motion/react";
 
 type ClubModeSwitchFabProps = {
@@ -18,7 +22,7 @@ export function ClubModeSwitchFab({ clubId, mode, className }: ClubModeSwitchFab
 
   return (
     <motion.div
-      className={`fixed bottom-24 right-6 z-40 ${className ?? ""}`.trim()}
+      className={`fixed ${MODE_SWITCH_FAB_BOTTOM_CLASS_NAME} ${FAB_RIGHT_OFFSET_CLASS_NAME} z-40 ${className ?? ""}`.trim()}
       initial={reduceMotion ? false : { opacity: 0, scale: 0.9, y: 8 }}
       animate={{ opacity: 1, scale: 1, y: 0 }}
       exit={reduceMotion ? undefined : { opacity: 0, scale: 0.9, y: 8 }}

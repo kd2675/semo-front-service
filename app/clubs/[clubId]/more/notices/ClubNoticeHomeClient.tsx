@@ -10,6 +10,7 @@ import {
   type ClubNoticeHomeResponse,
   type ClubNoticeListItem,
 } from "@/app/lib/clubs";
+import { FAB_RIGHT_OFFSET_CLASS_NAME, getActionFabBottomClass } from "@/app/lib/fab";
 import { staggeredFadeUpMotion } from "@/app/lib/motion";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useState, type CSSProperties } from "react";
@@ -70,6 +71,7 @@ export function ClubNoticeHomeClient({
   const basePath = mode === "admin" ? `/clubs/${clubId}/admin/more/notices` : `/clubs/${clubId}/more/notices`;
   const latestNotice = payload.notices[0] ?? null;
   const visibleNotices = payload.notices;
+  const hasModeSwitchFab = mode === "user" && payload.admin;
 
   const handleDelete = async () => {
     if (!deleteTarget) {
@@ -229,16 +231,14 @@ export function ClubNoticeHomeClient({
             type="button"
             aria-label="게시글 작성"
             onClick={() => setShowCreateModal(true)}
-            className={`fixed right-6 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-[var(--primary)] text-white transition-transform active:scale-95 ${
-              mode === "user" && payload.admin ? "bottom-40" : "bottom-24"
-            }`}
+            className={`fixed ${FAB_RIGHT_OFFSET_CLASS_NAME} ${getActionFabBottomClass(hasModeSwitchFab)} z-40 flex h-14 w-14 items-center justify-center rounded-full bg-[var(--primary)] text-white transition-transform active:scale-95`}
             style={{ boxShadow: "0 6px 16px rgba(19, 91, 236, 0.32)" }}
           >
             <span className="material-symbols-outlined text-[28px]">edit_square</span>
           </button>
         ) : null}
 
-        {mode === "user" && payload.admin ? <ClubModeSwitchFab clubId={clubId} mode="user" /> : null}
+        {hasModeSwitchFab ? <ClubModeSwitchFab clubId={clubId} mode="user" /> : null}
 
         <AnimatePresence>
           {showCreateModal ? (

@@ -4,7 +4,9 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   getClubAdminDues,
+  getClubAdminDuesCharges,
   getMyClub,
+  type ClubAdminDuesChargeFeedResponse,
   type ClubAdminDuesHomeResponse,
   type MyClubSummary,
 } from "@/app/lib/clubs";
@@ -19,14 +21,16 @@ export function ClubAdminDuesFallbackClient({ clubId }: ClubAdminDuesFallbackCli
   const router = useRouter();
   const [club, setClub] = useState<MyClubSummary | null>(null);
   const [dues, setDues] = useState<ClubAdminDuesHomeResponse | null>(null);
+  const [chargeFeed, setChargeFeed] = useState<ClubAdminDuesChargeFeedResponse | null>(null);
 
   useEffect(() => {
     let cancelled = false;
 
     void (async () => {
-      const [clubResult, duesResult] = await Promise.all([
+      const [clubResult, duesResult, chargeFeedResult] = await Promise.all([
         getMyClub(clubId),
         getClubAdminDues(clubId),
+        getClubAdminDuesCharges(clubId, { size: 10 }),
       ]);
 
       if (cancelled) {
@@ -37,13 +41,14 @@ export function ClubAdminDuesFallbackClient({ clubId }: ClubAdminDuesFallbackCli
         router.replace(`/clubs/${clubId}`);
         return;
       }
-      if (!duesResult.ok || !duesResult.data) {
+      if (!duesResult.ok || !duesResult.data || !chargeFeedResult.ok || !chargeFeedResult.data) {
         router.replace(`/clubs/${clubId}`);
         return;
       }
 
       setClub(clubResult.data);
       setDues(duesResult.data);
+      setChargeFeed(chargeFeedResult.data);
     })();
 
     return () => {
@@ -51,9 +56,9 @@ export function ClubAdminDuesFallbackClient({ clubId }: ClubAdminDuesFallbackCli
     };
   }, [clubId, router]);
 
-  if (!club || !dues) {
+  if (!club || !dues || !chargeFeed) {
     return <AdminAttendanceLoadingShell />;
   }
 
-  return <ClubAdminDuesClient clubId={clubId} initialData={dues} />;
+  return <ClubAdminDuesClient clubId={clubId} initialData={dues} initialChargeFeed={chargeFeed} />;
 }

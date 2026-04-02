@@ -8,6 +8,7 @@ import { ClubScheduleVoteEditorClient } from "@/app/clubs/[clubId]/schedule/Club
 import { ScheduleActionConfirmModal } from "@/app/clubs/[clubId]/schedule/ScheduleActionConfirmModal";
 import { deleteClubScheduleVote, type ClubPollHomeResponse, type ClubPollSummary } from "@/app/lib/clubs";
 import { getShareTargetBadges } from "@/app/lib/content-badge";
+import { FAB_RIGHT_OFFSET_CLASS_NAME, getActionFabBottomClass } from "@/app/lib/fab";
 import { staggeredFadeUpMotion } from "@/app/lib/motion";
 import { getVoteLifecycleBadgeClassName, getVoteLifecycleLabel } from "@/app/lib/vote-status";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
@@ -229,6 +230,7 @@ export function ClubPollHomeClient({
 }: ClubPollHomeClientProps) {
   const prefersReducedMotion = useReducedMotion();
   const reduceMotion = Boolean(prefersReducedMotion);
+  const hasModeSwitchFab = mode === "user" && payload.admin;
   const [activeTab, setActiveTab] = useState<PollTabKey>("ONGOING");
   const [query, setQuery] = useState("");
   const deferredQuery = useDeferredValue(query);
@@ -467,16 +469,14 @@ export function ClubPollHomeClient({
             type="button"
             aria-label="투표 생성"
             onClick={() => setShowCreateModal(true)}
-            className={`fixed right-6 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-[var(--primary)] text-white transition-transform active:scale-95 ${
-              mode === "user" && payload.admin ? "bottom-40" : "bottom-24"
-            }`}
+            className={`fixed ${FAB_RIGHT_OFFSET_CLASS_NAME} ${getActionFabBottomClass(hasModeSwitchFab)} z-40 flex h-14 w-14 items-center justify-center rounded-full bg-[var(--primary)] text-white transition-transform active:scale-95`}
             style={{ boxShadow: "0 4px 14px rgba(19, 91, 236, 0.35)" }}
           >
             <span className="material-symbols-outlined text-[30px]">add</span>
           </button>
         ) : null}
 
-        {mode === "user" && payload.admin ? <ClubModeSwitchFab clubId={clubId} mode="user" /> : null}
+        {hasModeSwitchFab ? <ClubModeSwitchFab clubId={clubId} mode="user" /> : null}
 
         <AnimatePresence>
           {showCreateModal ? (
