@@ -1,15 +1,17 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { EphemeralToastTone } from "@/app/components/EphemeralToast";
 
 type ToastState = {
+  id: number;
   message: string;
   tone: EphemeralToastTone;
 } | null;
 
 export function useEphemeralToast(durationMs = 2000) {
   const [toast, setToast] = useState<ToastState>(null);
+  const nextToastIdRef = useRef(1);
 
   useEffect(() => {
     if (!toast) {
@@ -24,7 +26,17 @@ export function useEphemeralToast(durationMs = 2000) {
   }, [durationMs, toast]);
 
   const showToast = useCallback((message: string, tone: EphemeralToastTone = "success") => {
-    setToast({ message, tone });
+    const normalizedMessage = message.trim();
+    if (!normalizedMessage) {
+      return;
+    }
+
+    setToast({
+      id: nextToastIdRef.current,
+      message: normalizedMessage,
+      tone,
+    });
+    nextToastIdRef.current += 1;
   }, []);
 
   const clearToast = useCallback(() => {

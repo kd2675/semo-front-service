@@ -390,9 +390,9 @@ export function ClubAdminMenuClient({
                     strategy={verticalListSortingStrategy}
                   >
                     <div className="flex flex-col gap-3">
-                      {enabledFeatures.map((feature) => (
+                      {enabledFeatures.map((feature, index) => (
                         <EnabledFeatureCard
-                          key={feature.featureKey}
+                          key={`${feature.featureKey || feature.adminPath || feature.userPath || "feature"}-${index}`}
                           feature={feature}
                           activeFeatureKey={activeFeatureKey}
                           onToggle={handleToggle}
@@ -421,7 +421,7 @@ export function ClubAdminMenuClient({
               ) : (
                 disabledFeatures.map((feature, index) => (
                   <motion.article
-                    key={feature.featureKey}
+                    key={`${feature.featureKey || feature.adminPath || feature.userPath || "feature"}-${index}`}
                     className="group flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 shadow-sm transition-all hover:border-slate-300"
                     {...staggeredFadeUpMotion(index + 5, reduceMotion)}
                   >
@@ -479,7 +479,7 @@ export function ClubAdminMenuClient({
           </div>
         ) : null}
       </div>
-      <EphemeralToast message={toast?.message ?? null} tone={toast?.tone} />
+      <EphemeralToast toastId={toast?.id ?? null} message={toast?.message ?? null} tone={toast?.tone} />
     </div>
   );
 }

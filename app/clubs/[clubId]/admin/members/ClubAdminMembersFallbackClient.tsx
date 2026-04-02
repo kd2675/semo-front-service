@@ -3,7 +3,12 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AdminMembersLoadingShell } from "../AdminRouteLoadingShells";
-import { getClubAdminMembers, type ClubAdminMembersResponse } from "@/app/lib/clubs";
+import {
+  getClubAdminJoinRequests,
+  getClubAdminMembers,
+  type ClubAdminJoinRequestsResponse,
+  type ClubAdminMembersResponse,
+} from "@/app/lib/clubs";
 import { ClubAdminMembersClient } from "./ClubAdminMembersClient";
 
 type ClubAdminMembersFallbackClientProps = {
@@ -15,20 +20,32 @@ export function ClubAdminMembersFallbackClient({
 }: ClubAdminMembersFallbackClientProps) {
   const router = useRouter();
   const [payload, setPayload] = useState<ClubAdminMembersResponse | null>(null);
+  const [joinRequestsPayload, setJoinRequestsPayload] = useState<ClubAdminJoinRequestsResponse | null>(null);
 
   useEffect(() => {
     let cancelled = false;
 
     void (async () => {
-      const result = await getClubAdminMembers(clubId);
+      const [membersResult, joinRequestsResult] = await Promise.all([
+        getClubAdminMembers(clubId),
+        getClubAdminJoinRequests(clubId),
+      ]);
       if (cancelled) {
         return;
       }
-      if (!result.ok || !result.data || !result.data.admin) {
+      if (
+        !membersResult.ok ||
+        !membersResult.data ||
+        !membersResult.data.admin ||
+        !joinRequestsResult.ok ||
+        !joinRequestsResult.data ||
+        !joinRequestsResult.data.admin
+      ) {
         router.replace(`/clubs/${clubId}`);
         return;
       }
-      setPayload(result.data);
+      setPayload(membersResult.data);
+      setJoinRequestsPayload(joinRequestsResult.data);
     })();
 
     return () => {
@@ -36,7 +53,7 @@ export function ClubAdminMembersFallbackClient({
     };
   }, [clubId, router]);
 
-  if (!payload) {
+  if (!payload || !joinRequestsPayload) {
     return <AdminMembersLoadingShell />;
   }
 
@@ -45,6 +62,7 @@ export function ClubAdminMembersFallbackClient({
       clubId={clubId}
       clubName={payload.clubName}
       initialMembers={payload.members}
+      initialJoinRequests={joinRequestsPayload.requests}
     />
   );
 }

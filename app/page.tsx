@@ -1,14 +1,32 @@
 "use client";
 
 import { RouterLink } from "@/app/components/RouterLink";
+import { AppAlertModal } from "@/app/components/AppAlertModal";
+import { EphemeralToast } from "@/app/components/EphemeralToast";
+import { RouteModal } from "@/app/components/RouteModal";
+import { useEphemeralToast } from "@/app/components/useEphemeralToast";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { useEffect, useState } from "react";
+import {
+  startTransition,
+  useDeferredValue,
+  useEffect,
+  useState,
+} from "react";
 import { useRouter } from "next/navigation";
 import { clearAccessToken, getUserFromToken, logout, normalizeRole } from "@/app/lib/auth";
 import { onAuthChanged } from "@/app/lib/authEvents";
-import { getMyClubs, type MyClubSummary } from "@/app/lib/clubs";
+import {
+  cancelClubJoinRequest,
+  getDiscoverClubs,
+  getMyClubs,
+  submitClubJoinRequest,
+  type ClubDiscoverResponse,
+  type ClubDiscoverSummary,
+  type MyClubSummary,
+} from "@/app/lib/clubs";
 import { overlayFadeMotion, popInMotion, staggeredFadeUpMotion } from "@/app/lib/motion";
 import type { AuthUser } from "@/app/types/auth";
+import { useAppAlert } from "@/app/hooks/useAppAlert";
 
 function createProfileLabel(user: AuthUser | null): string {
   const source = user?.username?.trim();
@@ -17,6 +35,140 @@ function createProfileLabel(user: AuthUser | null): string {
   }
 
   return source.slice(0, 1).toUpperCase();
+}
+
+function getMembershipPolicyLabel(membershipPolicy: string) {
+  return membershipPolicy === "OPEN" ? "바로 가입" : "승인 후 가입";
+}
+
+function getJoinStatusLabel(joinStatus: string) {
+  return (
+    {
+      PENDING: "신청 대기",
+      REJECTED: "재신청 가능",
+      CANCELED: "신청 취소됨",
+    }[joinStatus] ?? null
+  );
+}
+
+function getJoinActionLabel(club: ClubDiscoverSummary) {
+  if (club.joinStatus === "PENDING") {
+    return "신청 취소";
+  }
+  if (club.membershipPolicy === "OPEN") {
+    return "바로 가입";
+  }
+  if (club.joinStatus === "REJECTED") {
+    return "다시 신청";
+  }
+  return "가입 신청";
+}
+
+function getJoinActionTone(club: ClubDiscoverSummary) {
+  if (club.joinStatus === "PENDING") {
+    return "secondary";
+  }
+  return club.membershipPolicy === "OPEN" ? "primary" : "default";
+}
+
+function DiscoverClubModal({
+  club,
+  requestMessage,
+  isSubmitting,
+  onClose,
+  onRequestMessageChange,
+  onSubmit,
+}: {
+  club: ClubDiscoverSummary;
+  requestMessage: string;
+  isSubmitting: boolean;
+  onClose: () => void;
+  onRequestMessageChange: (value: string) => void;
+  onSubmit: () => Promise<void>;
+}) {
+  const actionLabel = getJoinActionLabel(club);
+  const showRequestMessage = club.membershipPolicy === "APPROVAL";
+
+  return (
+    <RouteModal onDismiss={onClose} contentClassName="max-w-[30rem] rounded-[2rem] sm:rounded-[2rem]">
+      <div className="overflow-y-auto bg-white px-5 py-5">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <div className="flex flex-wrap items-center gap-2">
+              <h3 className="text-xl font-bold tracking-tight text-slate-900">{club.name}</h3>
+              {club.recommendedByCategory ? (
+                <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold uppercase text-emerald-600">
+                  추천
+                </span>
+              ) : null}
+            </div>
+            <p className="mt-2 text-sm leading-6 text-slate-500">
+              {club.description ?? club.summary ?? "클럽 소개가 아직 없습니다."}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex size-10 items-center justify-center rounded-full bg-slate-100 text-slate-500"
+            aria-label="가입 신청 모달 닫기"
+          >
+            <span className="material-symbols-outlined">close</span>
+          </button>
+        </div>
+
+        <div className="mt-5 grid grid-cols-2 gap-3">
+          <div className="rounded-2xl bg-slate-50 px-4 py-3">
+            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">CATEGORY</p>
+            <p className="mt-1 text-sm font-semibold text-slate-700">{club.categoryKey ?? "OTHER"}</p>
+          </div>
+          <div className="rounded-2xl bg-slate-50 px-4 py-3">
+            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">JOIN RULE</p>
+            <p className="mt-1 text-sm font-semibold text-slate-700">{getMembershipPolicyLabel(club.membershipPolicy)}</p>
+          </div>
+          <div className="rounded-2xl bg-slate-50 px-4 py-3">
+            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">VISIBILITY</p>
+            <p className="mt-1 text-sm font-semibold text-slate-700">
+              {club.visibilityStatus === "PUBLIC" ? "공개 클럽" : "비공개 클럽"}
+            </p>
+          </div>
+          <div className="rounded-2xl bg-slate-50 px-4 py-3">
+            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">MEMBERS</p>
+            <p className="mt-1 text-sm font-semibold text-slate-700">{club.activeMemberCount.toLocaleString("ko-KR")}명</p>
+          </div>
+        </div>
+
+        {showRequestMessage ? (
+          <div className="mt-5">
+            <label className="mb-2 block text-sm font-bold text-slate-900">가입 메시지</label>
+            <textarea
+              value={requestMessage}
+              onChange={(event) => onRequestMessageChange(event.target.value)}
+              placeholder="모임에 관심 있는 이유나 활동 계획을 남겨 주세요."
+              className="form-input min-h-28 w-full resize-none rounded-2xl border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-[var(--primary)]/40"
+            />
+          </div>
+        ) : null}
+
+        <div className="mt-6 flex gap-3">
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex-1 rounded-2xl bg-slate-100 px-4 py-3 text-sm font-bold text-slate-600"
+          >
+            닫기
+          </button>
+          <button
+            type="button"
+            onClick={() => void onSubmit()}
+            disabled={isSubmitting}
+            className="flex-1 rounded-2xl bg-[var(--primary)] px-4 py-3 text-sm font-bold text-white disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500"
+          >
+            {isSubmitting ? "처리 중..." : actionLabel}
+          </button>
+        </div>
+      </div>
+    </RouteModal>
+  );
 }
 
 export default function Home() {
@@ -29,6 +181,16 @@ export default function Home() {
   const [myClubs, setMyClubs] = useState<MyClubSummary[]>([]);
   const [isLoadingMyClubs, setIsLoadingMyClubs] = useState(true);
   const [myClubsError, setMyClubsError] = useState<string | null>(null);
+  const [discoverPayload, setDiscoverPayload] = useState<ClubDiscoverResponse | null>(null);
+  const [isLoadingDiscover, setIsLoadingDiscover] = useState(true);
+  const [discoverError, setDiscoverError] = useState<string | null>(null);
+  const [selectedClub, setSelectedClub] = useState<ClubDiscoverSummary | null>(null);
+  const [requestMessage, setRequestMessage] = useState("");
+  const [isSubmittingJoinAction, setIsSubmittingJoinAction] = useState(false);
+  const [pendingJoinClubId, setPendingJoinClubId] = useState<number | null>(null);
+  const deferredSearchQuery = useDeferredValue(searchQuery.trim());
+  const { alertState, showAlert, closeAlert } = useAppAlert();
+  const { toast, showToast } = useEphemeralToast();
 
   const handleSignOut = async () => {
     if (isSigningOut) {
@@ -54,6 +216,30 @@ export default function Home() {
   const profileLabel = createProfileLabel(user);
   const userName = user?.username ?? "익명 사용자";
 
+  const refreshHomeData = async (query: string) => {
+    const [myClubsResult, discoverResult] = await Promise.all([
+      getMyClubs(),
+      getDiscoverClubs(query),
+    ]);
+
+    if (!myClubsResult.ok || !myClubsResult.data) {
+      setMyClubs([]);
+      setMyClubsError(myClubsResult.message ?? "내 클럽을 불러오지 못했습니다.");
+    } else {
+      setMyClubsError(null);
+      setMyClubs(myClubsResult.data);
+    }
+
+    if (!discoverResult.ok || !discoverResult.data) {
+      setDiscoverPayload(null);
+      setDiscoverError(discoverResult.message ?? "클럽 탐색 목록을 불러오지 못했습니다.");
+      throw new Error(discoverResult.message ?? "클럽 탐색 목록을 불러오지 못했습니다.");
+    }
+
+    setDiscoverError(null);
+    setDiscoverPayload(discoverResult.data);
+  };
+
   useEffect(() => {
     const unsubscribe = onAuthChanged(() => {
       setUser(getUserFromToken());
@@ -74,7 +260,6 @@ export default function Home() {
       if (cancelled) {
         return;
       }
-
       if (!result.ok || !result.data) {
         setMyClubs([]);
         setMyClubsError(result.message ?? "내 클럽을 불러오지 못했습니다.");
@@ -90,6 +275,110 @@ export default function Home() {
       cancelled = true;
     };
   }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    void (async () => {
+      setIsLoadingDiscover(true);
+      setDiscoverError(null);
+      const result = await getDiscoverClubs(deferredSearchQuery);
+      if (cancelled) {
+        return;
+      }
+      if (!result.ok || !result.data) {
+        setDiscoverPayload(null);
+        setDiscoverError(result.message ?? "클럽 탐색 목록을 불러오지 못했습니다.");
+        setIsLoadingDiscover(false);
+        return;
+      }
+
+      setDiscoverPayload(result.data);
+      setIsLoadingDiscover(false);
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [deferredSearchQuery]);
+
+  const handleOpenClubAction = (club: ClubDiscoverSummary) => {
+    setSelectedClub(club);
+    setRequestMessage("");
+  };
+
+  const handleSubmitJoinAction = async () => {
+    if (!selectedClub) {
+      return;
+    }
+
+    setIsSubmittingJoinAction(true);
+    const result = await submitClubJoinRequest(selectedClub.clubId, {
+      requestMessage:
+        selectedClub.membershipPolicy === "APPROVAL" ? requestMessage.trim() || null : null,
+    });
+    setIsSubmittingJoinAction(false);
+
+    if (!result.ok || !result.data) {
+      showAlert({
+        title: "가입 처리 실패",
+        message: result.message ?? "가입 처리에 실패했습니다.",
+        tone: "danger",
+      });
+      return;
+    }
+
+    setSelectedClub(null);
+    setRequestMessage("");
+
+    try {
+      await refreshHomeData(deferredSearchQuery);
+      showToast(
+        result.data.actionType === "JOINED"
+          ? `${selectedClub.name}에 가입했습니다.`
+          : `${selectedClub.name} 가입 신청을 보냈습니다.`,
+      );
+    } catch {
+      showAlert({
+        title: "화면 갱신 실패",
+        message: "가입 상태를 다시 불러오지 못했습니다.",
+        tone: "danger",
+      });
+    }
+  };
+
+  const handleCancelJoinRequest = async (club: ClubDiscoverSummary) => {
+    setPendingJoinClubId(club.clubId);
+    const result = await cancelClubJoinRequest(club.clubId);
+    setPendingJoinClubId(null);
+
+    if (!result.ok || !result.data) {
+      showAlert({
+        title: "가입 신청 취소 실패",
+        message: result.message ?? "가입 신청을 취소하지 못했습니다.",
+        tone: "danger",
+      });
+      return;
+    }
+
+    try {
+      await refreshHomeData(deferredSearchQuery);
+      showToast(`${club.name} 가입 신청을 취소했습니다.`, "info");
+    } catch {
+      showAlert({
+        title: "화면 갱신 실패",
+        message: "가입 상태를 다시 불러오지 못했습니다.",
+        tone: "danger",
+      });
+    }
+  };
+
+  const discoverClubs = discoverPayload?.clubs ?? [];
+  const discoverTitle = deferredSearchQuery.length > 0 ? "검색 결과" : "추천 클럽";
+  const discoverSubtitle =
+    deferredSearchQuery.length > 0
+      ? `"${deferredSearchQuery}" 검색 결과`
+      : discoverPayload?.recommendationLabel ?? "최근 개설된 공개 클럽";
 
   return (
     <div className="bg-[var(--background-light)] font-display text-slate-900 antialiased">
@@ -168,9 +457,12 @@ export default function Home() {
                 </div>
                 <input
                   className="form-input flex w-full border-none bg-transparent px-3 text-base font-normal text-slate-900 placeholder:text-slate-500 focus:ring-0"
-                  placeholder="Find your next community..."
+                  placeholder="클럽 이름이나 소개를 검색해 보세요."
                   value={searchQuery}
-                  onChange={(event) => setSearchQuery(event.target.value)}
+                  onChange={(event) => {
+                    const nextValue = event.target.value;
+                    startTransition(() => setSearchQuery(nextValue));
+                  }}
                 />
               </div>
             </label>
@@ -200,9 +492,9 @@ export default function Home() {
               <h2 className="text-lg font-bold leading-none text-slate-900">My Clubs</h2>
               <span className="mt-1 text-[10px] font-medium text-slate-400">내 클럽</span>
             </div>
-            <button type="button" className="text-sm font-semibold text-[var(--primary)]">
-              See all
-            </button>
+            <span className="text-sm font-semibold text-[var(--primary)]">
+              {myClubs.length.toLocaleString("ko-KR")}개
+            </span>
           </motion.section>
 
           <motion.section className="px-4 pb-4" {...staggeredFadeUpMotion(4, reduceMotion)}>
@@ -261,7 +553,7 @@ export default function Home() {
               <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-10 text-center">
                 <p className="text-sm font-semibold text-slate-700">아직 가입한 클럽이 없습니다.</p>
                 <p className="mt-1 text-xs text-slate-500">
-                  {myClubsError ?? "클럽에 가입하면 이 영역에 내 모임이 표시됩니다."}
+                  {myClubsError ?? "추천 클럽을 둘러보고 원하는 모임에 가입해 보세요."}
                 </p>
               </div>
             )}
@@ -269,22 +561,124 @@ export default function Home() {
 
           <motion.section className="px-4 pb-3 pt-6" {...staggeredFadeUpMotion(6, reduceMotion)}>
             <div className="flex items-baseline gap-2">
-              <h2 className="text-lg font-bold text-slate-900">Recommended for You</h2>
-              <span className="text-[10px] font-medium text-slate-400">클럽 찾기/추천</span>
+              <h2 className="text-lg font-bold text-slate-900">{discoverTitle}</h2>
+              <span className="text-[10px] font-medium text-slate-400">클럽 찾기/가입신청</span>
             </div>
-            <p className="mt-1 text-xs text-slate-500">Based on your interests in Seoul</p>
+            <p className="mt-1 text-xs text-slate-500">{discoverSubtitle}</p>
           </motion.section>
 
           <section className="flex flex-1 flex-col gap-4 px-4 pb-20">
-            <motion.div
-              className="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-10 text-center"
-              {...staggeredFadeUpMotion(7, reduceMotion)}
-            >
-              <p className="text-sm font-semibold text-slate-700">추천 클럽 데이터가 아직 없습니다.</p>
-              <p className="mt-1 text-xs text-slate-500">
-                백엔드 추천 API가 연결되면 이 영역에 클럽이 표시됩니다.
-              </p>
-            </motion.div>
+            {isLoadingDiscover ? (
+              <motion.div
+                className="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-10 text-center"
+                {...staggeredFadeUpMotion(7, reduceMotion)}
+              >
+                <p className="text-sm font-semibold text-slate-700">클럽을 탐색하는 중입니다.</p>
+                <p className="mt-1 text-xs text-slate-500">공개 클럽과 가입 상태를 확인하고 있습니다.</p>
+              </motion.div>
+            ) : discoverClubs.length > 0 ? (
+              discoverClubs.map((club, index) => {
+                const joinStatusLabel = getJoinStatusLabel(club.joinStatus);
+                const actionTone = getJoinActionTone(club);
+                return (
+                  <motion.article
+                    key={club.clubId}
+                    className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm"
+                    {...staggeredFadeUpMotion(index + 7, reduceMotion)}
+                  >
+                    <div className="flex gap-4">
+                      <div
+                        className="size-20 shrink-0 rounded-2xl bg-slate-100 bg-cover bg-center"
+                        style={club.imageUrl ? { backgroundImage: `url("${club.imageUrl}")` } : undefined}
+                      >
+                        {!club.imageUrl ? (
+                          <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-[var(--primary)]/12 to-blue-100 text-[var(--primary)]">
+                            <span className="material-symbols-outlined text-3xl">groups</span>
+                          </div>
+                        ) : null}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <p className="text-base font-bold text-slate-900">{club.name}</p>
+                          <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold uppercase text-slate-600">
+                            {club.categoryKey ?? "OTHER"}
+                          </span>
+                          {club.recommendedByCategory ? (
+                            <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold uppercase text-emerald-600">
+                              추천
+                            </span>
+                          ) : null}
+                          {joinStatusLabel ? (
+                            <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-bold uppercase text-amber-700">
+                              {joinStatusLabel}
+                            </span>
+                          ) : null}
+                        </div>
+                        <p className="mt-1 line-clamp-2 text-sm leading-6 text-slate-500">
+                          {club.summary ?? club.description ?? "클럽 소개가 아직 없습니다."}
+                        </p>
+                        <div className="mt-3 flex flex-wrap items-center gap-2 text-[11px] font-semibold text-slate-500">
+                          <span className="rounded-full bg-slate-100 px-2.5 py-1">
+                            멤버 {club.activeMemberCount.toLocaleString("ko-KR")}명
+                          </span>
+                          <span className="rounded-full bg-slate-100 px-2.5 py-1">
+                            {getMembershipPolicyLabel(club.membershipPolicy)}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        onClick={() => handleOpenClubAction(club)}
+                        className="rounded-xl bg-slate-100 px-4 py-2 text-sm font-bold text-slate-600 transition-colors hover:bg-slate-200"
+                      >
+                        소개 보기
+                      </button>
+                      {club.joinStatus === "PENDING" ? (
+                        <button
+                          type="button"
+                          disabled={pendingJoinClubId === club.clubId}
+                          onClick={() => void handleCancelJoinRequest(club)}
+                          className="rounded-xl bg-[var(--secondary)]/10 px-4 py-2 text-sm font-bold text-[var(--secondary)] transition-colors hover:bg-[var(--secondary)]/20 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          {pendingJoinClubId === club.clubId ? "처리 중..." : "신청 취소"}
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => handleOpenClubAction(club)}
+                          className={`rounded-xl px-4 py-2 text-sm font-bold transition-colors ${
+                            actionTone === "primary"
+                              ? "bg-[var(--primary)] text-white hover:bg-[var(--primary)]/90"
+                              : actionTone === "secondary"
+                                ? "bg-[var(--secondary)] text-white hover:bg-[var(--secondary)]/90"
+                                : "bg-[var(--primary)]/10 text-[var(--primary)] hover:bg-[var(--primary)]/20"
+                          }`}
+                        >
+                          {getJoinActionLabel(club)}
+                        </button>
+                      )}
+                    </div>
+                  </motion.article>
+                );
+              })
+            ) : (
+              <motion.div
+                className="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-10 text-center"
+                {...staggeredFadeUpMotion(7, reduceMotion)}
+              >
+                <p className="text-sm font-semibold text-slate-700">
+                  {discoverError ?? "표시할 공개 클럽이 없습니다."}
+                </p>
+                <p className="mt-1 text-xs text-slate-500">
+                  {deferredSearchQuery.length > 0
+                    ? "검색어를 바꾸거나 다른 키워드로 다시 찾아보세요."
+                    : "새 클럽이 등록되면 이 영역에 추천이 표시됩니다."}
+                </p>
+              </motion.div>
+            )}
           </section>
 
           <motion.div
@@ -300,9 +694,33 @@ export default function Home() {
               <span className="material-symbols-outlined text-3xl">add</span>
             </RouterLink>
           </motion.div>
-
         </main>
       </div>
+
+      <AnimatePresence>
+        {selectedClub ? (
+          <DiscoverClubModal
+            club={selectedClub}
+            requestMessage={requestMessage}
+            isSubmitting={isSubmittingJoinAction}
+            onClose={() => {
+              setSelectedClub(null);
+              setRequestMessage("");
+            }}
+            onRequestMessageChange={setRequestMessage}
+            onSubmit={handleSubmitJoinAction}
+          />
+        ) : null}
+      </AnimatePresence>
+      <EphemeralToast toastId={toast?.id ?? null} message={toast?.message ?? null} tone={toast?.tone} />
+      <AppAlertModal
+        open={alertState.open}
+        title={alertState.title}
+        message={alertState.message}
+        tone={alertState.tone}
+        confirmLabel={alertState.confirmLabel}
+        onClose={closeAlert}
+      />
     </div>
   );
 }

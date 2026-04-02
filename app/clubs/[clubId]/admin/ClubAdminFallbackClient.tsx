@@ -6,9 +6,11 @@ import { ClubAdminHomeClient } from "./ClubAdminHomeClient";
 import { AdminHomeLoadingShell } from "./AdminRouteLoadingShells";
 import {
   getClubAdminActivities,
+  getClubAdminJoinRequests,
   getClubAdminMembers,
   getMyClub,
   type ClubAdminActivityItem,
+  type ClubAdminJoinRequestsResponse,
   type ClubAdminMembersResponse,
   type MyClubSummary,
 } from "@/app/lib/clubs";
@@ -21,19 +23,29 @@ export function ClubAdminFallbackClient({ clubId }: ClubAdminFallbackClientProps
   const router = useRouter();
   const [club, setClub] = useState<MyClubSummary | null>(null);
   const [membersPayload, setMembersPayload] = useState<ClubAdminMembersResponse | null>(null);
+  const [joinRequestsPayload, setJoinRequestsPayload] = useState<ClubAdminJoinRequestsResponse | null>(null);
   const [activities, setActivities] = useState<ClubAdminActivityItem[]>([]);
 
   useEffect(() => {
     let cancelled = false;
 
     void (async () => {
-      const [clubResult, membersResult, activitiesResult] = await Promise.all([
+      const [clubResult, membersResult, joinRequestsResult, activitiesResult] = await Promise.all([
         getMyClub(clubId),
         getClubAdminMembers(clubId),
+        getClubAdminJoinRequests(clubId),
         getClubAdminActivities(clubId, { size: 5 }),
       ]);
 
-      if (cancelled || !clubResult.ok || !clubResult.data || !membersResult.ok || !membersResult.data) {
+      if (
+        cancelled ||
+        !clubResult.ok ||
+        !clubResult.data ||
+        !membersResult.ok ||
+        !membersResult.data ||
+        !joinRequestsResult.ok ||
+        !joinRequestsResult.data
+      ) {
         router.replace(`/clubs/${clubId}`);
         return;
       }
@@ -45,6 +57,7 @@ export function ClubAdminFallbackClient({ clubId }: ClubAdminFallbackClientProps
 
       setClub(clubResult.data);
       setMembersPayload(membersResult.data);
+      setJoinRequestsPayload(joinRequestsResult.data);
       setActivities(activitiesResult.ok && activitiesResult.data ? activitiesResult.data.activities : []);
     })();
 
@@ -56,7 +69,7 @@ export function ClubAdminFallbackClient({ clubId }: ClubAdminFallbackClientProps
   const metrics = useMemo(
     () => {
       const members = membersPayload?.members ?? [];
-      const pendingCount = members.filter((member) => member.membershipStatus === "PENDING").length;
+      const pendingCount = joinRequestsPayload?.requests.length ?? 0;
       const activeCount = members.filter((member) => member.membershipStatus === "ACTIVE").length;
 
       return [
@@ -80,7 +93,7 @@ export function ClubAdminFallbackClient({ clubId }: ClubAdminFallbackClientProps
       },
     ];
     },
-    [membersPayload],
+    [joinRequestsPayload, membersPayload],
   );
 
   const actions = useMemo(
@@ -110,7 +123,7 @@ export function ClubAdminFallbackClient({ clubId }: ClubAdminFallbackClientProps
     [clubId],
   );
 
-  if (!club || !membersPayload) {
+  if (!club || !membersPayload || !joinRequestsPayload) {
     return <AdminHomeLoadingShell />;
   }
 

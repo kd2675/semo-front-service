@@ -1833,7 +1833,7 @@ export function ClubDashboardFallbackClient({
         ) : null}
 
         {club?.admin ? <ClubModeSwitchFab clubId={clubId} mode="user" /> : null}
-        <EphemeralToast message={toast?.message ?? null} tone={toast?.tone} />
+        <EphemeralToast toastId={toast?.id ?? null} message={toast?.message ?? null} tone={toast?.tone} />
       </div>
     </div>
   );

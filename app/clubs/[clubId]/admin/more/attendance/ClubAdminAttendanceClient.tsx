@@ -178,7 +178,7 @@ export function ClubAdminAttendanceClient({
             </div>
           </motion.section>
         </main>
-        <EphemeralToast message={toast?.message ?? null} tone={toast?.tone} />
+        <EphemeralToast toastId={toast?.id ?? null} message={toast?.message ?? null} tone={toast?.tone} />
       </div>
     </div>
   );

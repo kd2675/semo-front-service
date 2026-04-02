@@ -1,4 +1,4 @@
-import { ClubAdminRoleEditFallbackClient } from "./ClubAdminRoleEditFallbackClient";
+import { redirect } from "next/navigation";
 
 type ClubAdminRoleEditPageProps = {
   params: Promise<{
@@ -9,5 +9,5 @@ type ClubAdminRoleEditPageProps = {
 
 export default async function ClubAdminRoleEditPage({ params }: ClubAdminRoleEditPageProps) {
   const { clubId, positionId } = await params;
-  return <ClubAdminRoleEditFallbackClient clubId={clubId} positionId={positionId} />;
+  redirect(`/clubs/${clubId}/admin/more/roles?editPositionId=${encodeURIComponent(positionId)}&tab=overview`);
 }

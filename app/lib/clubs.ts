@@ -36,6 +36,44 @@ export type MyClubSummary = {
   thumbnailUrl: string | null;
 };
 
+export type ClubDiscoverSummary = {
+  clubId: number;
+  name: string;
+  summary: string | null;
+  description: string | null;
+  categoryKey: string | null;
+  visibilityStatus: "PUBLIC" | "PRIVATE" | string;
+  membershipPolicy: "APPROVAL" | "OPEN" | string;
+  activeMemberCount: number;
+  fileName: string | null;
+  imageUrl: string | null;
+  thumbnailUrl: string | null;
+  joinStatus: "NONE" | "PENDING" | "REJECTED" | "CANCELED" | string;
+  clubJoinRequestId: number | null;
+  recommendedByCategory: boolean;
+};
+
+export type ClubDiscoverResponse = {
+  query: string;
+  recommended: boolean;
+  recommendationLabel: string;
+  totalCount: number;
+  clubs: ClubDiscoverSummary[];
+};
+
+export type SubmitClubJoinRequestRequest = {
+  requestMessage?: string | null;
+};
+
+export type ClubJoinActionResponse = {
+  clubId: number;
+  clubName: string;
+  actionType: "REQUESTED" | "JOINED" | "CANCELED" | "APPROVED" | "REJECTED" | string;
+  joinStatus: "ACTIVE" | "PENDING" | "REJECTED" | "CANCELED" | string;
+  clubJoinRequestId: number | null;
+  clubMemberId: number | null;
+};
+
 export type ClubBoardResponse = {
   clubId: number;
   clubName: string;
@@ -851,6 +889,26 @@ export type ClubAdminMembersResponse = {
   members: ClubAdminMember[];
 };
 
+export type ClubAdminJoinRequest = {
+  clubJoinRequestId: number;
+  clubId: number;
+  profileId: number;
+  displayName: string;
+  tagline: string | null;
+  profileColor: string | null;
+  requestMessage: string | null;
+  requestedAt: string | null;
+  requestedAtLabel: string | null;
+  requestStatus: "PENDING" | "APPROVED" | "REJECTED" | "CANCELED" | string;
+};
+
+export type ClubAdminJoinRequestsResponse = {
+  clubId: number;
+  clubName: string;
+  admin: boolean;
+  requests: ClubAdminJoinRequest[];
+};
+
 export type ClubAdminActivityItem = {
   activityId: number;
   actorDisplayName: string;
@@ -878,6 +936,10 @@ export type UpdateClubAdminMemberRoleRequest = {
 
 export type UpdateClubAdminMemberStatusRequest = {
   membershipStatus: "ACTIVE" | "DORMANT" | string;
+};
+
+export type ReviewClubJoinRequestRequest = {
+  requestStatus: "APPROVED" | "REJECTED" | string;
 };
 
 export type ClubTimelineEntry = {
@@ -1182,6 +1244,15 @@ export type ClubAdminAttendanceResponse = {
 
 export function createClub(request: CreateClubRequest) {
   return postJson<ClubCreateResponse>("/api/semo/v1/clubs", request);
+}
+
+export function getDiscoverClubs(query?: string) {
+  const params = new URLSearchParams();
+  if (query?.trim()) {
+    params.set("query", query.trim());
+  }
+  const queryString = params.toString();
+  return getJson<ClubDiscoverResponse>(`/api/semo/v1/clubs/discover${queryString ? `?${queryString}` : ""}`);
 }
 
 export function getMyClubs() {
@@ -1664,6 +1735,10 @@ export function getClubAdminMembers(clubId: string | number) {
   return getJson<ClubAdminMembersResponse>(`/api/semo/v1/clubs/${clubId}/admin/members`);
 }
 
+export function getClubAdminJoinRequests(clubId: string | number) {
+  return getJson<ClubAdminJoinRequestsResponse>(`/api/semo/v1/clubs/${clubId}/admin/join-requests`);
+}
+
 export function getClubAdminActivities(
   clubId: string | number,
   options: {
@@ -1725,6 +1800,31 @@ export function approveClubAdminMember(clubId: string | number, clubMemberId: st
   return postJson<ClubAdminMember>(
     `/api/semo/v1/clubs/${clubId}/admin/members/${clubMemberId}/approve`,
     undefined,
+  );
+}
+
+export function submitClubJoinRequest(
+  clubId: string | number,
+  request: SubmitClubJoinRequestRequest,
+) {
+  return postJson<ClubJoinActionResponse>(
+    `/api/semo/v1/clubs/${clubId}/join-requests`,
+    request,
+  );
+}
+
+export function cancelClubJoinRequest(clubId: string | number) {
+  return deleteJson<ClubJoinActionResponse>(`/api/semo/v1/clubs/${clubId}/join-requests/me`);
+}
+
+export function reviewClubAdminJoinRequest(
+  clubId: string | number,
+  clubJoinRequestId: string | number,
+  request: ReviewClubJoinRequestRequest,
+) {
+  return putJson<ClubJoinActionResponse>(
+    `/api/semo/v1/clubs/${clubId}/admin/join-requests/${clubJoinRequestId}/review`,
+    request,
   );
 }
 

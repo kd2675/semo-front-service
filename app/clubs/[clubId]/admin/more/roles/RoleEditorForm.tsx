@@ -414,7 +414,7 @@ export function RoleEditorForm({
             </motion.div>
           </main>
 
-          <EphemeralToast message={toast?.message ?? null} tone={toast?.tone} />
+          <EphemeralToast toastId={toast?.id ?? null} message={toast?.message ?? null} tone={toast?.tone} />
           {showDeleteConfirm && onDelete ? (
             <ScheduleActionConfirmModal
               title="직책 삭제"
@@ -623,7 +623,7 @@ export function RoleEditorForm({
           ) : null}
         </main>
 
-        <EphemeralToast message={toast?.message ?? null} tone={toast?.tone} />
+        <EphemeralToast toastId={toast?.id ?? null} message={toast?.message ?? null} tone={toast?.tone} />
         {showDeleteConfirm && onDelete ? (
           <ScheduleActionConfirmModal
             title="직책 삭제"

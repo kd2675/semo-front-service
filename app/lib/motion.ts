@@ -65,6 +65,23 @@ export function rightSheetMotion(reduced: boolean): MotionPreset {
   };
 }
 
+export function bottomSheetMotion(reduced: boolean): MotionPreset {
+  if (reduced) {
+    return {
+      initial: { opacity: 0 },
+      animate: { opacity: 1 },
+      exit: { opacity: 0 },
+      transition: { duration: 0.01, ease: EASE_OUT },
+    };
+  }
+  return {
+    initial: { y: "100%" },
+    animate: { y: 0 },
+    exit: { y: "100%" },
+    transition: { type: "spring", stiffness: 340, damping: 34, mass: 0.78 },
+  };
+}
+
 export function toastMotion(reduced: boolean): MotionPreset {
   return {
     initial: { opacity: 0, y: reduced ? 0 : 14, scale: reduced ? 1 : 0.98 },

@@ -379,7 +379,7 @@ export function AdminBottomNav({ clubId }: AdminBottomNavProps) {
       if (isMoreItem) {
         return (
           <motion.button
-            key={item.label}
+            key={item.key}
             type="button"
             whileTap={reduceMotion ? undefined : { scale: 0.92 }}
             onClick={() =>
@@ -407,7 +407,7 @@ export function AdminBottomNav({ clubId }: AdminBottomNavProps) {
       if (!href) {
         return (
           <button
-            key={item.label}
+            key={item.key}
             type="button"
             aria-disabled="true"
             className={`flex h-10 w-10 touch-manipulation items-center justify-center transition ${textClassName}`}
@@ -423,7 +423,7 @@ export function AdminBottomNav({ clubId }: AdminBottomNavProps) {
 
       return (
         <RouterLink
-          key={item.label}
+          key={item.key}
           href={href}
           className={`flex h-10 w-10 touch-manipulation items-center justify-center transition ${textClassName}`}
           aria-label={item.label}
@@ -543,9 +543,9 @@ export function AdminBottomNav({ clubId }: AdminBottomNavProps) {
                           strategy={rectSortingStrategy}
                         >
                           <div className="grid grid-cols-3 gap-6">
-                            {displayMenuItems.map((item) => (
+                            {displayMenuItems.map((item, index) => (
                               <AdminMoreSortableItem
-                                key={item.featureKey}
+                                key={`${item.featureKey || item.adminPath || "feature"}-${index}`}
                                 feature={item}
                               />
                             ))}
@@ -570,7 +570,7 @@ export function AdminBottomNav({ clubId }: AdminBottomNavProps) {
                     <div className="grid grid-cols-3 gap-6">
                       {displayMenuItems.map((item, index) => (
                         <motion.div
-                          key={item.featureKey}
+                          key={`${item.featureKey || item.adminPath || "feature"}-${index}`}
                           custom={index}
                           variants={POPOVER_ITEM_VARIANTS}
                           initial="hidden"
@@ -607,7 +607,7 @@ export function AdminBottomNav({ clubId }: AdminBottomNavProps) {
         ) : null}
       </AnimatePresence>
 
-      <EphemeralToast message={toast?.message ?? null} tone={toast?.tone} />
+      <EphemeralToast toastId={toast?.id ?? null} message={toast?.message ?? null} tone={toast?.tone} />
 
       <AnimatePresence initial={false}>
         {isDocked ? (

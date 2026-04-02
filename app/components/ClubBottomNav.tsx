@@ -172,7 +172,7 @@ export function ClubBottomNav({ clubId, isAdmin = false }: ClubBottomNavProps) {
       if (isMoreItem) {
         return (
           <motion.button
-            key={item.label}
+            key={item.key}
             type="button"
             whileTap={reduceMotion ? undefined : { scale: 0.92 }}
             onClick={() =>
@@ -200,7 +200,7 @@ export function ClubBottomNav({ clubId, isAdmin = false }: ClubBottomNavProps) {
       if (!href) {
         return (
           <button
-            key={item.label}
+            key={item.key}
             type="button"
             className={`flex h-10 w-10 touch-manipulation items-center justify-center transition ${textClassName}`}
             aria-disabled="true"
@@ -215,7 +215,7 @@ export function ClubBottomNav({ clubId, isAdmin = false }: ClubBottomNavProps) {
 
       return (
         <RouterLink
-          key={item.label}
+          key={item.key}
           href={href}
           className={`flex h-10 w-10 touch-manipulation items-center justify-center transition ${textClassName}`}
           aria-label={item.label}
@@ -278,7 +278,7 @@ export function ClubBottomNav({ clubId, isAdmin = false }: ClubBottomNavProps) {
                   <div className="grid grid-cols-3 gap-6">
                     {menuItems.map((item, index) => (
                       <motion.div
-                        key={item.featureKey}
+                        key={`${item.featureKey || item.userPath || "feature"}-${index}`}
                         custom={index}
                         variants={POPOVER_ITEM_VARIANTS}
                         initial="hidden"

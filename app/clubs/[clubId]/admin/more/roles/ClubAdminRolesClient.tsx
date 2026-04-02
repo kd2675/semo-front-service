@@ -6,11 +6,13 @@ import type {
   ClubAdminRoleManagementResponse,
   ClubPositionSummary,
 } from "@/app/lib/clubs";
-import { motion, useReducedMotion } from "motion/react";
+import { getClubAdminRoleManagement } from "@/app/lib/clubs";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { Manrope, Inter } from "next/font/google";
-import { useSearchParams } from "next/navigation";
-import { useMemo } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useMemo, useState } from "react";
 import type { CSSProperties } from "react";
+import { RoleEditSheet } from "./RoleEditSheet";
 
 const manrope = Manrope({
   subsets: ["latin"],
@@ -131,12 +133,14 @@ function AdminRoleCard({
   permissionLabels,
   emphasize = false,
   index,
+  onOpenSheet,
 }: {
   clubId: string;
   role: ClubPositionSummary;
   permissionLabels: string[];
   emphasize?: boolean;
   index: number;
+  onOpenSheet: (role: ClubPositionSummary, tab: RoleSheetTab) => void;
 }) {
   const colorHex = role.colorHex ?? "var(--secondary)";
   const level = buildRoleLevel(role, index);
@@ -202,20 +206,25 @@ function AdminRoleCard({
 
       <div className="mt-8 grid grid-cols-2 gap-3">
         <RouterLink
-          href={`/clubs/${clubId}/admin/more/roles/${role.clubPositionId}/edit`}
+          href={`/clubs/${clubId}/admin/more/roles?editPositionId=${role.clubPositionId}&tab=overview`}
+          onClick={(event) => {
+            event.preventDefault();
+            onOpenSheet(role, "overview");
+          }}
           className="inline-flex items-center justify-center gap-2 rounded-lg px-4 py-3 text-xs font-bold transition"
           style={{ backgroundColor: `${colorHex}18`, color: colorHex }}
         >
           <span className="material-symbols-outlined text-sm">edit</span>
           Edit
         </RouterLink>
-        <RouterLink
-          href={`/clubs/${clubId}/admin/more/roles/assignments?positionId=${role.clubPositionId}`}
+        <button
+          type="button"
+          onClick={() => onOpenSheet(role, "members")}
           className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-200 px-4 py-3 text-xs font-bold text-slate-700 transition hover:bg-slate-50"
         >
           <span className="material-symbols-outlined text-sm">person_add</span>
           Assign
-        </RouterLink>
+        </button>
       </div>
 
       <div className="mt-6 flex items-center justify-between border-t border-slate-200 pt-4">
@@ -242,44 +251,66 @@ function EmptyTemplateCard({ clubId }: { clubId: string }) {
   );
 }
 
+type RoleSheetTab = "overview" | "permissions" | "members";
+
+function normalizeRoleSheetTab(value: string | null): RoleSheetTab {
+  switch (value) {
+    case "permissions":
+      return "permissions";
+    case "members":
+      return "members";
+    default:
+      return "overview";
+  }
+}
+
 export function ClubAdminRolesClient({ clubId, initialData }: ClubAdminRolesClientProps) {
   const prefersReducedMotion = useReducedMotion();
   const reduceMotion = Boolean(prefersReducedMotion);
+  const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
   const featureFilter = searchParams.get("feature")?.trim().toUpperCase() ?? "";
+  const requestedEditPositionId = Number(searchParams.get("editPositionId") ?? "");
+  const requestedEditTab = normalizeRoleSheetTab(searchParams.get("tab"));
+  const [roleManagement, setRoleManagement] = useState(initialData);
+  const [selectedSheetState, setSelectedSheetState] = useState<{
+    positionId: number;
+    tab: RoleSheetTab;
+  } | null>(null);
 
   const permissionLabelMap = useMemo(
     () =>
       new Map(
-        initialData.permissionGroups.flatMap((group) =>
+        roleManagement.permissionGroups.flatMap((group) =>
           group.permissions.map((permission) => [permission.permissionKey, permission.displayName] as const),
         ),
       ),
-    [initialData.permissionGroups],
+    [roleManagement.permissionGroups],
   );
 
   const permissionKeysByFeature = useMemo(
     () =>
       new Map(
-        initialData.permissionGroups.map((group) => [
+        roleManagement.permissionGroups.map((group) => [
           group.featureKey,
           new Set(group.permissions.map((permission) => permission.permissionKey)),
         ]),
       ),
-    [initialData.permissionGroups],
+    [roleManagement.permissionGroups],
   );
 
   const stats = useMemo(
     () => ({
-      totalRoles: initialData.positions.length,
-      activeRoles: initialData.positions.filter((role) => role.active).length,
-      assignedMembers: initialData.positions.reduce((sum, role) => sum + role.memberCount, 0),
+      totalRoles: roleManagement.positions.length,
+      activeRoles: roleManagement.positions.filter((role) => role.active).length,
+      assignedMembers: roleManagement.positions.reduce((sum, role) => sum + role.memberCount, 0),
     }),
-    [initialData.positions],
+    [roleManagement.positions],
   );
 
   const sortedRoles = useMemo(() => {
-    const roles = [...initialData.positions];
+    const roles = [...roleManagement.positions];
     if (featureFilter) {
       const targetPermissionKeys = permissionKeysByFeature.get(featureFilter);
       if (targetPermissionKeys) {
@@ -303,7 +334,56 @@ export function ClubAdminRolesClient({ clubId, initialData }: ClubAdminRolesClie
       return right.memberCount - left.memberCount;
     });
     return roles;
-  }, [featureFilter, initialData.positions, permissionKeysByFeature]);
+  }, [featureFilter, permissionKeysByFeature, roleManagement.positions]);
+
+  const selectedEditRole = useMemo(() => {
+    if (selectedSheetState != null) {
+      return roleManagement.positions.find((position) => position.clubPositionId === selectedSheetState.positionId) ?? null;
+    }
+    if (Number.isFinite(requestedEditPositionId) && requestedEditPositionId > 0) {
+      return roleManagement.positions.find((position) => position.clubPositionId === requestedEditPositionId) ?? null;
+    }
+    return null;
+  }, [requestedEditPositionId, roleManagement.positions, selectedSheetState]);
+
+  const selectedEditTab = selectedSheetState?.tab ?? requestedEditTab;
+
+  const updateSheetSearchParams = (positionId: number | null, tab?: RoleSheetTab) => {
+    const nextParams = new URLSearchParams(searchParams.toString());
+    if (positionId == null) {
+      nextParams.delete("editPositionId");
+      nextParams.delete("tab");
+    } else {
+      nextParams.set("editPositionId", String(positionId));
+      nextParams.set("tab", tab ?? "overview");
+    }
+    const queryString = nextParams.toString();
+    router.replace(queryString ? `${pathname}?${queryString}` : pathname, { scroll: false });
+  };
+
+  const refreshRoleManagement = async () => {
+    const result = await getClubAdminRoleManagement(clubId);
+    if (!result.ok || !result.data) {
+      return false;
+    }
+    setRoleManagement(result.data);
+    return true;
+  };
+
+  const handleOpenRoleSheet = (role: ClubPositionSummary, tab: RoleSheetTab) => {
+    setSelectedSheetState({
+      positionId: role.clubPositionId,
+      tab,
+    });
+    updateSheetSearchParams(role.clubPositionId, tab);
+  };
+
+  const handleCloseRoleSheet = () => {
+    setSelectedSheetState(null);
+    if (searchParams.has("editPositionId")) {
+      updateSheetSearchParams(null);
+    }
+  };
 
   return (
     <div
@@ -408,6 +488,7 @@ export function ClubAdminRolesClient({ clubId, initialData }: ClubAdminRolesClie
                       permissionLabels={permissionLabels}
                       emphasize={index === 0}
                       index={index}
+                      onOpenSheet={handleOpenRoleSheet}
                     />
                   </motion.div>
                 );
@@ -444,6 +525,19 @@ export function ClubAdminRolesClient({ clubId, initialData }: ClubAdminRolesClie
           </motion.section>
         </main>
       </div>
+
+      <AnimatePresence>
+        {selectedEditRole ? (
+          <RoleEditSheet
+            key={`role-edit-${selectedEditRole.clubPositionId}-${selectedEditTab}`}
+            clubId={clubId}
+            role={selectedEditRole}
+            initialTab={selectedEditTab}
+            onClose={handleCloseRoleSheet}
+            onRolesChanged={refreshRoleManagement}
+          />
+        ) : null}
+      </AnimatePresence>
     </div>
   );
 }

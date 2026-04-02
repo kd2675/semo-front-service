@@ -5,6 +5,7 @@ import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 export type EphemeralToastTone = "success" | "error" | "info";
 
 type EphemeralToastProps = {
+  toastId?: number | null;
   message: string | null;
   tone?: EphemeralToastTone;
 };
@@ -16,6 +17,7 @@ const TONE_CLASSNAME: Record<EphemeralToastTone, string> = {
 };
 
 export function EphemeralToast({
+  toastId,
   message,
   tone = "success",
 }: EphemeralToastProps) {
@@ -26,7 +28,7 @@ export function EphemeralToast({
     <AnimatePresence initial={false}>
       {message ? (
         <motion.div
-          key={message}
+          key={toastId ?? `${tone}-${message}`}
           className="pointer-events-none fixed inset-x-0 top-5 z-[80] flex justify-center px-4"
           initial={reduceMotion ? false : { opacity: 0, y: -10, scale: 0.96 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}

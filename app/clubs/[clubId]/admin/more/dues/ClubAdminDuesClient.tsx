@@ -598,7 +598,7 @@ export function ClubAdminDuesClient({ clubId, initialData }: ClubAdminDuesClient
           </motion.section>
         </main>
 
-        <EphemeralToast message={toast?.message ?? null} tone={toast?.tone} />
+        <EphemeralToast toastId={toast?.id ?? null} message={toast?.message ?? null} tone={toast?.tone} />
         {pendingDeleteCharge ? (
           <ScheduleActionConfirmModal
             title="회비 항목 삭제"
