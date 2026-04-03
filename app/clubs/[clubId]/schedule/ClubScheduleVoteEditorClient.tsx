@@ -2,6 +2,8 @@
 
 import { RouterLink } from "@/app/components/RouterLink";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
+import { DatePopoverField } from "@/app/components/DatePopoverField";
+import { TimePopoverField } from "@/app/components/TimePopoverField";
 import { useRouter } from "next/navigation";
 import { useEffect, useEffectEvent, useId, useState } from "react";
 import {
@@ -214,47 +216,40 @@ export function ClubScheduleVoteEditorClient({
               <div className="grid grid-cols-2 gap-4">
                 <label>
                   <span className="mb-1 block text-xs text-gray-500">시작일</span>
-                  <input
-                    type="date"
+                  <DatePopoverField
                     value={voteStartDate}
-                    onChange={(event) => {
-                      const nextStartDate = event.target.value;
+                    onChange={(nextStartDate) => {
                       setVoteStartDate(nextStartDate);
                       setVoteEndDate((current) => (!current || current < nextStartDate ? nextStartDate : current));
                     }}
-                    className="h-11 w-full rounded-lg border border-gray-300 px-3 text-sm shadow-sm outline-none transition focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/20"
-                    required
+                    buttonClassName="h-11 rounded-lg border-gray-300 px-3 shadow-sm focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/20"
                   />
                 </label>
                 <label>
                   <span className="mb-1 block text-xs text-gray-500">종료일</span>
-                  <input
-                    type="date"
+                  <DatePopoverField
                     value={voteEndDate}
-                    min={voteStartDate}
-                    onChange={(event) => setVoteEndDate(event.target.value)}
-                    className="h-11 w-full rounded-lg border border-gray-300 px-3 text-sm shadow-sm outline-none transition focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/20"
-                    required
+                    minDate={voteStartDate}
+                    onChange={setVoteEndDate}
+                    buttonClassName="h-11 rounded-lg border-gray-300 px-3 shadow-sm focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/20"
                   />
                 </label>
               </div>
               <div className="mt-4 grid grid-cols-2 gap-4">
                 <label>
                   <span className="mb-1 block text-xs text-gray-500">시작 시간</span>
-                  <input
-                    type="time"
+                  <TimePopoverField
                     value={voteStartTime}
-                    onChange={(event) => setVoteStartTime(event.target.value)}
-                    className="h-11 w-full rounded-lg border border-gray-300 px-3 text-sm shadow-sm outline-none transition focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/20"
+                    onChange={setVoteStartTime}
+                    buttonClassName="h-11 rounded-lg border-gray-300 px-3 shadow-sm focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/20"
                   />
                 </label>
                 <label>
                   <span className="mb-1 block text-xs text-gray-500">종료 시간</span>
-                  <input
-                    type="time"
+                  <TimePopoverField
                     value={voteEndTime}
-                    onChange={(event) => setVoteEndTime(event.target.value)}
-                    className="h-11 w-full rounded-lg border border-gray-300 px-3 text-sm shadow-sm outline-none transition focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/20"
+                    onChange={setVoteEndTime}
+                    buttonClassName="h-11 rounded-lg border-gray-300 px-3 shadow-sm focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/20"
                   />
                 </label>
               </div>

@@ -5,6 +5,7 @@ import { AnimatePresence } from "motion/react";
 import { RouterLink } from "@/app/components/RouterLink";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import { DatePopoverField } from "@/app/components/DatePopoverField";
+import { TimePopoverField } from "@/app/components/TimePopoverField";
 import { useRouter } from "next/navigation";
 import { useEffect, useEffectEvent, useId, useState } from "react";
 import { uploadTempImage } from "@/app/lib/imageUpload";
@@ -212,11 +213,15 @@ export function ClubNoticeEditorClient({
       setError("공지 수정 권한이 없습니다.");
       return;
     }
-    if (postToCalendar && (!scheduleAtDate || !scheduleEndAtDate)) {
-      setError("캘린더 공유 공지는 시작 날짜와 종료 날짜를 모두 입력해야 합니다.");
+    const resolvedScheduleEndAtDate = scheduleDateMode === "range" ? scheduleEndAtDate : scheduleAtDate;
+    if (postToCalendar && (!scheduleAtDate || !resolvedScheduleEndAtDate)) {
+      setError(
+        scheduleDateMode === "range"
+          ? "캘린더 공유 공지는 시작 날짜와 종료 날짜를 모두 입력해야 합니다."
+          : "캘린더 공유 공지는 날짜를 입력해야 합니다.",
+      );
       return;
     }
-    const resolvedScheduleEndAtDate = scheduleDateMode === "range" ? scheduleEndAtDate : scheduleAtDate;
     setSaving(true);
     setError(null);
     const request = {
@@ -525,20 +530,18 @@ export function ClubNoticeEditorClient({
                         <div className="grid grid-cols-2 gap-3">
                           <label className="block">
                             <span className="mb-1.5 block text-sm font-medium text-slate-700">시작 시간</span>
-                            <input
-                              type="time"
+                            <TimePopoverField
                               value={scheduleAtTime}
-                              onChange={(event) => setScheduleAtTime(event.target.value)}
-                              className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm shadow-sm outline-none transition focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/15"
+                              onChange={setScheduleAtTime}
+                              buttonClassName="w-full rounded-2xl border-slate-200 bg-white px-4 py-3 shadow-sm focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/15"
                             />
                           </label>
                           <label className="block">
                             <span className="mb-1.5 block text-sm font-medium text-slate-700">종료 시간</span>
-                            <input
-                              type="time"
+                            <TimePopoverField
                               value={scheduleEndAtTime}
-                              onChange={(event) => setScheduleEndAtTime(event.target.value)}
-                              className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm shadow-sm outline-none transition focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/15"
+                              onChange={setScheduleEndAtTime}
+                              buttonClassName="w-full rounded-2xl border-slate-200 bg-white px-4 py-3 shadow-sm focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/15"
                             />
                           </label>
                         </div>

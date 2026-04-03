@@ -1,9 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
 const WEEK_LABELS = ["일", "월", "화", "수", "목", "금", "토"];
+const POPOVER_WIDTH = 286;
+const POPOVER_HEIGHT = 360;
+const VIEWPORT_PADDING = 12;
+const POPOVER_OFFSET = 8;
 
 type DatePopoverFieldProps = {
   value: string;
@@ -100,6 +104,29 @@ function buildCalendarDays(monthCursor: Date) {
   });
 }
 
+function resolvePopoverPosition(anchor: HTMLButtonElement, width = POPOVER_WIDTH, height = POPOVER_HEIGHT) {
+  const rect = anchor.getBoundingClientRect();
+  const viewportWidth = window.innerWidth;
+  const viewportHeight = window.innerHeight;
+  let left = rect.left;
+  let top = rect.bottom + POPOVER_OFFSET;
+
+  if (left + width > viewportWidth - VIEWPORT_PADDING) {
+    left = viewportWidth - width - VIEWPORT_PADDING;
+  }
+  if (left < VIEWPORT_PADDING) {
+    left = VIEWPORT_PADDING;
+  }
+  if (top + height > viewportHeight - VIEWPORT_PADDING) {
+    top = rect.top - height - POPOVER_OFFSET;
+  }
+  if (top < VIEWPORT_PADDING) {
+    top = VIEWPORT_PADDING;
+  }
+
+  return { left, top };
+}
+
 export function DatePopoverField({
   value,
   onChange,
@@ -123,37 +150,50 @@ export function DatePopoverField({
   const max = useMemo(() => parseDate(maxDate), [maxDate]);
   const [cursor, setCursor] = useState(() => startOfMonth(selectedDate ?? new Date()));
 
+  const handleToggleOpen = () => {
+    if (open) {
+      setOpen(false);
+      return;
+    }
+
+    if (anchorRef.current) {
+      setPosition(resolvePopoverPosition(anchorRef.current));
+    }
+    setCursor(startOfMonth(selectedDate ?? new Date()));
+    setOpen(true);
+  };
+
+  useLayoutEffect(() => {
+    if (!open || !anchorRef.current) {
+      return;
+    }
+
+    setPosition(
+      resolvePopoverPosition(
+        anchorRef.current,
+        popoverRef.current?.offsetWidth || POPOVER_WIDTH,
+        popoverRef.current?.offsetHeight || POPOVER_HEIGHT,
+      ),
+    );
+  }, [open]);
+
   useEffect(() => {
     if (!open) {
       return;
     }
 
     const updatePosition = () => {
-      if (!anchorRef.current || !popoverRef.current) {
+      if (!anchorRef.current) {
         return;
       }
-      const rect = anchorRef.current.getBoundingClientRect();
-      const width = popoverRef.current.offsetWidth || 286;
-      const height = popoverRef.current.offsetHeight || 360;
-      const viewportWidth = window.innerWidth;
-      const viewportHeight = window.innerHeight;
-      let left = rect.left;
-      let top = rect.bottom + 8;
 
-      if (left + width > viewportWidth - 12) {
-        left = viewportWidth - width - 12;
-      }
-      if (left < 12) {
-        left = 12;
-      }
-      if (top + height > viewportHeight - 12) {
-        top = rect.top - height - 8;
-      }
-      if (top < 12) {
-        top = 12;
-      }
-
-      setPosition({ left, top });
+      setPosition(
+        resolvePopoverPosition(
+          anchorRef.current,
+          popoverRef.current?.offsetWidth || POPOVER_WIDTH,
+          popoverRef.current?.offsetHeight || POPOVER_HEIGHT,
+        ),
+      );
     };
 
     const handlePointerDown = (event: MouseEvent) => {
@@ -205,15 +245,7 @@ export function DatePopoverField({
         ref={anchorRef}
         type="button"
         disabled={disabled}
-        onClick={() => {
-          setOpen((current) => {
-            const nextOpen = !current;
-            if (nextOpen) {
-              setCursor(startOfMonth(selectedDate ?? new Date()));
-            }
-            return nextOpen;
-          });
-        }}
+        onClick={handleToggleOpen}
         className={`flex w-full items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3 text-left text-sm outline-none transition hover:border-[var(--primary)] disabled:cursor-not-allowed disabled:opacity-60 ${buttonClassName ?? ""}`}
       >
         <span className={value ? "font-semibold text-slate-900" : "text-slate-400"}>

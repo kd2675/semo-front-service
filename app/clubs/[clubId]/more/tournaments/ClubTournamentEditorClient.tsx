@@ -2,6 +2,7 @@
 
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import { DatePopoverField } from "@/app/components/DatePopoverField";
+import { TimePopoverField } from "@/app/components/TimePopoverField";
 import { useRouter } from "next/navigation";
 import { useEffect, useId, useState } from "react";
 import {
@@ -285,7 +286,11 @@ export function ClubTournamentEditorClient({
                 </label>
                 <label className="block">
                   <span className="mb-2 block text-sm font-semibold text-slate-700">신청 시작 시간</span>
-                  <input type="time" value={applicationStartTime} onChange={(event) => setApplicationStartTime(event.target.value)} className={inputClassName} />
+                  <TimePopoverField
+                    value={applicationStartTime}
+                    onChange={setApplicationStartTime}
+                    buttonClassName={inputClassName}
+                  />
                 </label>
                 <label className="block">
                   <span className="mb-2 block text-sm font-semibold text-slate-700">신청 종료일</span>
@@ -297,7 +302,11 @@ export function ClubTournamentEditorClient({
                 </label>
                 <label className="block">
                   <span className="mb-2 block text-sm font-semibold text-slate-700">신청 종료 시간</span>
-                  <input type="time" value={applicationEndTime} onChange={(event) => setApplicationEndTime(event.target.value)} className={inputClassName} />
+                  <TimePopoverField
+                    value={applicationEndTime}
+                    onChange={setApplicationEndTime}
+                    buttonClassName={inputClassName}
+                  />
                 </label>
               </div>
               <div className="mt-4 rounded-[20px] border border-slate-200 bg-slate-50 p-4">

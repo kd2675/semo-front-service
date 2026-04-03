@@ -3,6 +3,7 @@
 import { RouterLink } from "@/app/components/RouterLink";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import { DatePopoverField } from "@/app/components/DatePopoverField";
+import { TimePopoverField } from "@/app/components/TimePopoverField";
 import { AnimatePresence } from "motion/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useEffectEvent, useId, useRef, useState, type UIEvent } from "react";
@@ -460,20 +461,18 @@ export function ClubScheduleEditorClient({
               <div className="grid grid-cols-2 gap-3">
                 <label className="block">
                   <span className="mb-1 block text-xs font-medium text-slate-700">시작 시간</span>
-                  <input
-                    type="time"
+                  <TimePopoverField
                     value={startTime}
-                    onChange={(event) => setStartTime(event.target.value)}
-                    className="h-11 w-full rounded-xl border border-[var(--primary)]/20 bg-white px-3 text-sm outline-none transition focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/20"
+                    onChange={setStartTime}
+                    buttonClassName="h-11 rounded-xl border-[var(--primary)]/20 px-3 focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/20"
                   />
                 </label>
                 <label className="block">
                   <span className="mb-1 block text-xs font-medium text-slate-700">종료 시간</span>
-                  <input
-                    type="time"
+                  <TimePopoverField
                     value={endTime}
-                    onChange={(event) => setEndTime(event.target.value)}
-                    className="h-11 w-full rounded-xl border border-[var(--primary)]/20 bg-white px-3 text-sm outline-none transition focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/20"
+                    onChange={setEndTime}
+                    buttonClassName="h-11 rounded-xl border-[var(--primary)]/20 px-3 focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/20"
                   />
                 </label>
               </div>

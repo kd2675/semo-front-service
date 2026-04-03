@@ -5,8 +5,10 @@ import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useState } from "react";
 import type { CSSProperties } from "react";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
+import { DatePopoverField } from "@/app/components/DatePopoverField";
 import { EphemeralToast } from "@/app/components/EphemeralToast";
 import { RouteModal } from "@/app/components/RouteModal";
+import { TimePopoverField } from "@/app/components/TimePopoverField";
 import { TodoApplicationManagerModal } from "@/app/components/TodoApplicationManagerModal";
 import { useEphemeralToast } from "@/app/components/useEphemeralToast";
 import { ScheduleActionConfirmModal } from "@/app/clubs/[clubId]/schedule/ScheduleActionConfirmModal";
@@ -976,11 +978,10 @@ export function ClubAdminTodoClient({ clubId, initialData }: ClubAdminTodoClient
                                       <span className="material-symbols-outlined text-[16px]">calendar_month</span>
                                       날짜
                                     </span>
-                                    <input
-                                      type="date"
+                                    <DatePopoverField
                                       value={dueAtDate}
-                                      onChange={(event) => setDueAtDate(event.target.value)}
-                                      className="w-full bg-transparent text-sm font-semibold text-slate-900 outline-none"
+                                      onChange={setDueAtDate}
+                                      buttonClassName="w-full border-0 bg-transparent px-0 py-0 text-sm font-semibold text-slate-900 hover:border-transparent focus:border-transparent focus:ring-0"
                                     />
                                   </label>
                                   <label className={`rounded-2xl border px-3 py-3 text-sm transition ${
@@ -992,12 +993,13 @@ export function ClubAdminTodoClient({ clubId, initialData }: ClubAdminTodoClient
                                       <span className="material-symbols-outlined text-[16px]">schedule</span>
                                       시간
                                     </span>
-                                    <input
-                                      type="time"
+                                    <TimePopoverField
                                       value={dueAtTime}
-                                      onChange={(event) => setDueAtTime(event.target.value)}
+                                      onChange={setDueAtTime}
                                       disabled={!dueAtDate}
-                                      className="w-full bg-transparent text-sm font-semibold text-slate-900 outline-none disabled:cursor-not-allowed"
+                                      buttonClassName={`w-full border-0 bg-transparent px-0 py-0 text-sm font-semibold text-slate-900 hover:border-transparent focus:border-transparent focus:ring-0 disabled:cursor-not-allowed ${
+                                        dueAtDate ? "" : "text-slate-400"
+                                      }`}
                                     />
                                   </label>
                                 </div>

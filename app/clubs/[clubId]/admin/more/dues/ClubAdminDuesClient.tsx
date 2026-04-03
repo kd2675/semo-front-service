@@ -15,6 +15,7 @@ import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import { DatePopoverField } from "@/app/components/DatePopoverField";
 import { EphemeralToast } from "@/app/components/EphemeralToast";
 import { RouteModal } from "@/app/components/RouteModal";
+import { TimePopoverField } from "@/app/components/TimePopoverField";
 import { useEphemeralToast } from "@/app/components/useEphemeralToast";
 import { ScheduleActionConfirmModal } from "@/app/clubs/[clubId]/schedule/ScheduleActionConfirmModal";
 import {
@@ -692,12 +693,11 @@ export function ClubAdminDuesClient({
                                 placeholder="마감 날짜를 선택하세요"
                               />
                               <div className="flex items-center gap-2">
-                                <input
-                                  type="time"
+                                <TimePopoverField
                                   value={dueAtTime}
-                                  onChange={(event) => setDueAtTime(event.target.value)}
+                                  onChange={setDueAtTime}
                                   disabled={!dueAtDate}
-                                  className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-[#ec5b13] focus:ring-2 focus:ring-[#ec5b13]/10 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
+                                  buttonClassName="w-full rounded-2xl border-slate-200 bg-white px-4 py-3 text-slate-900 focus:border-[#ec5b13] focus:ring-2 focus:ring-[#ec5b13]/10 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
                                 />
                                 <button
                                   type="button"
