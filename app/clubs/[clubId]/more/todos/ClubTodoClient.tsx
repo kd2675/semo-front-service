@@ -7,7 +7,8 @@ import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import { EphemeralToast } from "@/app/components/EphemeralToast";
 import { useEphemeralToast } from "@/app/components/useEphemeralToast";
 import {
-  claimClubTodo,
+  applyClubTodo,
+  cancelMyClubTodoApplication,
   completeClubTodo,
   getClubTodos,
   type ClubTodoResponse,
@@ -38,18 +39,32 @@ export function ClubTodoClient({ clubId, initialData, isAdmin }: ClubTodoClientP
     return true;
   };
 
-  const handleClaim = async (todoItemId: number) => {
+  const handleApply = async (todoItemId: number) => {
     setPendingTodoId(todoItemId);
     clearToast();
-    const result = await claimClubTodo(clubId, todoItemId);
+    const result = await applyClubTodo(clubId, todoItemId);
     setPendingTodoId(null);
 
     if (!result.ok || !result.data) {
-      showToast(result.message ?? "업무를 맡지 못했습니다.", "error");
+      showToast(result.message ?? "업무 신청에 실패했습니다.", "error");
       return;
     }
     await reloadTodos();
-    showToast("업무를 맡았습니다.", "success");
+    showToast("업무를 신청했습니다.", "success");
+  };
+
+  const handleCancelApplication = async (todoItemId: number) => {
+    setPendingTodoId(todoItemId);
+    clearToast();
+    const result = await cancelMyClubTodoApplication(clubId, todoItemId);
+    setPendingTodoId(null);
+
+    if (!result.ok || !result.data) {
+      showToast(result.message ?? "업무 신청을 취소하지 못했습니다.", "error");
+      return;
+    }
+    await reloadTodos();
+    showToast("업무 신청을 취소했습니다.", "success");
   };
 
   const handleComplete = async (todoItemId: number) => {
@@ -85,15 +100,15 @@ export function ClubTodoClient({ clubId, initialData, isAdmin }: ClubTodoClientP
               My Queue
             </p>
             <h2 className="mt-3 text-xl font-bold">
-              누가 맡았는지 흐려지지 않게 내 업무와 지원 가능한 업무를 한 번에 확인합니다.
+              운영자가 선발하는 신청형 업무와 내 배정 업무를 한 번에 확인합니다.
             </h2>
             <p className="mt-2 text-sm text-slate-500">
-              본인 할 일은 바로 완료 처리할 수 있고, 지원 가능한 봉사/운영 업무는 직접 맡아 진행으로 전환합니다.
+              신청형 업무는 바로 배정되지 않고, 신청 후 운영진이 검토해 담당자를 확정합니다.
             </p>
             <div className="mt-5 grid grid-cols-2 gap-3">
               <SummaryCard label="내 진행" value={todoData.myOpenCount} />
-              <SummaryCard label="내 완료" value={todoData.myCompletedCount} />
-              <SummaryCard label="지원 가능" value={todoData.claimableOpenCount} />
+              <SummaryCard label="신청 대기" value={todoData.myApplyingCount} />
+              <SummaryCard label="모집 중" value={todoData.claimableOpenCount} />
               <SummaryCard label="지연" value={todoData.overdueCount} />
             </div>
           </motion.section>
@@ -106,19 +121,21 @@ export function ClubTodoClient({ clubId, initialData, isAdmin }: ClubTodoClientP
             reduceMotion={reduceMotion}
             offset={1}
             pendingTodoId={pendingTodoId}
-            onClaim={handleClaim}
+            onApply={handleApply}
+            onCancelApplication={handleCancelApplication}
             onComplete={handleComplete}
           />
 
           <TodoSection
-            title="지원 가능한 업무"
+            title="신청 가능한 업무"
             countLabel={`${todoData.claimableTodos.length}건`}
-            emptyMessage="지금 지원 가능한 업무가 없습니다."
+            emptyMessage="지금 신청 가능한 업무가 없습니다."
             items={todoData.claimableTodos}
             reduceMotion={reduceMotion}
             offset={2 + todoData.myTodos.length}
             pendingTodoId={pendingTodoId}
-            onClaim={handleClaim}
+            onApply={handleApply}
+            onCancelApplication={handleCancelApplication}
             onComplete={handleComplete}
           />
 
@@ -130,7 +147,8 @@ export function ClubTodoClient({ clubId, initialData, isAdmin }: ClubTodoClientP
             reduceMotion={reduceMotion}
             offset={3 + todoData.myTodos.length + todoData.claimableTodos.length}
             pendingTodoId={pendingTodoId}
-            onClaim={handleClaim}
+            onApply={handleApply}
+            onCancelApplication={handleCancelApplication}
             onComplete={handleComplete}
             muted
           />
@@ -151,7 +169,8 @@ function TodoSection({
   reduceMotion,
   offset,
   pendingTodoId,
-  onClaim,
+  onApply,
+  onCancelApplication,
   onComplete,
   muted = false,
 }: {
@@ -162,7 +181,8 @@ function TodoSection({
   reduceMotion: boolean;
   offset: number;
   pendingTodoId: number | null;
-  onClaim: (todoItemId: number) => Promise<void>;
+  onApply: (todoItemId: number) => Promise<void>;
+  onCancelApplication: (todoItemId: number) => Promise<void>;
   onComplete: (todoItemId: number) => Promise<void>;
   muted?: boolean;
 }) {
@@ -199,6 +219,12 @@ function TodoSection({
                 <Badge tone={item.todoType === "VOLUNTEER" ? "sky" : "slate"} label={item.todoTypeLabel} />
                 <Badge tone={item.assignmentMode === "OPEN_SUPPORT" ? "amber" : "blue"} label={item.assignmentModeLabel} />
                 <Badge tone={item.statusCode === "COMPLETED" ? "emerald" : item.overdue ? "rose" : "slate"} label={item.overdue ? "지연" : item.statusLabel} />
+                {item.myApplicationStatusLabel ? (
+                  <Badge
+                    tone={item.myApplicationStatus === "REJECTED" ? "rose" : item.myApplicationStatus === "SELECTED" ? "emerald" : "amber"}
+                    label={item.myApplicationStatusLabel}
+                  />
+                ) : null}
               </div>
               <p className="mt-3 text-base font-bold text-slate-900">{item.title}</p>
               {item.description ? (
@@ -210,16 +236,30 @@ function TodoSection({
                 <InfoItem label="등록자" value={item.createdByDisplayName ?? "미정"} />
                 <InfoItem label="완료 시각" value={item.completedAtLabel ?? "없음"} />
               </div>
-              {item.canClaim || item.canComplete ? (
+              {item.canApply || item.canCancelApplication || item.canComplete ? (
                 <div className="mt-4 flex gap-2">
-                  {item.canClaim ? (
+                  {item.canApply ? (
                     <button
                       type="button"
-                      onClick={() => void onClaim(item.todoItemId)}
+                      onClick={() => void onApply(item.todoItemId)}
                       disabled={pendingTodoId === item.todoItemId}
                       className="flex-1 rounded-xl bg-amber-500 px-4 py-3 text-sm font-bold text-white transition hover:bg-amber-600 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500"
                     >
-                      {pendingTodoId === item.todoItemId ? "처리 중..." : "내가 맡기"}
+                      {pendingTodoId === item.todoItemId
+                        ? "처리 중..."
+                        : item.myApplicationStatus === "REJECTED"
+                          ? "다시 신청"
+                          : "신청하기"}
+                    </button>
+                  ) : null}
+                  {item.canCancelApplication ? (
+                    <button
+                      type="button"
+                      onClick={() => void onCancelApplication(item.todoItemId)}
+                      disabled={pendingTodoId === item.todoItemId}
+                      className="flex-1 rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
+                    >
+                      {pendingTodoId === item.todoItemId ? "처리 중..." : "신청 취소"}
                     </button>
                   ) : null}
                   {item.canComplete ? (
