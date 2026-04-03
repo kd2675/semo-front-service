@@ -63,6 +63,7 @@ const FEATURE_ACCENT_CLASS: Record<string, string> = {
   BRACKET: "bg-amber-50 text-amber-700",
   DUES: "bg-emerald-50 text-emerald-700",
   FEEDBACK: "bg-violet-50 text-violet-700",
+  TODO: "bg-amber-50 text-amber-700",
 };
 
 function getFeatureDisplayName(feature: ClubFeatureSummary) {

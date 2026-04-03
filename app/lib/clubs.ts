@@ -1407,6 +1407,95 @@ export type ClubAdminAttendanceResponse = {
   recentLogs: AttendanceDailyLog[];
 };
 
+export type TodoSummary = {
+  todoItemId: number;
+  title: string;
+  description: string | null;
+  todoType: "VOLUNTEER" | "OPERATIONS" | string;
+  todoTypeLabel: string;
+  assignmentMode: "DIRECT_ASSIGN" | "OPEN_SUPPORT" | string;
+  assignmentModeLabel: string;
+  statusCode: "OPEN" | "IN_PROGRESS" | "COMPLETED" | "CANCELED" | string;
+  statusLabel: string;
+  dueAt: string | null;
+  dueAtLabel: string | null;
+  overdue: boolean;
+  assignedClubProfileId: number | null;
+  assignedDisplayName: string | null;
+  createdByDisplayName: string | null;
+  completedByDisplayName: string | null;
+  completedAt: string | null;
+  completedAtLabel: string | null;
+  canClaim: boolean;
+  canComplete: boolean;
+  canEdit: boolean;
+  canManageStatus: boolean;
+};
+
+export type TodoMemberOption = {
+  clubProfileId: number;
+  memberDisplayName: string;
+  memberRoleCode: string;
+};
+
+export type ClubTodoResponse = {
+  clubId: number;
+  clubName: string;
+  admin: boolean;
+  myOpenCount: number;
+  myCompletedCount: number;
+  claimableOpenCount: number;
+  overdueCount: number;
+  myTodos: TodoSummary[];
+  claimableTodos: TodoSummary[];
+  recentCompletedTodos: TodoSummary[];
+};
+
+export type ClubAdminTodoResponse = {
+  clubId: number;
+  clubName: string;
+  admin: boolean;
+  canCreate: boolean;
+  canAssign: boolean;
+  canManageStatus: boolean;
+  activeMemberCount: number;
+  openCount: number;
+  inProgressCount: number;
+  completedCount: number;
+  overdueCount: number;
+  availableMembers: TodoMemberOption[];
+  items: TodoSummary[];
+  nextCursorTodoItemId: number | null;
+  hasNext: boolean;
+};
+
+export type CreateClubTodoRequest = {
+  title: string;
+  description?: string | null;
+  todoType: "VOLUNTEER" | "OPERATIONS" | string;
+  assignmentMode: "DIRECT_ASSIGN" | "OPEN_SUPPORT" | string;
+  assignedClubProfileId?: number | null;
+  dueAt?: string | null;
+};
+
+export type UpdateClubTodoRequest = CreateClubTodoRequest;
+
+export type UpdateTodoStatusRequest = {
+  statusCode: "OPEN" | "IN_PROGRESS" | "COMPLETED" | "CANCELED" | string;
+};
+
+export type TodoActionResponse = {
+  todoItemId: number;
+  statusCode: string;
+  statusLabel: string;
+  assignedClubProfileId: number | null;
+  assignedDisplayName: string | null;
+  completedByClubProfileId: number | null;
+  completedByDisplayName: string | null;
+  completedAt: string | null;
+  completedAtLabel: string | null;
+};
+
 export function createClub(request: CreateClubRequest) {
   return postJson<ClubCreateResponse>("/api/semo/v1/clubs", request);
 }
@@ -2036,6 +2125,72 @@ export function checkInClubAttendance(clubId: string | number) {
 
 export function getClubAdminAttendance(clubId: string | number) {
   return getJson<ClubAdminAttendanceResponse>(`/api/semo/v1/clubs/${clubId}/admin/more/attendance`);
+}
+
+export function getClubTodos(clubId: string | number) {
+  return getJson<ClubTodoResponse>(`/api/semo/v1/clubs/${clubId}/more/todos`);
+}
+
+export function claimClubTodo(clubId: string | number, todoItemId: string | number) {
+  return postJson<TodoActionResponse>(`/api/semo/v1/clubs/${clubId}/more/todos/${todoItemId}/claim`, undefined);
+}
+
+export function completeClubTodo(clubId: string | number, todoItemId: string | number) {
+  return postJson<TodoActionResponse>(`/api/semo/v1/clubs/${clubId}/more/todos/${todoItemId}/complete`, undefined);
+}
+
+export function getClubAdminTodos(
+  clubId: string | number,
+  options: {
+    statusFilter?: "ALL" | "OPEN" | "IN_PROGRESS" | "COMPLETED" | "OVERDUE" | string;
+    assignmentFilter?: "ALL" | "ASSIGNED" | "UNASSIGNED" | "OPEN_SUPPORT" | string;
+    cursorTodoItemId?: number | null;
+    size?: number;
+  } = {},
+) {
+  const params = new URLSearchParams();
+  if (options.statusFilter) {
+    params.set("statusFilter", options.statusFilter);
+  }
+  if (options.assignmentFilter) {
+    params.set("assignmentFilter", options.assignmentFilter);
+  }
+  if (options.cursorTodoItemId != null) {
+    params.set("cursorTodoItemId", String(options.cursorTodoItemId));
+  }
+  if (options.size != null) {
+    params.set("size", String(options.size));
+  }
+  const queryString = params.toString();
+  return getJson<ClubAdminTodoResponse>(
+    `/api/semo/v1/clubs/${clubId}/admin/more/todos${queryString ? `?${queryString}` : ""}`,
+  );
+}
+
+export function createClubTodo(
+  clubId: string | number,
+  request: CreateClubTodoRequest,
+) {
+  return postJson<TodoSummary>(`/api/semo/v1/clubs/${clubId}/admin/more/todos`, request);
+}
+
+export function updateClubTodo(
+  clubId: string | number,
+  todoItemId: string | number,
+  request: UpdateClubTodoRequest,
+) {
+  return putJson<TodoSummary>(`/api/semo/v1/clubs/${clubId}/admin/more/todos/${todoItemId}`, request);
+}
+
+export function updateClubTodoStatus(
+  clubId: string | number,
+  todoItemId: string | number,
+  request: UpdateTodoStatusRequest,
+) {
+  return putJson<TodoActionResponse>(
+    `/api/semo/v1/clubs/${clubId}/admin/more/todos/${todoItemId}/status`,
+    request,
+  );
 }
 
 export function getClubMemberDirectory(clubId: string | number) {

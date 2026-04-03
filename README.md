@@ -119,6 +119,7 @@ NEXT_PUBLIC_IMAGE_BASE_URL=http://localhost:8081
 - `/clubs/[clubId]/more/polls/[voteId]/edit`
 - `/clubs/[clubId]/more/timeline`
 - `/clubs/[clubId]/more/attendance`
+- `/clubs/[clubId]/more/todos`
 - `/clubs/[clubId]/more/members`
 - `/clubs/[clubId]/more/dues`
 - `/clubs/[clubId]/more/tournaments`
@@ -142,6 +143,7 @@ NEXT_PUBLIC_IMAGE_BASE_URL=http://localhost:8081
 - `/clubs/[clubId]/admin/more/polls/[voteId]/edit`
 - `/clubs/[clubId]/admin/more/timeline`
 - `/clubs/[clubId]/admin/more/attendance`
+- `/clubs/[clubId]/admin/more/todos`
 - `/clubs/[clubId]/admin/more/members`
 - `/clubs/[clubId]/admin/more/dues`
 - `/clubs/[clubId]/admin/more/tournaments`
