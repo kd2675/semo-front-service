@@ -79,6 +79,11 @@ NEXT_PUBLIC_IMAGE_BASE_URL=http://localhost:8081
 - 일부 상세/수정 흐름은 전용 페이지가 아니라 route modal 패턴을 사용합니다.
   - 예: 공지 상세/수정, 일정 상세/수정, 투표 상세/수정, 대회 상세
 
+### Shared input components
+- 날짜 선택은 네이티브 `input[type="date"]` 대신 `app/components/DatePopoverField.tsx`를 공용 기준으로 사용합니다.
+- 시간 선택은 네이티브 `input[type="time"]` 대신 `app/components/TimePopoverField.tsx`를 공용 기준으로 사용합니다.
+- 신규 `semo` 폼에서 날짜/시간 입력이 필요하면 기존 화면 스타일만 맞추고, 입력 경험 자체는 위 두 컴포넌트로 통일합니다.
+
 ## Route Map
 
 ### Public / auth
@@ -186,6 +191,10 @@ NEXT_PUBLIC_IMAGE_BASE_URL=http://localhost:8081
   - semo API 타입/함수 집합
 - `app/lib/imageUpload.ts`
   - 이미지 임시 업로드
+- `app/components/DatePopoverField.tsx`
+  - 공용 날짜 선택 팝오버
+- `app/components/TimePopoverField.tsx`
+  - 공용 시간 선택 팝오버
 - `app/components/ClubBottomNav.tsx`
   - 사용자 More 메뉴
 - `app/clubs/[clubId]/admin/AdminBottomNav.tsx`
