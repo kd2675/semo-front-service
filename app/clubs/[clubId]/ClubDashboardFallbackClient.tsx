@@ -29,7 +29,7 @@ import { useEphemeralToast } from "@/app/components/useEphemeralToast";
 import {
   checkInClubAttendance,
   getClubAttendance,
-  getClubDues,
+  getClubFinance,
   getClubBoard,
   getClubBracketHome,
   getClubDashboardWidgetEditor,
@@ -43,7 +43,7 @@ import {
   type ClubAttendanceResponse,
   type ClubBoardResponse,
   type ClubBracketHomeResponse,
-  type ClubDuesHomeResponse,
+  type ClubFinanceHomeResponse,
   type ClubMemberDirectoryResponse,
   type ClubPollHomeResponse,
   type ClubPollSummary,
@@ -70,20 +70,20 @@ const WIDGET_ACCENT_CLASS: Record<string, string> = {
   POLL_STATUS: "bg-amber-50 text-amber-500",
   PROFILE_SUMMARY: "bg-emerald-50 text-emerald-600",
   ATTENDANCE_STATUS: "bg-indigo-50 text-indigo-600",
-  DUES_STATUS: "bg-emerald-50 text-emerald-700",
+  FINANCE_STATUS: "bg-emerald-50 text-emerald-700",
   MEMBER_DIRECTORY_HIGHLIGHT: "bg-rose-50 text-rose-600",
   TOURNAMENT_RECORD_LATEST: "bg-emerald-50 text-emerald-700",
   BRACKET_LATEST: "bg-amber-50 text-amber-700",
 };
 
-function getDuesStatusClassName(paymentStatus: string) {
-  if (paymentStatus === "PAID") {
+function getFinanceStatusClassName(paymentStatusCode: string) {
+  if (paymentStatusCode === "PAID") {
     return "bg-emerald-50 text-emerald-700";
   }
-  if (paymentStatus === "WAIVED") {
+  if (paymentStatusCode === "WAIVED") {
     return "bg-slate-200 text-slate-600";
   }
-  if (paymentStatus === "OVERDUE") {
+  if (paymentStatusCode === "OVERDUE") {
     return "bg-rose-50 text-rose-600";
   }
   return "bg-amber-50 text-amber-700";
@@ -266,9 +266,9 @@ function DashboardWidgetCard({
   memberDirectoryData,
   memberDirectoryLoading,
   memberDirectoryError,
-  duesData,
-  duesLoading,
-  duesError,
+  financeData,
+  financeLoading,
+  financeError,
   boardData,
   boardLoading,
   boardError,
@@ -308,9 +308,9 @@ function DashboardWidgetCard({
   memberDirectoryData: ClubMemberDirectoryResponse | null;
   memberDirectoryLoading: boolean;
   memberDirectoryError: string | null;
-  duesData: ClubDuesHomeResponse | null;
-  duesLoading: boolean;
-  duesError: string | null;
+  financeData: ClubFinanceHomeResponse | null;
+  financeLoading: boolean;
+  financeError: string | null;
   boardData: ClubBoardResponse | null;
   boardLoading: boolean;
   boardError: string | null;
@@ -341,7 +341,7 @@ function DashboardWidgetCard({
   const isEditMode = isAdmin && editMode;
   const isAttendanceWidget = widget.widgetKey === "ATTENDANCE_STATUS";
   const isMemberDirectoryWidget = widget.widgetKey === "MEMBER_DIRECTORY_HIGHLIGHT";
-  const isDuesWidget = widget.widgetKey === "DUES_STATUS";
+  const isFinanceWidget = widget.widgetKey === "FINANCE_STATUS";
   const isBoardNoticeWidget = widget.widgetKey === "BOARD_NOTICE";
   const isScheduleWidget = widget.widgetKey === "SCHEDULE_OVERVIEW";
   const isPollWidget = widget.widgetKey === "POLL_STATUS";
@@ -350,7 +350,7 @@ function DashboardWidgetCard({
   const todayAttendance = attendanceData?.todayAttendance;
   const recentLog = attendanceData?.recentLogs?.[0] ?? null;
   const featuredMembers = memberDirectoryData?.members.slice(0, 3) ?? [];
-  const nextDueCharge = duesData?.nextPayableCharge ?? null;
+  const nextFinanceObligation = financeData?.nextPayableObligation ?? null;
   const latestNotice = boardData?.notices?.[0] ?? null;
   const latestOngoingPoll = useMemo<ClubPollSummary | null>(() => {
     if (!pollData) {
@@ -639,48 +639,52 @@ function DashboardWidgetCard({
             <p className="text-sm text-slate-500">회원 디렉터리 위젯 데이터를 준비 중입니다.</p>
           )}
         </div>
-      ) : isDuesWidget ? (
+      ) : isFinanceWidget ? (
         <div className="space-y-3">
-          {duesLoading ? (
+          {financeLoading ? (
             <>
               <div className="h-4 w-24 rounded-full bg-slate-100" />
               <div className="h-20 w-full rounded-xl bg-slate-50" />
             </>
-          ) : duesError ? (
-            <p className="text-sm text-slate-500">회비 정보를 가져오지 못했습니다.</p>
-          ) : nextDueCharge ? (
+          ) : financeError ? (
+            <p className="text-sm text-slate-500">재정 정보를 가져오지 못했습니다.</p>
+          ) : nextFinanceObligation ? (
             <RouterLink
-              href={`/clubs/${clubId}/more/dues`}
+              href={`/clubs/${clubId}/more/finance`}
               className="block rounded-xl border border-emerald-100 bg-white p-4 shadow-sm transition-all hover:border-emerald-300"
             >
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-[0.16em] text-emerald-600">
-                    My Dues
+                    My Finance
                   </p>
                   <p className="mt-2 line-clamp-2 text-base font-bold text-slate-900">
-                    {nextDueCharge.title}
+                    {nextFinanceObligation.title}
                   </p>
                 </div>
-                <span className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${getDuesStatusClassName(nextDueCharge.invoice.paymentStatus)}`}>
-                  {nextDueCharge.invoice.paymentStatusLabel}
+                <span
+                  className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${getFinanceStatusClassName(nextFinanceObligation.payment.paymentStatusCode)}`}
+                >
+                  {nextFinanceObligation.payment.paymentStatusLabel}
                 </span>
               </div>
-              <p className="mt-1 text-xs font-medium text-slate-500">{nextDueCharge.dueAtLabel ?? "회비 항목"}</p>
-              <p className="mt-2 text-sm font-semibold text-slate-900">{nextDueCharge.amountLabel}</p>
+              <p className="mt-1 text-xs font-medium text-slate-500">
+                {nextFinanceObligation.dueAtLabel ?? "재정 항목"}
+              </p>
+              <p className="mt-2 text-sm font-semibold text-slate-900">{nextFinanceObligation.amountLabel}</p>
               <div className="mt-3 flex items-center justify-between rounded-lg bg-emerald-50/60 px-3 py-2">
                 <p className="text-xs font-medium text-slate-500">
-                  미납 {duesData?.pendingInvoiceCount ?? 0}건 · 연체 {duesData?.overdueInvoiceCount ?? 0}건
+                  미납 {financeData?.pendingPaymentCount ?? 0}건 · 연체 {financeData?.overduePaymentCount ?? 0}건
                 </p>
                 <span className="rounded-full bg-white px-2 py-0.5 text-[11px] font-bold text-emerald-700">
-                  {duesData?.totalPendingAmountLabel ?? nextDueCharge.amountLabel}
+                  {financeData?.totalPendingAmountLabel ?? nextFinanceObligation.amountLabel}
                 </span>
               </div>
             </RouterLink>
           ) : (
             <>
-              <p className="text-sm font-semibold text-slate-900">현재 확인할 회비가 없습니다.</p>
-              <p className="text-xs text-slate-500">새 회비가 발행되면 이 위젯에서 바로 확인할 수 있습니다.</p>
+              <p className="text-sm font-semibold text-slate-900">현재 확인할 재정 항목이 없습니다.</p>
+              <p className="text-xs text-slate-500">새 재정 항목이 발행되면 이 위젯에서 바로 확인할 수 있습니다.</p>
             </>
           )}
         </div>
@@ -1063,9 +1067,9 @@ export function ClubDashboardFallbackClient({
   const [memberDirectoryData, setMemberDirectoryData] = useState<ClubMemberDirectoryResponse | null>(null);
   const [memberDirectoryLoading, setMemberDirectoryLoading] = useState(false);
   const [memberDirectoryError, setMemberDirectoryError] = useState<string | null>(null);
-  const [duesData, setDuesData] = useState<ClubDuesHomeResponse | null>(null);
-  const [duesLoading, setDuesLoading] = useState(false);
-  const [duesError, setDuesError] = useState<string | null>(null);
+  const [financeData, setFinanceData] = useState<ClubFinanceHomeResponse | null>(null);
+  const [financeLoading, setFinanceLoading] = useState(false);
+  const [financeError, setFinanceError] = useState<string | null>(null);
   const [boardData, setBoardData] = useState<ClubBoardResponse | null>(null);
   const [boardLoading, setBoardLoading] = useState(false);
   const [boardError, setBoardError] = useState<string | null>(null);
@@ -1269,9 +1273,9 @@ export function ClubDashboardFallbackClient({
     );
   }, [dashboardWidgetSource]);
 
-  const hasDuesWidget = useMemo(() => {
+  const hasFinanceWidget = useMemo(() => {
     return dashboardWidgetSource.some(
-      (widget) => widget.widgetKey === "DUES_STATUS" && widget.enabled && widget.available,
+      (widget) => widget.widgetKey === "FINANCE_STATUS" && widget.enabled && widget.available,
     );
   }, [dashboardWidgetSource]);
 
@@ -1332,24 +1336,24 @@ export function ClubDashboardFallbackClient({
     setMemberDirectoryLoading(false);
   }, [clubId, hasMemberDirectoryWidget]);
 
-  const loadDuesData = useCallback(async () => {
-    if (!hasDuesWidget) {
+  const loadFinanceData = useCallback(async () => {
+    if (!hasFinanceWidget) {
       return;
     }
 
-    setDuesLoading(true);
-    setDuesError(null);
-    const result = await getClubDues(clubId);
+    setFinanceLoading(true);
+    setFinanceError(null);
+    const result = await getClubFinance(clubId);
     if (!result.ok || !result.data) {
-      setDuesData(null);
-      setDuesError(result.message ?? "회비 정보를 불러오지 못했습니다.");
-      setDuesLoading(false);
+      setFinanceData(null);
+      setFinanceError(result.message ?? "재정 정보를 불러오지 못했습니다.");
+      setFinanceLoading(false);
       return;
     }
 
-    setDuesData(result.data);
-    setDuesLoading(false);
-  }, [clubId, hasDuesWidget]);
+    setFinanceData(result.data);
+    setFinanceLoading(false);
+  }, [clubId, hasFinanceWidget]);
 
   const loadScheduleData = useCallback(async () => {
     if (!hasScheduleWidget) {
@@ -1576,16 +1580,16 @@ export function ClubDashboardFallbackClient({
   }, [hasMemberDirectoryWidget, loadMemberDirectoryData]);
 
   useEffect(() => {
-    if (!hasDuesWidget) {
+    if (!hasFinanceWidget) {
       return;
     }
     const timerId = window.setTimeout(() => {
-      void loadDuesData();
+      void loadFinanceData();
     }, 0);
     return () => {
       window.clearTimeout(timerId);
     };
-  }, [hasDuesWidget, loadDuesData]);
+  }, [hasFinanceWidget, loadFinanceData]);
 
   useEffect(() => {
     if (!hasScheduleWidget) {
@@ -1897,9 +1901,9 @@ export function ClubDashboardFallbackClient({
                     memberDirectoryData={widget.widgetKey === "MEMBER_DIRECTORY_HIGHLIGHT" ? memberDirectoryData : null}
                     memberDirectoryLoading={widget.widgetKey === "MEMBER_DIRECTORY_HIGHLIGHT" && memberDirectoryLoading}
                     memberDirectoryError={widget.widgetKey === "MEMBER_DIRECTORY_HIGHLIGHT" ? memberDirectoryError : null}
-                    duesData={widget.widgetKey === "DUES_STATUS" ? duesData : null}
-                    duesLoading={widget.widgetKey === "DUES_STATUS" && duesLoading}
-                    duesError={widget.widgetKey === "DUES_STATUS" ? duesError : null}
+                    financeData={widget.widgetKey === "FINANCE_STATUS" ? financeData : null}
+                    financeLoading={widget.widgetKey === "FINANCE_STATUS" && financeLoading}
+                    financeError={widget.widgetKey === "FINANCE_STATUS" ? financeError : null}
                     boardData={widget.widgetKey === "BOARD_NOTICE" ? boardData : null}
                     boardLoading={widget.widgetKey === "BOARD_NOTICE" && boardLoading}
                     boardError={widget.widgetKey === "BOARD_NOTICE" ? boardError : null}

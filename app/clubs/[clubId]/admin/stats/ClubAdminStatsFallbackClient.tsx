@@ -36,7 +36,7 @@ export function ClubAdminStatsFallbackClient({ clubId }: ClubAdminStatsFallbackC
       { id: "engagement", label: "참여도", value: "84%", detail: "게시글/일정 기준", accent: "primary" as const, icon: "favorite" },
       { id: "attendance", label: "출석률", value: "78%", detail: "주간 평균 출석", accent: "green" as const, icon: "event_available" },
       { id: "growth", label: "성장률", value: "+12%", detail: "전월 대비", accent: "primary" as const, icon: "trending_up" },
-      { id: "dues", label: "회비 납부", value: "91%", detail: "현재 납부 완료율", icon: "payments" },
+      { id: "finance", label: "재정 수납", value: "91%", detail: "현재 납부 완료율", icon: "payments" },
     ],
     [],
   );

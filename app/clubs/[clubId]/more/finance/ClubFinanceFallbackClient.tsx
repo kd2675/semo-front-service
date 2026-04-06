@@ -3,43 +3,61 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
-  getClubDues,
+  getClubFinance,
+  getClubFinanceRequests,
   getMyClub,
-  type ClubDuesHomeResponse,
+  type ClubFinanceHomeResponse,
+  type ClubFinanceRequestFeedResponse,
   type MyClubSummary,
 } from "@/app/lib/clubs";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
-import { ClubDuesClient } from "./ClubDuesClient";
+import { ClubFinanceClient } from "./ClubFinanceClient";
 
-type ClubDuesFallbackClientProps = {
+type ClubFinanceFallbackClientProps = {
   clubId: string;
 };
 
-export function ClubDuesFallbackClient({ clubId }: ClubDuesFallbackClientProps) {
+export function ClubFinanceFallbackClient({ clubId }: ClubFinanceFallbackClientProps) {
   const router = useRouter();
   const [club, setClub] = useState<MyClubSummary | null>(null);
-  const [dues, setDues] = useState<ClubDuesHomeResponse | null>(null);
+  const [finance, setFinance] = useState<ClubFinanceHomeResponse | null>(null);
+  const [requestFeed, setRequestFeed] = useState<ClubFinanceRequestFeedResponse | null>(null);
 
   useEffect(() => {
     let cancelled = false;
 
     void (async () => {
-      const [clubResult, duesResult] = await Promise.all([
+      const [clubResult, financeResult, requestResult] = await Promise.all([
         getMyClub(clubId),
-        getClubDues(clubId),
+        getClubFinance(clubId),
+        getClubFinanceRequests(clubId),
       ]);
 
       if (cancelled) {
         return;
       }
 
-      if (!clubResult.ok || !clubResult.data || !duesResult.ok || !duesResult.data) {
+      if (
+        !clubResult.ok ||
+        !clubResult.data ||
+        !financeResult.ok ||
+        !financeResult.data
+      ) {
         router.replace(`/clubs/${clubId}`);
         return;
       }
 
       setClub(clubResult.data);
-      setDues(duesResult.data);
+      setFinance(financeResult.data);
+      setRequestFeed(
+        requestResult.ok && requestResult.data
+          ? requestResult.data
+          : {
+              clubId: financeResult.data.clubId,
+              clubName: financeResult.data.clubName,
+              items: [],
+            },
+      );
     })();
 
     return () => {
@@ -47,12 +65,12 @@ export function ClubDuesFallbackClient({ clubId }: ClubDuesFallbackClientProps) 
     };
   }, [clubId, router]);
 
-  if (!club || !dues) {
+  if (!club || !finance || !requestFeed) {
     return (
       <div className="bg-[var(--background-light)] text-slate-900 antialiased">
         <div className="relative min-h-screen">
           <ClubPageHeader
-            title="회비 관리"
+            title="내 재정"
             icon="payments"
             className="bg-white/85 backdrop-blur-md"
           />
@@ -93,5 +111,12 @@ export function ClubDuesFallbackClient({ clubId }: ClubDuesFallbackClientProps) 
     );
   }
 
-  return <ClubDuesClient clubId={clubId} initialData={dues} isAdmin={club.admin} />;
+  return (
+    <ClubFinanceClient
+      clubId={clubId}
+      initialData={finance}
+      initialRequestFeed={requestFeed}
+      isAdmin={club.admin}
+    />
+  );
 }

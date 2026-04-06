@@ -1,4 +1,4 @@
-import { deleteJson, getJson, postJson, putJson } from "@/app/lib/api";
+import { deleteJson, getJson, patchJson, postJson, putJson } from "@/app/lib/api";
 
 export type CreateClubRequest = {
   name: string;
@@ -1257,15 +1257,15 @@ export type AttendanceDailyLog = {
   checkedInAtLabel: string | null;
 };
 
-export type ClubDuesInvoice = {
-  invoiceId: number;
+export type ClubFinancePayment = {
+  paymentId: number;
   clubProfileId: number;
   memberDisplayName: string;
   memberRoleCode: string | null;
   amount: number;
   amountLabel: string;
   currencyCode: string;
-  paymentStatus: "PENDING" | "OVERDUE" | "PAID" | "WAIVED" | string;
+  paymentStatusCode: "PENDING" | "OVERDUE" | "PAID" | "WAIVED" | string;
   paymentStatusLabel: string;
   overdue: boolean;
   paidAt: string | null;
@@ -1273,16 +1273,18 @@ export type ClubDuesInvoice = {
   note: string | null;
 };
 
-export type ClubDuesMemberOption = {
+export type ClubFinanceMemberOption = {
   clubProfileId: number;
   memberDisplayName: string;
   memberRoleCode: string | null;
 };
 
-export type ClubAdminDuesCharge = {
-  chargeId: number;
+export type ClubAdminFinanceObligation = {
+  obligationId: number;
+  obligationTypeCode: string;
+  obligationTypeLabel: string;
   title: string;
-  targetScope: "ALL_ACTIVE_MEMBERS" | "SELECTED_MEMBERS" | string;
+  targetScopeCode: "ALL_ACTIVE_MEMBERS" | "SELECTED_MEMBERS" | string;
   targetScopeLabel: string;
   amount: number;
   amountLabel: string;
@@ -1294,29 +1296,31 @@ export type ClubAdminDuesCharge = {
   issuedByDisplayName: string;
   note: string | null;
   canDelete: boolean;
-  totalInvoiceCount: number;
-  pendingInvoiceCount: number;
-  paidInvoiceCount: number;
-  waivedInvoiceCount: number;
-  overdueInvoiceCount: number;
+  totalPaymentCount: number;
+  pendingPaymentCount: number;
+  paidPaymentCount: number;
+  waivedPaymentCount: number;
+  overduePaymentCount: number;
   collectionRate: number;
 };
 
-export type ClubAdminDuesChargeFeedResponse = {
+export type ClubAdminFinanceObligationFeedResponse = {
   clubId: number;
   clubName: string;
-  items: ClubAdminDuesCharge[];
-  nextCursorChargeId: number | null;
+  items: ClubAdminFinanceObligation[];
+  nextCursorObligationId: number | null;
   hasNext: boolean;
 };
 
-export type ClubAdminDuesChargeDetailResponse = {
-  charge: ClubAdminDuesCharge;
-  invoices: ClubDuesInvoice[];
+export type ClubAdminFinanceObligationDetailResponse = {
+  obligation: ClubAdminFinanceObligation;
+  payments: ClubFinancePayment[];
 };
 
-export type ClubDuesUserCharge = {
-  chargeId: number;
+export type ClubFinanceUserObligation = {
+  obligationId: number;
+  obligationTypeCode: string;
+  obligationTypeLabel: string;
   title: string;
   amount: number;
   amountLabel: string;
@@ -1326,23 +1330,97 @@ export type ClubDuesUserCharge = {
   issuedAt: string | null;
   issuedAtLabel: string | null;
   note: string | null;
-  invoice: ClubDuesInvoice;
+  payment: ClubFinancePayment;
 };
 
-export type ClubDuesHomeResponse = {
+export type ClubFinanceHomeResponse = {
   clubId: number;
   clubName: string;
   admin: boolean;
-  pendingInvoiceCount: number;
-  paidInvoiceCount: number;
-  overdueInvoiceCount: number;
+  pendingPaymentCount: number;
+  paidPaymentCount: number;
+  overduePaymentCount: number;
+  actionRequiredCount: number;
   totalPendingAmountLabel: string;
-  nextPayableCharge: ClubDuesUserCharge | null;
-  openCharges: ClubDuesUserCharge[];
-  chargeHistory: ClubDuesUserCharge[];
+  totalPaidAmountLabel: string;
+  recentPayments: ClubFinanceUserObligation[];
+  nextPayableObligation: ClubFinanceUserObligation | null;
+  openObligations: ClubFinanceUserObligation[];
+  paymentHistory: ClubFinanceUserObligation[];
 };
 
-export type ClubAdminDuesHomeResponse = {
+export type ClubFinanceRequest = {
+  requestId: number;
+  requestTypeCode: "ADVANCE" | "REFUND_REQUEST" | "SETTLEMENT_REQUEST" | string;
+  requestTypeLabel: string;
+  requesterDisplayName: string;
+  amount: number;
+  amountLabel: string;
+  currencyCode: string;
+  title: string;
+  relatedEventName: string | null;
+  note: string | null;
+  statusCode: "SUBMITTED" | "APPROVED" | "REJECTED" | string;
+  statusLabel: string;
+  submittedAt: string | null;
+  submittedAtLabel: string | null;
+  reviewedAt: string | null;
+  reviewedAtLabel: string | null;
+  reviewNote: string | null;
+};
+
+export type ClubFinanceRequestFeedResponse = {
+  clubId: number;
+  clubName: string;
+  items: ClubFinanceRequest[];
+};
+
+export type CreateFinanceRequestRequest = {
+  requestTypeCode: "ADVANCE" | "REFUND_REQUEST" | "SETTLEMENT_REQUEST" | string;
+  title: string;
+  amount: number;
+  relatedEventName?: string | null;
+  note?: string | null;
+};
+
+export type ReviewFinanceRequestRequest = {
+  statusCode: "APPROVED" | "REJECTED" | string;
+  reviewNote?: string | null;
+};
+
+export type ClubFinanceExpense = {
+  expenseId: number;
+  expenseTypeCode: string;
+  expenseTypeLabel: string;
+  categoryCode: string;
+  categoryLabel: string;
+  enteredByDisplayName: string;
+  amount: number;
+  amountLabel: string;
+  currencyCode: string;
+  title: string;
+  relatedEventName: string | null;
+  note: string | null;
+  spentAt: string | null;
+  spentAtLabel: string | null;
+};
+
+export type ClubFinanceExpenseFeedResponse = {
+  clubId: number;
+  clubName: string;
+  items: ClubFinanceExpense[];
+};
+
+export type CreateFinanceExpenseRequest = {
+  title: string;
+  categoryCode: string;
+  amount: number;
+  spentAt?: string | null;
+  relatedEventName?: string | null;
+  note?: string | null;
+};
+
+export type ClubAdminFinanceHomeResponse = {
   clubId: number;
   clubName: string;
   admin: boolean;
@@ -1350,35 +1428,40 @@ export type ClubAdminDuesHomeResponse = {
   canMarkPaid: boolean;
   canMarkWaive: boolean;
   activeMemberCount: number;
-  totalChargeCount: number;
-  totalInvoiceCount: number;
-  pendingInvoiceCount: number;
-  paidInvoiceCount: number;
-  waivedInvoiceCount: number;
-  overdueInvoiceCount: number;
+  totalObligationCount: number;
+  totalPaymentCount: number;
+  pendingPaymentCount: number;
+  paidPaymentCount: number;
+  waivedPaymentCount: number;
+  overduePaymentCount: number;
   collectionRate: number;
-  availableMembers: ClubDuesMemberOption[];
+  totalBilledAmountLabel: string;
+  totalCollectedAmountLabel: string;
+  totalOutstandingAmountLabel: string;
+  totalWaivedAmountLabel: string;
+  availableMembers: ClubFinanceMemberOption[];
 };
 
-export type CreateClubDuesChargeRequest = {
+export type CreateFinanceObligationRequest = {
   title: string;
   amount: number;
   dueAt?: string | null;
   note?: string | null;
-  targetScope?: "ALL_ACTIVE_MEMBERS" | "SELECTED_MEMBERS" | string;
+  targetScopeCode?: "ALL_ACTIVE_MEMBERS" | "SELECTED_MEMBERS" | string;
   clubProfileIds?: number[];
 };
 
-export type CreateClubDuesChargeResponse = {
-  chargeId: number;
+export type CreateFinanceObligationResponse = {
+  obligationId: number;
+  obligationTypeCode: string;
   title: string;
-  targetScope: string;
+  targetScopeCode: string;
   targetScopeLabel: string;
   createdCount: number;
 };
 
-export type UpdateClubDuesPaymentStatusRequest = {
-  paymentStatus: "PENDING" | "PAID" | "WAIVED" | string;
+export type UpdateFinancePaymentStatusRequest = {
+  paymentStatusCode: "PENDING" | "PAID" | "WAIVED" | string;
   note?: string | null;
 };
 
@@ -1994,20 +2077,60 @@ export function updateClubFeatures(
   return putJson<ClubFeatureSummary[]>(`/api/semo/v1/clubs/${clubId}/features`, request);
 }
 
-export function getClubDues(clubId: string | number) {
-  return getJson<ClubDuesHomeResponse>(`/api/semo/v1/clubs/${clubId}/more/dues`);
+export function getClubFinance(clubId: string | number) {
+  return getJson<ClubFinanceHomeResponse>(`/api/semo/v1/clubs/${clubId}/more/finance`);
 }
 
-export function getClubAdminDues(clubId: string | number) {
-  return getJson<ClubAdminDuesHomeResponse>(`/api/semo/v1/clubs/${clubId}/admin/more/dues`);
+export function getClubFinanceRequests(clubId: string | number) {
+  return getJson<ClubFinanceRequestFeedResponse>(`/api/semo/v1/clubs/${clubId}/more/finance/requests`);
 }
 
-export function getClubAdminDuesCharges(
+export function createClubFinanceRequest(
+  clubId: string | number,
+  request: CreateFinanceRequestRequest,
+) {
+  return postJson<ClubFinanceRequest>(`/api/semo/v1/clubs/${clubId}/more/finance/requests`, request);
+}
+
+export function getClubAdminFinance(clubId: string | number) {
+  return getJson<ClubAdminFinanceHomeResponse>(`/api/semo/v1/clubs/${clubId}/admin/more/finance`);
+}
+
+export function getClubAdminFinanceRequests(clubId: string | number) {
+  return getJson<ClubFinanceRequestFeedResponse>(`/api/semo/v1/clubs/${clubId}/admin/more/finance/requests`);
+}
+
+export function reviewClubFinanceRequest(
+  clubId: string | number,
+  requestId: string | number,
+  request: ReviewFinanceRequestRequest,
+) {
+  return postJson<ClubFinanceRequest>(
+    `/api/semo/v1/clubs/${clubId}/admin/more/finance/requests/${requestId}/review`,
+    request,
+  );
+}
+
+export function getClubAdminFinanceExpenses(clubId: string | number) {
+  return getJson<ClubFinanceExpenseFeedResponse>(`/api/semo/v1/clubs/${clubId}/admin/more/finance/expenses`);
+}
+
+export function createClubAdminFinanceExpense(
+  clubId: string | number,
+  request: CreateFinanceExpenseRequest,
+) {
+  return postJson<ClubFinanceExpense>(
+    `/api/semo/v1/clubs/${clubId}/admin/more/finance/expenses`,
+    request,
+  );
+}
+
+export function getClubAdminFinanceObligations(
   clubId: string | number,
   options: {
     query?: string;
-    chargeFilter?: "ALL" | "OPEN" | "SETTLED" | string;
-    cursorChargeId?: number | null;
+    obligationFilter?: "ALL" | "OPEN" | "SETTLED" | string;
+    cursorObligationId?: number | null;
     size?: number;
   } = {},
 ) {
@@ -2015,54 +2138,54 @@ export function getClubAdminDuesCharges(
   if (options.query?.trim()) {
     params.set("query", options.query.trim());
   }
-  if (options.chargeFilter && options.chargeFilter !== "ALL") {
-    params.set("chargeFilter", options.chargeFilter);
+  if (options.obligationFilter && options.obligationFilter !== "ALL") {
+    params.set("obligationFilter", options.obligationFilter);
   }
-  if (options.cursorChargeId != null) {
-    params.set("cursorChargeId", String(options.cursorChargeId));
+  if (options.cursorObligationId != null) {
+    params.set("cursorObligationId", String(options.cursorObligationId));
   }
   if (options.size != null) {
     params.set("size", String(options.size));
   }
   const queryString = params.toString();
-  return getJson<ClubAdminDuesChargeFeedResponse>(
-    `/api/semo/v1/clubs/${clubId}/admin/more/dues/charges${queryString ? `?${queryString}` : ""}`,
+  return getJson<ClubAdminFinanceObligationFeedResponse>(
+    `/api/semo/v1/clubs/${clubId}/admin/more/finance/obligations${queryString ? `?${queryString}` : ""}`,
   );
 }
 
-export function getClubAdminDuesChargeDetail(
+export function getClubAdminFinanceObligationDetail(
   clubId: string | number,
-  chargeId: string | number,
+  obligationId: string | number,
 ) {
-  return getJson<ClubAdminDuesChargeDetailResponse>(
-    `/api/semo/v1/clubs/${clubId}/admin/more/dues/charges/${chargeId}/invoices`,
+  return getJson<ClubAdminFinanceObligationDetailResponse>(
+    `/api/semo/v1/clubs/${clubId}/admin/more/finance/obligations/${obligationId}/payments`,
   );
 }
 
-export function createClubDuesCharge(
+export function createClubFinanceObligation(
   clubId: string | number,
-  request: CreateClubDuesChargeRequest,
+  request: CreateFinanceObligationRequest,
 ) {
-  return postJson<CreateClubDuesChargeResponse>(
-    `/api/semo/v1/clubs/${clubId}/admin/more/dues/charges`,
+  return postJson<CreateFinanceObligationResponse>(
+    `/api/semo/v1/clubs/${clubId}/admin/more/finance/obligations`,
     request,
   );
 }
 
-export function deleteClubDuesCharge(
+export function deleteClubFinanceObligation(
   clubId: string | number,
-  chargeId: string | number,
+  obligationId: string | number,
 ) {
-  return deleteJson<void>(`/api/semo/v1/clubs/${clubId}/admin/more/dues/charges/${chargeId}`);
+  return deleteJson<void>(`/api/semo/v1/clubs/${clubId}/admin/more/finance/obligations/${obligationId}`);
 }
 
-export function updateClubDuesPaymentStatus(
+export function updateClubFinancePaymentStatus(
   clubId: string | number,
-  invoiceId: string | number,
-  request: UpdateClubDuesPaymentStatusRequest,
+  paymentId: string | number,
+  request: UpdateFinancePaymentStatusRequest,
 ) {
-  return putJson<ClubDuesInvoice>(
-    `/api/semo/v1/clubs/${clubId}/admin/more/dues/invoices/${invoiceId}/payment-status`,
+  return patchJson<ClubFinancePayment>(
+    `/api/semo/v1/clubs/${clubId}/admin/more/finance/payments/${paymentId}/status`,
     request,
   );
 }

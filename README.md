@@ -126,7 +126,7 @@ NEXT_PUBLIC_IMAGE_BASE_URL=http://localhost:8081
 - `/clubs/[clubId]/more/attendance`
 - `/clubs/[clubId]/more/todos`
 - `/clubs/[clubId]/more/members`
-- `/clubs/[clubId]/more/dues`
+- `/clubs/[clubId]/more/finance`
 - `/clubs/[clubId]/more/tournaments`
 - `/clubs/[clubId]/more/tournaments/[tournamentRecordId]`
 - `/clubs/[clubId]/more/brackets`
@@ -150,7 +150,7 @@ NEXT_PUBLIC_IMAGE_BASE_URL=http://localhost:8081
 - `/clubs/[clubId]/admin/more/attendance`
 - `/clubs/[clubId]/admin/more/todos`
 - `/clubs/[clubId]/admin/more/members`
-- `/clubs/[clubId]/admin/more/dues`
+- `/clubs/[clubId]/admin/more/finance`
 - `/clubs/[clubId]/admin/more/tournaments`
 - `/clubs/[clubId]/admin/more/tournaments/[tournamentRecordId]`
 - `/clubs/[clubId]/admin/more/brackets`
@@ -170,10 +170,10 @@ NEXT_PUBLIC_IMAGE_BASE_URL=http://localhost:8081
 - 게시글 읽음 상태를 별도 API로 조회합니다.
 - 일정과 투표는 게시판/캘린더 공유 상태, 고정 여부, lifecycle 상태를 화면에서 함께 다룹니다.
 
-### Tournament / bracket / dues / roles
+### Tournament / bracket / finance / roles
 - 대회는 사용자 작성 -> 관리자 승인 -> 참가 신청/승인 흐름을 가집니다.
 - 대진표는 직접 작성 또는 대회 참가자 불러오기 후 제출/승인 흐름을 가집니다.
-- 회비는 사용자 조회 화면과 관리자 발행/납부 처리 화면이 분리됩니다.
+- 재정관리는 사용자 조회 화면과 관리자 발행/납부 처리 화면이 분리됩니다.
 - 회원 디렉터리는 사용자 `/more/members`에서 다른 회원을 보고, 관리자 `/admin/more/members`에서 직책/한줄소개/최근 활동 노출 여부를 설정합니다.
 - 직책관리는 `ADMIN_ONLY` 기능으로, 직책 생성/수정/삭제와 멤버 할당 화면이 따로 있습니다.
 
