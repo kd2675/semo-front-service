@@ -1,10 +1,14 @@
 import { deleteJson, getJson, patchJson, postJson, putJson } from "@/app/lib/api";
+import type { ActivityCategoryKey, ActivityTagKey, AffiliationTypeKey } from "@/app/lib/club-classification";
 import type { RegionScope } from "@/app/lib/regions";
 
 export type CreateClubRequest = {
   name: string;
   description?: string | null;
   categoryKey?: string | null;
+  activityCategory?: ActivityCategoryKey | null;
+  activityTags?: ActivityTagKey[];
+  affiliationType?: AffiliationTypeKey | null;
   visibilityStatus?: "PUBLIC" | "PRIVATE";
   membershipPolicy?: "APPROVAL" | "OPEN";
   regionScope?: RegionScope;
@@ -21,6 +25,9 @@ export type ClubCreateResponse = {
   summary: string | null;
   description: string | null;
   categoryKey: string | null;
+  activityCategory: ActivityCategoryKey | null;
+  activityTags: ActivityTagKey[];
+  affiliationType: AffiliationTypeKey | null;
   visibilityStatus: string;
   membershipPolicy: string;
   regionScope: RegionScope;
@@ -41,6 +48,9 @@ export type MyClubSummary = {
   summary: string | null;
   description: string | null;
   categoryKey: string | null;
+  activityCategory: ActivityCategoryKey | null;
+  activityTags: ActivityTagKey[];
+  affiliationType: AffiliationTypeKey | null;
   regionScope: RegionScope;
   regionDepth1Code: string | null;
   regionDepth2Code: string | null;
@@ -60,6 +70,9 @@ export type ClubDiscoverSummary = {
   summary: string | null;
   description: string | null;
   categoryKey: string | null;
+  activityCategory: ActivityCategoryKey | null;
+  activityTags: ActivityTagKey[];
+  affiliationType: AffiliationTypeKey | null;
   visibilityStatus: "PUBLIC" | "PRIVATE" | string;
   membershipPolicy: "APPROVAL" | "OPEN" | string;
   regionScope: RegionScope;
@@ -75,6 +88,7 @@ export type ClubDiscoverSummary = {
   joinStatus: "NONE" | "PENDING" | "REJECTED" | "CANCELED" | string;
   clubJoinRequestId: number | null;
   recommendedByCategory: boolean;
+  recommendedByTags: boolean;
 };
 
 export type ClubDiscoverResponse = {
@@ -99,6 +113,9 @@ export type ClubJoinActionResponse = {
 };
 
 export type UpdateClubSettingsRequest = {
+  activityCategory?: ActivityCategoryKey | null;
+  activityTags?: ActivityTagKey[];
+  affiliationType?: AffiliationTypeKey | null;
   regionScope: RegionScope;
   regionDepth1Code?: string | null;
   regionDepth2Code?: string | null;

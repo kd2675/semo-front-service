@@ -16,6 +16,11 @@ import { useRouter } from "next/navigation";
 import { clearAccessToken, getUserFromToken, logout, normalizeRole } from "@/app/lib/auth";
 import { onAuthChanged } from "@/app/lib/authEvents";
 import {
+  getActivityCategoryLabel,
+  getAffiliationTypeLabel,
+  getPrimaryClubActivityLabel,
+} from "@/app/lib/club-classification";
+import {
   cancelClubJoinRequest,
   getDiscoverClubs,
   getMyClubs,
@@ -96,7 +101,7 @@ function DiscoverClubModal({
           <div>
             <div className="flex flex-wrap items-center gap-2">
               <h3 className="text-xl font-bold tracking-tight text-slate-900">{club.name}</h3>
-              {club.recommendedByCategory ? (
+              {club.recommendedByTags || club.recommendedByCategory ? (
                 <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold uppercase text-emerald-600">
                   추천
                 </span>
@@ -119,7 +124,20 @@ function DiscoverClubModal({
         <div className="mt-5 grid grid-cols-2 gap-3">
           <div className="rounded-2xl bg-slate-50 px-4 py-3">
             <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">CATEGORY</p>
-            <p className="mt-1 text-sm font-semibold text-slate-700">{club.categoryKey ?? "OTHER"}</p>
+            <p className="mt-1 text-sm font-semibold text-slate-700">
+              {getPrimaryClubActivityLabel(club.activityTags, club.activityCategory, club.categoryKey)}
+            </p>
+          </div>
+          <div className="rounded-2xl bg-slate-50 px-4 py-3">
+            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">TYPE</p>
+            <p className="mt-1 text-sm font-semibold text-slate-700">
+              {[
+                getActivityCategoryLabel(club.activityCategory),
+                getAffiliationTypeLabel(club.affiliationType),
+              ]
+                .filter(Boolean)
+                .join(" · ") || "기타 · 독립"}
+            </p>
           </div>
           <div className="rounded-2xl bg-slate-50 px-4 py-3">
             <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">JOIN RULE</p>
@@ -545,7 +563,8 @@ export default function Home() {
                           <div className="mt-3 flex flex-wrap items-center gap-1.5 text-xs font-medium text-slate-500">
                             <span className="material-symbols-outlined text-sm text-[var(--primary)]">group</span>
                             <span>{club.roleCode}</span>
-                            {club.categoryKey ? <span>· {club.categoryKey}</span> : null}
+                            <span>· {getPrimaryClubActivityLabel(club.activityTags, club.activityCategory, club.categoryKey)}</span>
+                            {club.affiliationType ? <span>· {getAffiliationTypeLabel(club.affiliationType)}</span> : null}
                             {club.regionLabel ? <span>· {club.regionLabel}</span> : null}
                           </div>
                         </div>
@@ -606,9 +625,9 @@ export default function Home() {
                         <div className="flex flex-wrap items-center gap-2">
                           <p className="text-base font-bold text-slate-900">{club.name}</p>
                           <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold uppercase text-slate-600">
-                            {club.categoryKey ?? "OTHER"}
+                            {getPrimaryClubActivityLabel(club.activityTags, club.activityCategory, club.categoryKey)}
                           </span>
-                          {club.recommendedByCategory ? (
+                          {club.recommendedByTags || club.recommendedByCategory ? (
                             <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold uppercase text-emerald-600">
                               추천
                             </span>
@@ -629,6 +648,11 @@ export default function Home() {
                           <span className="rounded-full bg-slate-100 px-2.5 py-1">
                             {getMembershipPolicyLabel(club.membershipPolicy)}
                           </span>
+                          {club.affiliationType ? (
+                            <span className="rounded-full bg-slate-100 px-2.5 py-1">
+                              {getAffiliationTypeLabel(club.affiliationType)}
+                            </span>
+                          ) : null}
                           {club.regionLabel ? (
                             <span className="rounded-full bg-slate-100 px-2.5 py-1">{club.regionLabel}</span>
                           ) : null}

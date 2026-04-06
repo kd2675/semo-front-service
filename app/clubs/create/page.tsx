@@ -2,28 +2,15 @@
 
 import { useRouter } from "next/navigation";
 import { RouterLink } from "@/app/components/RouterLink";
+import { ClubClassificationField } from "@/app/components/ClubClassificationField";
 import { ClubRegionField } from "@/app/components/ClubRegionField";
 import { motion, useReducedMotion } from "motion/react";
 import { useEffect, useState } from "react";
 import { createClub } from "@/app/lib/clubs";
+import type { ActivityCategoryKey, ActivityTagKey, AffiliationTypeKey } from "@/app/lib/club-classification";
 import { uploadTempImage } from "@/app/lib/imageUpload";
 import { staggeredFadeUpMotion } from "@/app/lib/motion";
 import type { RegionScope } from "@/app/lib/regions";
-
-type ClubCategory = {
-  key: string;
-  label: string;
-  icon: string;
-};
-
-const CATEGORIES: ClubCategory[] = [
-  { key: "TENNIS", label: "Tennis", icon: "sports_tennis" },
-  { key: "RUNNING", label: "Running", icon: "directions_run" },
-  { key: "CROSSFIT", label: "Crossfit", icon: "fitness_center" },
-  { key: "HIKING", label: "Hiking", icon: "hiking" },
-  { key: "CYCLING", label: "Cycling", icon: "pedal_bike" },
-  { key: "OTHER", label: "Other", icon: "more_horiz" },
-];
 
 const VISIBILITY_OPTIONS = [
   { key: "PUBLIC", label: "Public", description: "누구나 찾고 가입 요청 가능" },
@@ -41,7 +28,9 @@ export default function CreateClubPage() {
   const reduceMotion = Boolean(prefersReducedMotion);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [categoryKey, setCategoryKey] = useState<string>("TENNIS");
+  const [activityCategory, setActivityCategory] = useState<ActivityCategoryKey>("SPORTS");
+  const [activityTags, setActivityTags] = useState<ActivityTagKey[]>(["TENNIS"]);
+  const [affiliationType, setAffiliationType] = useState<AffiliationTypeKey>("INDEPENDENT");
   const [visibilityStatus, setVisibilityStatus] = useState<(typeof VISIBILITY_OPTIONS)[number]["key"]>("PUBLIC");
   const [membershipPolicy, setMembershipPolicy] = useState<(typeof MEMBERSHIP_OPTIONS)[number]["key"]>("APPROVAL");
   const [regionScope, setRegionScope] = useState<RegionScope>("NATIONWIDE");
@@ -114,7 +103,9 @@ export default function CreateClubPage() {
       const result = await createClub({
         name: name.trim(),
         description: description.trim() || null,
-        categoryKey,
+        activityCategory,
+        activityTags,
+        affiliationType,
         visibilityStatus,
         membershipPolicy,
         regionScope,
@@ -131,7 +122,9 @@ export default function CreateClubPage() {
       setFeedback(`클럽이 생성되었습니다. 클럽 ID ${result.data.clubId}.`);
       setName("");
       setDescription("");
-      setCategoryKey("TENNIS");
+      setActivityCategory("SPORTS");
+      setActivityTags(["TENNIS"]);
+      setAffiliationType("INDEPENDENT");
       setVisibilityStatus("PUBLIC");
       setMembershipPolicy("APPROVAL");
       setRegionScope("NATIONWIDE");
@@ -234,26 +227,22 @@ export default function CreateClubPage() {
             </motion.section>
 
             <motion.section className="px-4 py-6" {...staggeredFadeUpMotion(3, reduceMotion)}>
-              <h3 className="mb-4 px-1 text-sm font-bold leading-tight text-slate-900">Club Category</h3>
-              <div className="flex flex-wrap gap-2">
-                {CATEGORIES.map((category) => {
-                  const isActive = categoryKey === category.key;
-                  return (
-                    <button
-                      key={category.key}
-                      type="button"
-                      onClick={() => setCategoryKey(category.key)}
-                      className={`flex items-center gap-2 rounded-full px-4 py-2.5 text-sm transition-all ${
-                        isActive
-                          ? "bg-[var(--primary)] text-white shadow-md shadow-[var(--primary)]/20"
-                          : "border border-transparent bg-slate-100 font-medium text-slate-600 hover:bg-slate-200"
-                      }`}
-                    >
-                      <span className="material-symbols-outlined text-lg">{category.icon}</span>
-                      {category.label}
-                    </button>
-                  );
-                })}
+              <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4">
+                <h3 className="text-sm font-bold text-slate-900">모임 분류</h3>
+                <p className="mt-2 text-sm leading-6 text-slate-500">
+                  모임이 어떤 활동을 하는지, 어떤 배경을 가진 모임인지 함께 저장합니다.
+                </p>
+                <div className="mt-4">
+                  <ClubClassificationField
+                    value={{ activityCategory, activityTags, affiliationType }}
+                    onChange={(nextValue) => {
+                      setActivityCategory(nextValue.activityCategory ?? "OTHER");
+                      setActivityTags(nextValue.activityTags);
+                      setAffiliationType(nextValue.affiliationType ?? "INDEPENDENT");
+                    }}
+                    disabled={isSubmitting || isUploadingPhoto}
+                  />
+                </div>
               </div>
             </motion.section>
 

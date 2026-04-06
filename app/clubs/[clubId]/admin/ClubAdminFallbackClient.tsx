@@ -101,7 +101,7 @@ export function ClubAdminFallbackClient({ clubId }: ClubAdminFallbackClientProps
       {
         id: "settings",
         title: "기본 정보",
-        description: "모임 대표 활동 지역과 기본 정보를 관리합니다.",
+        description: "모임 분류와 대표 활동 지역을 관리합니다.",
         icon: "tune",
         href: `/clubs/${clubId}/admin/settings`,
       },
