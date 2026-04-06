@@ -1,12 +1,14 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { RouterLink } from "@/app/components/RouterLink";
+import { ClubRegionField } from "@/app/components/ClubRegionField";
 import { motion, useReducedMotion } from "motion/react";
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import { createClub } from "@/app/lib/clubs";
 import { uploadTempImage } from "@/app/lib/imageUpload";
 import { staggeredFadeUpMotion } from "@/app/lib/motion";
+import type { RegionScope } from "@/app/lib/regions";
 
 type ClubCategory = {
   key: string;
@@ -42,6 +44,9 @@ export default function CreateClubPage() {
   const [categoryKey, setCategoryKey] = useState<string>("TENNIS");
   const [visibilityStatus, setVisibilityStatus] = useState<(typeof VISIBILITY_OPTIONS)[number]["key"]>("PUBLIC");
   const [membershipPolicy, setMembershipPolicy] = useState<(typeof MEMBERSHIP_OPTIONS)[number]["key"]>("APPROVAL");
+  const [regionScope, setRegionScope] = useState<RegionScope>("NATIONWIDE");
+  const [regionDepth1Code, setRegionDepth1Code] = useState<string | null>(null);
+  const [regionDepth2Code, setRegionDepth2Code] = useState<string | null>(null);
   const [photoPreviewUrl, setPhotoPreviewUrl] = useState<string | null>(null);
   const [uploadedPhotoFileName, setUploadedPhotoFileName] = useState<string | null>(null);
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
@@ -112,6 +117,9 @@ export default function CreateClubPage() {
         categoryKey,
         visibilityStatus,
         membershipPolicy,
+        regionScope,
+        regionDepth1Code,
+        regionDepth2Code,
         fileName: uploadedPhotoFileName,
       });
 
@@ -126,6 +134,9 @@ export default function CreateClubPage() {
       setCategoryKey("TENNIS");
       setVisibilityStatus("PUBLIC");
       setMembershipPolicy("APPROVAL");
+      setRegionScope("NATIONWIDE");
+      setRegionDepth1Code(null);
+      setRegionDepth2Code(null);
       setUploadedPhotoFileName(null);
       setPhotoPreviewUrl((current) => {
         if (current) {
@@ -301,7 +312,18 @@ export default function CreateClubPage() {
                       })}
                     </div>
                   </div>
-
+                  <div>
+                    <ClubRegionField
+                      value={{ regionScope, regionDepth1Code, regionDepth2Code }}
+                      onChange={(nextValue) => {
+                        setRegionScope(nextValue.regionScope);
+                        setRegionDepth1Code(nextValue.regionDepth1Code);
+                        setRegionDepth2Code(nextValue.regionDepth2Code);
+                      }}
+                      disabled={isSubmitting || isUploadingPhoto}
+                      helperText="클럽 대표 활동 권역입니다. 일정별 장소와는 별도로 모임의 기본 지역을 저장합니다."
+                    />
+                  </div>
                 </div>
               </div>
             </motion.section>

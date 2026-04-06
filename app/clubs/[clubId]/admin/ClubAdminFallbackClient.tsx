@@ -99,6 +99,13 @@ export function ClubAdminFallbackClient({ clubId }: ClubAdminFallbackClientProps
   const actions = useMemo(
     () => [
       {
+        id: "settings",
+        title: "기본 정보",
+        description: "모임 대표 활동 지역과 기본 정보를 관리합니다.",
+        icon: "tune",
+        href: `/clubs/${clubId}/admin/settings`,
+      },
+      {
         id: "menu",
         title: "메뉴 관리",
         description: "앱 기능, 탭, 레이아웃을 설정합니다.",

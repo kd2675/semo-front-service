@@ -135,6 +135,10 @@ function DiscoverClubModal({
             <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">MEMBERS</p>
             <p className="mt-1 text-sm font-semibold text-slate-700">{club.activeMemberCount.toLocaleString("ko-KR")}명</p>
           </div>
+          <div className="rounded-2xl bg-slate-50 px-4 py-3">
+            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">REGION</p>
+            <p className="mt-1 text-sm font-semibold text-slate-700">{club.regionLabel ?? "전국"}</p>
+          </div>
         </div>
 
         {showRequestMessage ? (
@@ -538,10 +542,11 @@ export default function Home() {
                           <p className="mt-1 line-clamp-2 text-xs font-medium text-slate-500">
                             {club.summary ?? club.description ?? "클럽 소개가 아직 없습니다."}
                           </p>
-                          <div className="mt-3 flex items-center gap-1.5 text-xs font-medium text-slate-500">
+                          <div className="mt-3 flex flex-wrap items-center gap-1.5 text-xs font-medium text-slate-500">
                             <span className="material-symbols-outlined text-sm text-[var(--primary)]">group</span>
                             <span>{club.roleCode}</span>
                             {club.categoryKey ? <span>· {club.categoryKey}</span> : null}
+                            {club.regionLabel ? <span>· {club.regionLabel}</span> : null}
                           </div>
                         </div>
                       </RouterLink>
@@ -624,6 +629,9 @@ export default function Home() {
                           <span className="rounded-full bg-slate-100 px-2.5 py-1">
                             {getMembershipPolicyLabel(club.membershipPolicy)}
                           </span>
+                          {club.regionLabel ? (
+                            <span className="rounded-full bg-slate-100 px-2.5 py-1">{club.regionLabel}</span>
+                          ) : null}
                         </div>
                       </div>
                     </div>

@@ -1,4 +1,5 @@
 import { deleteJson, getJson, patchJson, postJson, putJson } from "@/app/lib/api";
+import type { RegionScope } from "@/app/lib/regions";
 
 export type CreateClubRequest = {
   name: string;
@@ -6,6 +7,11 @@ export type CreateClubRequest = {
   categoryKey?: string | null;
   visibilityStatus?: "PUBLIC" | "PRIVATE";
   membershipPolicy?: "APPROVAL" | "OPEN";
+  regionScope?: RegionScope;
+  regionDepth1Code?: string | null;
+  regionDepth2Code?: string | null;
+  regionDepth1Name?: string | null;
+  regionDepth2Name?: string | null;
   fileName?: string | null;
 };
 
@@ -17,6 +23,12 @@ export type ClubCreateResponse = {
   categoryKey: string | null;
   visibilityStatus: string;
   membershipPolicy: string;
+  regionScope: RegionScope;
+  regionDepth1Code: string | null;
+  regionDepth2Code: string | null;
+  regionDepth1Name: string | null;
+  regionDepth2Name: string | null;
+  regionLabel: string | null;
   roleCode: string;
   fileName: string | null;
   imageUrl: string | null;
@@ -29,6 +41,12 @@ export type MyClubSummary = {
   summary: string | null;
   description: string | null;
   categoryKey: string | null;
+  regionScope: RegionScope;
+  regionDepth1Code: string | null;
+  regionDepth2Code: string | null;
+  regionDepth1Name: string | null;
+  regionDepth2Name: string | null;
+  regionLabel: string | null;
   roleCode: string;
   admin: boolean;
   fileName: string | null;
@@ -44,6 +62,12 @@ export type ClubDiscoverSummary = {
   categoryKey: string | null;
   visibilityStatus: "PUBLIC" | "PRIVATE" | string;
   membershipPolicy: "APPROVAL" | "OPEN" | string;
+  regionScope: RegionScope;
+  regionDepth1Code: string | null;
+  regionDepth2Code: string | null;
+  regionDepth1Name: string | null;
+  regionDepth2Name: string | null;
+  regionLabel: string | null;
   activeMemberCount: number;
   fileName: string | null;
   imageUrl: string | null;
@@ -72,6 +96,14 @@ export type ClubJoinActionResponse = {
   joinStatus: "ACTIVE" | "PENDING" | "REJECTED" | "CANCELED" | string;
   clubJoinRequestId: number | null;
   clubMemberId: number | null;
+};
+
+export type UpdateClubSettingsRequest = {
+  regionScope: RegionScope;
+  regionDepth1Code?: string | null;
+  regionDepth2Code?: string | null;
+  regionDepth1Name?: string | null;
+  regionDepth2Name?: string | null;
 };
 
 export type ClubBoardResponse = {
@@ -1647,6 +1679,10 @@ export function getMyClubs() {
 
 export function getMyClub(clubId: string | number) {
   return getJson<MyClubSummary>(`/api/semo/v1/clubs/${clubId}`);
+}
+
+export function updateClubSettings(clubId: string | number, request: UpdateClubSettingsRequest) {
+  return patchJson<MyClubSummary>(`/api/semo/v1/clubs/${clubId}/admin/settings`, request);
 }
 
 export function getClubBoard(clubId: string | number) {
