@@ -11,3 +11,5 @@ export type AuthUser = {
   role?: string;
   exp?: number;
 };
+
+export type AuthExpireReason = "expired" | "refresh_failed";

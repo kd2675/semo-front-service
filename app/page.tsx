@@ -13,8 +13,7 @@ import {
   useState,
 } from "react";
 import { useRouter } from "next/navigation";
-import { clearAccessToken, getUserFromToken, logout, normalizeRole } from "@/app/lib/auth";
-import { onAuthChanged } from "@/app/lib/authEvents";
+import { clearAccessToken, logout, normalizeRole } from "@/app/lib/auth";
 import {
   getActivityCategoryLabel,
   getAffiliationTypeLabel,
@@ -32,6 +31,7 @@ import {
 import { overlayFadeMotion, popInMotion, staggeredFadeUpMotion } from "@/app/lib/motion";
 import type { AuthUser } from "@/app/types/auth";
 import { useAppAlert } from "@/app/hooks/useAppAlert";
+import { useAppSelector } from "@/app/redux/hooks";
 
 function createProfileLabel(user: AuthUser | null): string {
   const source = user?.username?.trim();
@@ -197,7 +197,7 @@ export default function Home() {
   const router = useRouter();
   const prefersReducedMotion = useReducedMotion();
   const reduceMotion = Boolean(prefersReducedMotion);
-  const [user, setUser] = useState<AuthUser | null>(() => getUserFromToken());
+  const user = useAppSelector((state) => state.auth.user);
   const [searchQuery, setSearchQuery] = useState("");
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [myClubs, setMyClubs] = useState<MyClubSummary[]>([]);
@@ -261,16 +261,6 @@ export default function Home() {
     setDiscoverError(null);
     setDiscoverPayload(discoverResult.data);
   };
-
-  useEffect(() => {
-    const unsubscribe = onAuthChanged(() => {
-      setUser(getUserFromToken());
-    });
-
-    return () => {
-      unsubscribe();
-    };
-  }, []);
 
   useEffect(() => {
     let cancelled = false;

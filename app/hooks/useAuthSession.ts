@@ -1,6 +1,6 @@
 "use client";
 
-import { startTransition, useEffect, useEffectEvent, useState } from "react";
+import { startTransition, useEffect, useEffectEvent } from "react";
 import {
   bootstrapAccessToken,
   clearAccessToken,
@@ -11,12 +11,19 @@ import {
   refreshAccessToken,
   scheduleTokenExpiry,
 } from "@/app/lib/auth";
-import { onAuthChanged } from "@/app/lib/authEvents";
+import { useAppDispatch, useAppSelector } from "@/app/redux/hooks";
+import {
+  setAuthSnapshot,
+  setHydrated,
+  setRestoring,
+  type AuthStatus,
+} from "@/app/redux/slices/auth-slice";
 import type { AuthUser } from "@/app/types/auth";
 
-type AuthStatus = "unknown" | "in" | "out";
-
 export default function useAuthSession() {
+  const dispatch = useAppDispatch();
+  const { status, user, isHydrated, isRestoring } = useAppSelector((state) => state.auth);
+
   const readSnapshot = (): { status: AuthStatus; user: AuthUser | null } => {
     if (typeof window === "undefined") {
       return { status: "unknown", user: null };
@@ -39,15 +46,11 @@ export default function useAuthSession() {
     return { status: "in", user };
   };
 
-  const [snapshot, setSnapshot] = useState(readSnapshot);
-  const [isHydrated, setIsHydrated] = useState(false);
-  const [isRestoring, setIsRestoring] = useState(true);
-
   const commitSnapshot = useEffectEvent((restoring: boolean) => {
     const nextSnapshot = readSnapshot();
     startTransition(() => {
-      setSnapshot(nextSnapshot);
-      setIsRestoring(restoring);
+      dispatch(setAuthSnapshot(nextSnapshot));
+      dispatch(setRestoring(restoring));
     });
   });
 
@@ -89,15 +92,10 @@ export default function useAuthSession() {
   });
 
   useEffect(() => {
-    const frameId = window.requestAnimationFrame(() => setIsHydrated(true));
-    void syncSession();
-
-    const unsubscribe = onAuthChanged(() => {
-      startTransition(() => {
-        setSnapshot(readSnapshot());
-        setIsRestoring(false);
-      });
+    const frameId = window.requestAnimationFrame(() => {
+      dispatch(setHydrated());
     });
+    void syncSession();
 
     const handleVisibilityChange = () => {
       if (document.visibilityState === "visible") {
@@ -116,12 +114,11 @@ export default function useAuthSession() {
       window.removeEventListener("pageshow", handleResume);
       window.removeEventListener("online", handleResume);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
-      unsubscribe();
     };
-  }, []);
+  }, [dispatch]);
 
   useEffect(() => {
-    const userExp = snapshot.user?.exp;
+    const userExp = user?.exp;
     if (!userExp) {
       return;
     }
@@ -155,11 +152,11 @@ export default function useAuthSession() {
         commitSnapshot(false);
       })();
     }, userExp);
-  }, [snapshot.user?.exp]);
+  }, [user?.exp]);
 
   return {
     isHydrated,
-    authStatus: isRestoring ? "unknown" : snapshot.status,
-    user: snapshot.user,
+    authStatus: isRestoring ? "unknown" : status,
+    user,
   };
 }

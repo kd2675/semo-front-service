@@ -12,11 +12,13 @@
     "@dnd-kit/core": "^6.3.1",
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
+    "@reduxjs/toolkit": "^2.11.2",
     "axios": "^1.13.4",
     "motion": "^12.35.2",
     "next": "16.1.6",
     "react": "19.2.3",
     "react-dom": "19.2.3",
+    "react-redux": "^9.2.0",
     "swiper": "^12.1.2"
   },
   "devDependencies": {

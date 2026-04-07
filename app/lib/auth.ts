@@ -1,6 +1,13 @@
 import { postJson } from "@/app/lib/api";
-import { emitAuthChanged, emitAuthExpired } from "@/app/lib/authEvents";
-import type { LoginResponse, AuthUser } from "@/app/types/auth";
+import {
+  clearAuth,
+  clearAuthExpired,
+  setAuthExpired,
+  setAuthSnapshot,
+  setRestoring,
+} from "@/app/redux/slices/auth-slice";
+import { store } from "@/app/redux/store";
+import type { AuthExpireReason, LoginResponse, AuthUser } from "@/app/types/auth";
 
 const TOKEN_EXPIRY_LEEWAY_SECONDS = 300;
 let accessTokenMemory: string | null = null;
@@ -12,12 +19,25 @@ export function getAccessToken(): string | null {
 
 export function setAccessToken(token: string): void {
   accessTokenMemory = token;
-  emitAuthChanged();
+  const user = getUserFromToken(token);
+  if (!user || (user.exp && isTokenExpired(user.exp))) {
+    clearAccessToken();
+    return;
+  }
+
+  store.dispatch(clearAuthExpired());
+  store.dispatch(
+    setAuthSnapshot({
+      status: "in",
+      user,
+    }),
+  );
+  store.dispatch(setRestoring(false));
 }
 
 export function clearAccessToken(): void {
   accessTokenMemory = null;
-  emitAuthChanged();
+  store.dispatch(clearAuth());
 }
 
 function decodeBase64Url(value: string): string | null {
@@ -102,10 +122,8 @@ export function scheduleTokenExpiry(
   return () => window.clearTimeout(timeoutId);
 }
 
-export type AuthExpireReason = "expired" | "refresh_failed";
-
 export function notifyAuthExpired(reason: AuthExpireReason = "expired"): void {
-  emitAuthExpired(reason);
+  store.dispatch(setAuthExpired(reason));
 }
 
 export async function logout(): Promise<void> {
