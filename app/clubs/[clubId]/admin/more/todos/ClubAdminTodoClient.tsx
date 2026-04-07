@@ -6,11 +6,10 @@ import { useState } from "react";
 import type { CSSProperties } from "react";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import { DatePopoverField } from "@/app/components/DatePopoverField";
-import { EphemeralToast } from "@/app/components/EphemeralToast";
 import { RouteModal } from "@/app/components/RouteModal";
 import { TimePopoverField } from "@/app/components/TimePopoverField";
 import { TodoApplicationManagerModal } from "@/app/components/TodoApplicationManagerModal";
-import { useEphemeralToast } from "@/app/components/useEphemeralToast";
+import { useAppToast } from "@/app/hooks/useAppToast";
 import { ScheduleActionConfirmModal } from "@/app/clubs/[clubId]/schedule/ScheduleActionConfirmModal";
 import {
   createClubTodo,
@@ -248,7 +247,7 @@ export function ClubAdminTodoClient({ clubId, initialData }: ClubAdminTodoClient
   const [isApplicationModalLoading, setIsApplicationModalLoading] = useState(false);
   const [reviewingApplicationId, setReviewingApplicationId] = useState<number | null>(null);
   const [deletingTodoItem, setDeletingTodoItem] = useState<TodoSummary | null>(null);
-  const { toast, showToast, clearToast } = useEphemeralToast();
+  const { showToast, clearToast } = useAppToast();
 
   const editingItem = editorModal?.mode === "edit" ? editorModal.original : null;
   const assignedMember = todoData.availableMembers.find(
@@ -852,7 +851,6 @@ export function ClubAdminTodoClient({ clubId, initialData }: ClubAdminTodoClient
           </button>
         ) : null}
 
-        <EphemeralToast toastId={toast?.id ?? null} message={toast?.message ?? null} tone={toast?.tone} />
 
         {deletingTodoItem ? (
           <ScheduleActionConfirmModal
@@ -1212,15 +1210,17 @@ export function ClubAdminTodoClient({ clubId, initialData }: ClubAdminTodoClient
           ) : null}
         </AnimatePresence>
 
-        {applicationModalItem ? (
-          <TodoApplicationManagerModal
-            data={applicationModalData}
-            loading={isApplicationModalLoading}
-            reviewingApplicationId={reviewingApplicationId}
-            onDismiss={closeApplicationModal}
-            onReview={handleReviewApplication}
-          />
-        ) : null}
+        <AnimatePresence initial={false} mode="wait">
+          {applicationModalItem ? (
+            <TodoApplicationManagerModal
+              data={applicationModalData}
+              loading={isApplicationModalLoading}
+              reviewingApplicationId={reviewingApplicationId}
+              onDismiss={closeApplicationModal}
+              onReview={handleReviewApplication}
+            />
+          ) : null}
+        </AnimatePresence>
       </div>
     </div>
   );

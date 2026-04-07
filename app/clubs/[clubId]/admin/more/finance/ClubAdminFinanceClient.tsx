@@ -13,10 +13,9 @@ import {
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import { DatePopoverField } from "@/app/components/DatePopoverField";
-import { EphemeralToast } from "@/app/components/EphemeralToast";
 import { RouteModal } from "@/app/components/RouteModal";
 import { TimePopoverField } from "@/app/components/TimePopoverField";
-import { useEphemeralToast } from "@/app/components/useEphemeralToast";
+import { useAppToast } from "@/app/hooks/useAppToast";
 import { ScheduleActionConfirmModal } from "@/app/clubs/[clubId]/schedule/ScheduleActionConfirmModal";
 import {
   createClubAdminFinanceExpense,
@@ -177,7 +176,7 @@ export function ClubAdminFinanceClient({
   const [activePaymentId, setActivePaymentId] = useState<number | null>(null);
   const [activeRequestId, setActiveRequestId] = useState<number | null>(null);
   const [pendingDeleteObligation, setPendingDeleteObligation] = useState<ClubAdminFinanceObligation | null>(null);
-  const { toast, showToast, clearToast } = useEphemeralToast();
+  const { showToast, clearToast } = useAppToast();
   const loadingMoreRef = useRef(false);
   const didMountFilterRef = useRef(false);
 
@@ -1028,7 +1027,6 @@ export function ClubAdminFinanceClient({
           </button>
         ) : null}
 
-        <EphemeralToast toastId={toast?.id ?? null} message={toast?.message ?? null} tone={toast?.tone} />
         <AnimatePresence>
           {detailObligationId && activeObligationSummary ? (
             <RouteModal onDismiss={() => setDetailObligationId(null)}>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { RouteModalPresence } from "@/app/components/RouteModalPresence";
 import { ClubPollDetailModal } from "@/app/components/ClubDetailModals";
 
 type ClubAdminPollDetailRouteModalProps = {
@@ -21,12 +22,16 @@ export function ClubAdminPollDetailRouteModal({
 
   return (
     <div className="min-h-screen bg-[var(--background-light)]">
-      <ClubPollDetailModal
-        clubId={clubId}
-        voteId={voteId}
-        mode="admin"
-        onRequestClose={handleDismiss}
-      />
+      <RouteModalPresence onExitComplete={handleDismiss}>
+        {(requestClose) => (
+          <ClubPollDetailModal
+            clubId={clubId}
+            voteId={voteId}
+            mode="admin"
+            onRequestClose={requestClose}
+          />
+        )}
+      </RouteModalPresence>
     </div>
   );
 }

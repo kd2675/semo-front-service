@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { RouteModalPresence } from "@/app/components/RouteModalPresence";
 import { RouteModal } from "@/app/components/RouteModal";
 import { ClubScheduleEditorClient } from "../../ClubScheduleEditorClient";
 
@@ -21,14 +22,19 @@ export function ClubScheduleEditRouteModal({
 
   return (
     <div className="min-h-screen bg-[var(--background-light)]">
-      <RouteModal onDismiss={handleDismiss} dismissOnBackdrop={false}>
-        <ClubScheduleEditorClient
-          clubId={clubId}
-          eventId={eventId}
-          presentation="modal"
-          onRequestClose={handleDismiss}
-        />
-      </RouteModal>
+      <RouteModalPresence onExitComplete={handleDismiss}>
+        {(requestClose) => (
+          <RouteModal onDismiss={requestClose} dismissOnBackdrop={false}>
+            <ClubScheduleEditorClient
+              clubId={clubId}
+              eventId={eventId}
+              presentation="modal"
+              onRequestClose={requestClose}
+              onDeleted={requestClose}
+            />
+          </RouteModal>
+        )}
+      </RouteModalPresence>
     </div>
   );
 }

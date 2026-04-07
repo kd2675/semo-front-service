@@ -4,9 +4,8 @@ import { startTransition, useMemo, useState, type ReactNode } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { ClubModeSwitchFab } from "@/app/components/ClubModeSwitchFab";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
-import { EphemeralToast } from "@/app/components/EphemeralToast";
 import { RouteModal } from "@/app/components/RouteModal";
-import { useEphemeralToast } from "@/app/components/useEphemeralToast";
+import { useAppToast } from "@/app/hooks/useAppToast";
 import {
   createClubFinanceRequest,
   type ClubFinanceHomeResponse,
@@ -122,7 +121,7 @@ export function ClubFinanceClient({
   const [activeAction, setActiveAction] = useState<MemberFabAction | null>(null);
   const [draft, setDraft] = useState<MemberRequestDraft>(createDraft("ADVANCE"));
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { toast, showToast, clearToast } = useEphemeralToast();
+  const { showToast, clearToast } = useAppToast();
 
   const paidHistory = useMemo(
     () =>
@@ -404,7 +403,6 @@ export function ClubFinanceClient({
 
         {isAdmin ? <ClubModeSwitchFab clubId={clubId} mode="user" /> : null}
 
-        <EphemeralToast toastId={toast?.id ?? null} message={toast?.message ?? null} tone={toast?.tone} />
         <AnimatePresence>
           {showActionSheet ? (
             <RouteModal

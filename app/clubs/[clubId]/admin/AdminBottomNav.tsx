@@ -18,9 +18,8 @@ import {
   useSortable,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { EphemeralToast } from "@/app/components/EphemeralToast";
 import { RouterLink } from "@/app/components/RouterLink";
-import { useEphemeralToast } from "@/app/components/useEphemeralToast";
+import { useAppToast } from "@/app/hooks/useAppToast";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
@@ -176,7 +175,7 @@ export function AdminBottomNav({ clubId }: AdminBottomNavProps) {
   const [activeFeatureKey, setActiveFeatureKey] = useState<string | null>(null);
   const [isReorderSaving, setIsReorderSaving] = useState(false);
   const [reorderFeedback, setReorderFeedback] = useState<string | null>(null);
-  const { toast, showToast, clearToast } = useEphemeralToast();
+  const { showToast, clearToast } = useAppToast();
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
@@ -610,7 +609,6 @@ export function AdminBottomNav({ clubId }: AdminBottomNavProps) {
         ) : null}
       </AnimatePresence>
 
-      <EphemeralToast toastId={toast?.id ?? null} message={toast?.message ?? null} tone={toast?.tone} />
 
       <AnimatePresence initial={false}>
         {isDocked ? (

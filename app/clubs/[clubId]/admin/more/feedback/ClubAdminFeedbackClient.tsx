@@ -4,8 +4,7 @@ import { motion, useReducedMotion } from "motion/react";
 import { useMemo, useState } from "react";
 import type { CSSProperties } from "react";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
-import { EphemeralToast } from "@/app/components/EphemeralToast";
-import { useEphemeralToast } from "@/app/components/useEphemeralToast";
+import { useAppToast } from "@/app/hooks/useAppToast";
 import {
   getClubAdminFeedback,
   getClubAdminFeedbackDetail,
@@ -110,7 +109,7 @@ export function ClubAdminFeedbackClient({
     initialDetail?.visibilityScope ?? "PRIVATE",
   );
   const [adminAnswer, setAdminAnswer] = useState(initialDetail?.adminAnswer ?? "");
-  const { toast, showToast, clearToast } = useEphemeralToast();
+  const { showToast, clearToast } = useAppToast();
 
   const filteredItems = useMemo(
     () =>
@@ -450,7 +449,6 @@ export function ClubAdminFeedbackClient({
           </motion.section>
         </main>
 
-        <EphemeralToast toastId={toast?.id ?? null} message={toast?.message ?? null} tone={toast?.tone} />
       </div>
     </div>
   );

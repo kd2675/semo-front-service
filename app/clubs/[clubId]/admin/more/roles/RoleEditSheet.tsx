@@ -1,7 +1,6 @@
 "use client";
 
-import { EphemeralToast } from "@/app/components/EphemeralToast";
-import { useEphemeralToast } from "@/app/components/useEphemeralToast";
+import { useAppToast } from "@/app/hooks/useAppToast";
 import { ScheduleActionConfirmModal } from "@/app/clubs/[clubId]/schedule/ScheduleActionConfirmModal";
 import { bottomSheetMotion, overlayFadeMotion } from "@/app/lib/motion";
 import {
@@ -281,7 +280,7 @@ export function RoleEditSheet({
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [memberQuery, setMemberQuery] = useState("");
   const deferredMemberQuery = useDeferredValue(memberQuery.trim().toLowerCase());
-  const { toast, showToast, clearToast } = useEphemeralToast(2400);
+  const { showToast, clearToast } = useAppToast(2400);
   const colorHex = form.colorHex || "#904e00";
 
   useEffect(() => {
@@ -480,7 +479,6 @@ export function RoleEditSheet({
 
   return (
     <>
-      <EphemeralToast toastId={toast?.id} message={toast?.message ?? null} tone={toast?.tone} />
 
       <motion.button
         type="button"

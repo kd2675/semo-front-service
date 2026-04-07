@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { RouteModalPresence } from "@/app/components/RouteModalPresence";
 import { ClubTournamentDetailModal } from "@/app/components/ClubDetailModals";
 
 type ClubTournamentDetailRouteModalProps = {
@@ -21,12 +22,16 @@ export function ClubTournamentDetailRouteModal({
 
   return (
     <div className="min-h-screen bg-[var(--background-light)]">
-      <ClubTournamentDetailModal
-        clubId={clubId}
-        tournamentRecordId={tournamentRecordId}
-        mode={mode}
-        onRequestClose={() => router.push(basePath)}
-      />
+      <RouteModalPresence onExitComplete={() => router.push(basePath)}>
+        {(requestClose) => (
+          <ClubTournamentDetailModal
+            clubId={clubId}
+            tournamentRecordId={tournamentRecordId}
+            mode={mode}
+            onRequestClose={requestClose}
+          />
+        )}
+      </RouteModalPresence>
     </div>
   );
 }

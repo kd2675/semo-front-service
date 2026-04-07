@@ -22,8 +22,7 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
-import { EphemeralToast } from "@/app/components/EphemeralToast";
-import { useEphemeralToast } from "@/app/components/useEphemeralToast";
+import { useAppToast } from "@/app/hooks/useAppToast";
 import { Public_Sans } from "next/font/google";
 import { motion, useReducedMotion } from "motion/react";
 import { startTransition, useEffect, useMemo, useState } from "react";
@@ -164,7 +163,7 @@ export function ClubAdminMenuClient({
   );
   const [isSaving, setIsSaving] = useState(false);
   const [activeFeatureKey, setActiveFeatureKey] = useState<string | null>(null);
-  const { toast, showToast, clearToast } = useEphemeralToast();
+  const { showToast, clearToast } = useAppToast();
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
@@ -479,7 +478,6 @@ export function ClubAdminMenuClient({
           </div>
         ) : null}
       </div>
-      <EphemeralToast toastId={toast?.id ?? null} message={toast?.message ?? null} tone={toast?.tone} />
     </div>
   );
 }

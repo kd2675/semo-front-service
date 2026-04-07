@@ -1,8 +1,7 @@
 "use client";
 
-import { EphemeralToast } from "@/app/components/EphemeralToast";
 import { RouterLink } from "@/app/components/RouterLink";
-import { useEphemeralToast } from "@/app/components/useEphemeralToast";
+import { useAppToast } from "@/app/hooks/useAppToast";
 import { bottomSheetMotion, overlayFadeMotion } from "@/app/lib/motion";
 import {
   getClubAdminMembers,
@@ -181,7 +180,7 @@ export function RoleAssignmentSheet({
   const [query, setQuery] = useState("");
   const [loadError, setLoadError] = useState<string | null>(null);
   const deferredQuery = useDeferredValue(query.trim().toLowerCase());
-  const { toast, showToast } = useEphemeralToast(2400);
+  const { showToast } = useAppToast(2400);
   const colorHex = role.colorHex ?? "#904e00";
 
   useEffect(() => {
@@ -318,7 +317,6 @@ export function RoleAssignmentSheet({
 
   return (
     <>
-      <EphemeralToast toastId={toast?.id} message={toast?.message ?? null} tone={toast?.tone} />
       <motion.button
         key="role-assignment-sheet-backdrop"
         type="button"

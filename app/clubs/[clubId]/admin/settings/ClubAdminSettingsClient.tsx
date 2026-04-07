@@ -7,8 +7,7 @@ import type { CSSProperties } from "react";
 import { ClubClassificationField } from "@/app/components/ClubClassificationField";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import { ClubRegionField } from "@/app/components/ClubRegionField";
-import { EphemeralToast } from "@/app/components/EphemeralToast";
-import { useEphemeralToast } from "@/app/components/useEphemeralToast";
+import { useAppToast } from "@/app/hooks/useAppToast";
 import { getActivityCategoryLabel, getAffiliationTypeLabel, getPrimaryClubActivityLabel } from "@/app/lib/club-classification";
 import { updateClubSettings, type MyClubSummary } from "@/app/lib/clubs";
 
@@ -33,7 +32,7 @@ export function ClubAdminSettingsClient({ clubId, initialClub }: ClubAdminSettin
   const [regionDepth2Code, setRegionDepth2Code] = useState(initialClub.regionDepth2Code);
   const [isSaving, setIsSaving] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
-  const { toast, showToast } = useEphemeralToast();
+  const { showToast } = useAppToast();
   const currentPrimaryActivityLabel = getPrimaryClubActivityLabel(
     activityTags,
     activityCategory,
@@ -222,7 +221,6 @@ export function ClubAdminSettingsClient({ clubId, initialClub }: ClubAdminSettin
         </section>
       </main>
 
-      <EphemeralToast toastId={toast?.id ?? null} message={toast?.message ?? null} tone={toast?.tone} />
     </div>
   );
 }

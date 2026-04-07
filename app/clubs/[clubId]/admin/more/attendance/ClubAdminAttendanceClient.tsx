@@ -1,8 +1,6 @@
 "use client";
 
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
-import { EphemeralToast } from "@/app/components/EphemeralToast";
-import { useEphemeralToast } from "@/app/components/useEphemeralToast";
 import { Public_Sans } from "next/font/google";
 import { motion, useReducedMotion } from "motion/react";
 import type { CSSProperties } from "react";
@@ -37,7 +35,7 @@ export function ClubAdminAttendanceClient({
   const prefersReducedMotion = useReducedMotion();
   const reduceMotion = Boolean(prefersReducedMotion);
   const attendance = initialData;
-  const { toast } = useEphemeralToast();
+  
   const todayAttendance = attendance.todayAttendance;
 
   return (
@@ -178,7 +176,6 @@ export function ClubAdminAttendanceClient({
             </div>
           </motion.section>
         </main>
-        <EphemeralToast toastId={toast?.id ?? null} message={toast?.message ?? null} tone={toast?.tone} />
       </div>
     </div>
   );

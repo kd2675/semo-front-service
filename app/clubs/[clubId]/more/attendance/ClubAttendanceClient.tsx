@@ -2,10 +2,9 @@
 
 import { motion, useReducedMotion } from "motion/react";
 import { useState } from "react";
-import { EphemeralToast } from "@/app/components/EphemeralToast";
 import { ClubModeSwitchFab } from "@/app/components/ClubModeSwitchFab";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
-import { useEphemeralToast } from "@/app/components/useEphemeralToast";
+import { useAppToast } from "@/app/hooks/useAppToast";
 import {
   checkInClubAttendance,
   type ClubAttendanceResponse,
@@ -29,7 +28,7 @@ export function ClubAttendanceClient({
   const reduceMotion = Boolean(prefersReducedMotion);
   const [attendance, setAttendance] = useState(initialData);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { toast, showToast, clearToast } = useEphemeralToast();
+  const { showToast, clearToast } = useAppToast();
 
   const todayAttendance = attendance.todayAttendance;
 
@@ -169,7 +168,6 @@ export function ClubAttendanceClient({
         </main>
 
         {isAdmin ? <ClubModeSwitchFab clubId={clubId} mode="user" /> : null}
-        <EphemeralToast toastId={toast?.id ?? null} message={toast?.message ?? null} tone={toast?.tone} />
       </div>
     </div>
   );

@@ -3,7 +3,7 @@
 import { RouterLink } from "@/app/components/RouterLink";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import { RouteModal } from "@/app/components/RouteModal";
-import { motion, useReducedMotion } from "motion/react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useEffect, useEffectEvent, useState } from "react";
 import { ClubModeSwitchFab } from "@/app/components/ClubModeSwitchFab";
 import {
@@ -361,62 +361,64 @@ export function ClubScheduleDetailClient({
           </footer>
         ) : null}
 
-        {payload && showGoingParticipants ? (
-          <RouteModal onDismiss={() => setShowGoingParticipants(false)} contentClassName="max-w-md">
-            <div className="flex min-h-0 flex-1 flex-col">
-              <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
-                <div>
-                  <p className="text-sm font-bold text-slate-900">참석 명단</p>
-                  <p className="mt-1 text-xs text-slate-400">현재 {payload.goingCount}명 참석</p>
+        <AnimatePresence initial={false} mode="wait">
+          {payload && showGoingParticipants ? (
+            <RouteModal onDismiss={() => setShowGoingParticipants(false)} contentClassName="max-w-md">
+              <div className="flex min-h-0 flex-1 flex-col">
+                <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
+                  <div>
+                    <p className="text-sm font-bold text-slate-900">참석 명단</p>
+                    <p className="mt-1 text-xs text-slate-400">현재 {payload.goingCount}명 참석</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowGoingParticipants(false)}
+                    className="rounded-full p-2 text-slate-500 transition hover:bg-slate-100"
+                    aria-label="참석 명단 닫기"
+                  >
+                    <span className="material-symbols-outlined text-[20px]">close</span>
+                  </button>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setShowGoingParticipants(false)}
-                  className="rounded-full p-2 text-slate-500 transition hover:bg-slate-100"
-                  aria-label="참석 명단 닫기"
-                >
-                  <span className="material-symbols-outlined text-[20px]">close</span>
-                </button>
-              </div>
 
-              <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
-                {payload.goingParticipants.length === 0 ? (
-                  <div className="rounded-2xl bg-slate-50 px-4 py-10 text-center text-sm text-slate-500">
-                    아직 참석한 멤버가 없습니다.
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {payload.goingParticipants.map((participant) => {
-                      const avatarUrl = participant.avatarThumbnailUrl ?? participant.avatarImageUrl;
-                      return (
-                        <div
-                          key={participant.clubProfileId}
-                          className="flex items-center gap-3 rounded-2xl border border-slate-100 bg-white px-4 py-3 shadow-sm"
-                        >
-                          {avatarUrl ? (
-                            <div
-                              className="size-11 rounded-full bg-cover bg-center bg-no-repeat"
-                              style={{ backgroundImage: `url('${avatarUrl}')` }}
-                              aria-hidden="true"
-                            />
-                          ) : (
-                            <div className="flex size-11 items-center justify-center rounded-full bg-[var(--primary)]/10 text-sm font-bold text-[var(--primary)]">
-                              {participant.displayName.slice(0, 1)}
+                <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
+                  {payload.goingParticipants.length === 0 ? (
+                    <div className="rounded-2xl bg-slate-50 px-4 py-10 text-center text-sm text-slate-500">
+                      아직 참석한 멤버가 없습니다.
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {payload.goingParticipants.map((participant) => {
+                        const avatarUrl = participant.avatarThumbnailUrl ?? participant.avatarImageUrl;
+                        return (
+                          <div
+                            key={participant.clubProfileId}
+                            className="flex items-center gap-3 rounded-2xl border border-slate-100 bg-white px-4 py-3 shadow-sm"
+                          >
+                            {avatarUrl ? (
+                              <div
+                                className="size-11 rounded-full bg-cover bg-center bg-no-repeat"
+                                style={{ backgroundImage: `url('${avatarUrl}')` }}
+                                aria-hidden="true"
+                              />
+                            ) : (
+                              <div className="flex size-11 items-center justify-center rounded-full bg-[var(--primary)]/10 text-sm font-bold text-[var(--primary)]">
+                                {participant.displayName.slice(0, 1)}
+                              </div>
+                            )}
+                            <div className="min-w-0 flex-1">
+                              <p className="truncate text-sm font-bold text-slate-900">{participant.displayName}</p>
+                              <p className="mt-1 text-xs text-slate-400">참석 확정</p>
                             </div>
-                          )}
-                          <div className="min-w-0 flex-1">
-                            <p className="truncate text-sm font-bold text-slate-900">{participant.displayName}</p>
-                            <p className="mt-1 text-xs text-slate-400">참석 확정</p>
                           </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
-          </RouteModal>
-        ) : null}
+            </RouteModal>
+          ) : null}
+        </AnimatePresence>
 
         {!isModal && payload?.admin ? <ClubModeSwitchFab clubId={clubId} mode="user" /> : null}
       </div>

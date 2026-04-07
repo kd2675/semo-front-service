@@ -1,29 +1,19 @@
 "use client";
 
-import { useState } from "react";
-
-type AlertTone = "default" | "warning" | "danger";
-
-export type AppAlertState = {
-  open: boolean;
-  title: string;
-  message: string;
-  tone: AlertTone;
-  confirmLabel: string;
-};
-
-const INITIAL_ALERT_STATE: AppAlertState = {
-  open: false,
-  title: "",
-  message: "",
-  tone: "default",
-  confirmLabel: "확인",
-};
+import { useCallback } from "react";
+import { useAppDispatch, useAppSelector } from "@/app/redux/hooks";
+import {
+  addAlert,
+  deleteAlert,
+  deleteAllAlert,
+  type AlertTone,
+} from "@/app/redux/slices/modal-slice";
 
 export function useAppAlert() {
-  const [alertState, setAlertState] = useState<AppAlertState>(INITIAL_ALERT_STATE);
+  const dispatch = useAppDispatch();
+  const currentAlert = useAppSelector((state) => state.modal.alert[0] ?? null);
 
-  const showAlert = ({
+  const showAlert = useCallback(({
     title,
     message,
     tone = "default",
@@ -34,21 +24,24 @@ export function useAppAlert() {
     tone?: AlertTone;
     confirmLabel?: string;
   }) => {
-    setAlertState({
-      open: true,
+    dispatch(addAlert({
       title,
       message,
       tone,
       confirmLabel,
-    });
-  };
+    }));
+  }, [dispatch]);
 
-  const closeAlert = () => {
-    setAlertState(INITIAL_ALERT_STATE);
-  };
+  const closeAlert = useCallback(() => {
+    if (currentAlert) {
+      dispatch(deleteAlert(currentAlert.id));
+      return;
+    }
+
+    dispatch(deleteAllAlert());
+  }, [currentAlert, dispatch]);
 
   return {
-    alertState,
     showAlert,
     closeAlert,
   };

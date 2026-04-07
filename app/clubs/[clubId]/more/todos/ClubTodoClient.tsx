@@ -4,8 +4,7 @@ import { motion, useReducedMotion } from "motion/react";
 import { useState } from "react";
 import { ClubModeSwitchFab } from "@/app/components/ClubModeSwitchFab";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
-import { EphemeralToast } from "@/app/components/EphemeralToast";
-import { useEphemeralToast } from "@/app/components/useEphemeralToast";
+import { useAppToast } from "@/app/hooks/useAppToast";
 import {
   applyClubTodo,
   cancelMyClubTodoApplication,
@@ -27,7 +26,7 @@ export function ClubTodoClient({ clubId, initialData, isAdmin }: ClubTodoClientP
   const reduceMotion = Boolean(prefersReducedMotion);
   const [todoData, setTodoData] = useState(initialData);
   const [pendingTodoId, setPendingTodoId] = useState<number | null>(null);
-  const { toast, showToast, clearToast } = useEphemeralToast();
+  const { showToast, clearToast } = useAppToast();
 
   const reloadTodos = async () => {
     const result = await getClubTodos(clubId);
@@ -155,7 +154,6 @@ export function ClubTodoClient({ clubId, initialData, isAdmin }: ClubTodoClientP
         </main>
 
         {isAdmin ? <ClubModeSwitchFab clubId={clubId} mode="user" /> : null}
-        <EphemeralToast toastId={toast?.id ?? null} message={toast?.message ?? null} tone={toast?.tone} />
       </div>
     </div>
   );

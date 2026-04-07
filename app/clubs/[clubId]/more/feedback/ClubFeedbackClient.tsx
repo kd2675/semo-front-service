@@ -5,8 +5,7 @@ import { startTransition, useMemo, useState } from "react";
 import type { CSSProperties } from "react";
 import { ClubModeSwitchFab } from "@/app/components/ClubModeSwitchFab";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
-import { EphemeralToast } from "@/app/components/EphemeralToast";
-import { useEphemeralToast } from "@/app/components/useEphemeralToast";
+import { useAppToast } from "@/app/hooks/useAppToast";
 import {
   createClubFeedback,
   getClubFeedbackDetail,
@@ -90,7 +89,7 @@ export function ClubFeedbackClient({
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [anonymous, setAnonymous] = useState(false);
-  const { toast, showToast, clearToast } = useEphemeralToast();
+  const { showToast, clearToast } = useAppToast();
 
   const filteredItems = useMemo(
     () => feedbackHome.items.filter((item) => matchesFilter(item, activeFilter)),
@@ -427,7 +426,6 @@ export function ClubFeedbackClient({
         </main>
 
         {isAdmin ? <ClubModeSwitchFab clubId={clubId} mode="user" /> : null}
-        <EphemeralToast toastId={toast?.id ?? null} message={toast?.message ?? null} tone={toast?.tone} />
       </div>
     </div>
   );

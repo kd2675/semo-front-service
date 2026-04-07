@@ -1,9 +1,7 @@
 "use client";
 
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
-import { AppAlertModal } from "@/app/components/AppAlertModal";
-import { EphemeralToast } from "@/app/components/EphemeralToast";
-import { useEphemeralToast } from "@/app/components/useEphemeralToast";
+import { useAppToast } from "@/app/hooks/useAppToast";
 import { useAppAlert } from "@/app/hooks/useAppAlert";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
@@ -242,8 +240,8 @@ export function ClubAdminMembersClient({
   const [saving, setSaving] = useState(false);
   const [reviewingJoinRequestId, setReviewingJoinRequestId] = useState<number | null>(null);
   const deferredQuery = useDeferredValue(query.trim().toLowerCase());
-  const { alertState, showAlert, closeAlert } = useAppAlert();
-  const { toast, showToast, clearToast } = useEphemeralToast();
+  const { showAlert } = useAppAlert();
+  const { showToast } = useAppToast();
 
   const filteredJoinRequests = useMemo(() => {
     if (deferredQuery.length === 0) {
@@ -596,20 +594,6 @@ export function ClubAdminMembersClient({
             />
           ) : null}
         </AnimatePresence>
-        <EphemeralToast toastId={toast?.id ?? null} message={toast?.message ?? null} tone={toast?.tone} />
-        <AppAlertModal
-          open={alertState.open}
-          title={alertState.title}
-          message={alertState.message}
-          tone={alertState.tone}
-          confirmLabel={alertState.confirmLabel}
-          onClose={closeAlert}
-        />
-        {toast ? (
-          <button type="button" onClick={clearToast} className="sr-only">
-            토스트 닫기
-          </button>
-        ) : null}
       </div>
     </div>
   );

@@ -1,10 +1,8 @@
 "use client";
 
 import { RouterLink } from "@/app/components/RouterLink";
-import { AppAlertModal } from "@/app/components/AppAlertModal";
-import { EphemeralToast } from "@/app/components/EphemeralToast";
 import { RouteModal } from "@/app/components/RouteModal";
-import { useEphemeralToast } from "@/app/components/useEphemeralToast";
+import { useAppToast } from "@/app/hooks/useAppToast";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import {
   startTransition,
@@ -211,8 +209,8 @@ export default function Home() {
   const [isSubmittingJoinAction, setIsSubmittingJoinAction] = useState(false);
   const [pendingJoinClubId, setPendingJoinClubId] = useState<number | null>(null);
   const deferredSearchQuery = useDeferredValue(searchQuery.trim());
-  const { alertState, showAlert, closeAlert } = useAppAlert();
-  const { toast, showToast } = useEphemeralToast();
+  const { showAlert } = useAppAlert();
+  const { showToast } = useAppToast();
 
   const handleSignOut = async () => {
     if (isSigningOut) {
@@ -734,15 +732,6 @@ export default function Home() {
           />
         ) : null}
       </AnimatePresence>
-      <EphemeralToast toastId={toast?.id ?? null} message={toast?.message ?? null} tone={toast?.tone} />
-      <AppAlertModal
-        open={alertState.open}
-        title={alertState.title}
-        message={alertState.message}
-        tone={alertState.tone}
-        confirmLabel={alertState.confirmLabel}
-        onClose={closeAlert}
-      />
     </div>
   );
 }

@@ -1,6 +1,5 @@
 "use client";
 
-import { AppAlertModal } from "@/app/components/AppAlertModal";
 import { RouterLink } from "@/app/components/RouterLink";
 import { useAppAlert } from "@/app/hooks/useAppAlert";
 import { staggeredFadeUpMotion } from "@/app/lib/motion";
@@ -51,7 +50,7 @@ export function ClubAdminRoleAssignmentsClient({
   const [query, setQuery] = useState("");
   const [saving, setSaving] = useState(false);
   const deferredQuery = useDeferredValue(query.trim().toLowerCase());
-  const { alertState, showAlert, closeAlert } = useAppAlert();
+  const { showAlert } = useAppAlert();
 
   const selectedRole = useMemo(
     () =>
@@ -370,14 +369,6 @@ export function ClubAdminRoleAssignmentsClient({
         </nav>
 
         <AnimatePresence />
-        <AppAlertModal
-          open={alertState.open}
-          title={alertState.title}
-          message={alertState.message}
-          tone={alertState.tone}
-          confirmLabel={alertState.confirmLabel}
-          onClose={closeAlert}
-        />
       </div>
     </div>
   );

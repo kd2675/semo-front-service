@@ -4,9 +4,8 @@ import { Manrope } from "next/font/google";
 import { motion, useReducedMotion } from "motion/react";
 import { useMemo, useState } from "react";
 
-import { EphemeralToast } from "@/app/components/EphemeralToast";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
-import { useEphemeralToast } from "@/app/components/useEphemeralToast";
+import { useAppToast } from "@/app/hooks/useAppToast";
 import {
   updateClubAdminMemberDirectorySettings,
   type ClubAdminMemberDirectorySettingsResponse,
@@ -410,7 +409,7 @@ export function ClubAdminMemberDirectoryClient({
   const [settings, setSettings] = useState(initialData.settings);
   const [savedSettings, setSavedSettings] = useState(initialData.settings);
   const [saving, setSaving] = useState(false);
-  const { toast, showToast, clearToast } = useEphemeralToast();
+  const { showToast, clearToast } = useAppToast();
 
   const previewMembers = useMemo(() => initialData.previewMembers.slice(0, 3), [initialData.previewMembers]);
   const enabledVisibilityCount = useMemo(
@@ -596,11 +595,6 @@ export function ClubAdminMemberDirectoryClient({
           </div>
         </div>
 
-        <EphemeralToast
-          toastId={toast?.id ?? null}
-          message={toast?.message ?? null}
-          tone={toast?.tone}
-        />
       </div>
     </div>
   );

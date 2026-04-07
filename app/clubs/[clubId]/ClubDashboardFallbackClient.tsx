@@ -20,12 +20,11 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { RouterLink } from "@/app/components/RouterLink";
-import { EphemeralToast } from "@/app/components/EphemeralToast";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { startTransition, useCallback, useEffect, useMemo, useState } from "react";
 import { ClubModeSwitchFab } from "@/app/components/ClubModeSwitchFab";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
-import { useEphemeralToast } from "@/app/components/useEphemeralToast";
+import { useAppToast } from "@/app/hooks/useAppToast";
 import {
   checkInClubAttendance,
   getClubAttendance,
@@ -1087,7 +1086,7 @@ export function ClubDashboardFallbackClient({
   const [bracketError, setBracketError] = useState<string | null>(null);
   const [attendancePulseToken, setAttendancePulseToken] = useState(0);
   const [isCheckingInAttendance, setIsCheckingInAttendance] = useState(false);
-  const { toast, showToast, clearToast } = useEphemeralToast();
+  const { showToast, clearToast } = useAppToast();
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
@@ -1971,7 +1970,6 @@ export function ClubDashboardFallbackClient({
         ) : null}
 
         {club?.admin ? <ClubModeSwitchFab clubId={clubId} mode="user" /> : null}
-        <EphemeralToast toastId={toast?.id ?? null} message={toast?.message ?? null} tone={toast?.tone} />
       </div>
     </div>
   );

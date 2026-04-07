@@ -1,8 +1,7 @@
 "use client";
 
-import { EphemeralToast } from "@/app/components/EphemeralToast";
 import { RouterLink } from "@/app/components/RouterLink";
-import { useEphemeralToast } from "@/app/components/useEphemeralToast";
+import { useAppToast } from "@/app/hooks/useAppToast";
 import { ScheduleActionConfirmModal } from "@/app/clubs/[clubId]/schedule/ScheduleActionConfirmModal";
 import { staggeredFadeUpMotion } from "@/app/lib/motion";
 import type {
@@ -183,7 +182,7 @@ export function RoleEditorForm({
   const [form, setForm] = useState(() => buildInitialValue(initialPosition));
   const [submitting, setSubmitting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const { toast, showToast, clearToast } = useEphemeralToast();
+  const { showToast, clearToast } = useAppToast();
 
   const generatedPositionCode = useMemo(
     () => createAutoPositionCode(form.displayName, clubId),
@@ -414,7 +413,6 @@ export function RoleEditorForm({
             </motion.div>
           </main>
 
-          <EphemeralToast toastId={toast?.id ?? null} message={toast?.message ?? null} tone={toast?.tone} />
           {showDeleteConfirm && onDelete ? (
             <ScheduleActionConfirmModal
               title="직책 삭제"
@@ -623,7 +621,6 @@ export function RoleEditorForm({
           ) : null}
         </main>
 
-        <EphemeralToast toastId={toast?.id ?? null} message={toast?.message ?? null} tone={toast?.tone} />
         {showDeleteConfirm && onDelete ? (
           <ScheduleActionConfirmModal
             title="직책 삭제"

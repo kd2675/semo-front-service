@@ -5,6 +5,7 @@ import { Suspense } from "react";
 import { Provider } from "react-redux";
 import AuthGate from "@/app/components/AuthGate";
 import AuthWatcher from "@/app/components/AuthWatcher";
+import { GlobalModalViewport } from "@/app/components/GlobalModalViewport";
 import { store } from "@/app/redux/store";
 
 type ProvidersProps = {
@@ -19,6 +20,7 @@ export default function Providers({ children }: ProvidersProps) {
         <Suspense fallback={null}>
           <AuthWatcher />
         </Suspense>
+        <GlobalModalViewport />
       </MotionConfig>
     </Provider>
   );
