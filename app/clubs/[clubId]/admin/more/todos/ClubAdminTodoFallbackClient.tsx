@@ -1,13 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import {
-  getClubAdminTodos,
-  getMyClub,
-  type ClubAdminTodoResponse,
-  type MyClubSummary,
-} from "@/app/lib/clubs";
+import { getClubAdminTodos, getMyClub } from "@/app/lib/clubs";
+import { unwrap } from "@/app/lib/query";
+import { ApiError } from "@/app/lib/query";
+import { clubKeys, adminKeys } from "@/app/lib/queryKeys";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import { ClubAdminTodoClient } from "./ClubAdminTodoClient";
 
@@ -15,56 +14,58 @@ type ClubAdminTodoFallbackClientProps = {
   clubId: string;
 };
 
+const DEFAULT_STATUS_FILTER = "ALL";
+const DEFAULT_ASSIGNMENT_FILTER = "ALL";
+const DEFAULT_APPLICATION_FILTER = "ALL";
+
 export function ClubAdminTodoFallbackClient({ clubId }: ClubAdminTodoFallbackClientProps) {
   const router = useRouter();
-  const [club, setClub] = useState<MyClubSummary | null>(null);
-  const [todoData, setTodoData] = useState<ClubAdminTodoResponse | null>(null);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [reloadKey, setReloadKey] = useState(0);
+
+  const { data: club, isError: clubError, error: clubApiError } = useQuery({
+    queryKey: clubKeys.detail(clubId),
+    queryFn: () => unwrap(getMyClub(clubId)),
+    retry: false,
+  });
+
+  const isAdmin = club?.admin === true;
+
+  const { data: todoData, isError: todoError, error: todoApiError, refetch } = useQuery({
+    queryKey: adminKeys.todo.list(
+      clubId,
+      DEFAULT_STATUS_FILTER,
+      DEFAULT_ASSIGNMENT_FILTER,
+      DEFAULT_APPLICATION_FILTER,
+    ),
+    queryFn: () =>
+      unwrap(getClubAdminTodos(clubId, {
+        statusFilter: DEFAULT_STATUS_FILTER,
+        assignmentFilter: DEFAULT_ASSIGNMENT_FILTER,
+        applicationFilter: DEFAULT_APPLICATION_FILTER,
+      })),
+    enabled: isAdmin,
+    retry: false,
+  });
 
   useEffect(() => {
-    let cancelled = false;
-
-    void (async () => {
-      setErrorMessage(null);
-      const [clubResult, todoResult] = await Promise.all([
-        getMyClub(clubId),
-        getClubAdminTodos(clubId),
-      ]);
-
-      if (cancelled) {
-        return;
+    if (clubError) {
+      const status = clubApiError instanceof ApiError ? clubApiError.status : undefined;
+      if (status === 403 || status === 404) {
+        router.replace(`/clubs/${clubId}`);
       }
-
-      if (!clubResult.ok || !clubResult.data) {
-        if (clubResult.status === 403 || clubResult.status === 404) {
-          router.replace(`/clubs/${clubId}`);
-          return;
-        }
-        setClub(null);
-        setTodoData(null);
-        setErrorMessage(clubResult.message ?? "모임 정보를 다시 불러오지 못했습니다.");
-        return;
+    }
+    if (todoError) {
+      const status = todoApiError instanceof ApiError ? todoApiError.status : undefined;
+      if (status === 403 || status === 404) {
+        router.replace(`/clubs/${clubId}/more/todos`);
       }
-      setClub(clubResult.data);
+    }
+  }, [clubError, clubApiError, todoError, todoApiError, clubId, router]);
 
-      if (!todoResult.ok || !todoResult.data) {
-        if (todoResult.status === 403 || todoResult.status === 404) {
-          router.replace(`/clubs/${clubId}/more/todos`);
-          return;
-        }
-        setTodoData(null);
-        setErrorMessage(todoResult.message ?? "할 일 운영 정보를 다시 불러오지 못했습니다.");
-        return;
-      }
-
-      setTodoData(todoResult.data);
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [clubId, reloadKey, router]);
+  const errorMessage = clubError
+    ? (clubApiError instanceof ApiError ? clubApiError.message : "모임 정보를 다시 불러오지 못했습니다.")
+    : todoError
+      ? (todoApiError instanceof ApiError ? todoApiError.message : "할 일 운영 정보를 다시 불러오지 못했습니다.")
+      : null;
 
   if (errorMessage) {
     return (
@@ -82,7 +83,7 @@ export function ClubAdminTodoFallbackClient({ clubId }: ClubAdminTodoFallbackCli
             <p className="mt-2 text-sm leading-6 text-slate-600">{errorMessage}</p>
             <button
               type="button"
-              onClick={() => setReloadKey((current) => current + 1)}
+              onClick={() => void refetch()}
               className="mt-4 rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white"
             >
               다시 시도

@@ -3,8 +3,11 @@
 import { RouterLink } from "@/app/components/RouterLink";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import { motion, useReducedMotion } from "motion/react";
-import { useEffect, useEffectEvent, useState } from "react";
+import { useState } from "react";
 import { ClubModeSwitchFab } from "@/app/components/ClubModeSwitchFab";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { unwrap } from "@/app/lib/query";
+import { clubKeys } from "@/app/lib/queryKeys";
 import { ScheduleActionConfirmModal } from "./ScheduleActionConfirmModal";
 import {
   closeClubScheduleVote,
@@ -64,67 +67,72 @@ export function ClubScheduleVoteDetailClient({
 }: ClubScheduleVoteDetailClientProps) {
   const prefersReducedMotion = useReducedMotion();
   const reduceMotion = Boolean(prefersReducedMotion);
-  const [payload, setPayload] = useState<ClubScheduleVoteDetailResponse | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [closing, setClosing] = useState(false);
   const [showCloseConfirm, setShowCloseConfirm] = useState(false);
   const [submittingVoteOptionId, setSubmittingVoteOptionId] = useState<number | null>(null);
   const [selectedOptionId, setSelectedOptionId] = useState<number | null>(null);
-  const [error, setError] = useState<string | null>(null);
+
+  const queryClient = useQueryClient();
+  const queryKey = clubKeys.schedule.voteDetail(clubId, voteId);
+
+  const { data: payload, isLoading, error: queryError } = useQuery({
+    queryKey,
+    queryFn: () => unwrap(getClubScheduleVoteDetail(clubId, voteId)),
+  });
+
+  // Initialise selectedOptionId from query data the first time it arrives
+  const [initializedFor, setInitializedFor] = useState<string | null>(null);
+  if (payload && initializedFor !== voteId) {
+    setSelectedOptionId(payload.mySelectedOptionId);
+    setInitializedFor(voteId);
+  }
+
+  const voteSubmitMutation = useMutation({
+    mutationFn: (voteOptionId: number) =>
+      unwrap(submitClubScheduleVoteSelection(clubId, voteId, { voteOptionId })),
+    onSuccess: (data) => {
+      queryClient.setQueryData(queryKey, data);
+      setSelectedOptionId(data.mySelectedOptionId);
+      setSubmittingVoteOptionId(null);
+    },
+    onError: () => {
+      setSubmittingVoteOptionId(null);
+    },
+  });
+
+  const closeVoteMutation = useMutation({
+    mutationFn: () => unwrap(closeClubScheduleVote(clubId, voteId)),
+    onSuccess: (data) => {
+      queryClient.setQueryData(queryKey, data);
+      setSelectedOptionId(data.mySelectedOptionId);
+      setShowCloseConfirm(false);
+    },
+  });
+
+  const closing = closeVoteMutation.isPending;
+  const loading = isLoading;
+  const error =
+    voteSubmitMutation.error?.message ??
+    closeVoteMutation.error?.message ??
+    (queryError ? (queryError.message ?? "투표 상세를 불러오지 못했습니다.") : null);
+
   const shareBadges = getShareTargetBadges({
     postedToBoard: payload?.postedToBoard,
     postedToCalendar: payload?.postedToCalendar,
   });
 
-  const loadDetail = useEffectEvent(async () => {
-    setLoading(true);
-    setError(null);
-    const result = await getClubScheduleVoteDetail(clubId, voteId);
-    setLoading(false);
-    if (!result.ok || !result.data) {
-      setError(result.message ?? "투표 상세를 불러오지 못했습니다.");
-      return;
-    }
-    setPayload(result.data);
-    setSelectedOptionId(result.data.mySelectedOptionId);
-  });
-
-  useEffect(() => {
-    void loadDetail();
-  }, [clubId, voteId]);
-
-  const handleVoteSubmit = async () => {
+  const handleVoteSubmit = () => {
     if (!payload?.votingOpen || selectedOptionId == null) {
       return;
     }
-
     setSubmittingVoteOptionId(selectedOptionId);
-    setError(null);
-    const result = await submitClubScheduleVoteSelection(clubId, voteId, { voteOptionId: selectedOptionId });
-    setSubmittingVoteOptionId(null);
-    if (!result.ok || !result.data) {
-      setError(result.message ?? "투표 저장에 실패했습니다.");
-      return;
-    }
-    setPayload(result.data);
-    setSelectedOptionId(result.data.mySelectedOptionId);
+    voteSubmitMutation.mutate(selectedOptionId);
   };
 
-  const handleCloseVote = async () => {
+  const handleCloseVote = () => {
     if (!payload || !payload.canEdit || payload.voteStatus === "CLOSED") {
       return;
     }
-
-    setClosing(true);
-    setError(null);
-    const result = await closeClubScheduleVote(clubId, voteId);
-    setClosing(false);
-    if (!result.ok || !result.data) {
-      setError(result.message ?? "투표 종료에 실패했습니다.");
-      return;
-    }
-    setPayload(result.data);
-    setSelectedOptionId(result.data.mySelectedOptionId);
+    closeVoteMutation.mutate();
   };
 
   if (loading && !payload && !error) {
@@ -325,11 +333,7 @@ export function ClubScheduleVoteDetailClient({
                 setShowCloseConfirm(false);
               }
             }}
-            onConfirm={() =>
-              void handleCloseVote().finally(() => {
-                setShowCloseConfirm(false);
-              })
-            }
+            onConfirm={handleCloseVote}
           />
         ) : null}
       </div>

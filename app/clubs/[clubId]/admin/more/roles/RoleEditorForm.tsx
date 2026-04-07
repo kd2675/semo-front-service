@@ -1,8 +1,7 @@
 "use client";
 
-import { EphemeralToast } from "@/app/components/EphemeralToast";
 import { RouterLink } from "@/app/components/RouterLink";
-import { useEphemeralToast } from "@/app/components/useEphemeralToast";
+import { useToast } from "@/app/hooks/useToast";
 import { ScheduleActionConfirmModal } from "@/app/clubs/[clubId]/schedule/ScheduleActionConfirmModal";
 import { staggeredFadeUpMotion } from "@/app/lib/motion";
 import type {
@@ -183,7 +182,7 @@ export function RoleEditorForm({
   const [form, setForm] = useState(() => buildInitialValue(initialPosition));
   const [submitting, setSubmitting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const { toast, showToast, clearToast } = useEphemeralToast();
+  const toast = useToast();
 
   const generatedPositionCode = useMemo(
     () => createAutoPositionCode(form.displayName, clubId),
@@ -210,21 +209,21 @@ export function RoleEditorForm({
 
   const handleSubmit = async () => {
     if (!canSubmit) {
-      showToast(mode === "create" ? "직책 이름을 입력해주세요." : "직책 이름과 코드를 입력해주세요.", "error");
+      toast.error(mode === "create" ? "직책 이름을 입력해주세요." : "직책 이름과 코드를 입력해주세요.");
       return;
     }
     setSubmitting(true);
-    clearToast();
+    toast.hide();
     const result = await onSubmit({
       ...form,
       positionCode: submittedPositionCode,
     });
     setSubmitting(false);
     if (!result.success) {
-      showToast("저장에 실패했습니다.", "error");
+      toast.error("저장에 실패했습니다.");
       return;
     }
-    showToast("직책 저장이 완료되었습니다.", "success");
+    toast.success("직책 저장이 완료되었습니다.");
     if (result.nextHref) {
       router.replace(result.nextHref);
     }
@@ -238,7 +237,7 @@ export function RoleEditorForm({
     const success = await onDelete();
     setSubmitting(false);
     if (!success) {
-      showToast("직책 삭제에 실패했습니다.", "error");
+      toast.error("직책 삭제에 실패했습니다.");
       return;
     }
     router.replace(`/clubs/${clubId}/admin/more/roles`);
@@ -414,7 +413,6 @@ export function RoleEditorForm({
             </motion.div>
           </main>
 
-          <EphemeralToast toastId={toast?.id ?? null} message={toast?.message ?? null} tone={toast?.tone} />
           {showDeleteConfirm && onDelete ? (
             <ScheduleActionConfirmModal
               title="직책 삭제"
@@ -623,7 +621,6 @@ export function RoleEditorForm({
           ) : null}
         </main>
 
-        <EphemeralToast toastId={toast?.id ?? null} message={toast?.message ?? null} tone={toast?.tone} />
         {showDeleteConfirm && onDelete ? (
           <ScheduleActionConfirmModal
             title="직책 삭제"

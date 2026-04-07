@@ -20,12 +20,14 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { RouterLink } from "@/app/components/RouterLink";
-import { EphemeralToast } from "@/app/components/EphemeralToast";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { startTransition, useCallback, useEffect, useMemo, useState } from "react";
+import { startTransition, useCallback, useMemo, useState } from "react";
 import { ClubModeSwitchFab } from "@/app/components/ClubModeSwitchFab";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
-import { useEphemeralToast } from "@/app/components/useEphemeralToast";
+import { useAppDispatch } from "@/app/store/hooks";
+import { showToast as showToastAction, hideToast } from "@/app/store/uiSlice";
+import { unwrap, ApiError } from "@/app/lib/query";
 import {
   checkInClubAttendance,
   getClubAttendance,
@@ -51,10 +53,10 @@ import {
   type ClubDashboardEditorResponse,
   type ClubDashboardWidgetSummary,
   type ClubScheduleResponse,
-  type MyClubSummary,
 } from "@/app/lib/clubs";
 import { staggeredFadeUpMotion } from "@/app/lib/motion";
 import { getTournamentFeeLabel, getTournamentFormatLabel, getTournamentStatusLabel } from "@/app/lib/tournament";
+import { clubKeys } from "@/app/lib/queryKeys";
 import {
   ClubDashboardLoadingShell,
   ClubDashboardWidgetGridShell,
@@ -1049,45 +1051,49 @@ export function ClubDashboardFallbackClient({
 }: ClubDashboardFallbackClientProps) {
   const prefersReducedMotion = useReducedMotion();
   const reduceMotion = Boolean(prefersReducedMotion);
-  const [club, setClub] = useState<MyClubSummary | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [dashboardError, setDashboardError] = useState<string | null>(null);
-  const [dashboardLoading, setDashboardLoading] = useState(true);
-  const [widgets, setWidgets] = useState<ClubDashboardWidgetSummary[]>([]);
-  const [, setEditor] = useState<ClubDashboardEditorResponse | null>(null);
-  const [editorWidgets, setEditorWidgets] = useState<ClubDashboardWidgetSummary[]>([]);
-  const [savedEditorWidgets, setSavedEditorWidgets] = useState<ClubDashboardWidgetSummary[]>([]);
+  const queryClient = useQueryClient();
+  const dispatch = useAppDispatch();
+
+  // --- Server state via React Query ---
+  const { data: club, isLoading, error: clubQueryError } = useQuery({
+    queryKey: clubKeys.detail(clubId),
+    queryFn: () => unwrap(getMyClub(clubId)),
+  });
+
+  const isAdmin = club?.admin === true;
+  const error = clubQueryError
+    ? (clubQueryError instanceof ApiError ? clubQueryError.message : "클럽 정보를 불러오지 못했습니다.")
+    : null;
+
+  const { data: editorData, isLoading: editorLoading, error: editorQueryError } = useQuery({
+    queryKey: clubKeys.dashboard.widgetEditor(clubId),
+    queryFn: () => unwrap(getClubDashboardWidgetEditor(clubId, "USER_HOME")),
+    enabled: isAdmin,
+  });
+
+  const { data: widgetsData, isLoading: widgetsLoading, error: widgetsQueryError } = useQuery({
+    queryKey: clubKeys.dashboard.widgets(clubId),
+    queryFn: () => unwrap(getClubDashboardWidgets(clubId, "USER_HOME")),
+    enabled: club !== undefined && !isAdmin,
+  });
+
+  const dashboardLoading = isAdmin ? editorLoading : widgetsLoading;
+  const dashboardError = isAdmin
+    ? (editorQueryError ? (editorQueryError instanceof ApiError ? editorQueryError.message : "홈 위젯 편집 정보를 불러오지 못했습니다.") : null)
+    : (widgetsQueryError ? (widgetsQueryError instanceof ApiError ? widgetsQueryError.message : "홈 위젯을 불러오지 못했습니다.") : null);
+  const widgets = useMemo(() => widgetsData ?? [], [widgetsData]);
+  const savedEditorWidgets = useMemo(
+    () => cloneWidgets(editorData?.widgets ?? []),
+    [editorData],
+  );
+
+  // --- Local editor state ---
+  const [draftEditorWidgets, setDraftEditorWidgets] = useState<ClubDashboardWidgetSummary[] | null>(null);
   const [editMode, setEditMode] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [activeEditorWidgetKey, setActiveEditorWidgetKey] = useState<string | null>(null);
-  const [attendanceData, setAttendanceData] = useState<ClubAttendanceResponse | null>(null);
-  const [attendanceLoading, setAttendanceLoading] = useState(false);
-  const [attendanceError, setAttendanceError] = useState<string | null>(null);
-  const [memberDirectoryData, setMemberDirectoryData] = useState<ClubMemberDirectoryResponse | null>(null);
-  const [memberDirectoryLoading, setMemberDirectoryLoading] = useState(false);
-  const [memberDirectoryError, setMemberDirectoryError] = useState<string | null>(null);
-  const [financeData, setFinanceData] = useState<ClubFinanceHomeResponse | null>(null);
-  const [financeLoading, setFinanceLoading] = useState(false);
-  const [financeError, setFinanceError] = useState<string | null>(null);
-  const [boardData, setBoardData] = useState<ClubBoardResponse | null>(null);
-  const [boardLoading, setBoardLoading] = useState(false);
-  const [boardError, setBoardError] = useState<string | null>(null);
-  const [scheduleData, setScheduleData] = useState<ClubScheduleResponse | null>(null);
-  const [scheduleLoading, setScheduleLoading] = useState(false);
-  const [scheduleError, setScheduleError] = useState<string | null>(null);
-  const [pollData, setPollData] = useState<ClubPollHomeResponse | null>(null);
-  const [pollLoading, setPollLoading] = useState(false);
-  const [pollError, setPollError] = useState<string | null>(null);
-  const [tournamentData, setTournamentData] = useState<ClubTournamentHomeResponse | null>(null);
-  const [tournamentLoading, setTournamentLoading] = useState(false);
-  const [tournamentError, setTournamentError] = useState<string | null>(null);
-  const [bracketData, setBracketData] = useState<ClubBracketHomeResponse | null>(null);
-  const [bracketLoading, setBracketLoading] = useState(false);
-  const [bracketError, setBracketError] = useState<string | null>(null);
   const [attendancePulseToken, setAttendancePulseToken] = useState(0);
   const [isCheckingInAttendance, setIsCheckingInAttendance] = useState(false);
-  const { toast, showToast, clearToast } = useEphemeralToast();
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
@@ -1105,68 +1111,7 @@ export function ClubDashboardFallbackClient({
     }),
   );
 
-  useEffect(() => {
-    let cancelled = false;
-
-    void (async () => {
-      setIsLoading(true);
-      setDashboardLoading(true);
-      setError(null);
-      setDashboardError(null);
-      clearToast();
-
-      const clubResult = await getMyClub(clubId);
-      if (cancelled) {
-        return;
-      }
-      if (!clubResult.ok || !clubResult.data) {
-        setClub(null);
-        setError(clubResult.message ?? "클럽 정보를 불러오지 못했습니다.");
-        setIsLoading(false);
-        setDashboardLoading(false);
-        return;
-      }
-
-      const clubData = clubResult.data;
-      setClub(clubData);
-      setIsLoading(false);
-
-      if (clubData.admin) {
-        const editorResult = await getClubDashboardWidgetEditor(clubId, "USER_HOME");
-        if (cancelled) {
-          return;
-        }
-        if (!editorResult.ok || !editorResult.data) {
-          setEditor(null);
-          setDashboardError(editorResult.message ?? "홈 위젯 편집 정보를 불러오지 못했습니다.");
-          setDashboardLoading(false);
-          return;
-        }
-        setEditor(editorResult.data);
-        setEditorWidgets(cloneWidgets(editorResult.data.widgets));
-        setSavedEditorWidgets(cloneWidgets(editorResult.data.widgets));
-        setDashboardLoading(false);
-        return;
-      }
-
-      const widgetResult = await getClubDashboardWidgets(clubId, "USER_HOME");
-      if (cancelled) {
-        return;
-      }
-      if (!widgetResult.ok || !widgetResult.data) {
-        setWidgets([]);
-        setDashboardError(widgetResult.message ?? "홈 위젯을 불러오지 못했습니다.");
-        setDashboardLoading(false);
-        return;
-      }
-      setWidgets(widgetResult.data);
-      setDashboardLoading(false);
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [clearToast, clubId]);
+  const editorWidgets = draftEditorWidgets ?? savedEditorWidgets;
 
   const dashboardWidgetSource = useMemo(() => {
     if (club?.admin) {
@@ -1279,161 +1224,116 @@ export function ClubDashboardFallbackClient({
     );
   }, [dashboardWidgetSource]);
 
-  const loadAttendanceData = useCallback(async () => {
-    if (!hasAttendanceWidget) {
-      return;
-    }
+  // --- Widget data queries ---
+  const today = useMemo(() => new Date(), []);
 
-    setAttendanceLoading(true);
-    setAttendanceError(null);
-    const result = await getClubAttendance(clubId);
-    if (!result.ok || !result.data) {
-      setAttendanceData(null);
-      setAttendanceError(result.message ?? "출석 정보를 불러오지 못했습니다.");
-      setAttendanceLoading(false);
-      return;
-    }
+  const {
+    data: attendanceData = null,
+    isLoading: attendanceLoading,
+    error: attendanceQueryError,
+    refetch: refetchAttendance,
+  } = useQuery({
+    queryKey: clubKeys.attendance(clubId),
+    queryFn: () => unwrap(getClubAttendance(clubId)),
+    enabled: hasAttendanceWidget,
+  });
 
-    setAttendanceData(result.data);
-    setAttendanceLoading(false);
-  }, [clubId, hasAttendanceWidget]);
+  const {
+    data: boardData = null,
+    isLoading: boardLoading,
+    error: boardQueryError,
+  } = useQuery({
+    queryKey: clubKeys.board(clubId),
+    queryFn: () => unwrap(getClubBoard(clubId)),
+    enabled: hasBoardNoticeWidget,
+  });
 
-  const loadBoardData = useCallback(async () => {
-    if (!hasBoardNoticeWidget) {
-      return;
-    }
+  const {
+    data: memberDirectoryData = null,
+    isLoading: memberDirectoryLoading,
+    error: memberDirectoryQueryError,
+  } = useQuery({
+    queryKey: clubKeys.memberDirectory(clubId),
+    queryFn: () => unwrap(getClubMemberDirectory(clubId)),
+    enabled: hasMemberDirectoryWidget,
+  });
 
-    setBoardLoading(true);
-    setBoardError(null);
-    const result = await getClubBoard(clubId);
-    if (!result.ok || !result.data) {
-      setBoardData(null);
-      setBoardError(result.message ?? "공지 정보를 불러오지 못했습니다.");
-      setBoardLoading(false);
-      return;
-    }
+  const {
+    data: financeData = null,
+    isLoading: financeLoading,
+    error: financeQueryError,
+  } = useQuery({
+    queryKey: clubKeys.finance.home(clubId),
+    queryFn: () => unwrap(getClubFinance(clubId)),
+    enabled: hasFinanceWidget,
+  });
 
-    setBoardData(result.data);
-    setBoardLoading(false);
-  }, [clubId, hasBoardNoticeWidget]);
+  const {
+    data: scheduleData = null,
+    isLoading: scheduleLoading,
+    error: scheduleQueryError,
+  } = useQuery({
+    queryKey: clubKeys.schedule.monthly(clubId, today.getFullYear(), today.getMonth() + 1),
+    queryFn: () =>
+      unwrap(getClubSchedule(clubId, { year: today.getFullYear(), month: today.getMonth() + 1 })),
+    enabled: hasScheduleWidget,
+  });
 
-  const loadMemberDirectoryData = useCallback(async () => {
-    if (!hasMemberDirectoryWidget) {
-      return;
-    }
+  const {
+    data: pollData = null,
+    isLoading: pollLoading,
+    error: pollQueryError,
+  } = useQuery({
+    queryKey: clubKeys.poll.home(clubId),
+    queryFn: () => unwrap(getClubPollHome(clubId)),
+    enabled: hasPollWidget,
+  });
 
-    setMemberDirectoryLoading(true);
-    setMemberDirectoryError(null);
-    const result = await getClubMemberDirectory(clubId);
-    if (!result.ok || !result.data) {
-      setMemberDirectoryData(null);
-      setMemberDirectoryError(result.message ?? "회원 디렉터리 정보를 불러오지 못했습니다.");
-      setMemberDirectoryLoading(false);
-      return;
-    }
+  const {
+    data: tournamentData = null,
+    isLoading: tournamentLoading,
+    error: tournamentQueryError,
+  } = useQuery({
+    queryKey: clubKeys.tournament.home(clubId, "user"),
+    queryFn: () => unwrap(getClubTournamentHome(clubId)),
+    enabled: hasTournamentWidget,
+  });
 
-    setMemberDirectoryData(result.data);
-    setMemberDirectoryLoading(false);
-  }, [clubId, hasMemberDirectoryWidget]);
+  const {
+    data: bracketData = null,
+    isLoading: bracketLoading,
+    error: bracketQueryError,
+  } = useQuery({
+    queryKey: clubKeys.bracket.home(clubId, "user"),
+    queryFn: () => unwrap(getClubBracketHome(clubId)),
+    enabled: hasBracketWidget,
+  });
 
-  const loadFinanceData = useCallback(async () => {
-    if (!hasFinanceWidget) {
-      return;
-    }
-
-    setFinanceLoading(true);
-    setFinanceError(null);
-    const result = await getClubFinance(clubId);
-    if (!result.ok || !result.data) {
-      setFinanceData(null);
-      setFinanceError(result.message ?? "재정 정보를 불러오지 못했습니다.");
-      setFinanceLoading(false);
-      return;
-    }
-
-    setFinanceData(result.data);
-    setFinanceLoading(false);
-  }, [clubId, hasFinanceWidget]);
-
-  const loadScheduleData = useCallback(async () => {
-    if (!hasScheduleWidget) {
-      return;
-    }
-
-    setScheduleLoading(true);
-    setScheduleError(null);
-    const today = new Date();
-    const result = await getClubSchedule(clubId, {
-      year: today.getFullYear(),
-      month: today.getMonth() + 1,
-    });
-    if (!result.ok || !result.data) {
-      setScheduleData(null);
-      setScheduleError(result.message ?? "일정 정보를 불러오지 못했습니다.");
-      setScheduleLoading(false);
-      return;
-    }
-
-    setScheduleData(result.data);
-    setScheduleLoading(false);
-  }, [clubId, hasScheduleWidget]);
-
-  const loadPollData = useCallback(async () => {
-    if (!hasPollWidget) {
-      return;
-    }
-
-    setPollLoading(true);
-    setPollError(null);
-    const result = await getClubPollHome(clubId);
-    if (!result.ok || !result.data) {
-      setPollData(null);
-      setPollError(result.message ?? "투표 정보를 불러오지 못했습니다.");
-      setPollLoading(false);
-      return;
-    }
-
-    setPollData(result.data);
-    setPollLoading(false);
-  }, [clubId, hasPollWidget]);
-
-  const loadTournamentData = useCallback(async () => {
-    if (!hasTournamentWidget) {
-      return;
-    }
-
-    setTournamentLoading(true);
-    setTournamentError(null);
-    const result = await getClubTournamentHome(clubId);
-    if (!result.ok || !result.data) {
-      setTournamentData(null);
-      setTournamentError(result.message ?? "대회 정보를 불러오지 못했습니다.");
-      setTournamentLoading(false);
-      return;
-    }
-
-    setTournamentData(result.data);
-    setTournamentLoading(false);
-  }, [clubId, hasTournamentWidget]);
-
-  const loadBracketData = useCallback(async () => {
-    if (!hasBracketWidget) {
-      return;
-    }
-
-    setBracketLoading(true);
-    setBracketError(null);
-    const result = await getClubBracketHome(clubId);
-    if (!result.ok || !result.data) {
-      setBracketData(null);
-      setBracketError(result.message ?? "대진표 정보를 불러오지 못했습니다.");
-      setBracketLoading(false);
-      return;
-    }
-
-    setBracketData(result.data);
-    setBracketLoading(false);
-  }, [clubId, hasBracketWidget]);
+  // Derive error strings for DashboardWidgetCard
+  const attendanceError = attendanceQueryError
+    ? (attendanceQueryError instanceof ApiError ? attendanceQueryError.message : "출석 정보를 불러오지 못했습니다.")
+    : null;
+  const boardError = boardQueryError
+    ? (boardQueryError instanceof ApiError ? boardQueryError.message : "공지 정보를 불러오지 못했습니다.")
+    : null;
+  const memberDirectoryError = memberDirectoryQueryError
+    ? (memberDirectoryQueryError instanceof ApiError ? memberDirectoryQueryError.message : "회원 디렉터리 정보를 불러오지 못했습니다.")
+    : null;
+  const financeError = financeQueryError
+    ? (financeQueryError instanceof ApiError ? financeQueryError.message : "재정 정보를 불러오지 못했습니다.")
+    : null;
+  const scheduleError = scheduleQueryError
+    ? (scheduleQueryError instanceof ApiError ? scheduleQueryError.message : "일정 정보를 불러오지 못했습니다.")
+    : null;
+  const pollError = pollQueryError
+    ? (pollQueryError instanceof ApiError ? pollQueryError.message : "투표 정보를 불러오지 못했습니다.")
+    : null;
+  const tournamentError = tournamentQueryError
+    ? (tournamentQueryError instanceof ApiError ? tournamentQueryError.message : "대회 정보를 불러오지 못했습니다.")
+    : null;
+  const bracketError = bracketQueryError
+    ? (bracketQueryError instanceof ApiError ? bracketQueryError.message : "대진표 정보를 불러오지 못했습니다.")
+    : null;
 
   const persistEditorWidgets = useCallback(
     async (nextWidgets: ClubDashboardWidgetSummary[], successMessage: string) => {
@@ -1442,7 +1342,7 @@ export function ClubDashboardFallbackClient({
       }
 
       setIsSaving(true);
-      clearToast();
+      dispatch(hideToast());
       const result = await updateClubDashboardWidgets(clubId, {
         scope: "USER_HOME",
         widgets: nextWidgets.map((widget) => ({
@@ -1456,17 +1356,18 @@ export function ClubDashboardFallbackClient({
       setIsSaving(false);
 
       if (!result.ok || !result.data) {
-        showToast(result.message ?? "위젯 저장에 실패했습니다.", "error");
+        dispatch(showToastAction({ message: result.message ?? "위젯 저장에 실패했습니다.", tone: "error" }));
         return;
       }
 
-      setEditor(result.data);
-      setEditorWidgets(cloneWidgets(result.data.widgets));
-      setSavedEditorWidgets(cloneWidgets(result.data.widgets));
-      showToast(successMessage, "success");
-      window.dispatchEvent(new Event("semo:dashboard-widgets-updated"));
+      setDraftEditorWidgets(cloneWidgets(result.data.widgets));
+      queryClient.setQueryData<ClubDashboardEditorResponse>(
+        clubKeys.dashboard.widgetEditor(clubId),
+        result.data,
+      );
+      dispatch(showToastAction({ message: successMessage, tone: "success" }));
     },
-    [clearToast, club?.admin, clubId, showToast],
+    [club?.admin, clubId, dispatch, queryClient],
   );
 
   const handleRemoveWidget = (widgetKey: string) => {
@@ -1475,10 +1376,10 @@ export function ClubDashboardFallbackClient({
     }
 
     startTransition(() => {
-      setEditorWidgets((current) =>
+      setDraftEditorWidgets((current) =>
         normalizeSortOrder(
-          current.map((widget) =>
-        widget.widgetKey === widgetKey ? { ...widget, enabled: false } : widget,
+          (current ?? savedEditorWidgets).map((widget) =>
+            widget.widgetKey === widgetKey ? { ...widget, enabled: false } : widget,
           ),
         ),
       );
@@ -1491,10 +1392,10 @@ export function ClubDashboardFallbackClient({
     }
 
     startTransition(() => {
-      setEditorWidgets((current) =>
+      setDraftEditorWidgets((current) =>
         normalizeSortOrder(
-          current.map((widget) =>
-        widget.widgetKey === widgetKey ? { ...widget, enabled: true } : widget,
+          (current ?? savedEditorWidgets).map((widget) =>
+            widget.widgetKey === widgetKey ? { ...widget, enabled: true } : widget,
           ),
         ),
       );
@@ -1508,12 +1409,12 @@ export function ClubDashboardFallbackClient({
       }
 
       startTransition(() => {
-        setEditorWidgets((current) =>
-          reorderEnabledWidgets(current, sourceWidgetKey, targetWidgetKey),
+        setDraftEditorWidgets((current) =>
+          reorderEnabledWidgets(current ?? savedEditorWidgets, sourceWidgetKey, targetWidgetKey),
         );
       });
     },
-    [club?.admin, isSaving],
+    [club?.admin, isSaving, savedEditorWidgets],
   );
 
   const handleEditorDragStart = (event: DragStartEvent) => {
@@ -1537,107 +1438,24 @@ export function ClubDashboardFallbackClient({
     await persistEditorWidgets(editorWidgets, "홈 위젯 구성이 저장되었습니다.");
   };
 
-  const handleResetEditor = () => {
-    setActiveEditorWidgetKey(null);
-    setEditorWidgets(cloneWidgets(savedEditorWidgets));
-    showToast("위젯 편집 초안을 되돌렸습니다.", "info");
+  const handleStartEditMode = () => {
+    setDraftEditorWidgets(cloneWidgets(savedEditorWidgets));
+    setEditMode(true);
   };
 
-  useEffect(() => {
-    if (!hasAttendanceWidget) {
-      return;
-    }
-    const timerId = window.setTimeout(() => {
-      void loadAttendanceData();
-    }, 0);
-    return () => {
-      window.clearTimeout(timerId);
-    };
-  }, [hasAttendanceWidget, loadAttendanceData]);
+  const handleResetEditor = () => {
+    setActiveEditorWidgetKey(null);
+    setDraftEditorWidgets(cloneWidgets(savedEditorWidgets));
+    dispatch(showToastAction({ message: "위젯 편집 초안을 되돌렸습니다.", tone: "info" }));
+  };
 
-  useEffect(() => {
-    if (!hasBoardNoticeWidget) {
-      return;
-    }
-    const timerId = window.setTimeout(() => {
-      void loadBoardData();
-    }, 0);
-    return () => {
-      window.clearTimeout(timerId);
-    };
-  }, [hasBoardNoticeWidget, loadBoardData]);
+  const handleCloseEditMode = () => {
+    setActiveEditorWidgetKey(null);
+    setDraftEditorWidgets(null);
+    setEditMode(false);
+  };
 
-  useEffect(() => {
-    if (!hasMemberDirectoryWidget) {
-      return;
-    }
-    const timerId = window.setTimeout(() => {
-      void loadMemberDirectoryData();
-    }, 0);
-    return () => {
-      window.clearTimeout(timerId);
-    };
-  }, [hasMemberDirectoryWidget, loadMemberDirectoryData]);
-
-  useEffect(() => {
-    if (!hasFinanceWidget) {
-      return;
-    }
-    const timerId = window.setTimeout(() => {
-      void loadFinanceData();
-    }, 0);
-    return () => {
-      window.clearTimeout(timerId);
-    };
-  }, [hasFinanceWidget, loadFinanceData]);
-
-  useEffect(() => {
-    if (!hasScheduleWidget) {
-      return;
-    }
-    const timerId = window.setTimeout(() => {
-      void loadScheduleData();
-    }, 0);
-    return () => {
-      window.clearTimeout(timerId);
-    };
-  }, [hasScheduleWidget, loadScheduleData]);
-
-  useEffect(() => {
-    if (!hasPollWidget) {
-      return;
-    }
-    const timerId = window.setTimeout(() => {
-      void loadPollData();
-    }, 0);
-    return () => {
-      window.clearTimeout(timerId);
-    };
-  }, [hasPollWidget, loadPollData]);
-
-  useEffect(() => {
-    if (!hasTournamentWidget) {
-      return;
-    }
-    const timerId = window.setTimeout(() => {
-      void loadTournamentData();
-    }, 0);
-    return () => {
-      window.clearTimeout(timerId);
-    };
-  }, [hasTournamentWidget, loadTournamentData]);
-
-  useEffect(() => {
-    if (!hasBracketWidget) {
-      return;
-    }
-    const timerId = window.setTimeout(() => {
-      void loadBracketData();
-    }, 0);
-    return () => {
-      window.clearTimeout(timerId);
-    };
-  }, [hasBracketWidget, loadBracketData]);
+  // Widget data queries auto-fetch via React Query `enabled` — no manual useEffect triggers needed.
 
   const handleAttendanceCheckIn = useCallback(async () => {
     const todayAttendance = attendanceData?.todayAttendance;
@@ -1646,19 +1464,19 @@ export function ClubDashboardFallbackClient({
     }
 
     setIsCheckingInAttendance(true);
-    clearToast();
+    dispatch(hideToast());
     const result = await checkInClubAttendance(clubId);
     setIsCheckingInAttendance(false);
 
     if (!result.ok || !result.data) {
-      showToast(result.message ?? "출석 처리에 실패했습니다.", "error");
+      dispatch(showToastAction({ message: result.message ?? "출석 처리에 실패했습니다.", tone: "error" }));
       return;
     }
 
-    showToast("출석이 완료되었습니다.", "success");
+    dispatch(showToastAction("출석이 완료되었습니다."));
     setAttendancePulseToken((current) => current + 1);
-    await loadAttendanceData();
-  }, [attendanceData?.todayAttendance, clearToast, clubId, isCheckingInAttendance, loadAttendanceData, showToast]);
+    await refetchAttendance();
+  }, [attendanceData?.todayAttendance, clubId, dispatch, isCheckingInAttendance, refetchAttendance]);
 
   if (isLoading && !club && !error) {
     return <ClubDashboardLoadingShell />;
@@ -1676,12 +1494,16 @@ export function ClubDashboardFallbackClient({
               <button
                 type="button"
                 onClick={() => {
-                  clearToast();
+                  dispatch(hideToast());
                   if (editMode && isEditorDirty) {
-                    showToast("저장하거나 되돌린 뒤 편집을 종료할 수 있습니다.", "info");
+                    dispatch(showToastAction({ message: "저장하거나 되돌린 뒤 편집을 종료할 수 있습니다.", tone: "info" }));
                     return;
                   }
-                  setEditMode((current) => !current);
+                  if (editMode) {
+                    handleCloseEditMode();
+                    return;
+                  }
+                  handleStartEditMode();
                 }}
                 className="rounded-full bg-[var(--primary)]/10 px-3 py-1.5 text-xs font-bold text-[var(--primary)] transition-colors hover:bg-[var(--primary)]/20"
               >
@@ -1971,7 +1793,6 @@ export function ClubDashboardFallbackClient({
         ) : null}
 
         {club?.admin ? <ClubModeSwitchFab clubId={clubId} mode="user" /> : null}
-        <EphemeralToast toastId={toast?.id ?? null} message={toast?.message ?? null} tone={toast?.tone} />
       </div>
     </div>
   );

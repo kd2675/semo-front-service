@@ -1,7 +1,10 @@
 "use client";
 
-import { startTransition, useEffect, useState } from "react";
-import { getClubSchedule, type ClubScheduleResponse } from "@/app/lib/clubs";
+import { startTransition, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { getClubSchedule } from "@/app/lib/clubs";
+import { unwrap } from "@/app/lib/query";
+import { clubKeys } from "@/app/lib/queryKeys";
 import { ScheduleClient } from "./ScheduleClient";
 import { ClubScheduleLoadingShell } from "../ClubRouteLoadingShells";
 
@@ -13,32 +16,11 @@ export function ClubScheduleFallbackClient({ clubId }: ClubScheduleFallbackClien
   const today = new Date();
   const [activeYear, setActiveYear] = useState(today.getFullYear());
   const [activeMonth, setActiveMonth] = useState(today.getMonth() + 1);
-  const [payload, setPayload] = useState<ClubScheduleResponse | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isMonthLoading, setIsMonthLoading] = useState(false);
 
-  useEffect(() => {
-    let cancelled = false;
-
-    void (async () => {
-      setIsMonthLoading(true);
-      const result = await getClubSchedule(clubId, { year: activeYear, month: activeMonth });
-      if (cancelled) {
-        return;
-      }
-
-      setIsLoading(false);
-      setIsMonthLoading(false);
-      if (!result.ok || !result.data) {
-        return;
-      }
-      setPayload(result.data);
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [activeMonth, activeYear, clubId]);
+  const { data: payload, isFetching } = useQuery({
+    queryKey: clubKeys.schedule.monthly(clubId, activeYear, activeMonth),
+    queryFn: () => unwrap(getClubSchedule(clubId, { year: activeYear, month: activeMonth })),
+  });
 
   const handleMonthChange = (year: number, month: number) => {
     startTransition(() => {
@@ -47,7 +29,7 @@ export function ClubScheduleFallbackClient({ clubId }: ClubScheduleFallbackClien
     });
   };
 
-  if (isLoading) {
+  if (!payload && isFetching) {
     return <ClubScheduleLoadingShell />;
   }
 
@@ -76,7 +58,7 @@ export function ClubScheduleFallbackClient({ clubId }: ClubScheduleFallbackClien
       }
       activeYear={payload?.calendarYear ?? activeYear}
       activeMonth={payload?.calendarMonth ?? activeMonth}
-      isMonthLoading={isMonthLoading}
+      isMonthLoading={isFetching}
       onChangeMonth={handleMonthChange}
     />
   );

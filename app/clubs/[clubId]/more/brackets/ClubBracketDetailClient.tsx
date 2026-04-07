@@ -6,9 +6,11 @@ import {
   getClubBracketDetail,
   reviewClubBracket,
   submitClubBracket,
-  type BracketDetailResponse,
 } from "@/app/lib/clubs";
-import { useEffect, useState, type CSSProperties } from "react";
+import { type CSSProperties } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { unwrap } from "@/app/lib/query";
+import { clubKeys } from "@/app/lib/queryKeys";
 import { ClubDetailLoadingShell } from "../../ClubRouteLoadingShells";
 
 type ClubBracketDetailClientProps = {
@@ -70,10 +72,6 @@ export function ClubBracketDetailClient({
   onRequestClose,
   onReload,
 }: ClubBracketDetailClientProps) {
-  const [payload, setPayload] = useState<BracketDetailResponse | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const isModal = presentation === "modal";
   const isAdminMode = mode === "admin";
   const fallbackBasePath = basePath ?? (isAdminMode
@@ -83,46 +81,50 @@ export function ClubBracketDetailClient({
     ? "bg-[linear-gradient(135deg,#fff3eb_0%,#ffffff_55%,#fff7f1_100%)] shadow-[0_18px_50px_rgba(236,91,19,0.12)] ring-orange-100"
     : "bg-[linear-gradient(135deg,#eaf1ff_0%,#ffffff_55%,#f5f8ff_100%)] shadow-[0_18px_50px_rgba(19,91,236,0.12)] ring-sky-100";
 
-  useEffect(() => {
-    let cancelled = false;
+  const queryClient = useQueryClient();
+  const queryKey = clubKeys.bracket.detail(clubId, bracketRecordId);
 
-    void (async () => {
-      setLoading(true);
-      setError(null);
-      const result = await getClubBracketDetail(clubId, bracketRecordId);
-      if (cancelled) {
-        return;
-      }
-      setLoading(false);
-      if (!result.ok || !result.data) {
-        setError(result.message ?? "대진표 상세를 불러오지 못했습니다.");
-        return;
-      }
-      setPayload(result.data);
-    })();
+  const {
+    data: payload,
+    isLoading,
+    error: queryError,
+  } = useQuery({
+    queryKey,
+    queryFn: () => unwrap(getClubBracketDetail(clubId, bracketRecordId)),
+  });
 
-    return () => {
-      cancelled = true;
-    };
-  }, [bracketRecordId, clubId]);
+  const submitMutation = useMutation({
+    mutationFn: () => unwrap(submitClubBracket(clubId, bracketRecordId)),
+    onSuccess: (data) => {
+      queryClient.setQueryData(queryKey, data);
+      onReload?.();
+    },
+  });
 
-  const handleSubmit = async () => {
+  const reviewMutation = useMutation({
+    mutationFn: ({ approvalStatus, rejectionReason }: { approvalStatus: "APPROVED" | "REJECTED"; rejectionReason: string | null }) =>
+      unwrap(reviewClubBracket(clubId, bracketRecordId, { approvalStatus, rejectionReason })),
+    onSuccess: (data) => {
+      queryClient.setQueryData(queryKey, data);
+      onReload?.();
+    },
+  });
+
+  const submitting = submitMutation.isPending || reviewMutation.isPending;
+  const loading = isLoading;
+  const error =
+    submitMutation.error?.message ??
+    reviewMutation.error?.message ??
+    (queryError instanceof Error ? queryError.message : null);
+
+  const handleSubmit = () => {
     if (!payload) {
       return;
     }
-    setSubmitting(true);
-    setError(null);
-    const result = await submitClubBracket(clubId, payload.bracketRecordId);
-    setSubmitting(false);
-    if (!result.ok || !result.data) {
-      setError(result.message ?? "대진표 제출에 실패했습니다.");
-      return;
-    }
-    setPayload(result.data);
-    onReload?.();
+    submitMutation.mutate();
   };
 
-  const handleReview = async (approvalStatus: "APPROVED" | "REJECTED") => {
+  const handleReview = (approvalStatus: "APPROVED" | "REJECTED") => {
     if (!payload) {
       return;
     }
@@ -132,27 +134,14 @@ export function ClubBracketDetailClient({
     if (approvalStatus === "REJECTED" && !(rejectionReason ?? "").trim()) {
       return;
     }
-
-    setSubmitting(true);
-    setError(null);
-    const result = await reviewClubBracket(clubId, payload.bracketRecordId, {
-      approvalStatus,
-      rejectionReason,
-    });
-    setSubmitting(false);
-    if (!result.ok || !result.data) {
-      setError(result.message ?? "대진표 검토에 실패했습니다.");
-      return;
-    }
-    setPayload(result.data);
-    onReload?.();
+    reviewMutation.mutate({ approvalStatus, rejectionReason });
   };
 
-  if (loading && !payload) {
+  if (loading && payload == null) {
     return <ClubDetailLoadingShell />;
   }
 
-  if (!payload) {
+  if (payload == null) {
     return (
       <div className="px-4 py-8 text-sm font-medium text-rose-600">
         {error ?? "대진표 정보를 찾을 수 없습니다."}

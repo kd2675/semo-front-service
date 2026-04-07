@@ -3,16 +3,19 @@
 import { Manrope } from "next/font/google";
 import { motion, useReducedMotion } from "motion/react";
 import { useMemo, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { EphemeralToast } from "@/app/components/EphemeralToast";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
-import { useEphemeralToast } from "@/app/components/useEphemeralToast";
+import { useToast } from "@/app/hooks/useToast";
 import {
+  getClubAdminMemberDirectorySettings,
   updateClubAdminMemberDirectorySettings,
   type ClubAdminMemberDirectorySettingsResponse,
   type ClubMemberDirectoryMember,
   type ClubMemberDirectorySettings,
 } from "@/app/lib/clubs";
+import { unwrap } from "@/app/lib/query";
+import { adminKeys } from "@/app/lib/queryKeys";
 import { staggeredFadeUpMotion } from "@/app/lib/motion";
 
 const manrope = Manrope({
@@ -407,12 +410,18 @@ export function ClubAdminMemberDirectoryClient({
 }: ClubAdminMemberDirectoryClientProps) {
   const prefersReducedMotion = useReducedMotion();
   const reduceMotion = Boolean(prefersReducedMotion);
-  const [settings, setSettings] = useState(initialData.settings);
-  const [savedSettings, setSavedSettings] = useState(initialData.settings);
+  const queryClient = useQueryClient();
+  const { data: directoryData = initialData } = useQuery({
+    queryKey: adminKeys.memberDirectory(clubId),
+    queryFn: () => unwrap(getClubAdminMemberDirectorySettings(clubId)),
+    initialData,
+  });
+  const [settings, setSettings] = useState(directoryData.settings);
+  const [savedSettings, setSavedSettings] = useState(directoryData.settings);
   const [saving, setSaving] = useState(false);
-  const { toast, showToast, clearToast } = useEphemeralToast();
+  const toast = useToast();
 
-  const previewMembers = useMemo(() => initialData.previewMembers.slice(0, 3), [initialData.previewMembers]);
+  const previewMembers = useMemo(() => directoryData.previewMembers.slice(0, 3), [directoryData.previewMembers]);
   const enabledVisibilityCount = useMemo(
     () => VISIBILITY_ITEMS.filter((item) => settings[item.key]).length,
     [settings],
@@ -438,7 +447,7 @@ export function ClubAdminMemberDirectoryClient({
     }
 
     setSaving(true);
-    clearToast();
+    toast.hide();
     const result = await updateClubAdminMemberDirectorySettings(clubId, {
       showPositions: settings.showPositions,
       showTagline: settings.showTagline,
@@ -447,13 +456,14 @@ export function ClubAdminMemberDirectoryClient({
     setSaving(false);
 
     if (!result.ok || !result.data) {
-      showToast(result.message ?? "회원 디렉터리 설정을 저장하지 못했습니다.", "error");
+      toast.error(result.message ?? "회원 디렉터리 설정을 저장하지 못했습니다.");
       return;
     }
 
     setSettings(result.data.settings);
     setSavedSettings(result.data.settings);
-    showToast("회원 디렉터리 설정을 저장했습니다.", "success");
+    queryClient.setQueryData(adminKeys.memberDirectory(clubId), result.data);
+    toast.success("회원 디렉터리 설정을 저장했습니다.");
   };
 
   return (
@@ -461,7 +471,7 @@ export function ClubAdminMemberDirectoryClient({
       <div className="mx-auto min-h-screen max-w-md bg-[linear-gradient(180deg,rgba(255,248,242,0.68)_0%,rgba(248,246,246,0.94)_26%,#f8f6f6_100%)] pb-40">
         <ClubPageHeader
           title="회원 디렉터리 설정"
-          subtitle={initialData.clubName}
+          subtitle={directoryData.clubName}
           icon="groups"
           theme="admin"
           containerClassName="max-w-md"
@@ -485,7 +495,7 @@ export function ClubAdminMemberDirectoryClient({
               </h2>
               <p className="mt-3 text-sm leading-6 text-slate-600">
                 회원용 More 화면에 보이는 프로필 요소를 조정합니다. 현재 활성 회원{" "}
-                {initialData.totalMemberCount}명에게 같은 규칙이 적용됩니다.
+                {directoryData.totalMemberCount}명에게 같은 규칙이 적용됩니다.
               </p>
 
               <div className="mt-5 grid grid-cols-2 gap-3">
@@ -493,7 +503,7 @@ export function ClubAdminMemberDirectoryClient({
                   label="활성 컨트롤"
                   value={`${enabledVisibilityCount}/${VISIBILITY_ITEMS.length}`}
                 />
-                <DirectoryStatChip label="반영 대상" value={`${initialData.totalMemberCount}명`} />
+                <DirectoryStatChip label="반영 대상" value={`${directoryData.totalMemberCount}명`} />
               </div>
             </div>
           </motion.section>
@@ -596,11 +606,6 @@ export function ClubAdminMemberDirectoryClient({
           </div>
         </div>
 
-        <EphemeralToast
-          toastId={toast?.id ?? null}
-          message={toast?.message ?? null}
-          tone={toast?.tone}
-        />
       </div>
     </div>
   );

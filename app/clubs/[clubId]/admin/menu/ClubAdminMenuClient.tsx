@@ -22,17 +22,20 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
-import { EphemeralToast } from "@/app/components/EphemeralToast";
-import { useEphemeralToast } from "@/app/components/useEphemeralToast";
+import { useToast } from "@/app/hooks/useToast";
 import { Public_Sans } from "next/font/google";
 import { motion, useReducedMotion } from "motion/react";
 import { startTransition, useEffect, useMemo, useState } from "react";
 import type { CSSProperties } from "react";
 import {
   updateClubFeatures,
+  getClubFeatures,
   type ClubFeatureSummary,
 } from "@/app/lib/clubs";
 import { staggeredFadeUpMotion } from "@/app/lib/motion";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { unwrap } from "@/app/lib/query";
+import { clubKeys } from "@/app/lib/queryKeys";
 
 const publicSans = Public_Sans({
   subsets: ["latin"],
@@ -157,6 +160,12 @@ export function ClubAdminMenuClient({
 }: ClubAdminMenuClientProps) {
   const prefersReducedMotion = useReducedMotion();
   const reduceMotion = Boolean(prefersReducedMotion);
+  const queryClient = useQueryClient();
+  const { data: latestFeatures } = useQuery({
+    queryKey: clubKeys.features(clubId),
+    queryFn: () => unwrap(getClubFeatures(clubId)),
+    initialData: initialFeatures,
+  });
   const [features, setFeatures] = useState(() => cloneFeatures(initialFeatures));
   const [savedFeatures, setSavedFeatures] = useState(() => cloneFeatures(initialFeatures));
   const [savedEnabledFeatureKeys, setSavedEnabledFeatureKeys] = useState<string[]>(
@@ -164,7 +173,7 @@ export function ClubAdminMenuClient({
   );
   const [isSaving, setIsSaving] = useState(false);
   const [activeFeatureKey, setActiveFeatureKey] = useState<string | null>(null);
-  const { toast, showToast, clearToast } = useEphemeralToast();
+  const toast = useToast();
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
@@ -183,10 +192,10 @@ export function ClubAdminMenuClient({
   );
 
   useEffect(() => {
-    setFeatures(cloneFeatures(initialFeatures));
-    setSavedFeatures(cloneFeatures(initialFeatures));
-    setSavedEnabledFeatureKeys(extractEnabledFeatureKeys(initialFeatures));
-  }, [initialFeatures]);
+    setFeatures(cloneFeatures(latestFeatures));
+    setSavedFeatures(cloneFeatures(latestFeatures));
+    setSavedEnabledFeatureKeys(extractEnabledFeatureKeys(latestFeatures));
+  }, [latestFeatures]);
 
   const enabledFeatures = useMemo(
     () => features.filter((feature) => feature.enabled),
@@ -263,12 +272,12 @@ export function ClubAdminMenuClient({
 
   const handleSave = async () => {
     if (!canPersist) {
-      showToast("모의 모드에서는 저장되지 않습니다.", "info");
+      toast.info("모의 모드에서는 저장되지 않습니다.");
       return;
     }
 
     setIsSaving(true);
-    clearToast();
+    toast.hide();
     const result = await updateClubFeatures(clubId, {
       enabledFeatureKeys: features
         .filter((feature) => feature.enabled)
@@ -277,21 +286,21 @@ export function ClubAdminMenuClient({
     setIsSaving(false);
 
     if (!result.ok || !result.data) {
-      showToast(result.message ?? "기능 설정 저장에 실패했습니다.", "error");
+      toast.error(result.message ?? "기능 설정 저장에 실패했습니다.");
       return;
     }
 
     setFeatures(cloneFeatures(result.data));
     setSavedFeatures(cloneFeatures(result.data));
     setSavedEnabledFeatureKeys(extractEnabledFeatureKeys(result.data));
-    showToast("기능 설정이 저장되었습니다.", "success");
-    window.dispatchEvent(new Event("semo:club-features-updated"));
+    toast.success("기능 설정이 저장되었습니다.");
+    queryClient.setQueryData(clubKeys.features(clubId), result.data);
   };
 
   const handleReset = () => {
     setActiveFeatureKey(null);
     setFeatures(cloneFeatures(savedFeatures));
-    showToast("변경 사항을 되돌렸습니다.", "info");
+    toast.info("변경 사항을 되돌렸습니다.");
   };
 
   return (
@@ -479,7 +488,6 @@ export function ClubAdminMenuClient({
           </div>
         ) : null}
       </div>
-      <EphemeralToast toastId={toast?.id ?? null} message={toast?.message ?? null} tone={toast?.tone} />
     </div>
   );
 }

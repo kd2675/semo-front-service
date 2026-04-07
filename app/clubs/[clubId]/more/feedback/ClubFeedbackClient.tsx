@@ -1,12 +1,14 @@
 "use client";
 
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion, useReducedMotion } from "motion/react";
 import { startTransition, useMemo, useState } from "react";
 import type { CSSProperties } from "react";
 import { ClubModeSwitchFab } from "@/app/components/ClubModeSwitchFab";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
-import { EphemeralToast } from "@/app/components/EphemeralToast";
-import { useEphemeralToast } from "@/app/components/useEphemeralToast";
+import { unwrap } from "@/app/lib/query";
+import { clubKeys } from "@/app/lib/queryKeys";
+import { useToast } from "@/app/hooks/useToast";
 import {
   createClubFeedback,
   getClubFeedbackDetail,
@@ -76,7 +78,6 @@ export function ClubFeedbackClient({
 }: ClubFeedbackClientProps) {
   const prefersReducedMotion = useReducedMotion();
   const reduceMotion = Boolean(prefersReducedMotion);
-  const [feedbackHome, setFeedbackHome] = useState(initialData);
   const [activeFilter, setActiveFilter] = useState<FeedbackFilterKey>("all");
   const [selectedFeedbackId, setSelectedFeedbackId] = useState<number | null>(
     initialDetail?.feedbackId ?? initialData.items[0]?.feedbackId ?? null,
@@ -85,12 +86,18 @@ export function ClubFeedbackClient({
     initialDetail,
   );
   const [isDetailLoading, setIsDetailLoading] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [feedbackType, setFeedbackType] = useState<ClubFeedbackType>("SUGGESTION");
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [anonymous, setAnonymous] = useState(false);
-  const { toast, showToast, clearToast } = useEphemeralToast();
+  const toast = useToast();
+  const queryClient = useQueryClient();
+
+  const { data: feedbackHome = initialData } = useQuery({
+    queryKey: clubKeys.feedback.list(clubId),
+    queryFn: () => unwrap(getClubFeedbackHome(clubId)),
+    initialData,
+  });
 
   const filteredItems = useMemo(
     () => feedbackHome.items.filter((item) => matchesFilter(item, activeFilter)),
@@ -99,68 +106,59 @@ export function ClubFeedbackClient({
 
   const loadDetail = async (feedbackId: number) => {
     setIsDetailLoading(true);
-    const result = await getClubFeedbackDetail(clubId, feedbackId);
-    setIsDetailLoading(false);
-    if (!result.ok || !result.data) {
-      showToast(result.message ?? "피드백 상세를 불러오지 못했습니다.", "error");
-      return;
+    try {
+      const detail = await queryClient.fetchQuery({
+        queryKey: clubKeys.feedback.detail(clubId, String(feedbackId)),
+        queryFn: () => unwrap(getClubFeedbackDetail(clubId, feedbackId)),
+        staleTime: 0,
+      });
+      setSelectedFeedbackId(feedbackId);
+      setSelectedDetail(detail);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "피드백 상세를 불러오지 못했습니다.");
+    } finally {
+      setIsDetailLoading(false);
     }
-    setSelectedFeedbackId(feedbackId);
-    setSelectedDetail(result.data);
   };
 
-  const refreshHome = async (nextSelectedFeedbackId?: number | null) => {
-    const result = await getClubFeedbackHome(clubId);
-    if (!result.ok || !result.data) {
-      showToast(result.message ?? "피드백 목록을 새로고침하지 못했습니다.", "error");
-      return;
-    }
-    setFeedbackHome(result.data);
-    const fallbackFeedbackId = result.data.items[0]?.feedbackId ?? null;
-    const resolvedFeedbackId = nextSelectedFeedbackId ?? fallbackFeedbackId;
-    if (resolvedFeedbackId != null) {
-      void loadDetail(resolvedFeedbackId);
-      return;
-    }
-    setSelectedFeedbackId(null);
-    setSelectedDetail(null);
-  };
+  const submitFeedbackMutation = useMutation({
+    mutationFn: async () =>
+      unwrap(createClubFeedback(clubId, {
+        feedbackType,
+        title: title.trim(),
+        content: content.trim(),
+        anonymous,
+      })),
+    onSuccess: async (data) => {
+      startTransition(() => {
+        setTitle("");
+        setContent("");
+        setAnonymous(false);
+        setFeedbackType("SUGGESTION");
+      });
+      setSelectedFeedbackId(data.feedbackId);
+      setSelectedDetail(data);
+      queryClient.setQueryData(clubKeys.feedback.detail(clubId, String(data.feedbackId)), data);
+      await queryClient.invalidateQueries({ queryKey: clubKeys.feedback.list(clubId) });
+      toast.success("피드백을 등록했습니다.");
+    },
+    onError: (error) => {
+      toast.error(error instanceof Error ? error.message : "피드백 등록에 실패했습니다.");
+    },
+  });
 
   const handleSubmit = async () => {
     if (!title.trim() || !content.trim()) {
-      showToast("제목과 내용을 입력해주세요.", "error");
+      toast.error("제목과 내용을 입력해주세요.");
       return;
     }
     if (!canPersist) {
-      showToast("Mock mode에서는 피드백 저장이 되지 않습니다.", "info");
+      toast.info("Mock mode에서는 피드백 저장이 되지 않습니다.");
       return;
     }
 
-    setIsSubmitting(true);
-    clearToast();
-    const result = await createClubFeedback(clubId, {
-      feedbackType,
-      title: title.trim(),
-      content: content.trim(),
-      anonymous,
-    });
-    setIsSubmitting(false);
-
-    if (!result.ok || !result.data) {
-      showToast(result.message ?? "피드백 등록에 실패했습니다.", "error");
-      return;
-    }
-
-    startTransition(() => {
-      setTitle("");
-      setContent("");
-      setAnonymous(false);
-      setFeedbackType("SUGGESTION");
-    });
-    setSelectedFeedbackId(result.data.feedbackId);
-    setSelectedDetail(result.data);
-    showToast("피드백을 등록했습니다.", "success");
-    void refreshHome(result.data.feedbackId);
+    toast.hide();
+    await submitFeedbackMutation.mutateAsync().catch(() => undefined);
   };
 
   return (
@@ -276,10 +274,10 @@ export function ClubFeedbackClient({
             <button
               type="button"
               onClick={() => void handleSubmit()}
-              disabled={isSubmitting}
+              disabled={submitFeedbackMutation.isPending}
               className="mt-4 flex w-full items-center justify-center rounded-2xl bg-[var(--primary)] py-3.5 text-sm font-bold text-white transition hover:bg-[#0f4fd1] disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500"
             >
-              {isSubmitting ? "등록 중..." : "피드백 보내기"}
+              {submitFeedbackMutation.isPending ? "등록 중..." : "피드백 보내기"}
             </button>
           </motion.section>
 
@@ -427,7 +425,6 @@ export function ClubFeedbackClient({
         </main>
 
         {isAdmin ? <ClubModeSwitchFab clubId={clubId} mode="user" /> : null}
-        <EphemeralToast toastId={toast?.id ?? null} message={toast?.message ?? null} tone={toast?.tone} />
       </div>
     </div>
   );

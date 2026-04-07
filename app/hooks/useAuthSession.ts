@@ -1,83 +1,30 @@
 "use client";
 
-import { startTransition, useEffect, useEffectEvent, useState } from "react";
+import { useEffect, useEffectEvent } from "react";
 import {
-  bootstrapAccessToken,
-  clearAccessToken,
-  getAccessToken,
-  getUserFromToken,
   isTokenExpired,
-  notifyAuthExpired,
-  refreshAccessToken,
   scheduleTokenExpiry,
 } from "@/app/lib/auth";
+import {
+  selectAuthHydrated,
+  selectAuthIsRestoring,
+  selectAuthStatus,
+  selectAuthUser,
+  setHydrated,
+  syncSession,
+} from "@/app/store/authSlice";
+import { useAppDispatch, useAppSelector } from "@/app/store/hooks";
 import { onAuthChanged } from "@/app/lib/authEvents";
-import type { AuthUser } from "@/app/types/auth";
-
-type AuthStatus = "unknown" | "in" | "out";
 
 export default function useAuthSession() {
-  const readSnapshot = (): { status: AuthStatus; user: AuthUser | null } => {
-    if (typeof window === "undefined") {
-      return { status: "unknown", user: null };
-    }
+  const dispatch = useAppDispatch();
+  const isHydrated = useAppSelector(selectAuthHydrated);
+  const isRestoring = useAppSelector(selectAuthIsRestoring);
+  const authStatus = useAppSelector(selectAuthStatus);
+  const user = useAppSelector(selectAuthUser);
 
-    const token = getAccessToken();
-    if (!token) {
-      return { status: "out", user: null };
-    }
-
-    const user = getUserFromToken(token);
-    if (!user) {
-      return { status: "out", user: null };
-    }
-
-    if (user.exp && isTokenExpired(user.exp)) {
-      return { status: "out", user: null };
-    }
-
-    return { status: "in", user };
-  };
-
-  const [snapshot, setSnapshot] = useState(readSnapshot);
-  const [isHydrated, setIsHydrated] = useState(false);
-  const [isRestoring, setIsRestoring] = useState(true);
-
-  const commitSnapshot = useEffectEvent((restoring: boolean) => {
-    const nextSnapshot = readSnapshot();
-    startTransition(() => {
-      setSnapshot(nextSnapshot);
-      setIsRestoring(restoring);
-    });
-  });
-
-  const syncSession = useEffectEvent(async () => {
-    const token = getAccessToken();
-    if (!token) {
-      await bootstrapAccessToken();
-      commitSnapshot(false);
-      return;
-    }
-
-    const user = getUserFromToken(token);
-    if (!user) {
-      clearAccessToken();
-      await bootstrapAccessToken();
-      commitSnapshot(false);
-      return;
-    }
-
-    if (user.exp && isTokenExpired(user.exp)) {
-      const refreshed = await refreshAccessToken();
-      if (!refreshed) {
-        clearAccessToken();
-        notifyAuthExpired("refresh_failed");
-      }
-      commitSnapshot(false);
-      return;
-    }
-
-    commitSnapshot(false);
+  const syncSessionNow = useEffectEvent(() => {
+    void dispatch(syncSession());
   });
 
   const handleResume = useEffectEvent(() => {
@@ -85,18 +32,17 @@ export default function useAuthSession() {
       return;
     }
 
-    void syncSession();
+    syncSessionNow();
   });
 
   useEffect(() => {
-    const frameId = window.requestAnimationFrame(() => setIsHydrated(true));
-    void syncSession();
+    const frameId = window.requestAnimationFrame(() => {
+      dispatch(setHydrated(true));
+    });
+    syncSessionNow();
 
     const unsubscribe = onAuthChanged(() => {
-      startTransition(() => {
-        setSnapshot(readSnapshot());
-        setIsRestoring(false);
-      });
+      syncSessionNow();
     });
 
     const handleVisibilityChange = () => {
@@ -118,10 +64,10 @@ export default function useAuthSession() {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
       unsubscribe();
     };
-  }, []);
+  }, [dispatch]);
 
   useEffect(() => {
-    const userExp = snapshot.user?.exp;
+    const userExp = user?.exp;
     if (!userExp) {
       return;
     }
@@ -129,16 +75,10 @@ export default function useAuthSession() {
     if (isTokenExpired(userExp)) {
       let cancelled = false;
       void (async () => {
-        const refreshed = await refreshAccessToken();
         if (cancelled) {
           return;
         }
-
-        if (!refreshed) {
-          clearAccessToken();
-          notifyAuthExpired("refresh_failed");
-        }
-        commitSnapshot(false);
+        await dispatch(syncSession());
       })();
       return () => {
         cancelled = true;
@@ -146,20 +86,13 @@ export default function useAuthSession() {
     }
 
     return scheduleTokenExpiry(() => {
-      void (async () => {
-        const refreshed = await refreshAccessToken();
-        if (!refreshed) {
-          clearAccessToken();
-          notifyAuthExpired("refresh_failed");
-        }
-        commitSnapshot(false);
-      })();
+      void dispatch(syncSession());
     }, userExp);
-  }, [snapshot.user?.exp]);
+  }, [dispatch, user?.exp]);
 
   return {
     isHydrated,
-    authStatus: isRestoring ? "unknown" : snapshot.status,
-    user: snapshot.user,
+    authStatus: isRestoring ? "unknown" : authStatus,
+    user,
   };
 }

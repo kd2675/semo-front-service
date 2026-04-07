@@ -1,13 +1,14 @@
 "use client";
 
+import type { InfiniteData } from "@tanstack/react-query";
+import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
+import { clubKeys } from "@/app/lib/queryKeys";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import {
-  startTransition,
   useEffect,
-  useEffectEvent,
-  useRef,
   useState,
 } from "react";
+import { unwrap } from "@/app/lib/query";
 import { ClubModeSwitchFab } from "@/app/components/ClubModeSwitchFab";
 import { ItemReadStatusModal } from "@/app/components/ItemReadStatusModal";
 import { RouteModal } from "@/app/components/RouteModal";
@@ -20,6 +21,7 @@ import {
 import {
   type BoardItemReadStatusResponse,
   type ClubBoardFeedItem,
+  type ClubNoticeFeedResponse,
   type TournamentSummary,
   deleteClubTournament,
   deleteClubNotice,
@@ -27,7 +29,6 @@ import {
   deleteClubScheduleVote,
   getClubBoardItemReadStatus,
   getClubNoticeFeed,
-  type ClubNoticeFeedResponse,
   type ClubNoticeListItem,
   type ClubScheduleEventSummary,
   type ClubScheduleVoteSummary,
@@ -49,10 +50,6 @@ import { PinnedBoardCarousel } from "./PinnedBoardCarousel";
 import { BoardTournamentManageCard } from "./BoardTournamentManageCard";
 import { ClubTournamentEditorClient } from "../more/tournaments/ClubTournamentEditorClient";
 
-type CursorState = {
-  boardItemId: number | null;
-};
-
 type ClubBoardFeedClientProps = {
   clubId: string;
 };
@@ -61,6 +58,25 @@ type BoardReadStatusModalState = {
   title: string;
   status: BoardItemReadStatusResponse | null;
 };
+
+type BoardFeedCache = InfiniteData<ClubNoticeFeedResponse, number | null>;
+
+function removeBoardFeedItems(
+  old: BoardFeedCache | undefined,
+  predicate: (item: ClubBoardFeedItem) => boolean,
+): BoardFeedCache | undefined {
+  if (!old) {
+    return old;
+  }
+
+  return {
+    ...old,
+    pages: old.pages.map((page) => ({
+      ...page,
+      items: page.items.filter((item) => !predicate(item)),
+    })),
+  };
+}
 
 function isPinnedBoardItem(item: ClubBoardFeedItem) {
   return Boolean(
@@ -251,13 +267,7 @@ function BoardVoteCard({
 export function ClubBoardFeedClient({ clubId }: ClubBoardFeedClientProps) {
   const prefersReducedMotion = useReducedMotion();
   const reduceMotion = Boolean(prefersReducedMotion);
-  const [items, setItems] = useState<ClubBoardFeedItem[]>([]);
-  const [clubName, setClubName] = useState("Notice Board");
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [hasNext, setHasNext] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [initialLoaded, setInitialLoaded] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const queryClient = useQueryClient();
   const [detailNoticeId, setDetailNoticeId] = useState<string | null>(null);
   const [detailEventId, setDetailEventId] = useState<string | null>(null);
   const [detailVoteId, setDetailVoteId] = useState<string | null>(null);
@@ -273,104 +283,74 @@ export function ClubBoardFeedClient({ clubId }: ClubBoardFeedClientProps) {
   const [deleting, setDeleting] = useState(false);
   const [activeActionKey, setActiveActionKey] = useState<string | null>(null);
   const [readStatusModal, setReadStatusModal] = useState<BoardReadStatusModalState | null>(null);
-  const [reloadKey, setReloadKey] = useState(0);
   const [pinnedOnly, setPinnedOnly] = useState(false);
-  const [cursor, setCursor] = useState<CursorState>({ boardItemId: null });
   const [sentinelNode, setSentinelNode] = useState<HTMLDivElement | null>(null);
-  const loadingRef = useRef(false);
 
-  const loadFeed = useEffectEvent(async (mode: "reset" | "append") => {
-    if (loadingRef.current) {
-      return;
-    }
-
-    if (mode === "reset") {
-      setItems([]);
-      setHasNext(false);
-      setCursor({ boardItemId: null });
-      setInitialLoaded(false);
-      setActiveActionKey(null);
-      setDetailNoticeId(null);
-      setDetailEventId(null);
-      setDetailVoteId(null);
-      setDetailTournamentId(null);
-    }
-
-    loadingRef.current = true;
-    setLoading(true);
-    setError(null);
-
-    const result = await getClubNoticeFeed(clubId, {
+  const {
+    data,
+    error: queryError,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading,
+  } = useInfiniteQuery({
+    queryKey: clubKeys.notice.feed(clubId, pinnedOnly),
+    queryFn: ({ pageParam }) => unwrap(getClubNoticeFeed(clubId, {
       pinnedOnly,
-      cursorBoardItemId: mode === "append" ? cursor.boardItemId : null,
+      cursorBoardItemId: pageParam,
       size: 10,
-    });
-
-    loadingRef.current = false;
-    setLoading(false);
-    setInitialLoaded(true);
-
-    if (!result.ok || !result.data) {
-      setError(result.message ?? "게시판 피드를 불러오지 못했습니다.");
-      return;
-    }
-
-    const payload: ClubNoticeFeedResponse = result.data;
-    setClubName(payload.clubName);
-    setIsAdmin(payload.admin);
-    setHasNext(payload.hasNext);
-    setCursor({
-      boardItemId: payload.nextCursorBoardItemId,
-    });
-    setItems((current) => (mode === "append" ? [...current, ...payload.items] : payload.items));
+    })),
+    initialPageParam: null as number | null,
+    getNextPageParam: (lastPage) =>
+      lastPage.hasNext ? lastPage.nextCursorBoardItemId : undefined,
   });
 
-  useEffect(() => {
-    void loadFeed("reset");
-  }, [clubId, pinnedOnly, reloadKey]);
+  const items = data?.pages.flatMap((page) => page.items) ?? [];
+  const clubName = data?.pages[0]?.clubName ?? "Notice Board";
+  const isAdmin = data?.pages[0]?.admin ?? false;
+  const error = queryError instanceof Error ? queryError.message : null;
 
   useEffect(() => {
-    if (!sentinelNode || !hasNext || loading) {
-      return;
-    }
-
+    if (!sentinelNode || !hasNextPage || isFetchingNextPage) return;
     const observer = new IntersectionObserver(
       (entries) => {
-        if (!entries[0]?.isIntersecting) {
-          return;
-        }
-        void loadFeed("append");
+        if (!entries[0]?.isIntersecting) return;
+        void fetchNextPage();
       },
       { rootMargin: "240px 0px" },
     );
-
     observer.observe(sentinelNode);
-    return () => {
-      observer.disconnect();
-    };
-  }, [hasNext, loading, sentinelNode]);
+    return () => observer.disconnect();
+  }, [fetchNextPage, hasNextPage, isFetchingNextPage, sentinelNode]);
 
   const handleDeleteNotice = async () => {
     if (!deleteTarget) {
       return;
     }
     setDeleting(true);
-    setError(null);
-    const result = await deleteClubNotice(clubId, deleteTarget.noticeId);
+    const deletedNoticeId = deleteTarget.noticeId;
+    const result = await deleteClubNotice(clubId, deletedNoticeId);
     setDeleting(false);
     if (!result.ok) {
-      setError(result.message ?? "공지 삭제에 실패했습니다.");
       return;
     }
     setDeleteTarget(null);
     setActiveActionKey(null);
-    setReloadKey((current) => current + 1);
+    queryClient.setQueryData<BoardFeedCache>(
+      clubKeys.notice.feed(clubId, pinnedOnly),
+      (old) =>
+        removeBoardFeedItems(
+          old,
+          (item) => item.contentType === "NOTICE" && item.notice?.noticeId === deletedNoticeId,
+        ),
+    );
+    void queryClient.invalidateQueries({ queryKey: clubKeys.notice.feed(clubId) });
   };
 
   const handleModalSaved = (savedNoticeId: number) => {
     setEditingNoticeId(null);
     setActiveActionKey(null);
-    setReloadKey((current) => current + 1);
+    void queryClient.invalidateQueries({ queryKey: clubKeys.notice.feed(clubId) });
     setDetailNoticeId(String(savedNoticeId));
   };
 
@@ -379,16 +359,23 @@ export function ClubBoardFeedClient({ clubId }: ClubBoardFeedClientProps) {
       return;
     }
     setDeleting(true);
-    setError(null);
-    const result = await deleteClubScheduleEvent(clubId, deleteEventTarget.eventId);
+    const deletedEventId = deleteEventTarget.eventId;
+    const result = await deleteClubScheduleEvent(clubId, deletedEventId);
     setDeleting(false);
     if (!result.ok) {
-      setError(result.message ?? "일정 삭제에 실패했습니다.");
       return;
     }
     setDeleteEventTarget(null);
     setActiveActionKey(null);
-    setReloadKey((current) => current + 1);
+    queryClient.setQueryData<BoardFeedCache>(
+      clubKeys.notice.feed(clubId, pinnedOnly),
+      (old) =>
+        removeBoardFeedItems(
+          old,
+          (item) => item.contentType === "SCHEDULE_EVENT" && item.event?.eventId === deletedEventId,
+        ),
+    );
+    void queryClient.invalidateQueries({ queryKey: clubKeys.notice.feed(clubId) });
   };
 
   const handleDeleteVote = async () => {
@@ -396,16 +383,23 @@ export function ClubBoardFeedClient({ clubId }: ClubBoardFeedClientProps) {
       return;
     }
     setDeleting(true);
-    setError(null);
-    const result = await deleteClubScheduleVote(clubId, deleteVoteTarget.voteId);
+    const deletedVoteId = deleteVoteTarget.voteId;
+    const result = await deleteClubScheduleVote(clubId, deletedVoteId);
     setDeleting(false);
     if (!result.ok) {
-      setError(result.message ?? "투표 삭제에 실패했습니다.");
       return;
     }
     setDeleteVoteTarget(null);
     setActiveActionKey(null);
-    setReloadKey((current) => current + 1);
+    queryClient.setQueryData<BoardFeedCache>(
+      clubKeys.notice.feed(clubId, pinnedOnly),
+      (old) =>
+        removeBoardFeedItems(
+          old,
+          (item) => item.contentType === "SCHEDULE_VOTE" && item.vote?.voteId === deletedVoteId,
+        ),
+    );
+    void queryClient.invalidateQueries({ queryKey: clubKeys.notice.feed(clubId) });
   };
 
   const handleDeleteTournament = async () => {
@@ -413,32 +407,29 @@ export function ClubBoardFeedClient({ clubId }: ClubBoardFeedClientProps) {
       return;
     }
     setDeleting(true);
-    const result = await deleteClubTournament(clubId, deleteTournamentTarget.tournamentRecordId);
+    const deletedTournamentId = deleteTournamentTarget.tournamentRecordId;
+    const result = await deleteClubTournament(clubId, deletedTournamentId);
     setDeleting(false);
     if (!result.ok) {
       return;
     }
     setDeleteTournamentTarget(null);
     setActiveActionKey(null);
-    setReloadKey((current) => current + 1);
-  };
-
-  const patchBoardItemReadCount = (boardItemId: number, readCount: number) => {
-    startTransition(() => {
-      setItems((current) => current.map((item) => (
-        item.boardItemId === boardItemId
-          ? { ...item, readCount }
-          : item
-      )));
-    });
+    queryClient.setQueryData<BoardFeedCache>(
+      clubKeys.notice.feed(clubId, pinnedOnly),
+      (old) =>
+        removeBoardFeedItems(
+          old,
+          (item) =>
+            item.contentType === "TOURNAMENT"
+            && item.tournament?.tournamentRecordId === deletedTournamentId,
+        ),
+    );
+    void queryClient.invalidateQueries({ queryKey: clubKeys.notice.feed(clubId) });
   };
 
   const recordBoardItemRead = async (boardItemId: number) => {
-    const result = await recordClubBoardItemRead(clubId, boardItemId);
-    if (!result.ok || !result.data) {
-      return;
-    }
-    patchBoardItemReadCount(boardItemId, result.data.readCount);
+    await recordClubBoardItemRead(clubId, boardItemId);
   };
 
   const openBoardItemDetail = (item: ClubBoardFeedItem) => {
@@ -466,13 +457,12 @@ export function ClubBoardFeedClient({ clubId }: ClubBoardFeedClientProps) {
     setActiveActionKey(null);
     const result = await getClubBoardItemReadStatus(clubId, boardItemId);
     if (!result.ok || !result.data) {
-      setError(result.message ?? "읽음 현황을 불러오지 못했습니다.");
       return;
     }
     setReadStatusModal({ title, status: result.data });
   };
 
-  if (!initialLoaded && !error) {
+  if (isLoading) {
     return <ClubBoardFeedLoadingShell />;
   }
 
@@ -671,7 +661,7 @@ export function ClubBoardFeedClient({ clubId }: ClubBoardFeedClientProps) {
             </section>
           </div>
 
-          {!loading && initialLoaded && visibleItems.length === 0 ? (
+          {!isLoading && !isFetchingNextPage && visibleItems.length === 0 ? (
             <motion.div
               className="flex justify-center p-8 text-sm font-medium text-slate-500"
               {...staggeredFadeUpMotion(2, reduceMotion)}
@@ -691,7 +681,7 @@ export function ClubBoardFeedClient({ clubId }: ClubBoardFeedClientProps) {
 
           <div ref={setSentinelNode} className="h-px" aria-hidden="true" />
 
-          {loading && initialLoaded ? (
+          {isFetchingNextPage ? (
             <div className="space-y-4 px-4 pb-8">
               {Array.from({ length: 2 }, (_, index) => (
                 <motion.article
@@ -762,7 +752,7 @@ export function ClubBoardFeedClient({ clubId }: ClubBoardFeedClientProps) {
                 onDeleted={() => {
                   setEditingNoticeId(null);
                   setActiveActionKey(null);
-                  setReloadKey((current) => current + 1);
+                  void queryClient.invalidateQueries({ queryKey: clubKeys.notice.feed(clubId) });
                 }}
               />
             </RouteModal>
@@ -778,13 +768,13 @@ export function ClubBoardFeedClient({ clubId }: ClubBoardFeedClientProps) {
                 onSaved={(savedEventId) => {
                   setEditingEventId(null);
                   setActiveActionKey(null);
-                  setReloadKey((current) => current + 1);
+                  void queryClient.invalidateQueries({ queryKey: clubKeys.notice.feed(clubId) });
                   setDetailEventId(String(savedEventId));
                 }}
                 onDeleted={() => {
                   setEditingEventId(null);
                   setActiveActionKey(null);
-                  setReloadKey((current) => current + 1);
+                  void queryClient.invalidateQueries({ queryKey: clubKeys.notice.feed(clubId) });
                 }}
               />
             </RouteModal>
@@ -801,7 +791,7 @@ export function ClubBoardFeedClient({ clubId }: ClubBoardFeedClientProps) {
                 onSaved={(savedVoteId) => {
                   setEditingVoteId(null);
                   setActiveActionKey(null);
-                  setReloadKey((current) => current + 1);
+                  void queryClient.invalidateQueries({ queryKey: clubKeys.notice.feed(clubId) });
                   setDetailVoteId(String(savedVoteId));
                 }}
               />
@@ -817,7 +807,7 @@ export function ClubBoardFeedClient({ clubId }: ClubBoardFeedClientProps) {
                 onSaved={(savedTournamentId) => {
                   setEditingTournamentId(null);
                   setActiveActionKey(null);
-                  setReloadKey((current) => current + 1);
+                  void queryClient.invalidateQueries({ queryKey: clubKeys.notice.feed(clubId) });
                   setDetailTournamentId(String(savedTournamentId));
                 }}
               />

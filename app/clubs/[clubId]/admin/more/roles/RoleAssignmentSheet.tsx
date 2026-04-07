@@ -1,8 +1,8 @@
 "use client";
 
-import { EphemeralToast } from "@/app/components/EphemeralToast";
 import { RouterLink } from "@/app/components/RouterLink";
-import { useEphemeralToast } from "@/app/components/useEphemeralToast";
+import { adminKeys } from "@/app/lib/queryKeys";
+import { useToast } from "@/app/hooks/useToast";
 import { bottomSheetMotion, overlayFadeMotion } from "@/app/lib/motion";
 import {
   getClubAdminMembers,
@@ -15,6 +15,8 @@ import { motion, useReducedMotion } from "motion/react";
 import { Inter, Manrope } from "next/font/google";
 import { startTransition, useDeferredValue, useEffect, useMemo, useState } from "react";
 import type { CSSProperties } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { unwrap } from "@/app/lib/query";
 
 const manrope = Manrope({
   subsets: ["latin"],
@@ -175,14 +177,25 @@ export function RoleAssignmentSheet({
 }: RoleAssignmentSheetProps) {
   const prefersReducedMotion = useReducedMotion();
   const reduceMotion = Boolean(prefersReducedMotion);
-  const [memberPayload, setMemberPayload] = useState<ClubAdminMembersResponse | null>(null);
-  const [loadingMembers, setLoadingMembers] = useState(true);
+  const [localMemberPayload, setLocalMemberPayload] = useState<ClubAdminMembersResponse | null>(null);
   const [pendingMemberId, setPendingMemberId] = useState<number | null>(null);
   const [query, setQuery] = useState("");
-  const [loadError, setLoadError] = useState<string | null>(null);
   const deferredQuery = useDeferredValue(query.trim().toLowerCase());
-  const { toast, showToast } = useEphemeralToast(2400);
+  const toast = useToast();
   const colorHex = role.colorHex ?? "#904e00";
+
+  const {
+    data: queryMemberData,
+    isLoading: loadingMembers,
+    error: memberQueryError,
+    refetch: refetchMembers,
+  } = useQuery({
+    queryKey: adminKeys.members(clubId),
+    queryFn: () => unwrap(getClubAdminMembers(clubId)),
+  });
+
+  const memberPayload = localMemberPayload ?? queryMemberData ?? null;
+  const loadError = memberQueryError instanceof Error ? memberQueryError.message : null;
 
   useEffect(() => {
     const previousOverflow = document.body.style.overflow;
@@ -206,44 +219,9 @@ export function RoleAssignmentSheet({
     };
   }, [onClose]);
 
-  const handleRetryMembers = async () => {
-    setLoadingMembers(true);
-    setLoadError(null);
-
-    const result = await getClubAdminMembers(clubId);
-    if (!result.ok || !result.data) {
-      setLoadError(result.message ?? "멤버 목록을 불러오지 못했습니다.");
-      setLoadingMembers(false);
-      return;
-    }
-
-    setMemberPayload(result.data);
-    setLoadingMembers(false);
+  const handleRetryMembers = () => {
+    void refetchMembers();
   };
-
-  useEffect(() => {
-    let cancelled = false;
-
-    void (async () => {
-      const result = await getClubAdminMembers(clubId);
-      if (cancelled) {
-        return;
-      }
-
-      if (!result.ok || !result.data) {
-        setLoadError(result.message ?? "멤버 목록을 불러오지 못했습니다.");
-        setLoadingMembers(false);
-        return;
-      }
-
-      setMemberPayload(result.data);
-      setLoadingMembers(false);
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [clubId]);
 
   const members = memberPayload?.members ?? EMPTY_MEMBERS;
 
@@ -299,26 +277,26 @@ export function RoleAssignmentSheet({
     setPendingMemberId(null);
 
     if (!result.ok || !result.data) {
-      showToast(result.message ?? "직책 변경을 저장하지 못했습니다.", "error");
+      toast.error(result.message ?? "직책 변경을 저장하지 못했습니다.");
       return;
     }
 
-    setMemberPayload((current) =>
-      current
+    setLocalMemberPayload((current) => {
+      const base = current ?? memberPayload;
+      return base
         ? {
-            ...current,
-            members: current.members.map((item) =>
-              item.clubMemberId === result.data?.clubMemberId ? result.data : item,
+            ...base,
+            members: base.members.map((item) =>
+              item.clubMemberId === result.data?.clubMemberId ? result.data! : item,
             ),
           }
-        : current,
-    );
-    showToast(shouldAssign ? "직책을 부여했습니다." : "직책을 해제했습니다.");
+        : base;
+    });
+    toast.success(shouldAssign ? "직책을 부여했습니다." : "직책을 해제했습니다.");
   };
 
   return (
     <>
-      <EphemeralToast toastId={toast?.id} message={toast?.message ?? null} tone={toast?.tone} />
       <motion.button
         key="role-assignment-sheet-backdrop"
         type="button"

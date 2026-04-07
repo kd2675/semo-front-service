@@ -1,13 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import {
-  getClubTodos,
-  getMyClub,
-  type ClubTodoResponse,
-  type MyClubSummary,
-} from "@/app/lib/clubs";
+import { getClubTodos, getMyClub } from "@/app/lib/clubs";
+import { unwrap } from "@/app/lib/query";
+import { clubKeys } from "@/app/lib/queryKeys";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import { ClubTodoClient } from "./ClubTodoClient";
 
@@ -17,35 +15,22 @@ type ClubTodoFallbackClientProps = {
 
 export function ClubTodoFallbackClient({ clubId }: ClubTodoFallbackClientProps) {
   const router = useRouter();
-  const [club, setClub] = useState<MyClubSummary | null>(null);
-  const [todoData, setTodoData] = useState<ClubTodoResponse | null>(null);
+
+  const { data: club, isError: clubError } = useQuery({
+    queryKey: clubKeys.detail(clubId),
+    queryFn: () => unwrap(getMyClub(clubId)),
+  });
+
+  const { data: todoData, isError: todoError } = useQuery({
+    queryKey: clubKeys.todo.list(clubId),
+    queryFn: () => unwrap(getClubTodos(clubId)),
+  });
 
   useEffect(() => {
-    let cancelled = false;
-
-    void (async () => {
-      const [clubResult, todoResult] = await Promise.all([
-        getMyClub(clubId),
-        getClubTodos(clubId),
-      ]);
-
-      if (cancelled) {
-        return;
-      }
-
-      if (!clubResult.ok || !clubResult.data || !todoResult.ok || !todoResult.data) {
-        router.replace(`/clubs/${clubId}`);
-        return;
-      }
-
-      setClub(clubResult.data);
-      setTodoData(todoResult.data);
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [clubId, router]);
+    if (clubError || todoError) {
+      router.replace(`/clubs/${clubId}`);
+    }
+  }, [clubError, todoError, clubId, router]);
 
   if (!club || !todoData) {
     return (

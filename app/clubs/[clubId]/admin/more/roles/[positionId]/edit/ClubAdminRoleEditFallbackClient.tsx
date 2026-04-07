@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import {
   deleteClubAdminRole,
@@ -10,6 +11,8 @@ import {
   type ClubPositionDetailResponse,
   type UpdateClubPositionRequest,
 } from "@/app/lib/clubs";
+import { unwrap } from "@/app/lib/query";
+import { clubKeys, adminKeys } from "@/app/lib/queryKeys";
 import { AdminFeatureSettingsLoadingShell } from "../../../../AdminRouteLoadingShells";
 import { RoleEditorForm } from "../../RoleEditorForm";
 
@@ -23,34 +26,30 @@ export function ClubAdminRoleEditFallbackClient({
   positionId,
 }: ClubAdminRoleEditFallbackClientProps) {
   const router = useRouter();
-  const [payload, setPayload] = useState<ClubPositionDetailResponse | null>(null);
+  const [localPayload, setLocalPayload] = useState<ClubPositionDetailResponse | null>(null);
+
+  const { data: club, isError: clubError } = useQuery({
+    queryKey: clubKeys.detail(clubId),
+    queryFn: () => unwrap(getMyClub(clubId)),
+  });
+
+  const isAdmin = club?.admin === true;
+
+  const { data: detail, isError: detailError } = useQuery({
+    queryKey: adminKeys.roles.detail(clubId, positionId),
+    queryFn: () => unwrap(getClubAdminRoleDetail(clubId, positionId)),
+    enabled: isAdmin,
+  });
+
+  const payload = localPayload ?? detail ?? null;
 
   useEffect(() => {
-    let cancelled = false;
-
-    void (async () => {
-      const [clubResult, detailResult] = await Promise.all([
-        getMyClub(clubId),
-        getClubAdminRoleDetail(clubId, positionId),
-      ]);
-      if (cancelled) {
-        return;
-      }
-      if (!clubResult.ok || !clubResult.data || !clubResult.data.admin) {
-        router.replace(`/clubs/${clubId}`);
-        return;
-      }
-      if (!detailResult.ok || !detailResult.data) {
-        router.replace(`/clubs/${clubId}/admin/more/roles`);
-        return;
-      }
-      setPayload(detailResult.data);
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [clubId, positionId, router]);
+    if (clubError || (club && !isAdmin)) {
+      router.replace(`/clubs/${clubId}`);
+    } else if (detailError) {
+      router.replace(`/clubs/${clubId}/admin/more/roles`);
+    }
+  }, [clubError, club, isAdmin, detailError, clubId, router]);
 
   if (!payload) {
     return <AdminFeatureSettingsLoadingShell />;
@@ -78,7 +77,7 @@ export function ClubAdminRoleEditFallbackClient({
         if (!result.ok || !result.data) {
           return { success: false };
         }
-        setPayload(result.data);
+        setLocalPayload(result.data);
         return { success: true };
       }}
       onDelete={async () => {

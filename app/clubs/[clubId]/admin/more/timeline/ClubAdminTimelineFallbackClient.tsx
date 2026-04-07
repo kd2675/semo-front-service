@@ -1,13 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import {
-  getClubAdminTimeline,
-  getMyClub,
-  type ClubAdminTimelineResponse,
-  type MyClubSummary,
-} from "@/app/lib/clubs";
+import { getClubAdminTimeline, getMyClub } from "@/app/lib/clubs";
+import { unwrap } from "@/app/lib/query";
+import { clubKeys, adminKeys } from "@/app/lib/queryKeys";
 import { AdminTimelineLoadingShell } from "../../AdminRouteLoadingShells";
 import { ClubAdminTimelineClient } from "./ClubAdminTimelineClient";
 
@@ -19,40 +17,27 @@ export function ClubAdminTimelineFallbackClient({
   clubId,
 }: ClubAdminTimelineFallbackClientProps) {
   const router = useRouter();
-  const [club, setClub] = useState<MyClubSummary | null>(null);
-  const [timeline, setTimeline] = useState<ClubAdminTimelineResponse | null>(null);
+
+  const { data: club, isError: clubError } = useQuery({
+    queryKey: clubKeys.detail(clubId),
+    queryFn: () => unwrap(getMyClub(clubId)),
+  });
+
+  const isAdmin = club?.admin === true;
+
+  const { data: timeline, isError: timelineError } = useQuery({
+    queryKey: adminKeys.timeline(clubId),
+    queryFn: () => unwrap(getClubAdminTimeline(clubId)),
+    enabled: isAdmin,
+  });
 
   useEffect(() => {
-    let cancelled = false;
-
-    void (async () => {
-      const [clubResult, timelineResult] = await Promise.all([
-        getMyClub(clubId),
-        getClubAdminTimeline(clubId),
-      ]);
-
-      if (cancelled) {
-        return;
-      }
-
-      if (!clubResult.ok || !clubResult.data || !clubResult.data.admin) {
-        router.replace(`/clubs/${clubId}`);
-        return;
-      }
-
-      if (!timelineResult.ok || !timelineResult.data) {
-        router.replace(`/clubs/${clubId}/admin`);
-        return;
-      }
-
-      setClub(clubResult.data);
-      setTimeline(timelineResult.data);
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [clubId, router]);
+    if (clubError || (club && !isAdmin)) {
+      router.replace(`/clubs/${clubId}`);
+    } else if (timelineError) {
+      router.replace(`/clubs/${clubId}/admin`);
+    }
+  }, [clubError, club, isAdmin, timelineError, clubId, router]);
 
   if (!club || !timeline) {
     return <AdminTimelineLoadingShell />;

@@ -4,7 +4,10 @@ import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import { DatePopoverField } from "@/app/components/DatePopoverField";
 import { TimePopoverField } from "@/app/components/TimePopoverField";
 import { useRouter } from "next/navigation";
-import { useEffect, useId, useState } from "react";
+import { useId, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { unwrap } from "@/app/lib/query";
+import { clubKeys } from "@/app/lib/queryKeys";
 import {
   createClubTournament,
   getClubTournamentDetail,
@@ -23,6 +26,28 @@ type ClubTournamentEditorClientProps = {
 };
 
 type TournamentDateMode = "single" | "range";
+type TournamentEditorInitialState = {
+  title: string;
+  summaryText: string;
+  detailText: string;
+  applicationStartDate: string;
+  applicationStartTime: string;
+  applicationEndDate: string;
+  applicationEndTime: string;
+  startDate: string;
+  tournamentDateMode: TournamentDateMode;
+  endDate: string;
+  locationLabel: string;
+  matchFormat: "SINGLE" | "DOUBLE" | "TEAM";
+  teamMemberLimit: string;
+  participantLimit: string;
+  feeRequired: boolean;
+  feeAmount: string;
+  feeCurrencyCode: string;
+  postToBoard: boolean;
+  postToCalendar: boolean;
+  pinned: boolean;
+};
 
 function getTodayDateValue() {
   return new Date().toISOString().slice(0, 10);
@@ -33,90 +58,97 @@ function combineDateTime(date: string, time: string) {
   return `${date}T${safeTime}:00`;
 }
 
-export function ClubTournamentEditorClient({
+function buildTournamentEditorInitialState(
+  detailPayload: TournamentDetailResponse | null,
+): TournamentEditorInitialState {
+  const today = getTodayDateValue();
+  if (!detailPayload) {
+    return {
+      title: "",
+      summaryText: "",
+      detailText: "",
+      applicationStartDate: today,
+      applicationStartTime: "09:00",
+      applicationEndDate: today,
+      applicationEndTime: "18:00",
+      startDate: today,
+      tournamentDateMode: "single",
+      endDate: today,
+      locationLabel: "",
+      matchFormat: "SINGLE",
+      teamMemberLimit: "3",
+      participantLimit: "",
+      feeRequired: false,
+      feeAmount: "",
+      feeCurrencyCode: "KRW",
+      postToBoard: true,
+      postToCalendar: true,
+      pinned: false,
+    };
+  }
+
+  return {
+    title: detailPayload.title,
+    summaryText: detailPayload.summaryText ?? "",
+    detailText: detailPayload.detailText ?? "",
+    applicationStartDate: detailPayload.applicationStartAt.slice(0, 10),
+    applicationStartTime: detailPayload.applicationStartAt.slice(11, 16),
+    applicationEndDate: detailPayload.applicationEndAt.slice(0, 10),
+    applicationEndTime: detailPayload.applicationEndAt.slice(11, 16),
+    startDate: detailPayload.startDate,
+    tournamentDateMode: detailPayload.startDate === detailPayload.endDate ? "single" : "range",
+    endDate: detailPayload.endDate,
+    locationLabel: detailPayload.locationLabel ?? "",
+    matchFormat: detailPayload.matchFormat,
+    teamMemberLimit: String(detailPayload.teamMemberLimit ?? 3),
+    participantLimit: detailPayload.participantLimit ? String(detailPayload.participantLimit) : "",
+    feeRequired: detailPayload.feeRequired,
+    feeAmount: detailPayload.feeAmount ? String(detailPayload.feeAmount) : "",
+    feeCurrencyCode: detailPayload.feeCurrencyCode || "KRW",
+    postToBoard: detailPayload.postedToBoard,
+    postToCalendar: detailPayload.postedToCalendar,
+    pinned: detailPayload.pinned,
+  };
+}
+
+function ClubTournamentEditorForm({
   clubId,
   tournamentRecordId,
   presentation = "page",
   onRequestClose,
   onSaved,
-}: ClubTournamentEditorClientProps) {
+  initialState,
+  fetchError,
+}: ClubTournamentEditorClientProps & {
+  initialState: TournamentEditorInitialState;
+  fetchError: string | null;
+}) {
   const router = useRouter();
   const formId = useId();
   const isEdit = Boolean(tournamentRecordId);
   const isModal = presentation === "modal";
-  const [title, setTitle] = useState("");
-  const [summaryText, setSummaryText] = useState("");
-  const [detailText, setDetailText] = useState("");
-  const [applicationStartDate, setApplicationStartDate] = useState(getTodayDateValue());
-  const [applicationStartTime, setApplicationStartTime] = useState("09:00");
-  const [applicationEndDate, setApplicationEndDate] = useState(getTodayDateValue());
-  const [applicationEndTime, setApplicationEndTime] = useState("18:00");
-  const [startDate, setStartDate] = useState(getTodayDateValue());
-  const [tournamentDateMode, setTournamentDateMode] = useState<TournamentDateMode>("single");
-  const [endDate, setEndDate] = useState(getTodayDateValue());
-  const [locationLabel, setLocationLabel] = useState("");
-  const [matchFormat, setMatchFormat] = useState<"SINGLE" | "DOUBLE" | "TEAM">("SINGLE");
-  const [teamMemberLimit, setTeamMemberLimit] = useState("3");
-  const [participantLimit, setParticipantLimit] = useState("");
-  const [feeRequired, setFeeRequired] = useState(false);
-  const [feeAmount, setFeeAmount] = useState("");
-  const [feeCurrencyCode, setFeeCurrencyCode] = useState("KRW");
-  const [postToBoard, setPostToBoard] = useState(true);
-  const [postToCalendar, setPostToCalendar] = useState(true);
-  const [pinned, setPinned] = useState(false);
-  const [loading, setLoading] = useState(isEdit);
+  const [title, setTitle] = useState(initialState.title);
+  const [summaryText, setSummaryText] = useState(initialState.summaryText);
+  const [detailText, setDetailText] = useState(initialState.detailText);
+  const [applicationStartDate, setApplicationStartDate] = useState(initialState.applicationStartDate);
+  const [applicationStartTime, setApplicationStartTime] = useState(initialState.applicationStartTime);
+  const [applicationEndDate, setApplicationEndDate] = useState(initialState.applicationEndDate);
+  const [applicationEndTime, setApplicationEndTime] = useState(initialState.applicationEndTime);
+  const [startDate, setStartDate] = useState(initialState.startDate);
+  const [tournamentDateMode, setTournamentDateMode] = useState<TournamentDateMode>(initialState.tournamentDateMode);
+  const [endDate, setEndDate] = useState(initialState.endDate);
+  const [locationLabel, setLocationLabel] = useState(initialState.locationLabel);
+  const [matchFormat, setMatchFormat] = useState<"SINGLE" | "DOUBLE" | "TEAM">(initialState.matchFormat);
+  const [teamMemberLimit, setTeamMemberLimit] = useState(initialState.teamMemberLimit);
+  const [participantLimit, setParticipantLimit] = useState(initialState.participantLimit);
+  const [feeRequired, setFeeRequired] = useState(initialState.feeRequired);
+  const [feeAmount, setFeeAmount] = useState(initialState.feeAmount);
+  const [feeCurrencyCode, setFeeCurrencyCode] = useState(initialState.feeCurrencyCode);
+  const [postToBoard, setPostToBoard] = useState(initialState.postToBoard);
+  const [postToCalendar, setPostToCalendar] = useState(initialState.postToCalendar);
+  const [pinned, setPinned] = useState(initialState.pinned);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!isEdit) {
-      return;
-    }
-    let cancelled = false;
-
-    void (async () => {
-      if (!tournamentRecordId) {
-        return;
-      }
-      setLoading(true);
-      setError(null);
-      const result = await getClubTournamentDetail(clubId, tournamentRecordId);
-      if (cancelled) {
-        return;
-      }
-      setLoading(false);
-      if (!result.ok || !result.data) {
-        setError(result.message ?? "대회 정보를 불러오지 못했습니다.");
-        return;
-      }
-
-      const payload: TournamentDetailResponse = result.data;
-      setTitle(payload.title);
-      setSummaryText(payload.summaryText ?? "");
-      setDetailText(payload.detailText ?? "");
-      setApplicationStartDate(payload.applicationStartAt.slice(0, 10));
-      setApplicationStartTime(payload.applicationStartAt.slice(11, 16));
-      setApplicationEndDate(payload.applicationEndAt.slice(0, 10));
-      setApplicationEndTime(payload.applicationEndAt.slice(11, 16));
-      setStartDate(payload.startDate);
-      setTournamentDateMode(payload.startDate === payload.endDate ? "single" : "range");
-      setEndDate(payload.endDate);
-      setLocationLabel(payload.locationLabel ?? "");
-      setMatchFormat(payload.matchFormat);
-      setTeamMemberLimit(String(payload.teamMemberLimit ?? 3));
-      setParticipantLimit(payload.participantLimit ? String(payload.participantLimit) : "");
-      setFeeRequired(payload.feeRequired);
-      setFeeAmount(payload.feeAmount ? String(payload.feeAmount) : "");
-      setFeeCurrencyCode(payload.feeCurrencyCode || "KRW");
-      setPostToBoard(payload.postedToBoard);
-      setPostToCalendar(payload.postedToCalendar);
-      setPinned(payload.pinned);
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [clubId, isEdit, tournamentRecordId]);
 
   const handleApplicationStartDateChange = (value: string) => {
     setApplicationStartDate(value);
@@ -202,10 +234,6 @@ export function ClubTournamentEditorClient({
     router.replace(`/clubs/${clubId}/more/tournaments/${result.data.tournamentRecordId}`);
   };
 
-  if (loading) {
-    return <ClubEditorLoadingShell presentation={presentation} />;
-  }
-
   const actionBarClassName = isModal
     ? "sticky bottom-0 z-20 border-t border-slate-200 bg-white/95 p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] backdrop-blur"
     : "fixed bottom-0 left-1/2 z-20 w-full max-w-md -translate-x-1/2 border-t border-slate-200 bg-white/95 p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] backdrop-blur";
@@ -233,8 +261,8 @@ export function ClubTournamentEditorClient({
 
         <main className={`flex-1 px-4 py-5 ${isModal ? "overflow-y-auto pb-28" : "semo-nav-bottom-space pb-28"}`}>
           <form id={formId} onSubmit={handleSubmit} className="space-y-6">
-            {error ? (
-              <div className="rounded-2xl bg-rose-50 px-4 py-3 text-sm font-medium text-rose-600">{error}</div>
+            {(error ?? fetchError) ? (
+              <div className="rounded-2xl bg-rose-50 px-4 py-3 text-sm font-medium text-rose-600">{error ?? fetchError}</div>
             ) : null}
 
             <section className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm">
@@ -454,5 +482,41 @@ export function ClubTournamentEditorClient({
         </div>
       </div>
     </div>
+  );
+}
+
+export function ClubTournamentEditorClient({
+  clubId,
+  tournamentRecordId,
+  presentation = "page",
+  onRequestClose,
+  onSaved,
+}: ClubTournamentEditorClientProps) {
+  const isEdit = Boolean(tournamentRecordId);
+  const { data: editData, isLoading: editLoading, error: editError } = useQuery({
+    queryKey: clubKeys.tournament.detail(clubId, tournamentRecordId!),
+    queryFn: () => unwrap(getClubTournamentDetail(clubId, tournamentRecordId!)),
+    enabled: isEdit && Boolean(tournamentRecordId),
+  });
+
+  if (isEdit && editLoading) {
+    return <ClubEditorLoadingShell presentation={presentation} />;
+  }
+
+  const initialState = buildTournamentEditorInitialState(editData ?? null);
+  const editorKey = isEdit ? `${tournamentRecordId}:${editData ? "loaded" : "empty"}` : "new";
+  const fetchError = editError instanceof Error ? editError.message : null;
+
+  return (
+    <ClubTournamentEditorForm
+      key={editorKey}
+      clubId={clubId}
+      tournamentRecordId={tournamentRecordId}
+      presentation={presentation}
+      onRequestClose={onRequestClose}
+      onSaved={onSaved}
+      initialState={initialState}
+      fetchError={fetchError}
+    />
   );
 }

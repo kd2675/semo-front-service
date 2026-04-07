@@ -1,6 +1,7 @@
 "use client";
 
-import { startTransition, useEffect, useState } from "react";
+import { useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import {
   getClubAdminTournamentHome,
@@ -8,6 +9,8 @@ import {
   type ClubAdminTournamentHomeResponse,
   type ClubTournamentHomeResponse,
 } from "@/app/lib/clubs";
+import { unwrap } from "@/app/lib/query";
+import { clubKeys } from "@/app/lib/queryKeys";
 import { ClubBoardFeedLoadingShell } from "../../ClubRouteLoadingShells";
 import { ClubTournamentHomeClient } from "./ClubTournamentHomeClient";
 
@@ -21,43 +24,24 @@ export function ClubTournamentHomeFallbackClient({
   mode = "user",
 }: ClubTournamentHomeFallbackClientProps) {
   const router = useRouter();
-  const [payload, setPayload] = useState<ClubTournamentHomeResponse | ClubAdminTournamentHomeResponse | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [reloadKey, setReloadKey] = useState(0);
+
+  const { data: payload, isError, refetch } = useQuery<
+    ClubTournamentHomeResponse | ClubAdminTournamentHomeResponse
+  >({
+    queryKey: clubKeys.tournament.home(clubId, mode),
+    queryFn: () =>
+      mode === "admin"
+        ? unwrap(getClubAdminTournamentHome(clubId))
+        : unwrap(getClubTournamentHome(clubId)),
+  });
 
   useEffect(() => {
-    let cancelled = false;
+    if (isError) {
+      router.replace(mode === "admin" ? `/clubs/${clubId}/admin` : `/clubs/${clubId}`);
+    }
+  }, [isError, mode, clubId, router]);
 
-    void (async () => {
-      setLoading(true);
-      const result = mode === "admin"
-        ? await getClubAdminTournamentHome(clubId)
-        : await getClubTournamentHome(clubId);
-      if (cancelled) {
-        return;
-      }
-
-      setLoading(false);
-      if (!result.ok || !result.data) {
-        router.replace(mode === "admin" ? `/clubs/${clubId}/admin` : `/clubs/${clubId}`);
-        return;
-      }
-
-      setPayload(result.data);
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [clubId, mode, reloadKey, router]);
-
-  const handleReload = () => {
-    startTransition(() => {
-      setReloadKey((current) => current + 1);
-    });
-  };
-
-  if (loading || !payload) {
+  if (!payload) {
     return <ClubBoardFeedLoadingShell />;
   }
 
@@ -66,7 +50,7 @@ export function ClubTournamentHomeFallbackClient({
       clubId={clubId}
       payload={payload}
       mode={mode}
-      onReload={handleReload}
+      onReload={() => void refetch()}
     />
   );
 }

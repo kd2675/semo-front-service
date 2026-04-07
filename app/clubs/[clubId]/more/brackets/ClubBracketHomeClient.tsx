@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type CSSProperties } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { AnimatePresence } from "motion/react";
 import { ClubModeSwitchFab } from "@/app/components/ClubModeSwitchFab";
 import { ClubBracketDetailModal } from "@/app/components/ClubDetailModals";
@@ -22,12 +23,12 @@ import {
   type UpsertBracketRequest,
 } from "@/app/lib/clubs";
 import { FAB_RIGHT_OFFSET_CLASS_NAME, getActionFabBottomClass } from "@/app/lib/fab";
+import { clubKeys } from "@/app/lib/queryKeys";
 
 type ClubBracketHomeClientProps = {
   clubId: string;
   payload: ClubBracketHomeResponse | ClubAdminBracketHomeResponse;
   mode?: "user" | "admin";
-  onReload: () => void;
 };
 
 type EditableParticipant = {
@@ -190,8 +191,8 @@ export function ClubBracketHomeClient({
   clubId,
   payload,
   mode = "user",
-  onReload,
 }: ClubBracketHomeClientProps) {
+  const queryClient = useQueryClient();
   const isAdminMode = mode === "admin";
   const userPayload = !isAdminMode ? (payload as ClubBracketHomeResponse) : null;
   const adminPayload = isAdminMode ? (payload as ClubAdminBracketHomeResponse) : null;
@@ -294,7 +295,7 @@ export function ClubBracketHomeClient({
     }
     setFeedback(editingBracketId == null ? "대진표 초안을 만들었습니다." : "대진표 초안을 수정했습니다.");
     setFormOpen(false);
-    onReload();
+    void queryClient.invalidateQueries({ queryKey: clubKeys.bracket.home(clubId, mode) });
   };
 
   const handleSubmit = async (bracketRecordId: number) => {
@@ -308,7 +309,7 @@ export function ClubBracketHomeClient({
       return;
     }
     setFeedback("대진표를 승인 요청 상태로 제출했습니다.");
-    onReload();
+    void queryClient.invalidateQueries({ queryKey: clubKeys.bracket.home(clubId, mode) });
   };
 
   const handleReview = async (bracketRecordId: number, approvalStatus: "APPROVED" | "REJECTED") => {
@@ -331,7 +332,7 @@ export function ClubBracketHomeClient({
       return;
     }
     setFeedback(approvalStatus === "APPROVED" ? "대진표를 승인했습니다." : "대진표를 반려했습니다.");
-    onReload();
+    void queryClient.invalidateQueries({ queryKey: clubKeys.bracket.home(clubId, mode) });
   };
 
   const handleDelete = async (bracketRecordId: number) => {
@@ -348,7 +349,7 @@ export function ClubBracketHomeClient({
       setDetailBracketId(null);
     }
     setFeedback("대진표를 삭제했습니다.");
-    onReload();
+    void queryClient.invalidateQueries({ queryKey: clubKeys.bracket.home(clubId, mode) });
   };
 
   const list = isAdminMode
@@ -837,7 +838,7 @@ export function ClubBracketHomeClient({
               bracketRecordId={detailBracketId}
               mode={mode}
               onRequestClose={() => setDetailBracketId(null)}
-              onReload={onReload}
+              onReload={() => void queryClient.invalidateQueries({ queryKey: clubKeys.bracket.home(clubId, mode) })}
             />
           ) : null}
           {pendingDeleteBracketId != null ? (

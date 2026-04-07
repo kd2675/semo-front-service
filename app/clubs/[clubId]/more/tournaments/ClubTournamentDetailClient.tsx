@@ -6,7 +6,6 @@ import {
   applyClubTournament,
   cancelClubTournamentApplication,
   getClubTournamentDetail,
-  type TournamentDetailResponse,
 } from "@/app/lib/clubs";
 import { getShareTargetBadges } from "@/app/lib/content-badge";
 import { staggeredFadeUpMotion } from "@/app/lib/motion";
@@ -19,7 +18,9 @@ import {
   getTournamentStatusLabel,
 } from "@/app/lib/tournament";
 import { motion, useReducedMotion } from "motion/react";
-import { useEffect, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { unwrap } from "@/app/lib/query";
+import { clubKeys } from "@/app/lib/queryKeys";
 import { ClubDetailLoadingShell } from "../../ClubRouteLoadingShells";
 
 type ClubTournamentDetailClientProps = {
@@ -41,10 +42,39 @@ export function ClubTournamentDetailClient({
 }: ClubTournamentDetailClientProps) {
   const prefersReducedMotion = useReducedMotion();
   const reduceMotion = Boolean(prefersReducedMotion);
-  const [payload, setPayload] = useState<TournamentDetailResponse | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [saving, setSaving] = useState(false);
+
+  const queryClient = useQueryClient();
+  const queryKey = clubKeys.tournament.detail(clubId, tournamentRecordId);
+
+  const {
+    data: payload,
+    isLoading,
+    error: queryError,
+  } = useQuery({
+    queryKey,
+    queryFn: () => unwrap(getClubTournamentDetail(clubId, tournamentRecordId)),
+  });
+
+  const applyMutation = useMutation({
+    mutationFn: () => unwrap(applyClubTournament(clubId, tournamentRecordId, {})),
+    onSuccess: (data) => {
+      queryClient.setQueryData(queryKey, data);
+    },
+  });
+
+  const cancelApplicationMutation = useMutation({
+    mutationFn: () => unwrap(cancelClubTournamentApplication(clubId, tournamentRecordId)),
+    onSuccess: (data) => {
+      queryClient.setQueryData(queryKey, data);
+    },
+  });
+
+  const saving = applyMutation.isPending || cancelApplicationMutation.isPending;
+  const loading = isLoading;
+  const error =
+    applyMutation.error?.message ??
+    cancelApplicationMutation.error?.message ??
+    (queryError instanceof Error ? queryError.message : null);
 
   const isModal = presentation === "modal";
   const fallbackBasePath = basePath ?? `/clubs/${clubId}/more/tournaments`;
@@ -53,56 +83,19 @@ export function ClubTournamentDetailClient({
     postedToCalendar: payload?.postedToCalendar,
   });
 
-  useEffect(() => {
-    let cancelled = false;
-
-    void (async () => {
-      setLoading(true);
-      setError(null);
-      const result = await getClubTournamentDetail(clubId, tournamentRecordId);
-      if (cancelled) {
-        return;
-      }
-      setLoading(false);
-      if (!result.ok || !result.data) {
-        setError(result.message ?? "대회 상세를 불러오지 못했습니다.");
-        return;
-      }
-      setPayload(result.data);
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [clubId, tournamentRecordId]);
-
-  const handleApply = async () => {
-    setSaving(true);
-    const result = await applyClubTournament(clubId, tournamentRecordId, {});
-    setSaving(false);
-    if (!result.ok || !result.data) {
-      setError(result.message ?? "대회 참가 신청에 실패했습니다.");
-      return;
-    }
-    setPayload(result.data);
+  const handleApply = () => {
+    applyMutation.mutate();
   };
 
-  const handleCancelApplication = async () => {
-    setSaving(true);
-    const result = await cancelClubTournamentApplication(clubId, tournamentRecordId);
-    setSaving(false);
-    if (!result.ok || !result.data) {
-      setError(result.message ?? "참가 신청 취소에 실패했습니다.");
-      return;
-    }
-    setPayload(result.data);
+  const handleCancelApplication = () => {
+    cancelApplicationMutation.mutate();
   };
 
-  if (loading && !payload) {
+  if (loading && payload == null) {
     return <ClubDetailLoadingShell />;
   }
 
-  if (!payload) {
+  if (payload == null) {
     return (
       <div className="px-4 py-8 text-sm font-medium text-rose-600">
         {error ?? "대회 정보를 찾을 수 없습니다."}

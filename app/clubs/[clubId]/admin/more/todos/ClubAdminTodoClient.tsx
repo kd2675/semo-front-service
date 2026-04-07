@@ -4,13 +4,13 @@ import { Public_Sans } from "next/font/google";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useState } from "react";
 import type { CSSProperties } from "react";
+import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import { DatePopoverField } from "@/app/components/DatePopoverField";
-import { EphemeralToast } from "@/app/components/EphemeralToast";
 import { RouteModal } from "@/app/components/RouteModal";
 import { TimePopoverField } from "@/app/components/TimePopoverField";
 import { TodoApplicationManagerModal } from "@/app/components/TodoApplicationManagerModal";
-import { useEphemeralToast } from "@/app/components/useEphemeralToast";
+import { useToast } from "@/app/hooks/useToast";
 import { ScheduleActionConfirmModal } from "@/app/clubs/[clubId]/schedule/ScheduleActionConfirmModal";
 import {
   createClubTodo,
@@ -24,6 +24,8 @@ import {
   type TodoItemApplicationsResponse,
   type TodoSummary,
 } from "@/app/lib/clubs";
+import { unwrap } from "@/app/lib/query";
+import { adminKeys } from "@/app/lib/queryKeys";
 import { FAB_RIGHT_OFFSET_CLASS_NAME, getActionFabBottomClass } from "@/app/lib/fab";
 import { staggeredFadeUpMotion } from "@/app/lib/motion";
 
@@ -69,6 +71,9 @@ const ASSIGNMENT_OPTIONS: AssignmentFilter[] = [
   "DIRECT_ASSIGN",
 ];
 const APPLICATION_OPTIONS: ApplicationFilter[] = ["ALL", "APPLIED", "SELECTED", "REJECTED", "WITHDRAWN"];
+const DEFAULT_STATUS_FILTER: StatusFilter = "ALL";
+const DEFAULT_ASSIGNMENT_FILTER: AssignmentFilter = "ALL";
+const DEFAULT_APPLICATION_FILTER: ApplicationFilter = "ALL";
 const TODO_TYPE_OPTIONS: TodoTypeOption[] = [
   {
     value: "OPERATIONS",
@@ -220,18 +225,45 @@ function getApplicationFilterLabel(value: ApplicationFilter) {
 export function ClubAdminTodoClient({ clubId, initialData }: ClubAdminTodoClientProps) {
   const prefersReducedMotion = useReducedMotion();
   const reduceMotion = Boolean(prefersReducedMotion);
-  const [todoData, setTodoData] = useState(initialData);
-  const canCreate = todoData.canCreate;
-  const canAssign = todoData.canAssign;
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>("ALL");
-  const [assignmentFilter, setAssignmentFilter] = useState<AssignmentFilter>("ALL");
-  const [applicationFilter, setApplicationFilter] = useState<ApplicationFilter>("ALL");
+  const queryClient = useQueryClient();
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>(DEFAULT_STATUS_FILTER);
+  const [assignmentFilter, setAssignmentFilter] = useState<AssignmentFilter>(DEFAULT_ASSIGNMENT_FILTER);
+  const [applicationFilter, setApplicationFilter] = useState<ApplicationFilter>(DEFAULT_APPLICATION_FILTER);
+
+  const {
+    data: todoPages,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useInfiniteQuery({
+    queryKey: adminKeys.todo.list(clubId, statusFilter, assignmentFilter, applicationFilter),
+    queryFn: ({ pageParam }) =>
+      unwrap(getClubAdminTodos(clubId, {
+        statusFilter,
+        assignmentFilter,
+        applicationFilter,
+        cursorTodoItemId: pageParam ?? undefined,
+      })),
+    initialPageParam: null as number | null,
+    initialData: {
+      pages: [initialData],
+      pageParams: [null],
+    },
+    getNextPageParam: (lastPage) =>
+      lastPage.hasNext ? lastPage.nextCursorTodoItemId : undefined,
+  });
+
+  // Derive values from the first page (metadata) + all pages (items)
+  const firstPage = todoPages?.pages[0] ?? initialData;
+  const todoItems = todoPages?.pages.flatMap((page) => page.items) ?? initialData.items;
+  const canCreate = firstPage.canCreate;
+  const canAssign = firstPage.canAssign;
+
   const [filterModalOpen, setFilterModalOpen] = useState(false);
-  const [filterDraftStatus, setFilterDraftStatus] = useState<StatusFilter>("ALL");
-  const [filterDraftAssignment, setFilterDraftAssignment] = useState<AssignmentFilter>("ALL");
-  const [filterDraftApplication, setFilterDraftApplication] = useState<ApplicationFilter>("ALL");
+  const [filterDraftStatus, setFilterDraftStatus] = useState<StatusFilter>(DEFAULT_STATUS_FILTER);
+  const [filterDraftAssignment, setFilterDraftAssignment] = useState<AssignmentFilter>(DEFAULT_ASSIGNMENT_FILTER);
+  const [filterDraftApplication, setFilterDraftApplication] = useState<ApplicationFilter>(DEFAULT_APPLICATION_FILTER);
   const [pendingTodoId, setPendingTodoId] = useState<number | null>(null);
-  const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [todoType, setTodoType] = useState<TodoType>("OPERATIONS");
@@ -248,10 +280,10 @@ export function ClubAdminTodoClient({ clubId, initialData }: ClubAdminTodoClient
   const [isApplicationModalLoading, setIsApplicationModalLoading] = useState(false);
   const [reviewingApplicationId, setReviewingApplicationId] = useState<number | null>(null);
   const [deletingTodoItem, setDeletingTodoItem] = useState<TodoSummary | null>(null);
-  const { toast, showToast, clearToast } = useEphemeralToast();
+  const toast = useToast();
 
   const editingItem = editorModal?.mode === "edit" ? editorModal.original : null;
-  const assignedMember = todoData.availableMembers.find(
+  const assignedMember = firstPage.availableMembers.find(
     (member) => String(member.clubProfileId) === assignedClubProfileId,
   );
   const inactiveAssignedOption =
@@ -263,34 +295,6 @@ export function ClubAdminTodoClient({ clubId, initialData }: ClubAdminTodoClient
           label: `${editingItem.assignedDisplayName ?? "기존 담당자"} · 현재 비활성`,
         }
       : null;
-
-  const reloadTodos = async (
-    nextStatusFilter = statusFilter,
-    nextAssignmentFilter = assignmentFilter,
-    nextApplicationFilter = applicationFilter,
-    { showErrorToast = true }: { showErrorToast?: boolean } = {},
-  ) => {
-    try {
-      const result = await getClubAdminTodos(clubId, {
-        statusFilter: nextStatusFilter,
-        assignmentFilter: nextAssignmentFilter,
-        applicationFilter: nextApplicationFilter,
-      });
-      if (!result.ok || !result.data) {
-        if (showErrorToast) {
-          showToast(result.message ?? "할 일 운영 정보를 다시 불러오지 못했습니다.", "error");
-        }
-        return false;
-      }
-      setTodoData(result.data);
-      return true;
-    } catch (error) {
-      if (showErrorToast) {
-        showToast(resolveErrorMessage(error, "할 일 운영 정보를 다시 불러오지 못했습니다."), "error");
-      }
-      return false;
-    }
-  };
 
   const resetFormDraft = () => {
     setTitle("");
@@ -330,24 +334,15 @@ export function ClubAdminTodoClient({ clubId, initialData }: ClubAdminTodoClient
     setEditorModal({ mode: "edit", todoItemId: item.todoItemId, original: item });
   };
 
-  const handleFilterChange = async (
+  const handleFilterChange = (
     nextStatusFilter: StatusFilter,
     nextAssignmentFilter: AssignmentFilter,
     nextApplicationFilter: ApplicationFilter,
   ) => {
-    const previousStatusFilter = statusFilter;
-    const previousAssignmentFilter = assignmentFilter;
-    const previousApplicationFilter = applicationFilter;
     setStatusFilter(nextStatusFilter);
     setAssignmentFilter(nextAssignmentFilter);
     setApplicationFilter(nextApplicationFilter);
-    clearToast();
-    const reloaded = await reloadTodos(nextStatusFilter, nextAssignmentFilter, nextApplicationFilter);
-    if (!reloaded) {
-      setStatusFilter(previousStatusFilter);
-      setAssignmentFilter(previousAssignmentFilter);
-      setApplicationFilter(previousApplicationFilter);
-    }
+    toast.hide();
   };
 
   const openFilterModal = () => {
@@ -361,12 +356,12 @@ export function ClubAdminTodoClient({ clubId, initialData }: ClubAdminTodoClient
     setFilterModalOpen(false);
   };
 
-  const applyFilters = async () => {
+  const applyFilters = () => {
     const nextStatus = filterDraftStatus;
     const nextAssignment = filterDraftAssignment;
     const nextApplication = filterDraftApplication;
     setFilterModalOpen(false);
-    await handleFilterChange(nextStatus, nextAssignment, nextApplication);
+    handleFilterChange(nextStatus, nextAssignment, nextApplication);
   };
 
   const handleSubmit = async () => {
@@ -374,12 +369,12 @@ export function ClubAdminTodoClient({ clubId, initialData }: ClubAdminTodoClient
       return;
     }
     if (editorModal.mode === "create" && !canCreate) {
-      showToast("할 일을 등록할 권한이 없습니다.", "error");
+      toast.error("할 일을 등록할 권한이 없습니다.");
       return;
     }
 
     setIsSubmitting(true);
-    clearToast();
+    toast.hide();
 
     const base = editorModal.mode === "edit" ? editorModal.original : null;
     const isEditMode = editorModal.mode === "edit";
@@ -407,28 +402,15 @@ export function ClubAdminTodoClient({ clubId, initialData }: ClubAdminTodoClient
         : await createClubTodo(clubId, request);
 
       if (!result.ok || !result.data) {
-        showToast(result.message ?? "할 일을 저장하지 못했습니다.", "error");
+        toast.error(result.message ?? "할 일을 저장하지 못했습니다.");
         return;
       }
 
-      const reloaded = await reloadTodos(undefined, undefined, undefined, { showErrorToast: false });
+      await queryClient.invalidateQueries({ queryKey: adminKeys.todo.root(clubId) });
       closeEditorModal({ force: true });
-      if (!reloaded) {
-        showToast(
-          isEditMode
-            ? "할 일은 수정했지만 목록을 다시 불러오지 못했습니다."
-            : "할 일은 등록했지만 목록을 다시 불러오지 못했습니다.",
-          "error",
-        );
-        return;
-      }
-
-      showToast(isEditMode ? "할 일을 수정했습니다." : "할 일을 등록했습니다.", "success");
+      toast.success(isEditMode ? "할 일을 수정했습니다." : "할 일을 등록했습니다.");
     } catch (error) {
-      showToast(
-        resolveErrorMessage(error, isEditMode ? "할 일을 수정하지 못했습니다." : "할 일을 등록하지 못했습니다."),
-        "error",
-      );
+      toast.error(resolveErrorMessage(error, isEditMode ? "할 일을 수정하지 못했습니다." : "할 일을 등록하지 못했습니다."));
     } finally {
       setIsSubmitting(false);
     }
@@ -436,58 +418,29 @@ export function ClubAdminTodoClient({ clubId, initialData }: ClubAdminTodoClient
 
   const handleStatusUpdate = async (todoItemId: number, nextStatus: string) => {
     setPendingTodoId(todoItemId);
-    clearToast();
+    toast.hide();
     const messages = getStatusUpdateMessages(nextStatus);
 
     try {
       const result = await updateClubTodoStatus(clubId, todoItemId, { statusCode: nextStatus });
 
       if (!result.ok || !result.data) {
-        showToast(result.message ?? messages.failure, "error");
+        toast.error(result.message ?? messages.failure);
         return;
       }
 
-      const reloaded = await reloadTodos(undefined, undefined, undefined, { showErrorToast: false });
-      if (!reloaded) {
-        showToast(messages.refreshFailure, "error");
-        return;
-      }
-
-      showToast(messages.success, "success");
+      await queryClient.invalidateQueries({ queryKey: adminKeys.todo.root(clubId) });
+      toast.success(messages.success);
     } catch (error) {
-      showToast(resolveErrorMessage(error, messages.failure), "error");
+      toast.error(resolveErrorMessage(error, messages.failure));
     } finally {
       setPendingTodoId(null);
     }
   };
 
-  const handleLoadMore = async () => {
-    if (!todoData.hasNext || todoData.nextCursorTodoItemId == null) {
-      return;
-    }
-    setIsLoadingMore(true);
-    try {
-      const result = await getClubAdminTodos(clubId, {
-        statusFilter,
-        assignmentFilter,
-        applicationFilter,
-        cursorTodoItemId: todoData.nextCursorTodoItemId,
-      });
-
-      if (!result.ok || !result.data) {
-        showToast(result.message ?? "목록을 더 불러오지 못했습니다.", "error");
-        return;
-      }
-      const nextData = result.data;
-
-      setTodoData((current) => ({
-        ...nextData,
-        items: [...current.items, ...nextData.items],
-      }));
-    } catch (error) {
-      showToast(resolveErrorMessage(error, "목록을 더 불러오지 못했습니다."), "error");
-    } finally {
-      setIsLoadingMore(false);
+  const handleLoadMore = () => {
+    if (hasNextPage && !isFetchingNextPage) {
+      void fetchNextPage();
     }
   };
 
@@ -495,18 +448,18 @@ export function ClubAdminTodoClient({ clubId, initialData }: ClubAdminTodoClient
     setApplicationModalItem(item);
     setApplicationModalData(null);
     setIsApplicationModalLoading(true);
-    clearToast();
+    toast.hide();
 
     try {
       const result = await getClubAdminTodoApplications(clubId, item.todoItemId);
       if (!result.ok || !result.data) {
-        showToast(result.message ?? "업무 신청 목록을 불러오지 못했습니다.", "error");
+        toast.error(result.message ?? "업무 신청 목록을 불러오지 못했습니다.");
         setApplicationModalItem(null);
         return;
       }
       setApplicationModalData(result.data);
     } catch (error) {
-      showToast(resolveErrorMessage(error, "업무 신청 목록을 불러오지 못했습니다."), "error");
+      toast.error(resolveErrorMessage(error, "업무 신청 목록을 불러오지 못했습니다."));
       setApplicationModalItem(null);
     } finally {
       setIsApplicationModalLoading(false);
@@ -529,7 +482,7 @@ export function ClubAdminTodoClient({ clubId, initialData }: ClubAdminTodoClient
       return;
     }
     setReviewingApplicationId(application.todoItemApplicationId);
-    clearToast();
+    toast.hide();
 
     try {
       const result = await reviewClubTodoApplication(
@@ -539,12 +492,12 @@ export function ClubAdminTodoClient({ clubId, initialData }: ClubAdminTodoClient
         { applicationStatus: nextStatus },
       );
       if (!result.ok || !result.data) {
-        showToast(result.message ?? "신청 검토에 실패했습니다.", "error");
+        toast.error(result.message ?? "신청 검토에 실패했습니다.");
         return;
       }
 
-      const [reloadedTodos, reloadedApplications] = await Promise.all([
-        reloadTodos(undefined, undefined, undefined, { showErrorToast: false }),
+      const [, reloadedApplications] = await Promise.all([
+        queryClient.invalidateQueries({ queryKey: adminKeys.todo.root(clubId) }),
         getClubAdminTodoApplications(clubId, applicationModalItem.todoItemId),
       ]);
 
@@ -552,14 +505,9 @@ export function ClubAdminTodoClient({ clubId, initialData }: ClubAdminTodoClient
         setApplicationModalData(reloadedApplications.data);
       }
 
-      if (!reloadedTodos) {
-        showToast("신청은 처리했지만 목록을 다시 불러오지 못했습니다.", "error");
-        return;
-      }
-
-      showToast(nextStatus === "SELECTED" ? "신청자를 선정했습니다." : "신청을 반려했습니다.", "success");
+      toast.success(nextStatus === "SELECTED" ? "신청자를 선정했습니다." : "신청을 반려했습니다.");
     } catch (error) {
-      showToast(resolveErrorMessage(error, "신청 검토에 실패했습니다."), "error");
+      toast.error(resolveErrorMessage(error, "신청 검토에 실패했습니다."));
     } finally {
       setReviewingApplicationId(null);
     }
@@ -570,25 +518,20 @@ export function ClubAdminTodoClient({ clubId, initialData }: ClubAdminTodoClient
       return;
     }
     setPendingTodoId(deletingTodoItem.todoItemId);
-    clearToast();
+    toast.hide();
 
     try {
       const result = await deleteClubTodo(clubId, deletingTodoItem.todoItemId);
       if (!result.ok) {
-        showToast(result.message ?? "할 일을 삭제하지 못했습니다.", "error");
+        toast.error(result.message ?? "할 일을 삭제하지 못했습니다.");
         return;
       }
       setDeletingTodoItem(null);
 
-      const reloaded = await reloadTodos(undefined, undefined, undefined, { showErrorToast: false });
-      if (!reloaded) {
-        showToast("할 일은 삭제했지만 목록을 다시 불러오지 못했습니다.", "error");
-        return;
-      }
-
-      showToast("할 일을 삭제했습니다.", "success");
+      await queryClient.invalidateQueries({ queryKey: adminKeys.todo.root(clubId) });
+      toast.success("할 일을 삭제했습니다.");
     } catch (error) {
-      showToast(resolveErrorMessage(error, "할 일을 삭제하지 못했습니다."), "error");
+      toast.error(resolveErrorMessage(error, "할 일을 삭제하지 못했습니다."));
     } finally {
       setPendingTodoId(null);
     }
@@ -607,7 +550,7 @@ export function ClubAdminTodoClient({ clubId, initialData }: ClubAdminTodoClient
       <div className="min-h-screen bg-[#f8f6f6]">
         <ClubPageHeader
           title="할 일 관리"
-          subtitle={todoData.clubName}
+          subtitle={firstPage.clubName}
           icon="assignment"
           theme="admin"
           containerClassName="max-w-md"
@@ -625,13 +568,13 @@ export function ClubAdminTodoClient({ clubId, initialData }: ClubAdminTodoClient
               누가 어떤 업무를 맡았는지, 아직 안 끝난 건 무엇인지 운영 관점에서 바로 확인합니다.
             </h2>
             <div className="mt-5 grid grid-cols-2 gap-3">
-              <SummaryCard label="열림" value={todoData.openCount} />
-              <SummaryCard label="진행중" value={todoData.inProgressCount} />
-              <SummaryCard label="완료" value={todoData.completedCount} />
-              <SummaryCard label="신청 대기" value={todoData.pendingApplicationCount} />
+              <SummaryCard label="열림" value={firstPage.openCount} />
+              <SummaryCard label="진행중" value={firstPage.inProgressCount} />
+              <SummaryCard label="완료" value={firstPage.completedCount} />
+              <SummaryCard label="신청 대기" value={firstPage.pendingApplicationCount} />
             </div>
             <div className="mt-4 rounded-xl bg-orange-50 px-4 py-3 text-sm text-slate-600">
-              활성 멤버 {todoData.activeMemberCount}명 기준으로 신청을 받고, 선발 후 배정 상태를 운영합니다.
+              활성 멤버 {firstPage.activeMemberCount}명 기준으로 신청을 받고, 선발 후 배정 상태를 운영합니다.
             </div>
           </motion.section>
 
@@ -641,7 +584,7 @@ export function ClubAdminTodoClient({ clubId, initialData }: ClubAdminTodoClient
           >
             <div className="mb-4 flex items-center justify-between">
               <h3 className="text-base font-bold">운영 필터</h3>
-              <span className="text-xs font-medium text-slate-400">{todoData.items.length}건</span>
+              <span className="text-xs font-medium text-slate-400">{todoItems.length}건</span>
             </div>
             <div className="flex flex-wrap gap-2">
               <button
@@ -670,19 +613,19 @@ export function ClubAdminTodoClient({ clubId, initialData }: ClubAdminTodoClient
             <div className="mb-4 flex items-center justify-between">
               <h3 className="text-base font-bold">업무 목록</h3>
               <span className="text-xs font-medium text-slate-400">
-                {todoData.hasNext ? "계속 있음" : "마지막 페이지"}
+                {hasNextPage ? "계속 있음" : "마지막 페이지"}
               </span>
             </div>
             <div className="space-y-3">
-              {todoData.items.length === 0 ? (
+              {todoItems.length === 0 ? (
                 <div className="rounded-xl bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">
                   현재 조건에 맞는 업무가 없습니다.
                 </div>
               ) : (
-                todoData.items.map((item, index) => {
+                todoItems.map((item, index) => {
                   const isTerminal = item.statusCode === "COMPLETED" || item.statusCode === "CANCELED";
                   const canOpenEditor = item.canEdit && !isTerminal;
-                  const canOpenAssignEditor = !item.canEdit && todoData.canAssign && !isTerminal;
+                  const canOpenAssignEditor = !item.canEdit && canAssign && !isTerminal;
                   const canMarkInProgress = item.statusCode === "OPEN" && item.assignedClubProfileId != null;
                   const canMarkCompleted =
                     item.statusCode === "IN_PROGRESS" ||
@@ -757,7 +700,7 @@ export function ClubAdminTodoClient({ clubId, initialData }: ClubAdminTodoClient
                           신청 관리 {item.applicationCount}
                         </button>
                       ) : null}
-                      {todoData.canDelete ? (
+                      {firstPage.canDelete ? (
                         <button
                           type="button"
                           onClick={() => setDeletingTodoItem(item)}
@@ -827,14 +770,14 @@ export function ClubAdminTodoClient({ clubId, initialData }: ClubAdminTodoClient
               )}
             </div>
 
-            {todoData.hasNext ? (
+            {hasNextPage ? (
               <button
                 type="button"
                 onClick={() => void handleLoadMore()}
-                disabled={isLoadingMore}
+                disabled={isFetchingNextPage}
                 className="mt-4 w-full rounded-xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
               >
-                {isLoadingMore ? "불러오는 중..." : "더 보기"}
+                {isFetchingNextPage ? "불러오는 중..." : "더 보기"}
               </button>
             ) : null}
           </motion.section>
@@ -851,8 +794,6 @@ export function ClubAdminTodoClient({ clubId, initialData }: ClubAdminTodoClient
             <span className="material-symbols-outlined text-[28px]">assignment_add</span>
           </button>
         ) : null}
-
-        <EphemeralToast toastId={toast?.id ?? null} message={toast?.message ?? null} tone={toast?.tone} />
 
         {deletingTodoItem ? (
           <ScheduleActionConfirmModal
@@ -1078,7 +1019,7 @@ export function ClubAdminTodoClient({ clubId, initialData }: ClubAdminTodoClient
                                       onClick={() => setAssignedClubProfileId(String(inactiveAssignedOption.clubProfileId))}
                                     />
                                   ) : null}
-                                  {todoData.availableMembers.map((member) => (
+                                  {firstPage.availableMembers.map((member) => (
                                     <SelectableMemberCard
                                       key={member.clubProfileId}
                                       selected={assignedClubProfileId === String(member.clubProfileId)}
@@ -1200,7 +1141,7 @@ export function ClubAdminTodoClient({ clubId, initialData }: ClubAdminTodoClient
                     </button>
                     <button
                       type="button"
-                      onClick={() => void applyFilters()}
+                      onClick={() => applyFilters()}
                       className="flex-1 rounded-2xl bg-[#ec5b13] px-4 py-3 text-sm font-bold text-white"
                     >
                       적용

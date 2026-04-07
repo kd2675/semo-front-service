@@ -1,6 +1,7 @@
 "use client";
 
-import { startTransition, useEffect, useState } from "react";
+import { useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import {
   getClubAdminBracketHome,
@@ -8,6 +9,8 @@ import {
   type ClubAdminBracketHomeResponse,
   type ClubBracketHomeResponse,
 } from "@/app/lib/clubs";
+import { unwrap } from "@/app/lib/query";
+import { clubKeys } from "@/app/lib/queryKeys";
 import { ClubBoardFeedLoadingShell } from "../../ClubRouteLoadingShells";
 import { ClubBracketHomeClient } from "./ClubBracketHomeClient";
 
@@ -21,43 +24,24 @@ export function ClubBracketHomeFallbackClient({
   mode = "user",
 }: ClubBracketHomeFallbackClientProps) {
   const router = useRouter();
-  const [payload, setPayload] = useState<ClubBracketHomeResponse | ClubAdminBracketHomeResponse | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [reloadKey, setReloadKey] = useState(0);
+
+  const { data: payload, isError } = useQuery<
+    ClubBracketHomeResponse | ClubAdminBracketHomeResponse
+  >({
+    queryKey: clubKeys.bracket.home(clubId, mode),
+    queryFn: () =>
+      mode === "admin"
+        ? unwrap(getClubAdminBracketHome(clubId))
+        : unwrap(getClubBracketHome(clubId)),
+  });
 
   useEffect(() => {
-    let cancelled = false;
+    if (isError) {
+      router.replace(mode === "admin" ? `/clubs/${clubId}/admin` : `/clubs/${clubId}`);
+    }
+  }, [isError, mode, clubId, router]);
 
-    void (async () => {
-      setLoading(true);
-      const result = mode === "admin"
-        ? await getClubAdminBracketHome(clubId)
-        : await getClubBracketHome(clubId);
-      if (cancelled) {
-        return;
-      }
-
-      setLoading(false);
-      if (!result.ok || !result.data) {
-        router.replace(mode === "admin" ? `/clubs/${clubId}/admin` : `/clubs/${clubId}`);
-        return;
-      }
-
-      setPayload(result.data);
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [clubId, mode, reloadKey, router]);
-
-  const handleReload = () => {
-    startTransition(() => {
-      setReloadKey((current) => current + 1);
-    });
-  };
-
-  if (loading || !payload) {
+  if (!payload) {
     return <ClubBoardFeedLoadingShell />;
   }
 
@@ -66,7 +50,6 @@ export function ClubBracketHomeFallbackClient({
       clubId={clubId}
       payload={payload}
       mode={mode}
-      onReload={handleReload}
     />
   );
 }

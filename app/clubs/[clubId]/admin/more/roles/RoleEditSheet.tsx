@@ -1,8 +1,8 @@
 "use client";
 
-import { EphemeralToast } from "@/app/components/EphemeralToast";
-import { useEphemeralToast } from "@/app/components/useEphemeralToast";
 import { ScheduleActionConfirmModal } from "@/app/clubs/[clubId]/schedule/ScheduleActionConfirmModal";
+import { adminKeys } from "@/app/lib/queryKeys";
+import { useToast } from "@/app/hooks/useToast";
 import { bottomSheetMotion, overlayFadeMotion } from "@/app/lib/motion";
 import {
   deleteClubAdminRole,
@@ -19,8 +19,10 @@ import {
 } from "@/app/lib/clubs";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { Inter, Manrope } from "next/font/google";
-import { startTransition, useDeferredValue, useEffect, useMemo, useState } from "react";
+import { startTransition, useEffect, useDeferredValue, useMemo, useState } from "react";
 import type { CSSProperties } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { unwrap } from "@/app/lib/query";
 
 const manrope = Manrope({
   subsets: ["latin"],
@@ -268,20 +270,80 @@ export function RoleEditSheet({
   onClose,
   onRolesChanged,
 }: RoleEditSheetProps) {
+  const {
+    data: queryDetailData,
+    isLoading: detailLoading,
+    error: detailQueryError,
+  } = useQuery({
+    queryKey: adminKeys.roles.detail(clubId, String(role.clubPositionId)),
+    queryFn: () => unwrap(getClubAdminRoleDetail(clubId, role.clubPositionId)),
+  });
+
+  const {
+    data: queryMemberData,
+    isLoading: memberLoading,
+    error: memberQueryError,
+  } = useQuery({
+    queryKey: adminKeys.members(clubId),
+    queryFn: () => unwrap(getClubAdminMembers(clubId)),
+  });
+
+  const loading = detailLoading || memberLoading;
+  const loadError =
+    (detailQueryError instanceof Error ? detailQueryError.message : null) ??
+    (memberQueryError instanceof Error ? memberQueryError.message : null);
+  const contentKey = `${role.clubPositionId}:${queryDetailData ? "loaded" : "base"}`;
+
+  return (
+    <RoleEditSheetContent
+      key={contentKey}
+      clubId={clubId}
+      role={role}
+      initialTab={initialTab}
+      onClose={onClose}
+      onRolesChanged={onRolesChanged}
+      loading={loading}
+      loadError={loadError}
+      initialDetailPayload={queryDetailData ?? null}
+      initialMemberPayload={queryMemberData ?? null}
+    />
+  );
+}
+
+function RoleEditSheetContent({
+  clubId,
+  role,
+  initialTab,
+  onClose,
+  onRolesChanged,
+  loading,
+  loadError,
+  initialDetailPayload,
+  initialMemberPayload,
+}: RoleEditSheetProps & {
+  loading: boolean;
+  loadError: string | null;
+  initialDetailPayload: ClubPositionDetailResponse | null;
+  initialMemberPayload: ClubAdminMembersResponse | null;
+}) {
   const prefersReducedMotion = useReducedMotion();
   const reduceMotion = Boolean(prefersReducedMotion);
-  const [detailPayload, setDetailPayload] = useState<ClubPositionDetailResponse | null>(null);
-  const [memberPayload, setMemberPayload] = useState<ClubAdminMembersResponse | null>(null);
-  const [form, setForm] = useState<RoleFormValue>(buildInitialValue(role));
-  const [loading, setLoading] = useState(true);
-  const [loadError, setLoadError] = useState<string | null>(null);
+  const [localDetailPayload, setLocalDetailPayload] = useState<ClubPositionDetailResponse | null>(initialDetailPayload);
+  const [localMemberPayload, setLocalMemberPayload] = useState<ClubAdminMembersResponse | null>(initialMemberPayload);
+  const [form, setForm] = useState<RoleFormValue>(
+    buildInitialValue(initialDetailPayload?.position ?? role),
+  );
   const [activeTab, setActiveTab] = useState<RoleSheetTab>(initialTab);
   const [submitting, setSubmitting] = useState(false);
   const [pendingMemberId, setPendingMemberId] = useState<number | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [memberQuery, setMemberQuery] = useState("");
   const deferredMemberQuery = useDeferredValue(memberQuery.trim().toLowerCase());
-  const { toast, showToast, clearToast } = useEphemeralToast(2400);
+  const toast = useToast();
+
+  const detailPayload = localDetailPayload ?? initialDetailPayload ?? null;
+  const memberPayload = localMemberPayload ?? initialMemberPayload ?? null;
+
   const colorHex = form.colorHex || "#904e00";
 
   useEffect(() => {
@@ -305,42 +367,6 @@ export function RoleEditSheet({
       window.removeEventListener("keydown", handleKeyDown);
     };
   }, [onClose]);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    void (async () => {
-      const [detailResult, memberResult] = await Promise.all([
-        getClubAdminRoleDetail(clubId, role.clubPositionId),
-        getClubAdminMembers(clubId),
-      ]);
-
-      if (cancelled) {
-        return;
-      }
-
-      if (!detailResult.ok || !detailResult.data) {
-        setLoadError(detailResult.message ?? "직책 정보를 불러오지 못했습니다.");
-        setLoading(false);
-        return;
-      }
-
-      if (!memberResult.ok || !memberResult.data) {
-        setLoadError(memberResult.message ?? "멤버 목록을 불러오지 못했습니다.");
-        setLoading(false);
-        return;
-      }
-
-      setDetailPayload(detailResult.data);
-      setMemberPayload(memberResult.data);
-      setForm(buildInitialValue(detailResult.data.position));
-      setLoading(false);
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [clubId, role.clubPositionId]);
 
   const members = memberPayload?.members ?? EMPTY_MEMBERS;
   const permissionGroups = detailPayload?.permissionGroups ?? [];
@@ -398,11 +424,11 @@ export function RoleEditSheet({
 
   const handleSave = async () => {
     if (!canSubmit) {
-      showToast("직책 이름을 입력해주세요.", "error");
+      toast.error("직책 이름을 입력해주세요.");
       return;
     }
 
-    clearToast();
+    toast.hide();
     setSubmitting(true);
     const request: UpdateClubPositionRequest = {
       displayName: form.displayName,
@@ -417,14 +443,14 @@ export function RoleEditSheet({
     setSubmitting(false);
 
     if (!result.ok || !result.data) {
-      showToast(result.message ?? "직책 저장에 실패했습니다.", "error");
+      toast.error(result.message ?? "직책 저장에 실패했습니다.");
       return;
     }
 
-    setDetailPayload(result.data);
+    setLocalDetailPayload(result.data);
     setForm(buildInitialValue(result.data.position));
     await onRolesChanged();
-    showToast("직책 설정을 저장했습니다.");
+    toast.success("직책 설정을 저장했습니다.");
   };
 
   const handleDelete = async () => {
@@ -433,7 +459,7 @@ export function RoleEditSheet({
     setSubmitting(false);
 
     if (!result.ok) {
-      showToast(result.message ?? "직책 삭제에 실패했습니다.", "error");
+      toast.error(result.message ?? "직책 삭제에 실패했습니다.");
       return;
     }
 
@@ -454,22 +480,23 @@ export function RoleEditSheet({
     setPendingMemberId(null);
 
     if (!result.ok || !result.data) {
-      showToast(result.message ?? "멤버 직책 변경에 실패했습니다.", "error");
+      toast.error(result.message ?? "멤버 직책 변경에 실패했습니다.");
       return;
     }
 
-    setMemberPayload((current) =>
-      current
+    setLocalMemberPayload((current) => {
+      const base = current ?? memberPayload;
+      return base
         ? {
-            ...current,
-            members: current.members.map((item) =>
-              item.clubMemberId === result.data?.clubMemberId ? result.data : item,
+            ...base,
+            members: base.members.map((item) =>
+              item.clubMemberId === result.data?.clubMemberId ? result.data! : item,
             ),
           }
-        : current,
-    );
+        : base;
+    });
     await onRolesChanged();
-    showToast(shouldAssign ? "멤버를 직책에 연결했습니다." : "멤버를 직책에서 해제했습니다.");
+    toast.success(shouldAssign ? "멤버를 직책에 연결했습니다." : "멤버를 직책에서 해제했습니다.");
   };
 
   const tabItems: Array<{ key: RoleSheetTab; label: string; icon: string }> = [
@@ -480,8 +507,6 @@ export function RoleEditSheet({
 
   return (
     <>
-      <EphemeralToast toastId={toast?.id} message={toast?.message ?? null} tone={toast?.tone} />
-
       <motion.button
         type="button"
         aria-label="직책 수정 시트 닫기"

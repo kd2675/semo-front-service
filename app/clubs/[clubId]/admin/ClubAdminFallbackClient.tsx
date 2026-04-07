@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { ClubAdminHomeClient } from "./ClubAdminHomeClient";
 import { AdminHomeLoadingShell } from "./AdminRouteLoadingShells";
@@ -9,11 +10,9 @@ import {
   getClubAdminJoinRequests,
   getClubAdminMembers,
   getMyClub,
-  type ClubAdminActivityItem,
-  type ClubAdminJoinRequestsResponse,
-  type ClubAdminMembersResponse,
-  type MyClubSummary,
 } from "@/app/lib/clubs";
+import { unwrap } from "@/app/lib/query";
+import { clubKeys, adminKeys } from "@/app/lib/queryKeys";
 
 type ClubAdminFallbackClientProps = {
   clubId: string;
@@ -21,50 +20,40 @@ type ClubAdminFallbackClientProps = {
 
 export function ClubAdminFallbackClient({ clubId }: ClubAdminFallbackClientProps) {
   const router = useRouter();
-  const [club, setClub] = useState<MyClubSummary | null>(null);
-  const [membersPayload, setMembersPayload] = useState<ClubAdminMembersResponse | null>(null);
-  const [joinRequestsPayload, setJoinRequestsPayload] = useState<ClubAdminJoinRequestsResponse | null>(null);
-  const [activities, setActivities] = useState<ClubAdminActivityItem[]>([]);
+
+  const { data: club, isError: clubError } = useQuery({
+    queryKey: clubKeys.detail(clubId),
+    queryFn: () => unwrap(getMyClub(clubId)),
+  });
+
+  const isAdmin = club?.admin === true;
+
+  const { data: membersPayload } = useQuery({
+    queryKey: adminKeys.members(clubId),
+    queryFn: () => unwrap(getClubAdminMembers(clubId)),
+    enabled: isAdmin,
+  });
+
+  const { data: joinRequestsPayload } = useQuery({
+    queryKey: adminKeys.joinRequests(clubId),
+    queryFn: () => unwrap(getClubAdminJoinRequests(clubId)),
+    enabled: isAdmin,
+  });
+
+  const { data: activitiesPayload } = useQuery({
+    queryKey: adminKeys.activities(clubId, "home"),
+    queryFn: async () => {
+      const result = await getClubAdminActivities(clubId, { size: 5 });
+      return result.ok && result.data ? result.data.activities : [];
+    },
+    enabled: isAdmin,
+  });
 
   useEffect(() => {
-    let cancelled = false;
-
-    void (async () => {
-      const [clubResult, membersResult, joinRequestsResult, activitiesResult] = await Promise.all([
-        getMyClub(clubId),
-        getClubAdminMembers(clubId),
-        getClubAdminJoinRequests(clubId),
-        getClubAdminActivities(clubId, { size: 5 }),
-      ]);
-
-      if (
-        cancelled ||
-        !clubResult.ok ||
-        !clubResult.data ||
-        !membersResult.ok ||
-        !membersResult.data ||
-        !joinRequestsResult.ok ||
-        !joinRequestsResult.data
-      ) {
-        router.replace(`/clubs/${clubId}`);
-        return;
-      }
-
-      if (!clubResult.data.admin) {
-        router.replace(`/clubs/${clubId}`);
-        return;
-      }
-
-      setClub(clubResult.data);
-      setMembersPayload(membersResult.data);
-      setJoinRequestsPayload(joinRequestsResult.data);
-      setActivities(activitiesResult.ok && activitiesResult.data ? activitiesResult.data.activities : []);
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [clubId, router]);
+    if (clubError || (club && !isAdmin)) {
+      router.replace(`/clubs/${clubId}`);
+    }
+  }, [clubError, club, isAdmin, clubId, router]);
 
   const metrics = useMemo(
     () => {
@@ -140,7 +129,7 @@ export function ClubAdminFallbackClient({ clubId }: ClubAdminFallbackClientProps
       clubName={club.name}
       metrics={metrics}
       actions={actions}
-      activities={activities}
+      activities={activitiesPayload ?? []}
     />
   );
 }

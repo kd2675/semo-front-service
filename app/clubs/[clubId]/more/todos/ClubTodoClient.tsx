@@ -1,11 +1,13 @@
 "use client";
 
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion, useReducedMotion } from "motion/react";
 import { useState } from "react";
 import { ClubModeSwitchFab } from "@/app/components/ClubModeSwitchFab";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
-import { EphemeralToast } from "@/app/components/EphemeralToast";
-import { useEphemeralToast } from "@/app/components/useEphemeralToast";
+import { unwrap } from "@/app/lib/query";
+import { clubKeys } from "@/app/lib/queryKeys";
+import { useToast } from "@/app/hooks/useToast";
 import {
   applyClubTodo,
   cancelMyClubTodoApplication,
@@ -25,60 +27,80 @@ type ClubTodoClientProps = {
 export function ClubTodoClient({ clubId, initialData, isAdmin }: ClubTodoClientProps) {
   const prefersReducedMotion = useReducedMotion();
   const reduceMotion = Boolean(prefersReducedMotion);
-  const [todoData, setTodoData] = useState(initialData);
   const [pendingTodoId, setPendingTodoId] = useState<number | null>(null);
-  const { toast, showToast, clearToast } = useEphemeralToast();
+  const toast = useToast();
+  const queryClient = useQueryClient();
 
-  const reloadTodos = async () => {
-    const result = await getClubTodos(clubId);
-    if (!result.ok || !result.data) {
-      showToast(result.message ?? "할 일 정보를 다시 불러오지 못했습니다.", "error");
-      return false;
-    }
-    setTodoData(result.data);
-    return true;
-  };
+  const { data: todoData = initialData } = useQuery({
+    queryKey: clubKeys.todo.list(clubId),
+    queryFn: () => unwrap(getClubTodos(clubId)),
+    initialData,
+  });
+
+  const applyMutation = useMutation({
+    mutationFn: async (todoItemId: number) => unwrap(applyClubTodo(clubId, todoItemId)),
+    onMutate: (todoItemId) => {
+      setPendingTodoId(todoItemId);
+      toast.hide();
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: clubKeys.todo.list(clubId) });
+      toast.success("업무를 신청했습니다.");
+    },
+    onError: (error) => {
+      toast.error(error instanceof Error ? error.message : "업무 신청에 실패했습니다.");
+    },
+    onSettled: () => {
+      setPendingTodoId(null);
+    },
+  });
+
+  const cancelMutation = useMutation({
+    mutationFn: async (todoItemId: number) => unwrap(cancelMyClubTodoApplication(clubId, todoItemId)),
+    onMutate: (todoItemId) => {
+      setPendingTodoId(todoItemId);
+      toast.hide();
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: clubKeys.todo.list(clubId) });
+      toast.success("업무 신청을 취소했습니다.");
+    },
+    onError: (error) => {
+      toast.error(error instanceof Error ? error.message : "업무 신청을 취소하지 못했습니다.");
+    },
+    onSettled: () => {
+      setPendingTodoId(null);
+    },
+  });
+
+  const completeMutation = useMutation({
+    mutationFn: async (todoItemId: number) => unwrap(completeClubTodo(clubId, todoItemId)),
+    onMutate: (todoItemId) => {
+      setPendingTodoId(todoItemId);
+      toast.hide();
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: clubKeys.todo.list(clubId) });
+      toast.success("업무를 완료 처리했습니다.");
+    },
+    onError: (error) => {
+      toast.error(error instanceof Error ? error.message : "업무를 완료 처리하지 못했습니다.");
+    },
+    onSettled: () => {
+      setPendingTodoId(null);
+    },
+  });
 
   const handleApply = async (todoItemId: number) => {
-    setPendingTodoId(todoItemId);
-    clearToast();
-    const result = await applyClubTodo(clubId, todoItemId);
-    setPendingTodoId(null);
-
-    if (!result.ok || !result.data) {
-      showToast(result.message ?? "업무 신청에 실패했습니다.", "error");
-      return;
-    }
-    await reloadTodos();
-    showToast("업무를 신청했습니다.", "success");
+    await applyMutation.mutateAsync(todoItemId).catch(() => undefined);
   };
 
   const handleCancelApplication = async (todoItemId: number) => {
-    setPendingTodoId(todoItemId);
-    clearToast();
-    const result = await cancelMyClubTodoApplication(clubId, todoItemId);
-    setPendingTodoId(null);
-
-    if (!result.ok || !result.data) {
-      showToast(result.message ?? "업무 신청을 취소하지 못했습니다.", "error");
-      return;
-    }
-    await reloadTodos();
-    showToast("업무 신청을 취소했습니다.", "success");
+    await cancelMutation.mutateAsync(todoItemId).catch(() => undefined);
   };
 
   const handleComplete = async (todoItemId: number) => {
-    setPendingTodoId(todoItemId);
-    clearToast();
-    const result = await completeClubTodo(clubId, todoItemId);
-    setPendingTodoId(null);
-
-    if (!result.ok || !result.data) {
-      showToast(result.message ?? "업무를 완료 처리하지 못했습니다.", "error");
-      return;
-    }
-    await reloadTodos();
-    showToast("업무를 완료 처리했습니다.", "success");
+    await completeMutation.mutateAsync(todoItemId).catch(() => undefined);
   };
 
   return (
@@ -155,7 +177,6 @@ export function ClubTodoClient({ clubId, initialData, isAdmin }: ClubTodoClientP
         </main>
 
         {isAdmin ? <ClubModeSwitchFab clubId={clubId} mode="user" /> : null}
-        <EphemeralToast toastId={toast?.id ?? null} message={toast?.message ?? null} tone={toast?.tone} />
       </div>
     </div>
   );

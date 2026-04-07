@@ -3,11 +3,14 @@
 import { RouterLink } from "@/app/components/RouterLink";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { unwrap } from "@/app/lib/query";
 import {
   getClubFeatures,
   type ClubFeatureSummary,
 } from "@/app/lib/clubs";
+import { clubKeys } from "@/app/lib/queryKeys";
 import { overlayFadeMotion, popInMotion } from "@/app/lib/motion";
 import { useBottomNavScrollDocking } from "@/app/components/useBottomNavScrollDocking";
 
@@ -79,47 +82,20 @@ export function ClubBottomNav({ clubId, isAdmin = false }: ClubBottomNavProps) {
   const reduceMotion = Boolean(prefersReducedMotion);
   const isDocked = useBottomNavScrollDocking({ routeKey: pathname });
   const [openMenuPathname, setOpenMenuPathname] = useState<string | null>(null);
-  const [enabledFeatures, setEnabledFeatures] = useState<ClubFeatureSummary[]>([]);
+  const { data: allFeatures } = useQuery({
+    queryKey: clubKeys.features(clubId),
+    queryFn: () => unwrap(getClubFeatures(clubId)),
+  });
+  const enabledFeatures = useMemo(
+    () => (allFeatures ?? []).filter((feature) => feature.enabled && feature.navigationScope !== "ADMIN_ONLY"),
+    [allFeatures],
+  );
   const menuItems = enabledFeatures;
   const isMoreOpen = openMenuPathname === pathname;
   const isFeatureRouteActive = menuItems.some((feature) => {
     const targetPath = stripQuery(feature.userPath);
     return pathname === targetPath || pathname.startsWith(`${targetPath}/`);
   });
-
-  useEffect(() => {
-    let cancelled = false;
-
-    const loadFeatures = async () => {
-      const result = await getClubFeatures(clubId);
-      if (cancelled) {
-        return;
-      }
-
-      if (!result.ok || !result.data) {
-        setEnabledFeatures([]);
-        return;
-      }
-
-      setEnabledFeatures(
-        result.data.filter(
-          (feature) => feature.enabled && feature.navigationScope !== "ADMIN_ONLY",
-        ),
-      );
-    };
-
-    void loadFeatures();
-
-    const onFeatureUpdate = () => {
-      void loadFeatures();
-    };
-
-    window.addEventListener("semo:club-features-updated", onFeatureUpdate);
-    return () => {
-      cancelled = true;
-      window.removeEventListener("semo:club-features-updated", onFeatureUpdate);
-    };
-  }, [clubId]);
 
   useEffect(() => {
     if (!isMoreOpen) {

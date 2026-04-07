@@ -4,13 +4,16 @@ import { RouterLink } from "@/app/components/RouterLink";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import { RouteModal } from "@/app/components/RouteModal";
 import { motion, useReducedMotion } from "motion/react";
-import { useEffect, useEffectEvent, useState } from "react";
+import { useState } from "react";
 import { ClubModeSwitchFab } from "@/app/components/ClubModeSwitchFab";
 import {
   getClubScheduleEventDetail,
   updateClubScheduleEventParticipation,
   type ClubScheduleEventDetailResponse,
 } from "@/app/lib/clubs";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { unwrap } from "@/app/lib/query";
+import { clubKeys } from "@/app/lib/queryKeys";
 import { getShareTargetBadges } from "@/app/lib/content-badge";
 import { staggeredFadeUpMotion } from "@/app/lib/motion";
 import { ClubDetailLoadingShell } from "../ClubRouteLoadingShells";
@@ -99,41 +102,38 @@ export function ClubScheduleDetailClient({
 }: ClubScheduleDetailClientProps) {
   const prefersReducedMotion = useReducedMotion();
   const reduceMotion = Boolean(prefersReducedMotion);
-  const [payload, setPayload] = useState<ClubScheduleEventDetailResponse | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [savingParticipation, setSavingParticipation] = useState(false);
   const [pendingParticipationAction, setPendingParticipationAction] = useState<"GOING" | "NOT_GOING" | "CANCEL" | null>(null);
   const [showGoingParticipants, setShowGoingParticipants] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
-  const loadDetail = useEffectEvent(async () => {
-    setLoading(true);
-    setError(null);
-    const result = await getClubScheduleEventDetail(clubId, eventId);
-    setLoading(false);
-    if (!result.ok || !result.data) {
-      setError(result.message ?? "일정 상세를 불러오지 못했습니다.");
-      return;
-    }
-    setPayload(result.data);
+  const queryClient = useQueryClient();
+  const queryKey = clubKeys.schedule.eventDetail(clubId, eventId);
+
+  const { data: payload, isLoading, error: queryError } = useQuery({
+    queryKey,
+    queryFn: () => unwrap(getClubScheduleEventDetail(clubId, eventId)),
   });
 
-  useEffect(() => {
-    void loadDetail();
-  }, [clubId, eventId]);
+  const participationMutation = useMutation({
+    mutationFn: (participationStatus: "GOING" | "NOT_GOING" | "CANCEL") =>
+      unwrap(updateClubScheduleEventParticipation(clubId, eventId, { participationStatus })),
+    onSuccess: (data) => {
+      queryClient.setQueryData(queryKey, data);
+      setPendingParticipationAction(null);
+    },
+    onError: () => {
+      setPendingParticipationAction(null);
+    },
+  });
 
-  const handleParticipation = async (participationStatus: "GOING" | "NOT_GOING" | "CANCEL") => {
-    setSavingParticipation(true);
+  const savingParticipation = participationMutation.isPending;
+  const loading = isLoading;
+  const error =
+    participationMutation.error?.message ??
+    (queryError ? (queryError.message ?? "일정 상세를 불러오지 못했습니다.") : null);
+
+  const handleParticipation = (participationStatus: "GOING" | "NOT_GOING" | "CANCEL") => {
     setPendingParticipationAction(participationStatus);
-    setError(null);
-    const result = await updateClubScheduleEventParticipation(clubId, eventId, { participationStatus });
-    setSavingParticipation(false);
-    setPendingParticipationAction(null);
-    if (!result.ok || !result.data) {
-      setError(result.message ?? "참석 상태 저장에 실패했습니다.");
-      return;
-    }
-    setPayload(result.data);
+    participationMutation.mutate(participationStatus);
   };
 
   if (loading && !payload && !error) {

@@ -1,3 +1,5 @@
+import axios, { AxiosError, type AxiosRequestConfig } from "axios";
+
 import type { ResponseEnvelope } from "@/app/types/response";
 import {
   clearAccessToken,
@@ -16,12 +18,19 @@ export type ApiResult<T> = {
   code?: string | number;
 };
 
-type RequestOptions = {
-  method?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
-  body?: unknown;
-  headers?: Record<string, string>;
-  credentials?: RequestCredentials;
-};
+const client = axios.create({
+  baseURL: API_BASE,
+  headers: { "Content-Type": "application/json" },
+  withCredentials: true,
+});
+
+client.interceptors.request.use((config) => {
+  const token = getAccessToken();
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
 
 function isEnvelope<T>(value: unknown): value is ResponseEnvelope<T> {
   if (!value || typeof value !== "object") {
@@ -39,42 +48,19 @@ function isEnvelope<T>(value: unknown): value is ResponseEnvelope<T> {
 
 async function requestJson<T>(
   path: string,
-  options: RequestOptions = {},
+  config: AxiosRequestConfig = {},
   retried = false,
 ): Promise<ApiResult<T>> {
-  const method = options.method ?? "GET";
-  const token = getAccessToken();
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-    ...(options.headers ?? {}),
-  };
-
-  if (token) {
-    headers.Authorization = `Bearer ${token}`;
-  }
-
   try {
-    const response = await fetch(`${API_BASE}${path}`, {
-      method,
-      headers,
-      credentials: options.credentials ?? "include",
-      body: options.body === undefined ? undefined : JSON.stringify(options.body),
+    const response = await client.request<unknown>({
+      url: path,
+      ...config,
     });
 
-    if (response.status === 401 && !retried) {
-      const refreshedToken = await refreshAccessToken();
-      if (refreshedToken) {
-        return requestJson<T>(path, options, true);
-      }
-      clearAccessToken();
-      notifyAuthExpired("refresh_failed");
-    }
-
-    const text = await response.text();
-    const parsed: unknown = text ? JSON.parse(text) : null;
+    const parsed = response.data;
 
     if (isEnvelope<T>(parsed)) {
-      if (response.ok && parsed.success) {
+      if (parsed.success) {
         return {
           ok: true,
           status: response.status,
@@ -93,21 +79,44 @@ async function requestJson<T>(
       };
     }
 
-    if (response.ok) {
+    return {
+      ok: true,
+      status: response.status,
+      data: (parsed as T) ?? null,
+    };
+  } catch (error) {
+    if (error instanceof AxiosError) {
+      const status = error.response?.status;
+
+      if (status === 401 && !retried) {
+        const refreshedToken = await refreshAccessToken();
+        if (refreshedToken) {
+          return requestJson<T>(path, config, true);
+        }
+        clearAccessToken();
+        notifyAuthExpired("refresh_failed");
+      }
+
+      const parsed = error.response?.data as unknown;
+
+      if (isEnvelope<T>(parsed)) {
+        return {
+          ok: false,
+          status,
+          data: null,
+          message: parsed.message,
+          code: parsed.code,
+        };
+      }
+
       return {
-        ok: true,
-        status: response.status,
-        data: (parsed as T) ?? null,
+        ok: false,
+        status,
+        data: null,
+        message: error.response?.statusText || "요청 처리에 실패했습니다.",
       };
     }
 
-    return {
-      ok: false,
-      status: response.status,
-      data: null,
-      message: response.statusText || "요청 처리에 실패했습니다.",
-    };
-  } catch (error) {
     if (error instanceof Error) {
       return {
         ok: false,
@@ -136,7 +145,7 @@ export function postJson<T>(
   body: unknown,
   headers?: Record<string, string>,
 ): Promise<ApiResult<T>> {
-  return requestJson(path, { method: "POST", body, headers });
+  return requestJson(path, { method: "POST", data: body, headers });
 }
 
 export function putJson<T>(
@@ -144,7 +153,7 @@ export function putJson<T>(
   body: unknown,
   headers?: Record<string, string>,
 ): Promise<ApiResult<T>> {
-  return requestJson(path, { method: "PUT", body, headers });
+  return requestJson(path, { method: "PUT", data: body, headers });
 }
 
 export function patchJson<T>(
@@ -152,7 +161,7 @@ export function patchJson<T>(
   body: unknown,
   headers?: Record<string, string>,
 ): Promise<ApiResult<T>> {
-  return requestJson(path, { method: "PATCH", body, headers });
+  return requestJson(path, { method: "PATCH", data: body, headers });
 }
 
 export function deleteJson<T>(

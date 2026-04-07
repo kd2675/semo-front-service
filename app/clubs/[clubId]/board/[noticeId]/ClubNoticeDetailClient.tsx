@@ -4,12 +4,14 @@ import Image from "next/image";
 import { RouterLink } from "@/app/components/RouterLink";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import { motion, useReducedMotion } from "motion/react";
-import { useEffect, useEffectEvent, useState } from "react";
 import { ClubModeSwitchFab } from "@/app/components/ClubModeSwitchFab";
 import { getClubNoticeDetail, type ClubNoticeDetailResponse } from "@/app/lib/clubs";
 import { getLinkedContentBadge, getShareTargetBadges } from "@/app/lib/content-badge";
 import { staggeredFadeUpMotion } from "@/app/lib/motion";
 import { ClubDetailLoadingShell } from "../../ClubRouteLoadingShells";
+import { useQuery } from "@tanstack/react-query";
+import { unwrap } from "@/app/lib/query";
+import { clubKeys } from "@/app/lib/queryKeys";
 
 type ClubNoticeDetailClientProps = {
   clubId: string;
@@ -130,25 +132,15 @@ export function ClubNoticeDetailClient({
 }: ClubNoticeDetailClientProps) {
   const prefersReducedMotion = useReducedMotion();
   const reduceMotion = Boolean(prefersReducedMotion);
-  const [payload, setPayload] = useState<ClubNoticeDetailResponse | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
-  const loadDetail = useEffectEvent(async () => {
-    setLoading(true);
-    setError(null);
-    const result = await getClubNoticeDetail(clubId, noticeId);
-    setLoading(false);
-    if (!result.ok || !result.data) {
-      setError(result.message ?? "공지 상세를 불러오지 못했습니다.");
-      return;
-    }
-    setPayload(result.data);
+  const { data: queryData, isLoading, error: queryError } = useQuery({
+    queryKey: clubKeys.notice.detail(clubId, noticeId),
+    queryFn: () => unwrap(getClubNoticeDetail(clubId, noticeId)),
   });
 
-  useEffect(() => {
-    void loadDetail();
-  }, [clubId, noticeId]);
+  const payload = queryData ?? null;
+  const loading = isLoading;
+  const error = queryError ? (queryError.message ?? "공지 상세를 불러오지 못했습니다.") : null;
 
   if (loading && !payload && !error) {
     return <ClubDetailLoadingShell />;

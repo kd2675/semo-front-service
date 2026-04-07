@@ -1,5 +1,6 @@
 "use client";
 
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { RouteModal } from "@/app/components/RouteModal";
 import { ClubModeSwitchFab } from "@/app/components/ClubModeSwitchFab";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
@@ -9,19 +10,21 @@ import { ClubScheduleEditorClient } from "@/app/clubs/[clubId]/schedule/ClubSche
 import { BoardScheduleManageCard } from "@/app/clubs/[clubId]/board/BoardScheduleManageCard";
 import {
   deleteClubScheduleEvent,
+  getClubScheduleHome,
   type ClubScheduleEventSummary,
   type ClubScheduleHomeResponse,
 } from "@/app/lib/clubs";
 import { FAB_RIGHT_OFFSET_CLASS_NAME, getActionFabBottomClass } from "@/app/lib/fab";
 import { staggeredFadeUpMotion } from "@/app/lib/motion";
+import { unwrap } from "@/app/lib/query";
+import { clubKeys } from "@/app/lib/queryKeys";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { startTransition, useDeferredValue, useMemo, useState, type CSSProperties } from "react";
 
 type ClubScheduleHomeClientProps = {
   clubId: string;
-  payload: ClubScheduleHomeResponse;
+  initialData: ClubScheduleHomeResponse;
   mode?: "user" | "admin";
-  onReload: () => void;
 };
 
 function AdminInsightTile({
@@ -70,13 +73,11 @@ function getDdayLabel(dateValue: string) {
 
 export function ClubScheduleHomeClient({
   clubId,
-  payload,
+  initialData,
   mode = "user",
-  onReload,
 }: ClubScheduleHomeClientProps) {
   const prefersReducedMotion = useReducedMotion();
   const reduceMotion = Boolean(prefersReducedMotion);
-  const hasModeSwitchFab = mode === "user" && payload.admin;
   const [query, setQuery] = useState("");
   const deferredQuery = useDeferredValue(query);
   const [showEventCreateModal, setShowEventCreateModal] = useState(false);
@@ -84,7 +85,24 @@ export function ClubScheduleHomeClient({
   const [editingEventId, setEditingEventId] = useState<string | null>(null);
   const [deleteEventTarget, setDeleteEventTarget] = useState<ClubScheduleEventSummary | null>(null);
   const [activeActionKey, setActiveActionKey] = useState<string | null>(null);
-  const [deleting, setDeleting] = useState(false);
+  const queryClient = useQueryClient();
+
+  const { data: payload = initialData } = useQuery({
+    queryKey: clubKeys.schedule.home(clubId),
+    queryFn: () => unwrap(getClubScheduleHome(clubId)),
+    initialData,
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (eventId: number) => unwrap(deleteClubScheduleEvent(clubId, eventId)),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: clubKeys.schedule.home(clubId) });
+      setDeleteEventTarget(null);
+      setActiveActionKey(null);
+    },
+  });
+
+  const hasModeSwitchFab = mode === "user" && payload.admin;
 
   const accent = mode === "admin" ? "#f97316" : "#135bec";
   const background = "#f6f6f8";
@@ -124,15 +142,7 @@ export function ClubScheduleHomeClient({
     if (!deleteEventTarget) {
       return;
     }
-    setDeleting(true);
-    const result = await deleteClubScheduleEvent(clubId, deleteEventTarget.eventId);
-    setDeleting(false);
-    if (!result.ok) {
-      return;
-    }
-    setDeleteEventTarget(null);
-    setActiveActionKey(null);
-    onReload();
+    await deleteMutation.mutateAsync(deleteEventTarget.eventId).catch(() => undefined);
   };
 
   return (
@@ -314,7 +324,7 @@ export function ClubScheduleHomeClient({
                 onRequestClose={() => setShowEventCreateModal(false)}
                 onSaved={(savedEventId) => {
                   setShowEventCreateModal(false);
-                  onReload();
+                  void queryClient.invalidateQueries({ queryKey: clubKeys.schedule.home(clubId) });
                   setDetailEventId(String(savedEventId));
                 }}
               />
@@ -339,12 +349,12 @@ export function ClubScheduleHomeClient({
                 onRequestClose={() => setEditingEventId(null)}
                 onSaved={(savedEventId) => {
                   setEditingEventId(null);
-                  onReload();
+                  void queryClient.invalidateQueries({ queryKey: clubKeys.schedule.home(clubId) });
                   setDetailEventId(String(savedEventId));
                 }}
                 onDeleted={() => {
                   setEditingEventId(null);
-                  onReload();
+                  void queryClient.invalidateQueries({ queryKey: clubKeys.schedule.home(clubId) });
                 }}
               />
             </RouteModal>
@@ -357,9 +367,9 @@ export function ClubScheduleHomeClient({
             description={`‘${deleteEventTarget.title}’ 항목은 삭제 후 복구할 수 없습니다.`}
             confirmLabel="삭제"
             busyLabel="삭제 중..."
-            busy={deleting}
+            busy={deleteMutation.isPending}
             onCancel={() => {
-              if (!deleting) {
+              if (!deleteMutation.isPending) {
                 setDeleteEventTarget(null);
               }
             }}

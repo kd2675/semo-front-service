@@ -1,15 +1,18 @@
 "use client";
 
 import { RouteModal } from "@/app/components/RouteModal";
-import type { AppAlertState } from "@/app/hooks/useAppAlert";
+import type { AppAlertState } from "@/app/store/uiSlice";
 
 type AppAlertModalProps = {
   open: boolean;
   title: string;
   message: string;
+  mode?: AppAlertState["mode"];
   tone?: AppAlertState["tone"];
   confirmLabel?: string;
+  cancelLabel?: string;
   onClose: () => void;
+  onConfirm?: () => void;
 };
 
 function getToneStyles(tone: AppAlertState["tone"]) {
@@ -39,9 +42,12 @@ export function AppAlertModal({
   open,
   title,
   message,
+  mode = "alert",
   tone = "default",
   confirmLabel = "확인",
+  cancelLabel = "취소",
   onClose,
+  onConfirm,
 }: AppAlertModalProps) {
   if (!open) {
     return null;
@@ -62,13 +68,32 @@ export function AppAlertModal({
           <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-slate-500">{message}</p>
         </div>
         <div className="mt-6">
-          <button
-            type="button"
-            onClick={onClose}
-            className={`w-full rounded-2xl px-4 py-3 text-sm font-semibold text-white transition-colors ${styles.buttonClassName}`}
-          >
-            {confirmLabel}
-          </button>
+          {mode === "confirm" ? (
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={onClose}
+                className="w-full rounded-2xl bg-slate-100 px-4 py-3 text-sm font-semibold text-slate-600 transition-colors hover:bg-slate-200"
+              >
+                {cancelLabel}
+              </button>
+              <button
+                type="button"
+                onClick={onConfirm ?? onClose}
+                className={`w-full rounded-2xl px-4 py-3 text-sm font-semibold text-white transition-colors ${styles.buttonClassName}`}
+              >
+                {confirmLabel}
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={onClose}
+              className={`w-full rounded-2xl px-4 py-3 text-sm font-semibold text-white transition-colors ${styles.buttonClassName}`}
+            >
+              {confirmLabel}
+            </button>
+          )}
         </div>
       </div>
     </RouteModal>

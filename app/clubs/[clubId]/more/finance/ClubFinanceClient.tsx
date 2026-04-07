@@ -1,14 +1,18 @@
 "use client";
 
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { startTransition, useMemo, useState, type ReactNode } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { ClubModeSwitchFab } from "@/app/components/ClubModeSwitchFab";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
-import { EphemeralToast } from "@/app/components/EphemeralToast";
 import { RouteModal } from "@/app/components/RouteModal";
-import { useEphemeralToast } from "@/app/components/useEphemeralToast";
+import { unwrap } from "@/app/lib/query";
+import { clubKeys } from "@/app/lib/queryKeys";
+import { useToast } from "@/app/hooks/useToast";
 import {
   createClubFinanceRequest,
+  getClubFinance,
+  getClubFinanceRequests,
   type ClubFinanceHomeResponse,
   type ClubFinancePayment,
   type ClubFinanceRequest,
@@ -116,13 +120,24 @@ export function ClubFinanceClient({
 }: ClubFinanceClientProps) {
   const prefersReducedMotion = useReducedMotion();
   const reduceMotion = Boolean(prefersReducedMotion);
-  const finance = initialData;
-  const [requests, setRequests] = useState(initialRequestFeed.items);
   const [showActionSheet, setShowActionSheet] = useState(false);
   const [activeAction, setActiveAction] = useState<MemberFabAction | null>(null);
   const [draft, setDraft] = useState<MemberRequestDraft>(createDraft("ADVANCE"));
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const { toast, showToast, clearToast } = useEphemeralToast();
+  const toast = useToast();
+  const queryClient = useQueryClient();
+
+  const { data: finance = initialData } = useQuery({
+    queryKey: clubKeys.finance.home(clubId),
+    queryFn: () => unwrap(getClubFinance(clubId)),
+    initialData,
+  });
+
+  const { data: requestFeed = initialRequestFeed } = useQuery({
+    queryKey: clubKeys.finance.requests(clubId),
+    queryFn: () => unwrap(getClubFinanceRequests(clubId)),
+    initialData: initialRequestFeed,
+  });
+  const requests = requestFeed.items;
 
   const paidHistory = useMemo(
     () =>
@@ -159,48 +174,63 @@ export function ClubFinanceClient({
   };
 
   const closeRequestModal = () => {
-    if (isSubmitting) {
+    if (submitRequestMutation.isPending) {
       return;
     }
     setActiveAction(null);
   };
 
+  const submitRequestMutation = useMutation({
+    mutationFn: async (payload: {
+      requestTypeCode: MemberFabAction;
+      title: string;
+      amount: number;
+      relatedEventName: string | null;
+      note: string | null;
+    }) => unwrap(createClubFinanceRequest(clubId, payload)),
+    onSuccess: (data) => {
+      startTransition(() => {
+        void queryClient.invalidateQueries({ queryKey: clubKeys.finance.home(clubId) });
+        queryClient.setQueryData<ClubFinanceRequestFeedResponse>(
+          clubKeys.finance.requests(clubId),
+          (current) => ({
+            clubId: current?.clubId ?? initialRequestFeed.clubId,
+            clubName: current?.clubName ?? initialRequestFeed.clubName,
+            items: [data, ...(current?.items ?? initialRequestFeed.items)],
+          }),
+        );
+        setActiveAction(null);
+      });
+      toast.success(`${data.requestTypeLabel}이 운영진에게 제출되었습니다.`);
+    },
+    onError: (error) => {
+      toast.error(error instanceof Error ? error.message : "재정 요청 제출에 실패했습니다.");
+    },
+  });
+
   const handleSubmitRequest = async () => {
-    if (!activeAction || isSubmitting) {
+    if (!activeAction || submitRequestMutation.isPending) {
       return;
     }
 
     const parsedAmount = Number(draft.amount);
     if (!draft.title.trim()) {
-      showToast("제목을 입력해주세요.", "error");
+      toast.error("제목을 입력해주세요.");
       return;
     }
     if (!Number.isFinite(parsedAmount) || parsedAmount <= 0) {
-      showToast("금액은 0보다 커야 합니다.", "error");
+      toast.error("금액은 0보다 커야 합니다.");
       return;
     }
 
-    setIsSubmitting(true);
-    clearToast();
-    const result = await createClubFinanceRequest(clubId, {
+    toast.hide();
+    await submitRequestMutation.mutateAsync({
       requestTypeCode: activeAction,
       title: draft.title.trim(),
       amount: parsedAmount,
       relatedEventName: draft.relatedEventName.trim() || null,
       note: draft.note.trim() || null,
-    });
-    setIsSubmitting(false);
-
-    if (!result.ok || !result.data) {
-      showToast(result.message ?? "재정 요청 제출에 실패했습니다.", "error");
-      return;
-    }
-
-    startTransition(() => {
-      setRequests((current) => [result.data!, ...current]);
-      setActiveAction(null);
-    });
-    showToast(`${result.data.requestTypeLabel}이 운영진에게 제출되었습니다.`, "success");
+    }).catch(() => undefined);
   };
 
   return (
@@ -404,7 +434,6 @@ export function ClubFinanceClient({
 
         {isAdmin ? <ClubModeSwitchFab clubId={clubId} mode="user" /> : null}
 
-        <EphemeralToast toastId={toast?.id ?? null} message={toast?.message ?? null} tone={toast?.tone} />
         <AnimatePresence>
           {showActionSheet ? (
             <RouteModal
@@ -460,7 +489,7 @@ export function ClubFinanceClient({
               <FinanceRequestModal
                 action={activeAction}
                 draft={draft}
-                busy={isSubmitting}
+                busy={submitRequestMutation.isPending}
                 onChange={(nextDraft) => setDraft(nextDraft)}
                 onClose={closeRequestModal}
                 onSubmit={() => void handleSubmitRequest()}

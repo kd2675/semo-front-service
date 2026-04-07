@@ -5,12 +5,15 @@ import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import { DatePopoverField } from "@/app/components/DatePopoverField";
 import { TimePopoverField } from "@/app/components/TimePopoverField";
 import { useRouter } from "next/navigation";
-import { useEffect, useEffectEvent, useId, useState } from "react";
+import { useId, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { unwrap } from "@/app/lib/query";
+import { clubKeys } from "@/app/lib/queryKeys";
 import {
+  type ClubScheduleVoteDetailResponse,
   createClubScheduleVote,
   getClubScheduleVoteDetail,
   updateClubScheduleVote,
-  type ClubScheduleVoteDetailResponse,
 } from "@/app/lib/clubs";
 import { ClubEditorLoadingShell } from "../ClubRouteLoadingShells";
 
@@ -24,7 +27,58 @@ type ClubScheduleVoteEditorClientProps = {
   onSaved?: (voteId: number) => void;
 };
 
-export function ClubScheduleVoteEditorClient({
+type ScheduleVoteEditorInitialState = {
+  title: string;
+  voteStartDate: string;
+  voteEndDate: string;
+  voteStartTime: string;
+  voteEndTime: string;
+  options: string[];
+  postToBoard: boolean;
+  postToCalendar: boolean;
+  pinned: boolean;
+  canEdit: boolean;
+};
+
+function buildScheduleVoteEditorInitialState({
+  detailPayload,
+  isEdit,
+  defaultVoteDate,
+}: {
+  detailPayload: ClubScheduleVoteDetailResponse | null;
+  isEdit: boolean;
+  defaultVoteDate: string;
+}): ScheduleVoteEditorInitialState {
+  if (detailPayload) {
+    return {
+      title: detailPayload.title,
+      voteStartDate: detailPayload.voteStartDate,
+      voteEndDate: detailPayload.voteEndDate,
+      voteStartTime: detailPayload.voteStartTime ?? "",
+      voteEndTime: detailPayload.voteEndTime ?? "",
+      options: detailPayload.options.map((option) => option.label),
+      postToBoard: detailPayload.postedToBoard,
+      postToCalendar: detailPayload.postedToCalendar,
+      pinned: detailPayload.pinned,
+      canEdit: detailPayload.canEdit,
+    };
+  }
+
+  return {
+    title: "",
+    voteStartDate: defaultVoteDate,
+    voteEndDate: defaultVoteDate,
+    voteStartTime: "",
+    voteEndTime: "",
+    options: ["", ""],
+    postToBoard: true,
+    postToCalendar: true,
+    pinned: false,
+    canEdit: !isEdit,
+  };
+}
+
+function ClubScheduleVoteEditorForm({
   clubId,
   voteId,
   clubName: initialClubName,
@@ -32,65 +86,30 @@ export function ClubScheduleVoteEditorClient({
   basePath,
   onRequestClose,
   onSaved,
-}: ClubScheduleVoteEditorClientProps) {
+  initialState,
+  queryError,
+}: ClubScheduleVoteEditorClientProps & {
+  initialState: ScheduleVoteEditorInitialState;
+  queryError: string | null;
+}) {
   const router = useRouter();
   const formId = useId();
   const isEdit = Boolean(voteId);
   const isModal = presentation === "modal";
-  const defaultVoteDate = new Date().toISOString().slice(0, 10);
-  const [title, setTitle] = useState("");
-  const [voteStartDate, setVoteStartDate] = useState(defaultVoteDate);
-  const [voteEndDate, setVoteEndDate] = useState(defaultVoteDate);
-  const [voteStartTime, setVoteStartTime] = useState("");
-  const [voteEndTime, setVoteEndTime] = useState("");
-  const [options, setOptions] = useState(["", ""]);
-  const [postToBoard, setPostToBoard] = useState(true);
-  const [postToCalendar, setPostToCalendar] = useState(true);
-  const [pinned, setPinned] = useState(false);
-  const [canEdit, setCanEdit] = useState(!isEdit);
-  const [loading, setLoading] = useState(isEdit);
+  const [title, setTitle] = useState(initialState.title);
+  const [voteStartDate, setVoteStartDate] = useState(initialState.voteStartDate);
+  const [voteEndDate, setVoteEndDate] = useState(initialState.voteEndDate);
+  const [voteStartTime, setVoteStartTime] = useState(initialState.voteStartTime);
+  const [voteEndTime, setVoteEndTime] = useState(initialState.voteEndTime);
+  const [options, setOptions] = useState(initialState.options);
+  const [postToBoard, setPostToBoard] = useState(initialState.postToBoard);
+  const [postToCalendar, setPostToCalendar] = useState(initialState.postToCalendar);
+  const [pinned, setPinned] = useState(initialState.pinned);
+  const [canEdit] = useState(initialState.canEdit);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const resolvedBasePath = basePath ?? `/clubs/${clubId}/more/polls`;
   const backHref = isEdit && voteId ? `${resolvedBasePath}/${voteId}` : resolvedBasePath;
-
-  const loadDetail = useEffectEvent(async () => {
-    if (!voteId) {
-      return;
-    }
-
-    setLoading(true);
-    setError(null);
-    const result = await getClubScheduleVoteDetail(clubId, voteId);
-    setLoading(false);
-    if (!result.ok || !result.data) {
-      setError(result.message ?? "투표 정보를 불러오지 못했습니다.");
-      return;
-    }
-
-    const payload: ClubScheduleVoteDetailResponse = result.data;
-    setTitle(payload.title);
-    setVoteStartDate(payload.voteStartDate);
-    setVoteEndDate(payload.voteEndDate);
-    setVoteStartTime(payload.voteStartTime ?? "");
-    setVoteEndTime(payload.voteEndTime ?? "");
-    setOptions(payload.options.map((option) => option.label));
-    setPostToBoard(payload.postedToBoard);
-    setPostToCalendar(payload.postedToCalendar);
-    setPinned(payload.pinned);
-    setCanEdit(payload.canEdit);
-  });
-
-  useEffect(() => {
-    if (!isEdit) {
-      return;
-    }
-    void loadDetail();
-  }, [isEdit]);
-
-  if (loading) {
-    return <ClubEditorLoadingShell presentation={presentation} />;
-  }
 
   const updateOption = (index: number, value: string) => {
     setOptions((current) => current.map((option, optionIndex) => (optionIndex === index ? value : option)));
@@ -347,9 +366,9 @@ export function ClubScheduleVoteEditorClient({
               </div>
             </section>
 
-            {error ? (
+            {error || queryError ? (
               <div className="rounded-xl bg-rose-50 px-4 py-3 text-sm font-medium text-rose-600">
-                {error}
+                {error ?? queryError}
               </div>
             ) : null}
           </form>
@@ -369,5 +388,50 @@ export function ClubScheduleVoteEditorClient({
         ) : null}
       </div>
     </div>
+  );
+}
+
+export function ClubScheduleVoteEditorClient({
+  clubId,
+  voteId,
+  clubName: initialClubName,
+  presentation = "page",
+  basePath,
+  onRequestClose,
+  onSaved,
+}: ClubScheduleVoteEditorClientProps) {
+  const isEdit = Boolean(voteId);
+  const defaultVoteDate = new Date().toISOString().slice(0, 10);
+  const { data: detailPayload, isLoading: loading, isError } = useQuery({
+    queryKey: clubKeys.schedule.voteDetail(clubId, voteId!),
+    queryFn: () => unwrap(getClubScheduleVoteDetail(clubId, voteId!)),
+    enabled: isEdit,
+  });
+
+  if (loading) {
+    return <ClubEditorLoadingShell presentation={presentation} />;
+  }
+
+  const initialState = buildScheduleVoteEditorInitialState({
+    detailPayload: detailPayload ?? null,
+    isEdit,
+    defaultVoteDate,
+  });
+  const editorKey = isEdit ? `${voteId}:${detailPayload ? "loaded" : "empty"}` : "new";
+  const queryError = isError ? "투표 정보를 불러오지 못했습니다." : null;
+
+  return (
+    <ClubScheduleVoteEditorForm
+      key={editorKey}
+      clubId={clubId}
+      voteId={voteId}
+      clubName={initialClubName}
+      presentation={presentation}
+      basePath={basePath}
+      onRequestClose={onRequestClose}
+      onSaved={onSaved}
+      initialState={initialState}
+      queryError={queryError}
+    />
   );
 }

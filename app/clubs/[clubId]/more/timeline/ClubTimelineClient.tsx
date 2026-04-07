@@ -1,15 +1,17 @@
 "use client";
 
+import { useInfiniteQuery } from "@tanstack/react-query";
 import { ClubModeSwitchFab } from "@/app/components/ClubModeSwitchFab";
 import {
   getClubTimeline,
   type ClubTimelineEntry,
   type ClubTimelineResponse,
 } from "@/app/lib/clubs";
+import { unwrap } from "@/app/lib/query";
+import { clubKeys } from "@/app/lib/queryKeys";
 import { motion, useReducedMotion } from "motion/react";
 import {
   useEffect,
-  useEffectEvent,
   useMemo,
   useRef,
   useState,
@@ -21,11 +23,6 @@ type ClubTimelineClientProps = {
   clubId: string;
   initialData: ClubTimelineResponse;
   isAdmin: boolean;
-};
-
-type CursorState = {
-  createdAt: string | null;
-  activityId: number | null;
 };
 
 type TimelineListItem =
@@ -149,60 +146,64 @@ export function ClubTimelineClient({
 }: ClubTimelineClientProps) {
   const prefersReducedMotion = useReducedMotion();
   const reduceMotion = Boolean(prefersReducedMotion);
-  const [timeline, setTimeline] = useState(initialData);
-  const [loading, setLoading] = useState(false);
-  const [feedback, setFeedback] = useState<string | null>(null);
   const [sentinelNode, setSentinelNode] = useState<HTMLDivElement | null>(null);
-  const loadingRef = useRef(false);
+  const fetchTriggeredRef = useRef(false);
 
-  const cursor: CursorState = {
-    createdAt: timeline.nextCursorCreatedAt,
-    activityId: timeline.nextCursorActivityId,
-  };
-
-  const loadTimeline = useEffectEvent(async (mode: "reset" | "append") => {
-    if (loadingRef.current) {
-      return;
-    }
-
-    loadingRef.current = true;
-    setLoading(true);
-    setFeedback(null);
-
-    const result = await getClubTimeline(clubId, {
-      cursorCreatedAt: mode === "append" ? cursor.createdAt : null,
-      cursorActivityId: mode === "append" ? cursor.activityId : null,
+  const {
+    data,
+    error,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useInfiniteQuery({
+    queryKey: clubKeys.timelineInfinite(clubId),
+    queryFn: ({ pageParam }) => unwrap(getClubTimeline(clubId, {
+      cursorCreatedAt: pageParam.createdAt,
+      cursorActivityId: pageParam.activityId,
       size: 12,
-    });
-
-    loadingRef.current = false;
-    setLoading(false);
-
-    if (!result.ok || !result.data) {
-      setFeedback(result.message ?? "타임라인을 불러오지 못했습니다.");
-      return;
-    }
-
-    const nextTimeline = result.data;
-
-    setTimeline((current) => ({
-      ...nextTimeline,
-      entries:
-        mode === "append" ? [...current.entries, ...nextTimeline.entries] : nextTimeline.entries,
-    }));
+    })),
+    initialPageParam: {
+      createdAt: null as string | null,
+      activityId: null as number | null,
+    },
+    initialData: {
+      pages: [initialData],
+      pageParams: [{ createdAt: null, activityId: null }],
+    },
+    getNextPageParam: (lastPage) => (
+      lastPage.hasNext
+        ? {
+            createdAt: lastPage.nextCursorCreatedAt,
+            activityId: lastPage.nextCursorActivityId,
+          }
+        : undefined
+    ),
   });
 
+  const timeline = useMemo<ClubTimelineResponse>(() => {
+    const pages = data.pages;
+    const lastPage = pages[pages.length - 1] ?? initialData;
+    return {
+      ...lastPage,
+      entries: pages.flatMap((page) => page.entries),
+    };
+  }, [data.pages, initialData]);
+  const feedback = error instanceof Error ? error.message : null;
+
   useEffect(() => {
-    if (!sentinelNode || !timeline.hasNext || loading) {
+    if (!sentinelNode || !hasNextPage || isFetchingNextPage) {
       return;
     }
 
     const observer = new IntersectionObserver(
       (entries) => {
-        if (!entries[0]?.isIntersecting) {
+        if (!entries[0]?.isIntersecting || fetchTriggeredRef.current) {
           return;
         }
-        void loadTimeline("append");
+        fetchTriggeredRef.current = true;
+        void fetchNextPage().finally(() => {
+          fetchTriggeredRef.current = false;
+        });
       },
       { rootMargin: "220px 0px" },
     );
@@ -211,7 +212,7 @@ export function ClubTimelineClient({
     return () => {
       observer.disconnect();
     };
-  }, [loading, sentinelNode, timeline.hasNext]);
+  }, [fetchNextPage, hasNextPage, isFetchingNextPage, sentinelNode]);
 
   const renderedItems = useMemo<TimelineListItem[]>(() => {
     const items: TimelineListItem[] = [];
@@ -332,7 +333,7 @@ export function ClubTimelineClient({
             </div>
           </div>
 
-          {!loading && timeline.entries.length === 0 ? (
+          {!isFetchingNextPage && timeline.entries.length === 0 ? (
             <motion.div
               className="rounded-2xl border border-dashed border-slate-300 bg-white px-5 py-10 text-center text-sm text-slate-500"
               {...staggeredFadeUpMotion(2, reduceMotion)}
@@ -350,7 +351,7 @@ export function ClubTimelineClient({
             </motion.div>
           ) : null}
 
-          {loading && timeline.entries.length > 0 ? (
+          {isFetchingNextPage && timeline.entries.length > 0 ? (
             <div className="py-2 text-center text-sm text-slate-400">활동을 더 불러오는 중...</div>
           ) : null}
 

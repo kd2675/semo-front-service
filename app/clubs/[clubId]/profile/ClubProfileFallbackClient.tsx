@@ -2,10 +2,13 @@
 
 import Image from "next/image";
 import { motion, useReducedMotion } from "motion/react";
-import { startTransition, useEffect, useRef, useState, type ChangeEvent } from "react";
+import { startTransition, useRef, useState, type ChangeEvent } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ClubModeSwitchFab } from "@/app/components/ClubModeSwitchFab";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
-import { getClubProfile, type ClubProfileResponse, updateClubProfile } from "@/app/lib/clubs";
+import { getClubProfile, updateClubProfile } from "@/app/lib/clubs";
+import { unwrap } from "@/app/lib/query";
+import { clubKeys } from "@/app/lib/queryKeys";
 import { uploadTempImage } from "@/app/lib/imageUpload";
 import { staggeredFadeUpMotion } from "@/app/lib/motion";
 import { ClubProfileLoadingShell } from "../ClubRouteLoadingShells";
@@ -17,33 +20,64 @@ type ClubProfileFallbackClientProps = {
 export function ClubProfileFallbackClient({ clubId }: ClubProfileFallbackClientProps) {
   const prefersReducedMotion = useReducedMotion();
   const reduceMotion = Boolean(prefersReducedMotion);
-  const [payload, setPayload] = useState<ClubProfileResponse | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
   const [displayName, setDisplayName] = useState("");
-  const [savingDisplayName, setSavingDisplayName] = useState(false);
-  const [savingAvatar, setSavingAvatar] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [displayNameInitialized, setDisplayNameInitialized] = useState(false);
+  const [validationError, setValidationError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  useEffect(() => {
-    let cancelled = false;
-    void (async () => {
-      const result = await getClubProfile(clubId);
-      if (cancelled) {
-        return;
+  const queryClient = useQueryClient();
+  const queryKey = clubKeys.profile(clubId);
+
+  const { data: payload, isLoading } = useQuery({
+    queryKey,
+    queryFn: () => unwrap(getClubProfile(clubId)),
+  });
+
+  if (payload && !displayNameInitialized) {
+    setDisplayName(payload.clubProfile.displayName ?? "");
+    setDisplayNameInitialized(true);
+  }
+
+  const uploadAvatarMutation = useMutation({
+    mutationFn: async (file: File) => {
+      const uploadResult = await uploadTempImage(file);
+      if (!uploadResult.data?.fileName) {
+        throw new Error(uploadResult.error ?? "프로필 사진 업로드에 실패했습니다.");
       }
-      setIsLoading(false);
-      if (cancelled || !result.ok || !result.data) {
-        setError(result.message ?? "프로필을 불러오지 못했습니다.");
-        return;
-      }
-      setPayload(result.data);
-      setDisplayName(result.data.clubProfile.displayName ?? "");
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [clubId]);
+      return unwrap(updateClubProfile(clubId, {
+        avatarFileName: uploadResult.data.fileName,
+        removeAvatar: false,
+      }));
+    },
+    onSuccess: (data) => {
+      queryClient.setQueryData(queryKey, data);
+    },
+  });
+
+  const deleteAvatarMutation = useMutation({
+    mutationFn: () => unwrap(updateClubProfile(clubId, { removeAvatar: true })),
+    onSuccess: (data) => {
+      queryClient.setQueryData(queryKey, data);
+    },
+  });
+
+  const saveDisplayNameMutation = useMutation({
+    mutationFn: (normalized: string) =>
+      unwrap(updateClubProfile(clubId, { displayName: normalized, removeAvatar: false })),
+    onSuccess: (data) => {
+      queryClient.setQueryData(queryKey, data);
+      setDisplayName(data.clubProfile.displayName ?? displayName);
+    },
+  });
+
+  const savingAvatar = uploadAvatarMutation.isPending || deleteAvatarMutation.isPending;
+  const savingDisplayName = saveDisplayNameMutation.isPending;
+  const error =
+    validationError ??
+    uploadAvatarMutation.error?.message ??
+    deleteAvatarMutation.error?.message ??
+    saveDisplayNameMutation.error?.message ??
+    null;
 
   const appProfile = payload?.appProfile;
   const clubProfile = payload?.clubProfile;
@@ -55,75 +89,38 @@ export function ClubProfileFallbackClient({ clubId }: ClubProfileFallbackClientP
     fileInputRef.current?.click();
   };
 
-  const handleAvatarFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
+  const handleAvatarFileChange = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     event.target.value = "";
     if (!file) {
       return;
     }
-
-    setSavingAvatar(true);
-    setError(null);
-    const uploadResult = await uploadTempImage(file);
-    if (!uploadResult.data?.fileName) {
-      setSavingAvatar(false);
-      setError(uploadResult.error ?? "프로필 사진 업로드에 실패했습니다.");
-      return;
-    }
-
-    const updateResult = await updateClubProfile(clubId, {
-      avatarFileName: uploadResult.data.fileName,
-      removeAvatar: false,
-    });
-    setSavingAvatar(false);
-    if (!updateResult.ok || !updateResult.data) {
-      setError(updateResult.message ?? "프로필 사진 저장에 실패했습니다.");
-      return;
-    }
-    setPayload(updateResult.data);
+    setValidationError(null);
+    uploadAvatarMutation.mutate(file);
   };
 
-  const handleDeleteAvatar = async () => {
+  const handleDeleteAvatar = () => {
     if (!clubProfile?.avatarFileName || savingAvatar) {
       return;
     }
-    setSavingAvatar(true);
-    setError(null);
-    const result = await updateClubProfile(clubId, { removeAvatar: true });
-    setSavingAvatar(false);
-    if (!result.ok || !result.data) {
-      setError(result.message ?? "프로필 사진 삭제에 실패했습니다.");
-      return;
-    }
-    setPayload(result.data);
+    setValidationError(null);
+    deleteAvatarMutation.mutate();
   };
 
-  const handleSaveDisplayName = async () => {
+  const handleSaveDisplayName = () => {
     if (!payload?.clubProfile || savingDisplayName || savingAvatar) {
       return;
     }
     const normalized = displayName.trim();
     if (!normalized) {
-      setError("닉네임은 비워둘 수 없습니다.");
+      setValidationError("닉네임은 비워둘 수 없습니다.");
       return;
     }
     if (normalized === payload.clubProfile.displayName) {
       return;
     }
-
-    setSavingDisplayName(true);
-    setError(null);
-    const result = await updateClubProfile(clubId, {
-      displayName: normalized,
-      removeAvatar: false,
-    });
-    setSavingDisplayName(false);
-    if (!result.ok || !result.data) {
-      setError(result.message ?? "닉네임 저장에 실패했습니다.");
-      return;
-    }
-    setPayload(result.data);
-    setDisplayName(result.data.clubProfile.displayName ?? normalized);
+    setValidationError(null);
+    saveDisplayNameMutation.mutate(normalized);
   };
 
   if (isLoading) {

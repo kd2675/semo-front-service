@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useEffectEvent, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useInfiniteQuery } from "@tanstack/react-query";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import { RouterLink } from "@/app/components/RouterLink";
 import {
@@ -8,6 +9,8 @@ import {
   type ClubAdminActivityFeedResponse,
   type ClubAdminActivityItem,
 } from "@/app/lib/clubs";
+import { unwrap } from "@/app/lib/query";
+import { adminKeys } from "@/app/lib/queryKeys";
 import { motion, useReducedMotion } from "motion/react";
 import { staggeredFadeUpMotion } from "@/app/lib/motion";
 
@@ -48,60 +51,57 @@ function formatRelativeTime(value: string | null, fallback: string | null) {
 export function ClubAdminLogsClient({ clubId, clubName, initialData }: ClubAdminLogsClientProps) {
   const prefersReducedMotion = useReducedMotion();
   const reduceMotion = Boolean(prefersReducedMotion);
-  const [items, setItems] = useState<ClubAdminActivityItem[]>(initialData.activities);
-  const [nextCursorCreatedAt, setNextCursorCreatedAt] = useState<string | null>(
-    initialData.nextCursorCreatedAt,
-  );
-  const [nextCursorActivityId, setNextCursorActivityId] = useState<number | null>(
-    initialData.nextCursorActivityId,
-  );
-  const [hasNext, setHasNext] = useState(initialData.hasNext);
-  const [isLoadingMore, setIsLoadingMore] = useState(false);
-  const [loadError, setLoadError] = useState<string | null>(null);
   const [sentinelNode, setSentinelNode] = useState<HTMLDivElement | null>(null);
-  const loadingRef = useRef(false);
+  const fetchTriggeredRef = useRef(false);
 
-  const handleLoadMore = useEffectEvent(async () => {
-    if (loadingRef.current || !hasNext) {
-      return;
-    }
-
-    loadingRef.current = true;
-    setIsLoadingMore(true);
-    setLoadError(null);
-
-    const result = await getClubAdminActivities(clubId, {
+  const {
+    data,
+    error,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useInfiniteQuery({
+    queryKey: adminKeys.activitiesInfinite(clubId),
+    queryFn: ({ pageParam }) => unwrap(getClubAdminActivities(clubId, {
       size: 20,
-      cursorCreatedAt: nextCursorCreatedAt,
-      cursorActivityId: nextCursorActivityId,
-    });
-
-    loadingRef.current = false;
-    setIsLoadingMore(false);
-
-    if (!result.ok || !result.data) {
-      setLoadError(result.message ?? "활동 로그를 더 불러오지 못했습니다.");
-      return;
-    }
-
-    const data = result.data;
-    setItems((current) => [...current, ...data.activities]);
-    setNextCursorCreatedAt(data.nextCursorCreatedAt);
-    setNextCursorActivityId(data.nextCursorActivityId);
-    setHasNext(data.hasNext);
+      cursorCreatedAt: pageParam.cursorCreatedAt,
+      cursorActivityId: pageParam.cursorActivityId,
+    })),
+    initialPageParam: {
+      cursorCreatedAt: null as string | null,
+      cursorActivityId: null as number | null,
+    },
+    initialData: {
+      pages: [initialData],
+      pageParams: [{ cursorCreatedAt: null, cursorActivityId: null }],
+    },
+    getNextPageParam: (lastPage) => (
+      lastPage.hasNext
+        ? {
+            cursorCreatedAt: lastPage.nextCursorCreatedAt,
+            cursorActivityId: lastPage.nextCursorActivityId,
+          }
+        : undefined
+    ),
   });
 
+  const items: ClubAdminActivityItem[] = data.pages.flatMap((page) => page.activities);
+  const loadError = error instanceof Error ? error.message : null;
+
   useEffect(() => {
-    if (!sentinelNode || !hasNext || isLoadingMore) {
+    if (!sentinelNode || !hasNextPage || isFetchingNextPage) {
       return;
     }
 
     const observer = new IntersectionObserver(
       (entries) => {
-        if (!entries[0]?.isIntersecting) {
+        if (!entries[0]?.isIntersecting || fetchTriggeredRef.current) {
           return;
         }
-        void handleLoadMore();
+        fetchTriggeredRef.current = true;
+        void fetchNextPage().finally(() => {
+          fetchTriggeredRef.current = false;
+        });
       },
       { rootMargin: "260px 0px" },
     );
@@ -110,7 +110,7 @@ export function ClubAdminLogsClient({ clubId, clubName, initialData }: ClubAdmin
     return () => {
       observer.disconnect();
     };
-  }, [hasNext, isLoadingMore, sentinelNode]);
+  }, [fetchNextPage, hasNextPage, isFetchingNextPage, sentinelNode]);
 
   return (
     <div className="min-h-screen bg-[#f8f6f6] text-slate-900">
@@ -203,12 +203,12 @@ export function ClubAdminLogsClient({ clubId, clubName, initialData }: ClubAdmin
             <div className="rounded-2xl bg-red-50 px-4 py-3 text-sm text-red-600">{loadError}</div>
           ) : null}
 
-          {hasNext ? (
+          {hasNextPage ? (
             <motion.div
               className="rounded-[24px] border border-dashed border-slate-200 bg-white/70 px-5 py-4 text-center text-sm text-slate-400"
               {...staggeredFadeUpMotion(items.length + 2, reduceMotion)}
             >
-              {isLoadingMore ? "활동을 더 불러오는 중..." : "스크롤을 내리면 다음 활동을 자동으로 불러옵니다."}
+              {isFetchingNextPage ? "활동을 더 불러오는 중..." : "스크롤을 내리면 다음 활동을 자동으로 불러옵니다."}
             </motion.div>
           ) : items.length > 0 ? (
             <div className="pb-4 text-center text-sm text-slate-400">마지막 활동까지 모두 불러왔습니다.</div>

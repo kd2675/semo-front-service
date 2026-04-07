@@ -1,13 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import {
-  getClubAdminMemberDirectorySettings,
-  getMyClub,
-  type ClubAdminMemberDirectorySettingsResponse,
-  type MyClubSummary,
-} from "@/app/lib/clubs";
+import { getClubAdminMemberDirectorySettings, getMyClub } from "@/app/lib/clubs";
+import { unwrap } from "@/app/lib/query";
+import { clubKeys, adminKeys } from "@/app/lib/queryKeys";
 import { AdminFeatureSettingsLoadingShell } from "../../AdminRouteLoadingShells";
 import { ClubAdminMemberDirectoryClient } from "./ClubAdminMemberDirectoryClient";
 
@@ -19,40 +17,27 @@ export function ClubAdminMemberDirectoryFallbackClient({
   clubId,
 }: ClubAdminMemberDirectoryFallbackClientProps) {
   const router = useRouter();
-  const [club, setClub] = useState<MyClubSummary | null>(null);
-  const [directory, setDirectory] = useState<ClubAdminMemberDirectorySettingsResponse | null>(null);
+
+  const { data: club, isError: clubError } = useQuery({
+    queryKey: clubKeys.detail(clubId),
+    queryFn: () => unwrap(getMyClub(clubId)),
+  });
+
+  const isAdmin = club?.admin === true;
+
+  const { data: directory, isError: directoryError } = useQuery({
+    queryKey: adminKeys.memberDirectory(clubId),
+    queryFn: () => unwrap(getClubAdminMemberDirectorySettings(clubId)),
+    enabled: isAdmin,
+  });
 
   useEffect(() => {
-    let cancelled = false;
-
-    void (async () => {
-      const [clubResult, directoryResult] = await Promise.all([
-        getMyClub(clubId),
-        getClubAdminMemberDirectorySettings(clubId),
-      ]);
-
-      if (cancelled) {
-        return;
-      }
-
-      if (!clubResult.ok || !clubResult.data || !clubResult.data.admin) {
-        router.replace(`/clubs/${clubId}`);
-        return;
-      }
-
-      if (!directoryResult.ok || !directoryResult.data) {
-        router.replace(`/clubs/${clubId}/admin`);
-        return;
-      }
-
-      setClub(clubResult.data);
-      setDirectory(directoryResult.data);
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [clubId, router]);
+    if (clubError || (club && !isAdmin)) {
+      router.replace(`/clubs/${clubId}`);
+    } else if (directoryError) {
+      router.replace(`/clubs/${clubId}/admin`);
+    }
+  }, [clubError, club, isAdmin, directoryError, clubId, router]);
 
   if (!club || !directory) {
     return <AdminFeatureSettingsLoadingShell />;

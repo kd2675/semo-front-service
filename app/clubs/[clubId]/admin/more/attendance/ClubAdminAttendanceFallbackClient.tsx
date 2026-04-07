@@ -1,13 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import {
-  getClubAdminAttendance,
-  getMyClub,
-  type ClubAdminAttendanceResponse,
-  type MyClubSummary,
-} from "@/app/lib/clubs";
+import { getClubAdminAttendance, getMyClub } from "@/app/lib/clubs";
+import { unwrap } from "@/app/lib/query";
+import { clubKeys, adminKeys } from "@/app/lib/queryKeys";
 import { ClubAdminAttendanceClient } from "./ClubAdminAttendanceClient";
 import { AdminAttendanceLoadingShell } from "../../AdminRouteLoadingShells";
 
@@ -19,39 +17,27 @@ export function ClubAdminAttendanceFallbackClient({
   clubId,
 }: ClubAdminAttendanceFallbackClientProps) {
   const router = useRouter();
-  const [club, setClub] = useState<MyClubSummary | null>(null);
-  const [attendance, setAttendance] = useState<ClubAdminAttendanceResponse | null>(null);
+
+  const { data: club, isError: clubError } = useQuery({
+    queryKey: clubKeys.detail(clubId),
+    queryFn: () => unwrap(getMyClub(clubId)),
+  });
+
+  const isAdmin = club?.admin === true;
+
+  const { data: attendance, isError: attendanceError } = useQuery({
+    queryKey: adminKeys.attendance(clubId),
+    queryFn: () => unwrap(getClubAdminAttendance(clubId)),
+    enabled: isAdmin,
+  });
 
   useEffect(() => {
-    let cancelled = false;
-
-    void (async () => {
-      const [clubResult, attendanceResult] = await Promise.all([
-        getMyClub(clubId),
-        getClubAdminAttendance(clubId),
-      ]);
-
-      if (cancelled) {
-        return;
-      }
-
-      if (!clubResult.ok || !clubResult.data || !clubResult.data.admin) {
-        router.replace(`/clubs/${clubId}`);
-        return;
-      }
-
-      if (!attendanceResult.ok || !attendanceResult.data) {
-        router.replace(`/clubs/${clubId}/admin`);
-        return;
-      }
-      setClub(clubResult.data);
-      setAttendance(attendanceResult.data);
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [clubId, router]);
+    if (clubError || (club && !isAdmin)) {
+      router.replace(`/clubs/${clubId}`);
+    } else if (attendanceError) {
+      router.replace(`/clubs/${clubId}/admin`);
+    }
+  }, [clubError, club, isAdmin, attendanceError, clubId, router]);
 
   if (!club || !attendance) {
     return <AdminAttendanceLoadingShell />;

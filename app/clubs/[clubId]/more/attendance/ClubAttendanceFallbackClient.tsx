@@ -1,13 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import {
-  getClubAttendance,
-  getMyClub,
-  type ClubAttendanceResponse,
-  type MyClubSummary,
-} from "@/app/lib/clubs";
+import { getClubAttendance, getMyClub } from "@/app/lib/clubs";
+import { unwrap } from "@/app/lib/query";
+import { clubKeys } from "@/app/lib/queryKeys";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import { ClubAttendanceClient } from "./ClubAttendanceClient";
 
@@ -19,35 +17,22 @@ export function ClubAttendanceFallbackClient({
   clubId,
 }: ClubAttendanceFallbackClientProps) {
   const router = useRouter();
-  const [club, setClub] = useState<MyClubSummary | null>(null);
-  const [attendance, setAttendance] = useState<ClubAttendanceResponse | null>(null);
+
+  const { data: club, isError: clubError } = useQuery({
+    queryKey: clubKeys.detail(clubId),
+    queryFn: () => unwrap(getMyClub(clubId)),
+  });
+
+  const { data: attendance, isError: attendanceError } = useQuery({
+    queryKey: clubKeys.attendance(clubId),
+    queryFn: () => unwrap(getClubAttendance(clubId)),
+  });
 
   useEffect(() => {
-    let cancelled = false;
-
-    void (async () => {
-      const [clubResult, attendanceResult] = await Promise.all([
-        getMyClub(clubId),
-        getClubAttendance(clubId),
-      ]);
-
-      if (cancelled) {
-        return;
-      }
-
-      if (!clubResult.ok || !clubResult.data || !attendanceResult.ok || !attendanceResult.data) {
-        router.replace(`/clubs/${clubId}`);
-        return;
-      }
-
-      setClub(clubResult.data);
-      setAttendance(attendanceResult.data);
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [clubId, router]);
+    if (clubError || attendanceError) {
+      router.replace(`/clubs/${clubId}`);
+    }
+  }, [clubError, attendanceError, clubId, router]);
 
   if (!club || !attendance) {
     return (

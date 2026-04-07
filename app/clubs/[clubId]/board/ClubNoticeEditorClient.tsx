@@ -7,14 +7,17 @@ import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import { DatePopoverField } from "@/app/components/DatePopoverField";
 import { TimePopoverField } from "@/app/components/TimePopoverField";
 import { useRouter } from "next/navigation";
-import { useEffect, useEffectEvent, useId, useState } from "react";
+import { useId, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { unwrap } from "@/app/lib/query";
+import { clubKeys } from "@/app/lib/queryKeys";
 import { uploadTempImage } from "@/app/lib/imageUpload";
 import {
+  type ClubNoticeDetailResponse,
   createClubNotice,
   deleteClubNotice,
   getClubNoticeDetail,
   updateClubNotice,
-  type ClubNoticeDetailResponse,
 } from "@/app/lib/clubs";
 import { ClubEditorLoadingShell } from "../ClubRouteLoadingShells";
 import { ScheduleActionConfirmModal } from "../schedule/ScheduleActionConfirmModal";
@@ -32,6 +35,26 @@ type ClubNoticeEditorClientProps = {
 };
 
 type NoticeScheduleDateMode = "single" | "range";
+type NoticeEditorInitialState = {
+  title: string;
+  content: string;
+  fileName: string | null;
+  imageUrl: string | null;
+  thumbnailUrl: string | null;
+  locationLabel: string;
+  scheduleAtDate: string;
+  scheduleAtTime: string;
+  scheduleEndAtDate: string;
+  scheduleEndAtTime: string;
+  scheduleDateMode: NoticeScheduleDateMode;
+  scheduleTimeEnabled: boolean;
+  postToBoard: boolean;
+  postToCalendar: boolean;
+  pinned: boolean;
+  clubName: string;
+  canEdit: boolean;
+  canDelete: boolean;
+};
 
 function toDateTimeLocalValue(value: string | null | undefined) {
   if (!value) {
@@ -54,6 +77,72 @@ function combineDateTimeValue(dateValue: string, timeValue: string) {
     return "";
   }
   return `${dateValue}T${timeValue || "00:00"}`;
+}
+
+function buildNoticeEditorInitialState({
+  detailPayload,
+  initialScheduleAt,
+  initialScheduleEndAt,
+  isEdit,
+}: {
+  detailPayload: ClubNoticeDetailResponse | null;
+  initialScheduleAt?: string;
+  initialScheduleEndAt?: string;
+  isEdit: boolean;
+}): NoticeEditorInitialState {
+  if (detailPayload) {
+    return {
+      title: detailPayload.title,
+      content: detailPayload.content,
+      fileName: detailPayload.fileName,
+      imageUrl: detailPayload.imageUrl,
+      thumbnailUrl: detailPayload.thumbnailUrl,
+      locationLabel: detailPayload.locationLabel ?? "",
+      scheduleAtDate: toDatePart(detailPayload.scheduleAt),
+      scheduleAtTime: toTimePart(detailPayload.scheduleAt),
+      scheduleEndAtDate: toDatePart(detailPayload.scheduleEndAt),
+      scheduleEndAtTime: toTimePart(detailPayload.scheduleEndAt),
+      scheduleDateMode:
+        detailPayload.scheduleAt &&
+        detailPayload.scheduleEndAt &&
+        toDatePart(detailPayload.scheduleAt) !== toDatePart(detailPayload.scheduleEndAt)
+          ? "range"
+          : "single",
+      scheduleTimeEnabled: detailPayload.scheduleTimeEnabled,
+      postToBoard: detailPayload.postedToBoard,
+      postToCalendar: detailPayload.postedToCalendar,
+      pinned: detailPayload.pinned,
+      clubName: detailPayload.clubName,
+      canEdit: detailPayload.canEdit,
+      canDelete: detailPayload.canDelete,
+    };
+  }
+
+  return {
+    title: "",
+    content: "",
+    fileName: null,
+    imageUrl: null,
+    thumbnailUrl: null,
+    locationLabel: "",
+    scheduleAtDate: toDatePart(initialScheduleAt),
+    scheduleAtTime: toTimePart(initialScheduleAt),
+    scheduleEndAtDate: toDatePart(initialScheduleEndAt),
+    scheduleEndAtTime: toTimePart(initialScheduleEndAt),
+    scheduleDateMode:
+      initialScheduleAt &&
+      initialScheduleEndAt &&
+      toDatePart(initialScheduleAt) !== toDatePart(initialScheduleEndAt)
+        ? "range"
+        : "single",
+    scheduleTimeEnabled: false,
+    postToBoard: true,
+    postToCalendar: true,
+    pinned: false,
+    clubName: "Notice",
+    canEdit: !isEdit,
+    canDelete: false,
+  };
 }
 
 function SettingSwitch({
@@ -84,98 +173,49 @@ function SettingSwitch({
   );
 }
 
-export function ClubNoticeEditorClient({
+function ClubNoticeEditorForm({
   clubId,
   noticeId,
   presentation = "page",
   basePath,
-  initialScheduleAt,
-  initialScheduleEndAt,
   onRequestClose,
   onSaved,
   onDeleted,
-}: ClubNoticeEditorClientProps) {
+  initialState,
+  queryError,
+}: ClubNoticeEditorClientProps & {
+  initialState: NoticeEditorInitialState;
+  queryError: string | null;
+}) {
   const router = useRouter();
   const formId = useId();
   const isEdit = Boolean(noticeId);
   const isModal = presentation === "modal";
-  const [title, setTitle] = useState("");
-  const [content, setContent] = useState("");
-  const [fileName, setFileName] = useState<string | null>(null);
-  const [imageUrl, setImageUrl] = useState<string | null>(null);
-  const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(null);
+  const [title, setTitle] = useState(initialState.title);
+  const [content, setContent] = useState(initialState.content);
+  const [fileName, setFileName] = useState<string | null>(initialState.fileName);
+  const [imageUrl, setImageUrl] = useState<string | null>(initialState.imageUrl);
+  const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(initialState.thumbnailUrl);
   const [uploadingImage, setUploadingImage] = useState(false);
-  const [locationLabel, setLocationLabel] = useState("");
-  const [scheduleAtDate, setScheduleAtDate] = useState(toDatePart(initialScheduleAt));
-  const [scheduleAtTime, setScheduleAtTime] = useState(toTimePart(initialScheduleAt));
-  const [scheduleEndAtDate, setScheduleEndAtDate] = useState(toDatePart(initialScheduleEndAt));
-  const [scheduleEndAtTime, setScheduleEndAtTime] = useState(toTimePart(initialScheduleEndAt));
-  const [scheduleDateMode, setScheduleDateMode] = useState<NoticeScheduleDateMode>(
-    initialScheduleAt && initialScheduleEndAt && toDatePart(initialScheduleAt) !== toDatePart(initialScheduleEndAt)
-      ? "range"
-      : "single",
-  );
-  const [scheduleTimeEnabled, setScheduleTimeEnabled] = useState(false);
-  const [postToBoard, setPostToBoard] = useState(true);
-  const [postToCalendar, setPostToCalendar] = useState(true);
-  const [pinned, setPinned] = useState(false);
-  const [clubName, setClubName] = useState("Notice");
-  const [loading, setLoading] = useState(isEdit);
+  const [locationLabel, setLocationLabel] = useState(initialState.locationLabel);
+  const [scheduleAtDate, setScheduleAtDate] = useState(initialState.scheduleAtDate);
+  const [scheduleAtTime, setScheduleAtTime] = useState(initialState.scheduleAtTime);
+  const [scheduleEndAtDate, setScheduleEndAtDate] = useState(initialState.scheduleEndAtDate);
+  const [scheduleEndAtTime, setScheduleEndAtTime] = useState(initialState.scheduleEndAtTime);
+  const [scheduleDateMode, setScheduleDateMode] = useState<NoticeScheduleDateMode>(initialState.scheduleDateMode);
+  const [scheduleTimeEnabled, setScheduleTimeEnabled] = useState(initialState.scheduleTimeEnabled);
+  const [postToBoard, setPostToBoard] = useState(initialState.postToBoard);
+  const [postToCalendar, setPostToCalendar] = useState(initialState.postToCalendar);
+  const [pinned, setPinned] = useState(initialState.pinned);
+  const [clubName] = useState(initialState.clubName);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [canEdit, setCanEdit] = useState(!isEdit);
-  const [canDelete, setCanDelete] = useState(false);
+  const [canEdit] = useState(initialState.canEdit);
+  const [canDelete] = useState(initialState.canDelete);
   const [error, setError] = useState<string | null>(null);
   const resolvedBasePath = basePath ?? `/clubs/${clubId}/more/notices`;
   const backHref = isEdit && noticeId ? `${resolvedBasePath}/${noticeId}` : resolvedBasePath;
-
-  const loadDetail = useEffectEvent(async () => {
-    if (!noticeId) {
-      return;
-    }
-    setLoading(true);
-    const result = await getClubNoticeDetail(clubId, noticeId);
-    setLoading(false);
-    if (!result.ok || !result.data) {
-      setError(result.message ?? "공지 정보를 불러오지 못했습니다.");
-      return;
-    }
-    const payload: ClubNoticeDetailResponse = result.data;
-    setClubName(payload.clubName);
-    setTitle(payload.title);
-    setContent(payload.content);
-    setFileName(payload.fileName);
-    setImageUrl(payload.imageUrl);
-    setThumbnailUrl(payload.thumbnailUrl);
-    setLocationLabel(payload.locationLabel ?? "");
-    setScheduleAtDate(toDatePart(payload.scheduleAt));
-    setScheduleAtTime(toTimePart(payload.scheduleAt));
-    setScheduleEndAtDate(toDatePart(payload.scheduleEndAt));
-    setScheduleEndAtTime(toTimePart(payload.scheduleEndAt));
-    setScheduleDateMode(
-      payload.scheduleAt && payload.scheduleEndAt && toDatePart(payload.scheduleAt) !== toDatePart(payload.scheduleEndAt)
-        ? "range"
-        : "single",
-    );
-    setScheduleTimeEnabled(payload.scheduleTimeEnabled);
-    setPostToBoard(payload.postedToBoard);
-    setPostToCalendar(payload.postedToCalendar);
-    setPinned(payload.pinned);
-    setCanEdit(payload.canEdit);
-    setCanDelete(payload.canDelete);
-  });
-
-  useEffect(() => {
-    if (!isEdit) {
-      return;
-    }
-    void loadDetail();
-  }, [isEdit]);
-
-  if (loading) {
-    return <ClubEditorLoadingShell presentation={presentation} />;
-  }
 
   const handleScheduleDateModeChange = (nextMode: NoticeScheduleDateMode) => {
     setScheduleDateMode(nextMode);
@@ -584,9 +624,9 @@ export function ClubNoticeEditorClient({
                 </div>
               ) : null}
 
-              {error ? (
+              {error || queryError ? (
                 <div className="rounded-2xl bg-rose-50 px-4 py-3 text-sm font-medium text-rose-600">
-                  {error}
+                  {error ?? queryError}
                 </div>
               ) : null}
 
@@ -650,5 +690,54 @@ export function ClubNoticeEditorClient({
         ) : null}
       </AnimatePresence>
     </div>
+  );
+}
+
+export function ClubNoticeEditorClient({
+  clubId,
+  noticeId,
+  presentation = "page",
+  basePath,
+  initialScheduleAt,
+  initialScheduleEndAt,
+  onRequestClose,
+  onSaved,
+  onDeleted,
+}: ClubNoticeEditorClientProps) {
+  const isEdit = Boolean(noticeId);
+  const { data: detailPayload, isLoading: loading, isError } = useQuery({
+    queryKey: clubKeys.notice.detail(clubId, noticeId!),
+    queryFn: () => unwrap(getClubNoticeDetail(clubId, noticeId!)),
+    enabled: isEdit,
+  });
+
+  if (loading) {
+    return <ClubEditorLoadingShell presentation={presentation} />;
+  }
+
+  const initialState = buildNoticeEditorInitialState({
+    detailPayload: detailPayload ?? null,
+    initialScheduleAt,
+    initialScheduleEndAt,
+    isEdit,
+  });
+  const editorKey = isEdit ? `${noticeId}:${detailPayload ? "loaded" : "empty"}` : "new";
+  const queryError = isError ? "공지 정보를 불러오지 못했습니다." : null;
+
+  return (
+    <ClubNoticeEditorForm
+      key={editorKey}
+      clubId={clubId}
+      noticeId={noticeId}
+      presentation={presentation}
+      basePath={basePath}
+      initialScheduleAt={initialScheduleAt}
+      initialScheduleEndAt={initialScheduleEndAt}
+      onRequestClose={onRequestClose}
+      onSaved={onSaved}
+      onDeleted={onDeleted}
+      initialState={initialState}
+      queryError={queryError}
+    />
   );
 }

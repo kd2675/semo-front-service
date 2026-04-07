@@ -4,13 +4,15 @@ import { Public_Sans } from "next/font/google";
 import { useRouter } from "next/navigation";
 import { startTransition, useState } from "react";
 import type { CSSProperties } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ClubClassificationField } from "@/app/components/ClubClassificationField";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import { ClubRegionField } from "@/app/components/ClubRegionField";
-import { EphemeralToast } from "@/app/components/EphemeralToast";
-import { useEphemeralToast } from "@/app/components/useEphemeralToast";
 import { getActivityCategoryLabel, getAffiliationTypeLabel, getPrimaryClubActivityLabel } from "@/app/lib/club-classification";
-import { updateClubSettings, type MyClubSummary } from "@/app/lib/clubs";
+import { useToast } from "@/app/hooks/useToast";
+import { getMyClub, updateClubSettings, type MyClubSummary } from "@/app/lib/clubs";
+import { unwrap } from "@/app/lib/query";
+import { clubKeys } from "@/app/lib/queryKeys";
 
 const publicSans = Public_Sans({
   subsets: ["latin"],
@@ -24,7 +26,12 @@ type ClubAdminSettingsClientProps = {
 
 export function ClubAdminSettingsClient({ clubId, initialClub }: ClubAdminSettingsClientProps) {
   const router = useRouter();
-  const [club, setClub] = useState(initialClub);
+  const queryClient = useQueryClient();
+  const { data: club = initialClub } = useQuery({
+    queryKey: clubKeys.detail(clubId),
+    queryFn: () => unwrap(getMyClub(clubId)),
+    initialData: initialClub,
+  });
   const [activityCategory, setActivityCategory] = useState(initialClub.activityCategory);
   const [activityTags, setActivityTags] = useState(initialClub.activityTags);
   const [affiliationType, setAffiliationType] = useState(initialClub.affiliationType);
@@ -33,7 +40,7 @@ export function ClubAdminSettingsClient({ clubId, initialClub }: ClubAdminSettin
   const [regionDepth2Code, setRegionDepth2Code] = useState(initialClub.regionDepth2Code);
   const [isSaving, setIsSaving] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
-  const { toast, showToast } = useEphemeralToast();
+  const toast = useToast();
   const currentPrimaryActivityLabel = getPrimaryClubActivityLabel(
     activityTags,
     activityCategory,
@@ -70,7 +77,6 @@ export function ClubAdminSettingsClient({ clubId, initialClub }: ClubAdminSettin
       const updatedClub = result.data;
 
       startTransition(() => {
-        setClub(updatedClub);
         setActivityCategory(updatedClub.activityCategory);
         setActivityTags(updatedClub.activityTags);
         setAffiliationType(updatedClub.affiliationType);
@@ -78,7 +84,8 @@ export function ClubAdminSettingsClient({ clubId, initialClub }: ClubAdminSettin
         setRegionDepth1Code(updatedClub.regionDepth1Code);
         setRegionDepth2Code(updatedClub.regionDepth2Code);
       });
-      showToast("모임 기본 정보를 저장했습니다.");
+      queryClient.setQueryData(clubKeys.detail(clubId), updatedClub);
+      toast.success("모임 기본 정보를 저장했습니다.");
     } finally {
       setIsSaving(false);
     }
@@ -222,7 +229,6 @@ export function ClubAdminSettingsClient({ clubId, initialClub }: ClubAdminSettin
         </section>
       </main>
 
-      <EphemeralToast toastId={toast?.id ?? null} message={toast?.message ?? null} tone={toast?.tone} />
     </div>
   );
 }

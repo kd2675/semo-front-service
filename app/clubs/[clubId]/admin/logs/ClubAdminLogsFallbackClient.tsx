@@ -1,13 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import {
-  getClubAdminActivities,
-  getMyClub,
-  type ClubAdminActivityFeedResponse,
-  type MyClubSummary,
-} from "@/app/lib/clubs";
+import { getClubAdminActivities, getMyClub } from "@/app/lib/clubs";
+import { unwrap } from "@/app/lib/query";
+import { clubKeys, adminKeys } from "@/app/lib/queryKeys";
 import { AdminHomeLoadingShell } from "../AdminRouteLoadingShells";
 import { ClubAdminLogsClient } from "./ClubAdminLogsClient";
 
@@ -17,40 +15,27 @@ type ClubAdminLogsFallbackClientProps = {
 
 export function ClubAdminLogsFallbackClient({ clubId }: ClubAdminLogsFallbackClientProps) {
   const router = useRouter();
-  const [club, setClub] = useState<MyClubSummary | null>(null);
-  const [initialData, setInitialData] = useState<ClubAdminActivityFeedResponse | null>(null);
+
+  const { data: club, isError: clubError } = useQuery({
+    queryKey: clubKeys.detail(clubId),
+    queryFn: () => unwrap(getMyClub(clubId)),
+  });
+
+  const isAdmin = club?.admin === true;
+
+  const { data: initialData, isError: logsError } = useQuery({
+    queryKey: adminKeys.activities(clubId),
+    queryFn: () => unwrap(getClubAdminActivities(clubId, { size: 20 })),
+    enabled: isAdmin,
+  });
 
   useEffect(() => {
-    let cancelled = false;
-
-    void (async () => {
-      const [clubResult, logsResult] = await Promise.all([
-        getMyClub(clubId),
-        getClubAdminActivities(clubId, { size: 20 }),
-      ]);
-
-      if (cancelled) {
-        return;
-      }
-
-      if (!clubResult.ok || !clubResult.data || !clubResult.data.admin) {
-        router.replace(`/clubs/${clubId}`);
-        return;
-      }
-
-      if (!logsResult.ok || !logsResult.data) {
-        router.replace(`/clubs/${clubId}/admin`);
-        return;
-      }
-
-      setClub(clubResult.data);
-      setInitialData(logsResult.data);
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [clubId, router]);
+    if (clubError || (club && !isAdmin)) {
+      router.replace(`/clubs/${clubId}`);
+    } else if (logsError) {
+      router.replace(`/clubs/${clubId}/admin`);
+    }
+  }, [clubError, club, isAdmin, logsError, clubId, router]);
 
   if (!club || !initialData) {
     return <AdminHomeLoadingShell />;

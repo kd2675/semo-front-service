@@ -2,19 +2,19 @@
 
 import { RouterLink } from "@/app/components/RouterLink";
 import { AppAlertModal } from "@/app/components/AppAlertModal";
-import { EphemeralToast } from "@/app/components/EphemeralToast";
 import { RouteModal } from "@/app/components/RouteModal";
-import { useEphemeralToast } from "@/app/components/useEphemeralToast";
+import { selectAuthUser, signOutSession } from "@/app/store/authSlice";
+import { useAppDispatch, useAppSelector } from "@/app/store/hooks";
+import { showToast } from "@/app/store/uiSlice";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import {
   startTransition,
   useDeferredValue,
-  useEffect,
   useState,
 } from "react";
-import { useRouter } from "next/navigation";
-import { clearAccessToken, getUserFromToken, logout, normalizeRole } from "@/app/lib/auth";
-import { onAuthChanged } from "@/app/lib/authEvents";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { unwrap } from "@/app/lib/query";
+import { normalizeRole } from "@/app/lib/auth";
 import {
   getActivityCategoryLabel,
   getAffiliationTypeLabel,
@@ -25,13 +25,12 @@ import {
   getDiscoverClubs,
   getMyClubs,
   submitClubJoinRequest,
-  type ClubDiscoverResponse,
   type ClubDiscoverSummary,
-  type MyClubSummary,
 } from "@/app/lib/clubs";
 import { overlayFadeMotion, popInMotion, staggeredFadeUpMotion } from "@/app/lib/motion";
-import type { AuthUser } from "@/app/types/auth";
+import { homeQueryKeys } from "@/app/lib/queryKeys";
 import { useAppAlert } from "@/app/hooks/useAppAlert";
+import type { AuthUser } from "@/app/types/auth";
 
 function createProfileLabel(user: AuthUser | null): string {
   const source = user?.username?.trim();
@@ -194,135 +193,127 @@ function DiscoverClubModal({
 }
 
 export default function Home() {
-  const router = useRouter();
   const prefersReducedMotion = useReducedMotion();
   const reduceMotion = Boolean(prefersReducedMotion);
-  const [user, setUser] = useState<AuthUser | null>(() => getUserFromToken());
+  const user = useAppSelector(selectAuthUser);
   const [searchQuery, setSearchQuery] = useState("");
-  const [isSigningOut, setIsSigningOut] = useState(false);
-  const [myClubs, setMyClubs] = useState<MyClubSummary[]>([]);
-  const [isLoadingMyClubs, setIsLoadingMyClubs] = useState(true);
-  const [myClubsError, setMyClubsError] = useState<string | null>(null);
-  const [discoverPayload, setDiscoverPayload] = useState<ClubDiscoverResponse | null>(null);
-  const [isLoadingDiscover, setIsLoadingDiscover] = useState(true);
-  const [discoverError, setDiscoverError] = useState<string | null>(null);
   const [selectedClub, setSelectedClub] = useState<ClubDiscoverSummary | null>(null);
   const [requestMessage, setRequestMessage] = useState("");
-  const [isSubmittingJoinAction, setIsSubmittingJoinAction] = useState(false);
   const [pendingJoinClubId, setPendingJoinClubId] = useState<number | null>(null);
   const deferredSearchQuery = useDeferredValue(searchQuery.trim());
-  const { alertState, showAlert, closeAlert } = useAppAlert();
-  const { toast, showToast } = useEphemeralToast();
+  const queryClient = useQueryClient();
+  const {
+    data: myClubsData,
+    isLoading: isLoadingMyClubs,
+    error: myClubsQueryError,
+  } = useQuery({
+    queryKey: homeQueryKeys.myClubs,
+    queryFn: () => unwrap(getMyClubs()),
+  });
+  const myClubs = myClubsData ?? [];
+  const myClubsError = myClubsQueryError?.message ?? null;
 
-  const handleSignOut = async () => {
-    if (isSigningOut) {
-      return;
-    }
-
-    setIsSigningOut(true);
-
-    try {
-      if (!reduceMotion) {
-        await new Promise((resolve) => window.setTimeout(resolve, 180));
-      }
-      await logout();
-    } catch {
-      // Ignore logout API failure and clear the local session regardless.
-    } finally {
-      clearAccessToken();
-      router.replace("/login");
-    }
-  };
+  const {
+    data: discoverPayload,
+    isLoading: isLoadingDiscover,
+    error: discoverQueryError,
+  } = useQuery({
+    queryKey: homeQueryKeys.discover(deferredSearchQuery),
+    queryFn: () => unwrap(getDiscoverClubs(deferredSearchQuery)),
+  });
+  const discoverError = discoverQueryError?.message ?? null;
+  const { alertState, closeAlert, confirmAlert, showAlert } = useAppAlert();
+  const dispatch = useAppDispatch();
 
   const roleLabel = normalizeRole(user?.role) ?? "GUEST";
   const profileLabel = createProfileLabel(user);
   const userName = user?.username ?? "익명 사용자";
 
-  const refreshHomeData = async (query: string) => {
-    const [myClubsResult, discoverResult] = await Promise.all([
-      getMyClubs(),
-      getDiscoverClubs(query),
-    ]);
-
-    if (!myClubsResult.ok || !myClubsResult.data) {
-      setMyClubs([]);
-      setMyClubsError(myClubsResult.message ?? "내 클럽을 불러오지 못했습니다.");
-    } else {
-      setMyClubsError(null);
-      setMyClubs(myClubsResult.data);
-    }
-
-    if (!discoverResult.ok || !discoverResult.data) {
-      setDiscoverPayload(null);
-      setDiscoverError(discoverResult.message ?? "클럽 탐색 목록을 불러오지 못했습니다.");
-      throw new Error(discoverResult.message ?? "클럽 탐색 목록을 불러오지 못했습니다.");
-    }
-
-    setDiscoverError(null);
-    setDiscoverPayload(discoverResult.data);
-  };
-
-  useEffect(() => {
-    const unsubscribe = onAuthChanged(() => {
-      setUser(getUserFromToken());
-    });
-
-    return () => {
-      unsubscribe();
-    };
-  }, []);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    void (async () => {
-      setIsLoadingMyClubs(true);
-      setMyClubsError(null);
-      const result = await getMyClubs();
-      if (cancelled) {
-        return;
+  const signOutMutation = useMutation({
+    mutationFn: async () => {
+      if (!reduceMotion) {
+        await new Promise((resolve) => window.setTimeout(resolve, 180));
       }
-      if (!result.ok || !result.data) {
-        setMyClubs([]);
-        setMyClubsError(result.message ?? "내 클럽을 불러오지 못했습니다.");
-        setIsLoadingMyClubs(false);
-        return;
+      await dispatch(signOutSession());
+    },
+  });
+
+  const joinClubMutation = useMutation({
+    mutationFn: async ({
+      clubId,
+      membershipPolicy,
+      trimmedRequestMessage,
+    }: {
+      clubId: number;
+      clubName: string;
+      membershipPolicy: ClubDiscoverSummary["membershipPolicy"];
+      trimmedRequestMessage: string;
+    }) =>
+      unwrap(submitClubJoinRequest(clubId, {
+        requestMessage: membershipPolicy === "APPROVAL" ? trimmedRequestMessage || null : null,
+      })),
+    onSuccess: async (data, variables) => {
+      setSelectedClub(null);
+      setRequestMessage("");
+      try {
+        await Promise.all([
+          queryClient.invalidateQueries({ queryKey: homeQueryKeys.myClubs }),
+          queryClient.invalidateQueries({ queryKey: homeQueryKeys.discoverRoot }),
+        ]);
+        dispatch(showToast(
+          data.actionType === "JOINED"
+            ? `${variables.clubName}에 가입했습니다.`
+            : `${variables.clubName} 가입 신청을 보냈습니다.`,
+        ));
+      } catch {
+        showAlert({
+          title: "화면 갱신 실패",
+          message: "가입 상태를 다시 불러오지 못했습니다.",
+          tone: "danger",
+        });
       }
+    },
+    onError: (error) => {
+      showAlert({
+        title: "가입 처리 실패",
+        message: error instanceof Error ? error.message : "가입 처리에 실패했습니다.",
+        tone: "danger",
+      });
+    },
+  });
 
-      setMyClubs(result.data);
-      setIsLoadingMyClubs(false);
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    void (async () => {
-      setIsLoadingDiscover(true);
-      setDiscoverError(null);
-      const result = await getDiscoverClubs(deferredSearchQuery);
-      if (cancelled) {
-        return;
+  const cancelJoinMutation = useMutation({
+    mutationFn: async (club: ClubDiscoverSummary) => unwrap(cancelClubJoinRequest(club.clubId)),
+    onMutate: (club) => {
+      setPendingJoinClubId(club.clubId);
+    },
+    onSuccess: async (_data, club) => {
+      try {
+        await Promise.all([
+          queryClient.invalidateQueries({ queryKey: homeQueryKeys.myClubs }),
+          queryClient.invalidateQueries({ queryKey: homeQueryKeys.discoverRoot }),
+        ]);
+        dispatch(showToast({ message: `${club.name} 가입 신청을 취소했습니다.`, tone: "info" }));
+      } catch {
+        showAlert({
+          title: "화면 갱신 실패",
+          message: "가입 상태를 다시 불러오지 못했습니다.",
+          tone: "danger",
+        });
       }
-      if (!result.ok || !result.data) {
-        setDiscoverPayload(null);
-        setDiscoverError(result.message ?? "클럽 탐색 목록을 불러오지 못했습니다.");
-        setIsLoadingDiscover(false);
-        return;
-      }
+    },
+    onError: (error) => {
+      showAlert({
+        title: "가입 신청 취소 실패",
+        message: error instanceof Error ? error.message : "가입 신청을 취소하지 못했습니다.",
+        tone: "danger",
+      });
+    },
+    onSettled: () => {
+      setPendingJoinClubId(null);
+    },
+  });
 
-      setDiscoverPayload(result.data);
-      setIsLoadingDiscover(false);
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [deferredSearchQuery]);
 
   const handleOpenClubAction = (club: ClubDiscoverSummary) => {
     setSelectedClub(club);
@@ -334,65 +325,16 @@ export default function Home() {
       return;
     }
 
-    setIsSubmittingJoinAction(true);
-    const result = await submitClubJoinRequest(selectedClub.clubId, {
-      requestMessage:
-        selectedClub.membershipPolicy === "APPROVAL" ? requestMessage.trim() || null : null,
-    });
-    setIsSubmittingJoinAction(false);
-
-    if (!result.ok || !result.data) {
-      showAlert({
-        title: "가입 처리 실패",
-        message: result.message ?? "가입 처리에 실패했습니다.",
-        tone: "danger",
-      });
-      return;
-    }
-
-    setSelectedClub(null);
-    setRequestMessage("");
-
-    try {
-      await refreshHomeData(deferredSearchQuery);
-      showToast(
-        result.data.actionType === "JOINED"
-          ? `${selectedClub.name}에 가입했습니다.`
-          : `${selectedClub.name} 가입 신청을 보냈습니다.`,
-      );
-    } catch {
-      showAlert({
-        title: "화면 갱신 실패",
-        message: "가입 상태를 다시 불러오지 못했습니다.",
-        tone: "danger",
-      });
-    }
+    await joinClubMutation.mutateAsync({
+      clubId: selectedClub.clubId,
+      clubName: selectedClub.name,
+      membershipPolicy: selectedClub.membershipPolicy,
+      trimmedRequestMessage: requestMessage.trim(),
+    }).catch(() => undefined);
   };
 
   const handleCancelJoinRequest = async (club: ClubDiscoverSummary) => {
-    setPendingJoinClubId(club.clubId);
-    const result = await cancelClubJoinRequest(club.clubId);
-    setPendingJoinClubId(null);
-
-    if (!result.ok || !result.data) {
-      showAlert({
-        title: "가입 신청 취소 실패",
-        message: result.message ?? "가입 신청을 취소하지 못했습니다.",
-        tone: "danger",
-      });
-      return;
-    }
-
-    try {
-      await refreshHomeData(deferredSearchQuery);
-      showToast(`${club.name} 가입 신청을 취소했습니다.`, "info");
-    } catch {
-      showAlert({
-        title: "화면 갱신 실패",
-        message: "가입 상태를 다시 불러오지 못했습니다.",
-        tone: "danger",
-      });
-    }
+    await cancelJoinMutation.mutateAsync(club).catch(() => undefined);
   };
 
   const discoverClubs = discoverPayload?.clubs ?? [];
@@ -405,7 +347,7 @@ export default function Home() {
   return (
     <div className="bg-[var(--background-light)] font-display text-slate-900 antialiased">
       <AnimatePresence>
-        {isSigningOut ? (
+        {signOutMutation.isPending ? (
           <>
             <motion.div
               className="fixed inset-0 z-40 bg-white/55 backdrop-blur-sm"
@@ -456,12 +398,15 @@ export default function Home() {
               </button>
               <motion.button
                 type="button"
-                onClick={handleSignOut}
+                onClick={() => {
+                  signOutMutation.mutate();
+                }}
+                disabled={signOutMutation.isPending}
                 className="flex h-10 items-center justify-center rounded-full border border-slate-200 bg-white px-3 text-xs font-bold text-slate-700 shadow-sm transition-colors hover:bg-slate-50"
                 aria-label="로그아웃"
                 whileTap={reduceMotion ? undefined : { scale: 0.96 }}
                 animate={
-                  isSigningOut && !reduceMotion
+                  signOutMutation.isPending && !reduceMotion
                     ? { scale: [1, 0.96, 1], opacity: [1, 0.85, 1] }
                     : undefined
                 }
@@ -734,7 +679,7 @@ export default function Home() {
           <DiscoverClubModal
             club={selectedClub}
             requestMessage={requestMessage}
-            isSubmitting={isSubmittingJoinAction}
+            isSubmitting={joinClubMutation.isPending}
             onClose={() => {
               setSelectedClub(null);
               setRequestMessage("");
@@ -744,14 +689,16 @@ export default function Home() {
           />
         ) : null}
       </AnimatePresence>
-      <EphemeralToast toastId={toast?.id ?? null} message={toast?.message ?? null} tone={toast?.tone} />
       <AppAlertModal
         open={alertState.open}
         title={alertState.title}
         message={alertState.message}
+        mode={alertState.mode}
         tone={alertState.tone}
         confirmLabel={alertState.confirmLabel}
+        cancelLabel={alertState.cancelLabel}
         onClose={closeAlert}
+        onConfirm={confirmAlert}
       />
     </div>
   );

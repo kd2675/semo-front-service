@@ -1,11 +1,13 @@
 "use client";
 
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion, useReducedMotion } from "motion/react";
 import { useMemo, useState } from "react";
 import type { CSSProperties } from "react";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
-import { EphemeralToast } from "@/app/components/EphemeralToast";
-import { useEphemeralToast } from "@/app/components/useEphemeralToast";
+import { unwrap } from "@/app/lib/query";
+import { adminKeys } from "@/app/lib/queryKeys";
+import { useToast } from "@/app/hooks/useToast";
 import {
   getClubAdminFeedback,
   getClubAdminFeedbackDetail,
@@ -89,7 +91,6 @@ export function ClubAdminFeedbackClient({
 }: ClubAdminFeedbackClientProps) {
   const prefersReducedMotion = useReducedMotion();
   const reduceMotion = Boolean(prefersReducedMotion);
-  const [feedbackHome, setFeedbackHome] = useState(initialData);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("ALL");
   const [visibilityFilter, setVisibilityFilter] = useState<VisibilityFilter>("ALL");
   const [selectedFeedbackId, setSelectedFeedbackId] = useState<number | null>(
@@ -99,7 +100,6 @@ export function ClubAdminFeedbackClient({
     initialDetail,
   );
   const [isDetailLoading, setIsDetailLoading] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
   const [feedbackType, setFeedbackType] = useState<ClubFeedbackType>(
     initialDetail?.feedbackType ?? "SUGGESTION",
   );
@@ -110,7 +110,14 @@ export function ClubAdminFeedbackClient({
     initialDetail?.visibilityScope ?? "PRIVATE",
   );
   const [adminAnswer, setAdminAnswer] = useState(initialDetail?.adminAnswer ?? "");
-  const { toast, showToast, clearToast } = useEphemeralToast();
+  const toast = useToast();
+  const queryClient = useQueryClient();
+
+  const { data: feedbackHome = initialData } = useQuery({
+    queryKey: adminKeys.feedback.list(clubId),
+    queryFn: () => unwrap(getClubAdminFeedback(clubId)),
+    initialData,
+  });
 
   const filteredItems = useMemo(
     () =>
@@ -122,63 +129,54 @@ export function ClubAdminFeedbackClient({
 
   const loadDetail = async (feedbackId: number) => {
     setIsDetailLoading(true);
-    const result = await getClubAdminFeedbackDetail(clubId, feedbackId);
-    setIsDetailLoading(false);
-    if (!result.ok || !result.data) {
-      showToast(result.message ?? "피드백 상세를 불러오지 못했습니다.", "error");
-      return;
+    try {
+      const detail = await queryClient.fetchQuery({
+        queryKey: adminKeys.feedback.detail(clubId, String(feedbackId)),
+        queryFn: () => unwrap(getClubAdminFeedbackDetail(clubId, feedbackId)),
+        staleTime: 0,
+      });
+      setSelectedFeedbackId(feedbackId);
+      setSelectedDetail(detail);
+      setFeedbackType(detail.feedbackType);
+      setStatusCode(detail.statusCode);
+      setVisibilityScope(detail.visibilityScope);
+      setAdminAnswer(detail.adminAnswer ?? "");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "피드백 상세를 불러오지 못했습니다.");
+    } finally {
+      setIsDetailLoading(false);
     }
-    setSelectedFeedbackId(feedbackId);
-    setSelectedDetail(result.data);
-    setFeedbackType(result.data.feedbackType);
-    setStatusCode(result.data.statusCode);
-    setVisibilityScope(result.data.visibilityScope);
-    setAdminAnswer(result.data.adminAnswer ?? "");
   };
 
-  const refreshAdminHome = async (nextSelectedFeedbackId?: number | null) => {
-    const result = await getClubAdminFeedback(clubId);
-    if (!result.ok || !result.data) {
-      showToast(result.message ?? "피드백 관리 목록을 새로고침하지 못했습니다.", "error");
-      return;
-    }
-    setFeedbackHome(result.data);
-    const fallbackFeedbackId = result.data.items[0]?.feedbackId ?? null;
-    const resolvedFeedbackId = nextSelectedFeedbackId ?? fallbackFeedbackId;
-    if (resolvedFeedbackId != null) {
-      void loadDetail(resolvedFeedbackId);
-      return;
-    }
-    setSelectedFeedbackId(null);
-    setSelectedDetail(null);
-  };
+  const saveFeedbackMutation = useMutation({
+    mutationFn: async () =>
+      unwrap(updateClubAdminFeedback(clubId, selectedFeedbackId!, {
+        feedbackType,
+        statusCode,
+        visibilityScope,
+        adminAnswer,
+      })),
+    onSuccess: async (data) => {
+      setSelectedDetail(data);
+      setFeedbackType(data.feedbackType);
+      setStatusCode(data.statusCode);
+      setVisibilityScope(data.visibilityScope);
+      setAdminAnswer(data.adminAnswer ?? "");
+      queryClient.setQueryData(adminKeys.feedback.detail(clubId, String(data.feedbackId)), data);
+      await queryClient.invalidateQueries({ queryKey: adminKeys.feedback.list(clubId) });
+      toast.success("피드백 상태를 저장했습니다.");
+    },
+    onError: (error) => {
+      toast.error(error instanceof Error ? error.message : "피드백 저장에 실패했습니다.");
+    },
+  });
 
   const handleSave = async () => {
     if (selectedFeedbackId == null) {
       return;
     }
-    clearToast();
-    setIsSaving(true);
-    const result = await updateClubAdminFeedback(clubId, selectedFeedbackId, {
-      feedbackType,
-      statusCode,
-      visibilityScope,
-      adminAnswer,
-    });
-    setIsSaving(false);
-
-    if (!result.ok || !result.data) {
-      showToast(result.message ?? "피드백 저장에 실패했습니다.", "error");
-      return;
-    }
-
-    setSelectedDetail(result.data);
-    setFeedbackType(result.data.feedbackType);
-    setStatusCode(result.data.statusCode);
-    setVisibilityScope(result.data.visibilityScope);
-    setAdminAnswer(result.data.adminAnswer ?? "");
-    showToast("피드백 상태를 저장했습니다.", "success");
-    void refreshAdminHome(result.data.feedbackId);
+    toast.hide();
+    await saveFeedbackMutation.mutateAsync().catch(() => undefined);
   };
 
   return (
@@ -440,17 +438,16 @@ export function ClubAdminFeedbackClient({
                 <button
                   type="button"
                   onClick={() => void handleSave()}
-                  disabled={isSaving}
+                  disabled={saveFeedbackMutation.isPending}
                   className="flex w-full items-center justify-center rounded-2xl bg-[#ec5b13] py-3.5 text-sm font-bold text-white transition hover:bg-[#d45110] disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500"
                 >
-                  {isSaving ? "저장 중..." : "관리 상태 저장"}
+                  {saveFeedbackMutation.isPending ? "저장 중..." : "관리 상태 저장"}
                 </button>
               </div>
             )}
           </motion.section>
         </main>
 
-        <EphemeralToast toastId={toast?.id ?? null} message={toast?.message ?? null} tone={toast?.tone} />
       </div>
     </div>
   );

@@ -2,8 +2,7 @@
 
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import { AppAlertModal } from "@/app/components/AppAlertModal";
-import { EphemeralToast } from "@/app/components/EphemeralToast";
-import { useEphemeralToast } from "@/app/components/useEphemeralToast";
+import { useToast } from "@/app/hooks/useToast";
 import { useAppAlert } from "@/app/hooks/useAppAlert";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
@@ -17,8 +16,13 @@ import {
   updateClubAdminMemberStatus,
   type ClubAdminJoinRequest,
   type ClubAdminMember,
+  type ClubAdminMembersResponse,
+  type ClubAdminJoinRequestsResponse,
 } from "@/app/lib/clubs";
 import { overlayFadeMotion, popInMotion, staggeredFadeUpMotion } from "@/app/lib/motion";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { unwrap } from "@/app/lib/query";
+import { adminKeys } from "@/app/lib/queryKeys";
 
 const plusJakartaSans = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -119,7 +123,7 @@ function MemberManageModal({
   member: ClubAdminMember;
   saving: boolean;
   onDismiss: () => void;
-  onSave: (nextRoleCode: string, nextMembershipStatus: "ACTIVE" | "DORMANT") => Promise<void>;
+  onSave: (nextRoleCode: string, nextMembershipStatus: "ACTIVE" | "DORMANT") => void;
 }) {
   const prefersReducedMotion = useReducedMotion();
   const reduceMotion = Boolean(prefersReducedMotion);
@@ -214,7 +218,7 @@ function MemberManageModal({
             <button
               type="button"
               disabled={saving}
-              onClick={() => void onSave(roleCode, membershipStatus)}
+              onClick={() => onSave(roleCode, membershipStatus)}
               className="flex-1 rounded-2xl bg-[var(--primary)] px-4 py-3 text-sm font-bold text-white disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500"
             >
               {saving ? "저장 중..." : "저장"}
@@ -236,14 +240,127 @@ export function ClubAdminMembersClient({
   const reduceMotion = Boolean(prefersReducedMotion);
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("전체");
-  const [members, setMembers] = useState(initialMembers);
-  const [joinRequests, setJoinRequests] = useState(initialJoinRequests);
   const [selectedMember, setSelectedMember] = useState<ClubAdminMember | null>(null);
-  const [saving, setSaving] = useState(false);
   const [reviewingJoinRequestId, setReviewingJoinRequestId] = useState<number | null>(null);
   const deferredQuery = useDeferredValue(query.trim().toLowerCase());
-  const { alertState, showAlert, closeAlert } = useAppAlert();
-  const { toast, showToast, clearToast } = useEphemeralToast();
+  const { alertState, closeAlert, confirmAlert, showAlert } = useAppAlert();
+  const toast = useToast();
+  const queryClient = useQueryClient();
+
+  const { data: membersData } = useQuery<ClubAdminMembersResponse>({
+    queryKey: adminKeys.members(clubId),
+    queryFn: () => unwrap(getClubAdminMembers(clubId)),
+    initialData: {
+      clubId: 0,
+      clubName,
+      admin: true,
+      roleManagementEnabled: false,
+      availablePositions: [],
+      members: initialMembers,
+    },
+  });
+
+  const { data: joinRequestsData } = useQuery<ClubAdminJoinRequestsResponse>({
+    queryKey: adminKeys.joinRequests(clubId),
+    queryFn: () => unwrap(getClubAdminJoinRequests(clubId)),
+    initialData: {
+      clubId: 0,
+      clubName,
+      admin: true,
+      requests: initialJoinRequests,
+    },
+  });
+
+  const members = membersData.members;
+  const joinRequests = joinRequestsData.requests;
+
+  const reviewJoinRequestMutation = useMutation({
+    mutationFn: ({ requestId, requestStatus }: { requestId: number; requestStatus: "APPROVED" | "REJECTED" }) =>
+      unwrap(reviewClubAdminJoinRequest(clubId, requestId, { requestStatus })),
+    onSuccess: async (_data, variables) => {
+      const { requestStatus } = variables;
+      try {
+        await Promise.all([
+          queryClient.invalidateQueries({ queryKey: adminKeys.members(clubId) }),
+          queryClient.invalidateQueries({ queryKey: adminKeys.joinRequests(clubId) }),
+        ]);
+        const request = joinRequests.find((r) => r.clubJoinRequestId === variables.requestId);
+        const displayName = request?.displayName ?? "";
+        toast.success(
+          requestStatus === "APPROVED"
+            ? `${displayName} 가입 신청을 승인했습니다.`
+            : `${displayName} 가입 신청을 반려했습니다.`,
+        );
+      } catch {
+        showAlert({
+          title: "목록 새로고침 실패",
+          message: "데이터를 다시 불러오지 못했습니다.",
+          tone: "danger",
+        });
+      } finally {
+        setReviewingJoinRequestId(null);
+      }
+    },
+    onError: (error, variables) => {
+      setReviewingJoinRequestId(null);
+      showAlert({
+        title: variables.requestStatus === "APPROVED" ? "가입 승인 실패" : "가입 반려 실패",
+        message: error.message ?? "가입 신청 처리에 실패했습니다.",
+        tone: "danger",
+      });
+    },
+  });
+
+  const manageSaveMutation = useMutation({
+    mutationFn: async ({
+      member,
+      nextRoleCode,
+      nextMembershipStatus,
+    }: {
+      member: ClubAdminMember;
+      nextRoleCode: string;
+      nextMembershipStatus: "ACTIVE" | "DORMANT";
+    }) => {
+      let currentMember = member;
+
+      if (currentMember.roleCode !== nextRoleCode) {
+        currentMember = await unwrap(
+          updateClubAdminMemberRole(clubId, currentMember.clubMemberId, { roleCode: nextRoleCode }),
+        );
+      }
+
+      if (currentMember.membershipStatus !== nextMembershipStatus) {
+        currentMember = await unwrap(
+          updateClubAdminMemberStatus(clubId, currentMember.clubMemberId, {
+            membershipStatus: nextMembershipStatus,
+          }),
+        );
+      }
+
+      return currentMember;
+    },
+    onSuccess: (updatedMember) => {
+      queryClient.setQueryData<ClubAdminMembersResponse>(adminKeys.members(clubId), (old) => {
+        if (!old) return old;
+        return {
+          ...old,
+          members: old.members.map((m) =>
+            m.clubMemberId === updatedMember.clubMemberId ? updatedMember : m,
+          ),
+        };
+      });
+      setSelectedMember(null);
+      toast.success(`${updatedMember.displayName} 정보를 저장했습니다.`);
+    },
+    onError: (error, variables) => {
+      const isRoleChange = variables.member.roleCode !== variables.nextRoleCode;
+      showAlert({
+        title: isRoleChange ? "권한 변경 실패" : "회원 상태 변경 실패",
+        message: error.message ?? (isRoleChange ? "권한 변경에 실패했습니다." : "회원 상태 변경에 실패했습니다."),
+        tone: "danger",
+      });
+    },
+  });
 
   const filteredJoinRequests = useMemo(() => {
     if (deferredQuery.length === 0) {
@@ -275,114 +392,25 @@ export function ClubAdminMembersClient({
     );
   }, [deferredQuery, members, statusFilter]);
 
-  const reloadAdminData = async () => {
-    const [membersResult, joinRequestsResult] = await Promise.all([
-      getClubAdminMembers(clubId),
-      getClubAdminJoinRequests(clubId),
-    ]);
-    if (!membersResult.ok || !membersResult.data || !joinRequestsResult.ok || !joinRequestsResult.data) {
-      throw new Error("멤버관리 데이터를 새로고침하지 못했습니다.");
-    }
-    setMembers(membersResult.data.members);
-    setJoinRequests(joinRequestsResult.data.requests);
-  };
-
-  const replaceMember = (nextMember: ClubAdminMember) => {
-    setMembers((current) =>
-      current.map((member) =>
-        member.clubMemberId === nextMember.clubMemberId ? nextMember : member,
-      ),
-    );
-    setSelectedMember((current) =>
-      current?.clubMemberId === nextMember.clubMemberId ? nextMember : current,
-    );
-  };
-
-  const handleReviewJoinRequest = async (
+  const handleReviewJoinRequest = (
     request: ClubAdminJoinRequest,
     requestStatus: "APPROVED" | "REJECTED",
   ) => {
     setReviewingJoinRequestId(request.clubJoinRequestId);
-    const result = await reviewClubAdminJoinRequest(clubId, request.clubJoinRequestId, {
-      requestStatus,
-    });
-    if (!result.ok || !result.data) {
-      setReviewingJoinRequestId(null);
-      showAlert({
-        title: requestStatus === "APPROVED" ? "가입 승인 실패" : "가입 반려 실패",
-        message: result.message ?? "가입 신청 처리에 실패했습니다.",
-        tone: "danger",
-      });
-      return;
-    }
-
-    try {
-      await reloadAdminData();
-      showToast(
-        requestStatus === "APPROVED"
-          ? `${request.displayName} 가입 신청을 승인했습니다.`
-          : `${request.displayName} 가입 신청을 반려했습니다.`,
-      );
-    } catch (error) {
-      showAlert({
-        title: "목록 새로고침 실패",
-        message: error instanceof Error ? error.message : "데이터를 다시 불러오지 못했습니다.",
-        tone: "danger",
-      });
-    } finally {
-      setReviewingJoinRequestId(null);
-    }
+    reviewJoinRequestMutation.mutate({ requestId: request.clubJoinRequestId, requestStatus });
   };
 
-  const handleManageSave = async (
+  const handleManageSave = (
     nextRoleCode: string,
     nextMembershipStatus: "ACTIVE" | "DORMANT",
   ) => {
     if (!selectedMember) {
       return;
     }
-
-    let currentMember = selectedMember;
-    setSaving(true);
-
-    if (currentMember.roleCode !== nextRoleCode) {
-      const roleResult = await updateClubAdminMemberRole(clubId, currentMember.clubMemberId, {
-        roleCode: nextRoleCode,
-      });
-      if (!roleResult.ok || !roleResult.data) {
-        setSaving(false);
-        showAlert({
-          title: "권한 변경 실패",
-          message: roleResult.message ?? "권한 변경에 실패했습니다.",
-          tone: "danger",
-        });
-        return;
-      }
-      currentMember = roleResult.data;
-      replaceMember(currentMember);
-    }
-
-    if (currentMember.membershipStatus !== nextMembershipStatus) {
-      const statusResult = await updateClubAdminMemberStatus(clubId, currentMember.clubMemberId, {
-        membershipStatus: nextMembershipStatus,
-      });
-      if (!statusResult.ok || !statusResult.data) {
-        setSaving(false);
-        showAlert({
-          title: "회원 상태 변경 실패",
-          message: statusResult.message ?? "회원 상태 변경에 실패했습니다.",
-          tone: "danger",
-        });
-        return;
-      }
-      currentMember = statusResult.data;
-      replaceMember(currentMember);
-    }
-
-    setSaving(false);
-    setSelectedMember(null);
-    showToast(`${currentMember.displayName} 정보를 저장했습니다.`);
+    manageSaveMutation.mutate({ member: selectedMember, nextRoleCode, nextMembershipStatus });
   };
+
+  const saving = manageSaveMutation.isPending;
 
   return (
     <div
@@ -491,7 +519,7 @@ export function ClubAdminMembersClient({
                       <button
                         type="button"
                         disabled={reviewingJoinRequestId === request.clubJoinRequestId}
-                        onClick={() => void handleReviewJoinRequest(request, "APPROVED")}
+                        onClick={() => handleReviewJoinRequest(request, "APPROVED")}
                         className="rounded-xl bg-[var(--secondary)] px-4 py-2 text-sm font-bold text-white transition-opacity disabled:cursor-not-allowed disabled:opacity-50"
                       >
                         {reviewingJoinRequestId === request.clubJoinRequestId ? "처리 중..." : "승인"}
@@ -499,7 +527,7 @@ export function ClubAdminMembersClient({
                       <button
                         type="button"
                         disabled={reviewingJoinRequestId === request.clubJoinRequestId}
-                        onClick={() => void handleReviewJoinRequest(request, "REJECTED")}
+                        onClick={() => handleReviewJoinRequest(request, "REJECTED")}
                         className="rounded-xl bg-rose-50 px-4 py-2 text-sm font-bold text-rose-600 transition-colors hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-50"
                       >
                         반려
@@ -596,20 +624,17 @@ export function ClubAdminMembersClient({
             />
           ) : null}
         </AnimatePresence>
-        <EphemeralToast toastId={toast?.id ?? null} message={toast?.message ?? null} tone={toast?.tone} />
-        <AppAlertModal
-          open={alertState.open}
-          title={alertState.title}
-          message={alertState.message}
-          tone={alertState.tone}
-          confirmLabel={alertState.confirmLabel}
-          onClose={closeAlert}
-        />
-        {toast ? (
-          <button type="button" onClick={clearToast} className="sr-only">
-            토스트 닫기
-          </button>
-        ) : null}
+      <AppAlertModal
+        open={alertState.open}
+        title={alertState.title}
+        message={alertState.message}
+        mode={alertState.mode}
+        tone={alertState.tone}
+        confirmLabel={alertState.confirmLabel}
+        cancelLabel={alertState.cancelLabel}
+        onClose={closeAlert}
+        onConfirm={confirmAlert}
+      />
       </div>
     </div>
   );

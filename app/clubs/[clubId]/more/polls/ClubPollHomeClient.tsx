@@ -1,15 +1,18 @@
 "use client";
 
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { RouteModal } from "@/app/components/RouteModal";
 import { ClubModeSwitchFab } from "@/app/components/ClubModeSwitchFab";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import { ClubPollDetailModal } from "@/app/components/ClubDetailModals";
 import { ClubScheduleVoteEditorClient } from "@/app/clubs/[clubId]/schedule/ClubScheduleVoteEditorClient";
 import { ScheduleActionConfirmModal } from "@/app/clubs/[clubId]/schedule/ScheduleActionConfirmModal";
-import { deleteClubScheduleVote, type ClubPollHomeResponse, type ClubPollSummary } from "@/app/lib/clubs";
+import { deleteClubScheduleVote, getClubPollHome, type ClubPollHomeResponse, type ClubPollSummary } from "@/app/lib/clubs";
 import { getShareTargetBadges } from "@/app/lib/content-badge";
 import { FAB_RIGHT_OFFSET_CLASS_NAME, getActionFabBottomClass } from "@/app/lib/fab";
 import { staggeredFadeUpMotion } from "@/app/lib/motion";
+import { unwrap } from "@/app/lib/query";
+import { clubKeys } from "@/app/lib/queryKeys";
 import { getVoteLifecycleBadgeClassName, getVoteLifecycleLabel } from "@/app/lib/vote-status";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import Image from "next/image";
@@ -17,9 +20,8 @@ import { startTransition, useDeferredValue, useMemo, useState, type CSSPropertie
 
 type ClubPollHomeClientProps = {
   clubId: string;
-  payload: ClubPollHomeResponse;
+  initialData: ClubPollHomeResponse;
   mode?: "user" | "admin";
-  onReload: () => void;
 };
 
 type PollTabKey = "ONGOING" | "WAITING" | "CLOSED";
@@ -224,13 +226,11 @@ function PollCard({
 
 export function ClubPollHomeClient({
   clubId,
-  payload,
+  initialData,
   mode = "user",
-  onReload,
 }: ClubPollHomeClientProps) {
   const prefersReducedMotion = useReducedMotion();
   const reduceMotion = Boolean(prefersReducedMotion);
-  const hasModeSwitchFab = mode === "user" && payload.admin;
   const [activeTab, setActiveTab] = useState<PollTabKey>("ONGOING");
   const [query, setQuery] = useState("");
   const deferredQuery = useDeferredValue(query);
@@ -239,7 +239,23 @@ export function ClubPollHomeClient({
   const [editingVoteId, setEditingVoteId] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<ClubPollSummary | null>(null);
   const [activeActionKey, setActiveActionKey] = useState<string | null>(null);
-  const [deleting, setDeleting] = useState(false);
+  const queryClient = useQueryClient();
+
+  const { data: payload = initialData } = useQuery({
+    queryKey: clubKeys.poll.home(clubId),
+    queryFn: () => unwrap(getClubPollHome(clubId)),
+    initialData,
+  });
+  const hasModeSwitchFab = mode === "user" && payload.admin;
+
+  const deleteMutation = useMutation({
+    mutationFn: (voteId: number) => unwrap(deleteClubScheduleVote(clubId, voteId)),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: clubKeys.poll.home(clubId) });
+      setDeleteTarget(null);
+      setActiveActionKey(null);
+    },
+  });
 
   const accent = mode === "admin" ? "#ec5b13" : "#135bec";
   const background = mode === "admin" ? "#f8f6f6" : "#f6f6f8";
@@ -278,17 +294,7 @@ export function ClubPollHomeClient({
     if (!deleteTarget) {
       return;
     }
-
-    setDeleting(true);
-    const result = await deleteClubScheduleVote(clubId, deleteTarget.voteId);
-    setDeleting(false);
-    if (!result.ok) {
-      return;
-    }
-
-    setDeleteTarget(null);
-    setActiveActionKey(null);
-    onReload();
+    await deleteMutation.mutateAsync(deleteTarget.voteId).catch(() => undefined);
   };
 
   const tabCountByKey = {
@@ -489,7 +495,7 @@ export function ClubPollHomeClient({
                 onRequestClose={() => setShowCreateModal(false)}
                 onSaved={(savedVoteId) => {
                   setShowCreateModal(false);
-                  onReload();
+                  void queryClient.invalidateQueries({ queryKey: clubKeys.poll.home(clubId) });
                   setDetailVoteId(String(savedVoteId));
                 }}
               />
@@ -516,7 +522,7 @@ export function ClubPollHomeClient({
                 onRequestClose={() => setEditingVoteId(null)}
                 onSaved={(savedVoteId) => {
                   setEditingVoteId(null);
-                  onReload();
+                  void queryClient.invalidateQueries({ queryKey: clubKeys.poll.home(clubId) });
                   setDetailVoteId(String(savedVoteId));
                 }}
               />
@@ -530,9 +536,9 @@ export function ClubPollHomeClient({
             description={`‘${deleteTarget.title}’ 투표와 연결된 선택 데이터가 함께 제거됩니다.`}
             confirmLabel="삭제"
             busyLabel="삭제 중..."
-            busy={deleting}
+            busy={deleteMutation.isPending}
             onCancel={() => {
-              if (!deleting) {
+              if (!deleteMutation.isPending) {
                 setDeleteTarget(null);
               }
             }}

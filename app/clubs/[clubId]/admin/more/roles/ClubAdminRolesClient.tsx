@@ -7,6 +7,9 @@ import type {
   ClubPositionSummary,
 } from "@/app/lib/clubs";
 import { getClubAdminRoleManagement } from "@/app/lib/clubs";
+import { unwrap } from "@/app/lib/query";
+import { adminKeys } from "@/app/lib/queryKeys";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { Manrope, Inter } from "next/font/google";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
@@ -273,7 +276,12 @@ export function ClubAdminRolesClient({ clubId, initialData }: ClubAdminRolesClie
   const featureFilter = searchParams.get("feature")?.trim().toUpperCase() ?? "";
   const requestedEditPositionId = Number(searchParams.get("editPositionId") ?? "");
   const requestedEditTab = normalizeRoleSheetTab(searchParams.get("tab"));
-  const [roleManagement, setRoleManagement] = useState(initialData);
+  const queryClient = useQueryClient();
+  const { data: roleManagement = initialData } = useQuery({
+    queryKey: adminKeys.roles.list(clubId),
+    queryFn: () => unwrap(getClubAdminRoleManagement(clubId)),
+    initialData,
+  });
   const [selectedSheetState, setSelectedSheetState] = useState<{
     positionId: number;
     tab: RoleSheetTab;
@@ -362,11 +370,7 @@ export function ClubAdminRolesClient({ clubId, initialData }: ClubAdminRolesClie
   };
 
   const refreshRoleManagement = async () => {
-    const result = await getClubAdminRoleManagement(clubId);
-    if (!result.ok || !result.data) {
-      return false;
-    }
-    setRoleManagement(result.data);
+    await queryClient.invalidateQueries({ queryKey: adminKeys.roles.list(clubId) });
     return true;
   };
 

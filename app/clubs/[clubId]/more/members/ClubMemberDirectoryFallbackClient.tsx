@@ -1,13 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import {
-  getClubMemberDirectory,
-  getMyClub,
-  type ClubMemberDirectoryResponse,
-  type MyClubSummary,
-} from "@/app/lib/clubs";
+import { getClubMemberDirectory, getMyClub } from "@/app/lib/clubs";
+import { unwrap } from "@/app/lib/query";
+import { clubKeys } from "@/app/lib/queryKeys";
 import { ClubTimelineLoadingShell } from "../../ClubRouteLoadingShells";
 import { ClubMemberDirectoryClient } from "./ClubMemberDirectoryClient";
 
@@ -19,35 +17,22 @@ export function ClubMemberDirectoryFallbackClient({
   clubId,
 }: ClubMemberDirectoryFallbackClientProps) {
   const router = useRouter();
-  const [club, setClub] = useState<MyClubSummary | null>(null);
-  const [directory, setDirectory] = useState<ClubMemberDirectoryResponse | null>(null);
+
+  const { data: club, isError: clubError } = useQuery({
+    queryKey: clubKeys.detail(clubId),
+    queryFn: () => unwrap(getMyClub(clubId)),
+  });
+
+  const { data: directory, isError: directoryError } = useQuery({
+    queryKey: clubKeys.memberDirectory(clubId),
+    queryFn: () => unwrap(getClubMemberDirectory(clubId)),
+  });
 
   useEffect(() => {
-    let cancelled = false;
-
-    void (async () => {
-      const [clubResult, directoryResult] = await Promise.all([
-        getMyClub(clubId),
-        getClubMemberDirectory(clubId),
-      ]);
-
-      if (cancelled) {
-        return;
-      }
-
-      if (!clubResult.ok || !clubResult.data || !directoryResult.ok || !directoryResult.data) {
-        router.replace(`/clubs/${clubId}`);
-        return;
-      }
-
-      setClub(clubResult.data);
-      setDirectory(directoryResult.data);
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [clubId, router]);
+    if (clubError || directoryError) {
+      router.replace(`/clubs/${clubId}`);
+    }
+  }, [clubError, directoryError, clubId, router]);
 
   if (!club || !directory) {
     return <ClubTimelineLoadingShell />;

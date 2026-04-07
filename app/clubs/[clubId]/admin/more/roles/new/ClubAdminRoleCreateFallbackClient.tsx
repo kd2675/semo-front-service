@@ -1,14 +1,16 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import {
   createClubAdminRole,
   getClubAdminRoleManagement,
   getMyClub,
-  type ClubAdminRoleManagementResponse,
   type CreateClubPositionRequest,
 } from "@/app/lib/clubs";
+import { unwrap } from "@/app/lib/query";
+import { clubKeys, adminKeys } from "@/app/lib/queryKeys";
 import { AdminFeatureSettingsLoadingShell } from "../../../AdminRouteLoadingShells";
 import { RoleEditorForm } from "../RoleEditorForm";
 
@@ -20,34 +22,27 @@ export function ClubAdminRoleCreateFallbackClient({
   clubId,
 }: ClubAdminRoleCreateFallbackClientProps) {
   const router = useRouter();
-  const [payload, setPayload] = useState<ClubAdminRoleManagementResponse | null>(null);
+
+  const { data: club, isError: clubError } = useQuery({
+    queryKey: clubKeys.detail(clubId),
+    queryFn: () => unwrap(getMyClub(clubId)),
+  });
+
+  const isAdmin = club?.admin === true;
+
+  const { data: payload, isError: roleError } = useQuery({
+    queryKey: adminKeys.roles.management(clubId),
+    queryFn: () => unwrap(getClubAdminRoleManagement(clubId)),
+    enabled: isAdmin,
+  });
 
   useEffect(() => {
-    let cancelled = false;
-
-    void (async () => {
-      const [clubResult, roleResult] = await Promise.all([
-        getMyClub(clubId),
-        getClubAdminRoleManagement(clubId),
-      ]);
-      if (cancelled) {
-        return;
-      }
-      if (!clubResult.ok || !clubResult.data || !clubResult.data.admin) {
-        router.replace(`/clubs/${clubId}`);
-        return;
-      }
-      if (!roleResult.ok || !roleResult.data) {
-        router.replace(`/clubs/${clubId}/admin`);
-        return;
-      }
-      setPayload(roleResult.data);
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [clubId, router]);
+    if (clubError || (club && !isAdmin)) {
+      router.replace(`/clubs/${clubId}`);
+    } else if (roleError) {
+      router.replace(`/clubs/${clubId}/admin`);
+    }
+  }, [clubError, club, isAdmin, roleError, clubId, router]);
 
   if (!payload) {
     return <AdminFeatureSettingsLoadingShell />;

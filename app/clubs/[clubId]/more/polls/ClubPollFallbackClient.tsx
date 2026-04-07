@@ -1,8 +1,11 @@
 "use client";
 
-import { startTransition, useEffect, useState } from "react";
+import { useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import { getClubPollHome, type ClubPollHomeResponse } from "@/app/lib/clubs";
+import { getClubPollHome } from "@/app/lib/clubs";
+import { unwrap } from "@/app/lib/query";
+import { clubKeys } from "@/app/lib/queryKeys";
 import { ClubPollHomeLoadingShell } from "../../ClubRouteLoadingShells";
 import { ClubPollHomeClient } from "./ClubPollHomeClient";
 
@@ -16,50 +19,21 @@ export function ClubPollFallbackClient({
   mode = "user",
 }: ClubPollFallbackClientProps) {
   const router = useRouter();
-  const [payload, setPayload] = useState<ClubPollHomeResponse | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [reloadKey, setReloadKey] = useState(0);
+
+  const { data: payload, isError } = useQuery({
+    queryKey: clubKeys.poll.home(clubId),
+    queryFn: () => unwrap(getClubPollHome(clubId)),
+  });
 
   useEffect(() => {
-    let cancelled = false;
+    if (isError) {
+      router.replace(mode === "admin" ? `/clubs/${clubId}/admin` : `/clubs/${clubId}`);
+    }
+  }, [isError, mode, clubId, router]);
 
-    void (async () => {
-      setLoading(true);
-      const result = await getClubPollHome(clubId);
-      if (cancelled) {
-        return;
-      }
-
-      setLoading(false);
-      if (!result.ok || !result.data) {
-        router.replace(mode === "admin" ? `/clubs/${clubId}/admin` : `/clubs/${clubId}`);
-        return;
-      }
-
-      setPayload(result.data);
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [clubId, mode, reloadKey, router]);
-
-  const handleReload = () => {
-    startTransition(() => {
-      setReloadKey((current) => current + 1);
-    });
-  };
-
-  if (loading || !payload) {
+  if (!payload) {
     return <ClubPollHomeLoadingShell mode={mode} />;
   }
 
-  return (
-    <ClubPollHomeClient
-      clubId={clubId}
-      payload={payload}
-      mode={mode}
-      onReload={handleReload}
-    />
-  );
+  return <ClubPollHomeClient clubId={clubId} initialData={payload} mode={mode} />;
 }

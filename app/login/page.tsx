@@ -10,9 +10,12 @@ import {
   isUserRole,
   logout,
   setAccessToken,
+  suspendSessionRestore,
 } from "@/app/lib/auth";
 import { staggeredFadeUpMotion } from "@/app/lib/motion";
 import { initializeProfile } from "@/app/lib/profile";
+import { markSignedOut, syncSession } from "@/app/store/authSlice";
+import { useAppDispatch } from "@/app/store/hooks";
 
 const GATEWAY_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080";
 
@@ -68,6 +71,7 @@ function resolveOAuthErrorMessage(
 }
 
 function LoginPageContent() {
+  const dispatch = useAppDispatch();
   const router = useRouter();
   const searchParams = useSearchParams();
   const [error, setError] = useState<string | null>(null);
@@ -87,7 +91,9 @@ function LoginPageContent() {
 
     if (!isUserRole(user?.role)) {
       await logout();
+      suspendSessionRestore();
       clearAccessToken();
+      dispatch(markSignedOut());
       setError("SEMO는 USER 계정만 로그인할 수 있습니다.");
       return;
     }
@@ -95,28 +101,35 @@ function LoginPageContent() {
     const initializeResult = await initializeProfile(nextToken);
     if (initializeResult.error) {
       await logout();
+      suspendSessionRestore();
       clearAccessToken();
+      dispatch(markSignedOut());
       setError(`프로필 생성에 실패했습니다. (${initializeResult.error})`);
       return;
     }
 
+    await dispatch(syncSession());
     router.replace("/");
   });
 
   const restoreSession = useEffectEvent(async () => {
     const restoredToken = await bootstrapAccessToken();
     if (!restoredToken) {
+      dispatch(markSignedOut());
       return;
     }
 
     const restoredUser = getUserFromToken(restoredToken);
     if (!isUserRole(restoredUser?.role)) {
       await logout();
+      suspendSessionRestore();
       clearAccessToken();
+      dispatch(markSignedOut());
       setError("SEMO는 USER 계정만 로그인할 수 있습니다.");
       return;
     }
 
+    await dispatch(syncSession());
     router.replace("/");
   });
 
@@ -139,7 +152,9 @@ function LoginPageContent() {
             oauthError,
           );
           if (oauthErrorMessage) {
+            suspendSessionRestore();
             clearAccessToken();
+            dispatch(markSignedOut());
             setError(oauthErrorMessage);
             return;
           }
@@ -150,7 +165,9 @@ function LoginPageContent() {
         }
       } catch {
         if (!cancelled) {
+          suspendSessionRestore();
           clearAccessToken();
+          dispatch(markSignedOut());
           setError("로그인 정보를 처리하는 중 문제가 발생했습니다. 다시 시도해 주세요.");
         }
       }
@@ -159,7 +176,7 @@ function LoginPageContent() {
     return () => {
       cancelled = true;
     };
-  }, [oauthError, oauthErrorCode, oauthProvider, token]);
+  }, [dispatch, oauthError, oauthErrorCode, oauthProvider, token]);
 
   const handleNaverLogin = () => {
     window.location.href = `${GATEWAY_BASE_URL}/oauth2/authorize/naver-semo`;

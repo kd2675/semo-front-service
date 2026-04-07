@@ -21,7 +21,10 @@ import {
   getTournamentStatusLabel,
 } from "@/app/lib/tournament";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { unwrap } from "@/app/lib/query";
+import { clubKeys } from "@/app/lib/queryKeys";
 import { ClubDetailLoadingShell } from "../../ClubRouteLoadingShells";
 
 type ClubTournamentManageClientProps = {
@@ -47,53 +50,90 @@ export function ClubTournamentManageClient({
 }: ClubTournamentManageClientProps) {
   const prefersReducedMotion = useReducedMotion();
   const reduceMotion = Boolean(prefersReducedMotion);
-  const [payload, setPayload] = useState<TournamentDetailResponse | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [saving, setSaving] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showCancelTournament, setShowCancelTournament] = useState(false);
   const [showDeleteTournament, setShowDeleteTournament] = useState(false);
   const [tournamentReviewStatus, setTournamentReviewStatus] = useState<"APPROVED" | "REJECTED">("APPROVED");
   const [tournamentRejectionReason, setTournamentRejectionReason] = useState("");
 
+  const queryClient = useQueryClient();
+  const queryKey = clubKeys.tournament.detail(clubId, tournamentRecordId);
+
+  const {
+    data: payload,
+    isLoading,
+    error: queryError,
+    refetch,
+  } = useQuery({
+    queryKey,
+    queryFn: () => unwrap(getClubTournamentDetail(clubId, tournamentRecordId)),
+  });
+
+  const loading = isLoading;
+
+  const reviewApplicationMutation = useMutation({
+    mutationFn: ({ application, applicationStatus }: { application: TournamentApplicationSummary; applicationStatus: "APPROVED" | "REJECTED" }) =>
+      unwrap(reviewClubTournamentApplication(clubId, tournamentRecordId, application.tournamentApplicationId, { applicationStatus })),
+    onSuccess: (data) => {
+      queryClient.setQueryData(queryKey, data);
+    },
+  });
+
+  const reviewTournamentMutation = useMutation({
+    mutationFn: () =>
+      unwrap(reviewClubTournament(clubId, tournamentRecordId, {
+        approvalStatus: tournamentReviewStatus,
+        rejectionReason: tournamentReviewStatus === "REJECTED"
+          ? tournamentRejectionReason.trim() || null
+          : null,
+      })),
+    onSuccess: (data) => {
+      queryClient.setQueryData(queryKey, data);
+      if (data.approvalStatus !== "REJECTED") {
+        setTournamentRejectionReason("");
+        setTournamentReviewStatus("APPROVED");
+      }
+    },
+  });
+
+  const cancelTournamentMutation = useMutation({
+    mutationFn: () =>
+      unwrap(cancelClubTournament(clubId, tournamentRecordId, { cancelReason: "작성자가 조기 취소" })),
+    onSuccess: (data) => {
+      setShowCancelTournament(false);
+      queryClient.setQueryData(queryKey, data);
+    },
+  });
+
+  const deleteTournamentMutation = useMutation({
+    mutationFn: () => unwrap(deleteClubTournament(clubId, tournamentRecordId)),
+    onSuccess: () => {
+      setShowDeleteTournament(false);
+      if (onDeleted) {
+        onDeleted();
+        return;
+      }
+      window.location.href = fallbackBasePath;
+    },
+  });
+
+  const saving =
+    reviewApplicationMutation.isPending ||
+    reviewTournamentMutation.isPending ||
+    cancelTournamentMutation.isPending ||
+    deleteTournamentMutation.isPending;
+
+  const mutationError =
+    reviewApplicationMutation.error?.message ??
+    reviewTournamentMutation.error?.message ??
+    cancelTournamentMutation.error?.message ??
+    deleteTournamentMutation.error?.message ??
+    null;
+
+  const error = mutationError ?? (queryError instanceof Error ? queryError.message : null);
+
   const isModal = presentation === "modal";
   const fallbackBasePath = basePath ?? `/clubs/${clubId}/more/tournaments`;
-
-  const loadDetail = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    const result = await getClubTournamentDetail(clubId, tournamentRecordId);
-    setLoading(false);
-    if (!result.ok || !result.data) {
-      setError(result.message ?? "대회 관리 정보를 불러오지 못했습니다.");
-      return;
-    }
-    setPayload(result.data);
-  }, [clubId, tournamentRecordId]);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    void (async () => {
-      setLoading(true);
-      setError(null);
-      const result = await getClubTournamentDetail(clubId, tournamentRecordId);
-      if (cancelled) {
-        return;
-      }
-      setLoading(false);
-      if (!result.ok || !result.data) {
-        setError(result.message ?? "대회 관리 정보를 불러오지 못했습니다.");
-        return;
-      }
-      setPayload(result.data);
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [clubId, tournamentRecordId]);
 
   useEffect(() => {
     if (!payload || !initialSection) {
@@ -123,71 +163,23 @@ export function ClubTournamentManageClient({
     return () => window.cancelAnimationFrame(frame);
   }, [initialSection, payload, reduceMotion]);
 
-  const handleReviewApplication = async (
+  const handleReviewApplication = (
     application: TournamentApplicationSummary,
     applicationStatus: "APPROVED" | "REJECTED",
   ) => {
-    setSaving(true);
-    const result = await reviewClubTournamentApplication(
-      clubId,
-      tournamentRecordId,
-      application.tournamentApplicationId,
-      { applicationStatus },
-    );
-    setSaving(false);
-    if (!result.ok || !result.data) {
-      setError(result.message ?? "참가 신청 처리에 실패했습니다.");
-      return;
-    }
-    setPayload(result.data);
+    reviewApplicationMutation.mutate({ application, applicationStatus });
   };
 
-  const handleReviewTournament = async () => {
-    setSaving(true);
-    const result = await reviewClubTournament(clubId, tournamentRecordId, {
-      approvalStatus: tournamentReviewStatus,
-      rejectionReason: tournamentReviewStatus === "REJECTED"
-        ? tournamentRejectionReason.trim() || null
-        : null,
-    });
-    setSaving(false);
-    if (!result.ok || !result.data) {
-      setError(result.message ?? "대회 승인 검토에 실패했습니다.");
-      return;
-    }
-    setPayload(result.data);
-    if (result.data.approvalStatus !== "REJECTED") {
-      setTournamentRejectionReason("");
-      setTournamentReviewStatus("APPROVED");
-    }
+  const handleReviewTournament = () => {
+    reviewTournamentMutation.mutate();
   };
 
-  const handleCancelTournament = async () => {
-    setSaving(true);
-    const result = await cancelClubTournament(clubId, tournamentRecordId, { cancelReason: "작성자가 조기 취소" });
-    setSaving(false);
-    setShowCancelTournament(false);
-    if (!result.ok || !result.data) {
-      setError(result.message ?? "대회 취소에 실패했습니다.");
-      return;
-    }
-    setPayload(result.data);
+  const handleCancelTournament = () => {
+    cancelTournamentMutation.mutate();
   };
 
-  const handleDeleteTournament = async () => {
-    setSaving(true);
-    const result = await deleteClubTournament(clubId, tournamentRecordId);
-    setSaving(false);
-    setShowDeleteTournament(false);
-    if (!result.ok) {
-      setError(result.message ?? "대회 삭제에 실패했습니다.");
-      return;
-    }
-    if (onDeleted) {
-      onDeleted();
-      return;
-    }
-    window.location.href = fallbackBasePath;
+  const handleDeleteTournament = () => {
+    deleteTournamentMutation.mutate();
   };
 
   if (loading && !payload) {
@@ -337,10 +329,10 @@ export function ClubTournamentManageClient({
                 <button
                   type="button"
                   onClick={handleReviewTournament}
-                  disabled={saving || (tournamentReviewStatus === "REJECTED" && !tournamentRejectionReason.trim())}
+                  disabled={reviewTournamentMutation.isPending || (tournamentReviewStatus === "REJECTED" && !tournamentRejectionReason.trim())}
                   className="rounded-full bg-slate-900 px-5 py-3 text-sm font-black text-white disabled:opacity-60"
                 >
-                  {saving ? "저장 중..." : tournamentReviewStatus === "APPROVED" ? "승인 처리" : "거절 처리"}
+                  {reviewTournamentMutation.isPending ? "저장 중..." : tournamentReviewStatus === "APPROVED" ? "승인 처리" : "거절 처리"}
                 </button>
               </div>
             </motion.section>
@@ -387,14 +379,16 @@ export function ClubTournamentManageClient({
                           <button
                             type="button"
                             onClick={() => handleReviewApplication(application, "APPROVED")}
-                            className="rounded-full bg-emerald-600 px-4 py-2 text-xs font-black text-white"
+                            disabled={reviewApplicationMutation.isPending}
+                            className="rounded-full bg-emerald-600 px-4 py-2 text-xs font-black text-white disabled:opacity-60"
                           >
                             승인
                           </button>
                           <button
                             type="button"
                             onClick={() => handleReviewApplication(application, "REJECTED")}
-                            className="rounded-full bg-rose-600 px-4 py-2 text-xs font-black text-white"
+                            disabled={reviewApplicationMutation.isPending}
+                            className="rounded-full bg-rose-600 px-4 py-2 text-xs font-black text-white disabled:opacity-60"
                           >
                             반려
                           </button>
@@ -463,7 +457,7 @@ export function ClubTournamentManageClient({
                 onRequestClose={() => setShowEditModal(false)}
                 onSaved={() => {
                   setShowEditModal(false);
-                  void loadDetail();
+                  void refetch();
                 }}
               />
             </RouteModal>
@@ -476,9 +470,9 @@ export function ClubTournamentManageClient({
             description="취소된 대회는 참가자와 게시판/캘린더 공유 상태는 남지만 신규 신청과 운영 액션은 중단됩니다."
             confirmLabel="대회 취소"
             busyLabel="취소 중..."
-            busy={saving}
+            busy={cancelTournamentMutation.isPending}
             onCancel={() => {
-              if (!saving) {
+              if (!cancelTournamentMutation.isPending) {
                 setShowCancelTournament(false);
               }
             }}
@@ -491,9 +485,9 @@ export function ClubTournamentManageClient({
             description="삭제는 관리자 전용 액션이며, 관련 신청 데이터와 공유 상태도 함께 정리됩니다."
             confirmLabel="대회 삭제"
             busyLabel="삭제 중..."
-            busy={saving}
+            busy={deleteTournamentMutation.isPending}
             onCancel={() => {
-              if (!saving) {
+              if (!deleteTournamentMutation.isPending) {
                 setShowDeleteTournament(false);
               }
             }}

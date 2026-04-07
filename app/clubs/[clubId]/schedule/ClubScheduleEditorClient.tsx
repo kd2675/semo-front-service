@@ -7,12 +7,15 @@ import { TimePopoverField } from "@/app/components/TimePopoverField";
 import { AnimatePresence } from "motion/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useEffectEvent, useId, useRef, useState, type UIEvent } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { unwrap } from "@/app/lib/query";
+import { clubKeys } from "@/app/lib/queryKeys";
 import {
+  type ClubScheduleEventDetailResponse,
   createClubScheduleEvent,
   deleteClubScheduleEvent,
   getClubScheduleEventDetail,
   updateClubScheduleEvent,
-  type ClubScheduleEventDetailResponse,
 } from "@/app/lib/clubs";
 import { ClubEditorLoadingShell } from "../ClubRouteLoadingShells";
 import { ScheduleActionConfirmModal } from "./ScheduleActionConfirmModal";
@@ -29,97 +32,137 @@ type ClubScheduleEditorClientProps = {
 };
 
 type ScheduleDateMode = "single" | "range";
+type ScheduleEditorInitialState = {
+  title: string;
+  startDate: string;
+  scheduleDateMode: ScheduleDateMode;
+  endDate: string;
+  startTime: string;
+  endTime: string;
+  attendeeLimit: string;
+  locationLabel: string;
+  participationConditionText: string;
+  participationEnabled: boolean;
+  feeRequired: boolean;
+  feeAmount: string;
+  feeAmountUndecided: boolean;
+  feeNWaySplit: boolean;
+  postToBoard: boolean;
+  postToCalendar: boolean;
+  pinned: boolean;
+  clubName: string;
+  canEdit: boolean;
+  canDelete: boolean;
+};
 
 function getTodayDateValue() {
   return new Date().toISOString().slice(0, 10);
 }
 
-export function ClubScheduleEditorClient({
+function buildScheduleEditorInitialState({
+  detailPayload,
+  initialEventDate,
+  initialClubName,
+  isEdit,
+}: {
+  detailPayload: ClubScheduleEventDetailResponse | null;
+  initialEventDate?: string;
+  initialClubName?: string;
+  isEdit: boolean;
+}): ScheduleEditorInitialState {
+  if (detailPayload) {
+    return {
+      title: detailPayload.title,
+      startDate: detailPayload.startDate,
+      scheduleDateMode: detailPayload.endDate ? "range" : "single",
+      endDate: detailPayload.endDate ?? "",
+      startTime: detailPayload.startTime ?? "",
+      endTime: detailPayload.endTime ?? "",
+      attendeeLimit: detailPayload.attendeeLimit ? String(detailPayload.attendeeLimit) : "",
+      locationLabel: detailPayload.locationLabel ?? "",
+      participationConditionText: detailPayload.participationConditionText ?? "",
+      participationEnabled: detailPayload.participationEnabled,
+      feeRequired: detailPayload.feeRequired,
+      feeAmount: detailPayload.feeAmount ? String(detailPayload.feeAmount) : "",
+      feeAmountUndecided: detailPayload.feeAmountUndecided,
+      feeNWaySplit: detailPayload.feeNWaySplit,
+      postToBoard: detailPayload.postedToBoard,
+      postToCalendar: detailPayload.postedToCalendar,
+      pinned: detailPayload.pinned,
+      clubName: detailPayload.clubName,
+      canEdit: detailPayload.canEdit,
+      canDelete: detailPayload.canDelete,
+    };
+  }
+
+  return {
+    title: "",
+    startDate: initialEventDate ?? getTodayDateValue(),
+    scheduleDateMode: "single",
+    endDate: "",
+    startTime: "",
+    endTime: "",
+    attendeeLimit: "",
+    locationLabel: "",
+    participationConditionText: "",
+    participationEnabled: false,
+    feeRequired: false,
+    feeAmount: "",
+    feeAmountUndecided: false,
+    feeNWaySplit: false,
+    postToBoard: true,
+    postToCalendar: true,
+    pinned: false,
+    clubName: initialClubName ?? "일정 스튜디오",
+    canEdit: !isEdit,
+    canDelete: false,
+  };
+}
+
+function ClubScheduleEditorForm({
   clubId,
   eventId,
-  clubName: initialClubName,
   presentation = "page",
-  initialEventDate,
   onRequestClose,
   onSaved,
   onDeleted,
-}: ClubScheduleEditorClientProps) {
+  initialState,
+  queryError,
+}: ClubScheduleEditorClientProps & {
+  initialState: ScheduleEditorInitialState;
+  queryError: string | null;
+}) {
   const router = useRouter();
   const formId = useId();
   const mainRef = useRef<HTMLElement | null>(null);
   const isEdit = Boolean(eventId);
   const isModal = presentation === "modal";
-  const [title, setTitle] = useState("");
-  const [startDate, setStartDate] = useState(initialEventDate ?? getTodayDateValue());
-  const [scheduleDateMode, setScheduleDateMode] = useState<ScheduleDateMode>("single");
-  const [endDate, setEndDate] = useState("");
-  const [startTime, setStartTime] = useState("");
-  const [endTime, setEndTime] = useState("");
-  const [attendeeLimit, setAttendeeLimit] = useState("");
-  const [locationLabel, setLocationLabel] = useState("");
-  const [participationConditionText, setParticipationConditionText] = useState("");
-  const [participationEnabled, setParticipationEnabled] = useState(false);
-  const [feeRequired, setFeeRequired] = useState(false);
-  const [feeAmount, setFeeAmount] = useState("");
-  const [feeAmountUndecided, setFeeAmountUndecided] = useState(false);
-  const [feeNWaySplit, setFeeNWaySplit] = useState(false);
-  const [postToBoard, setPostToBoard] = useState(true);
-  const [postToCalendar, setPostToCalendar] = useState(true);
-  const [pinned, setPinned] = useState(false);
-  const [clubName, setClubName] = useState(initialClubName ?? "일정 스튜디오");
-  const [loading, setLoading] = useState(isEdit);
+  const [title, setTitle] = useState(initialState.title);
+  const [startDate, setStartDate] = useState(initialState.startDate);
+  const [scheduleDateMode, setScheduleDateMode] = useState<ScheduleDateMode>(initialState.scheduleDateMode);
+  const [endDate, setEndDate] = useState(initialState.endDate);
+  const [startTime, setStartTime] = useState(initialState.startTime);
+  const [endTime, setEndTime] = useState(initialState.endTime);
+  const [attendeeLimit, setAttendeeLimit] = useState(initialState.attendeeLimit);
+  const [locationLabel, setLocationLabel] = useState(initialState.locationLabel);
+  const [participationConditionText, setParticipationConditionText] = useState(initialState.participationConditionText);
+  const [participationEnabled, setParticipationEnabled] = useState(initialState.participationEnabled);
+  const [feeRequired, setFeeRequired] = useState(initialState.feeRequired);
+  const [feeAmount, setFeeAmount] = useState(initialState.feeAmount);
+  const [feeAmountUndecided, setFeeAmountUndecided] = useState(initialState.feeAmountUndecided);
+  const [feeNWaySplit, setFeeNWaySplit] = useState(initialState.feeNWaySplit);
+  const [postToBoard, setPostToBoard] = useState(initialState.postToBoard);
+  const [postToCalendar, setPostToCalendar] = useState(initialState.postToCalendar);
+  const [pinned, setPinned] = useState(initialState.pinned);
+  const [clubName] = useState(initialState.clubName);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  const [canEdit, setCanEdit] = useState(!isEdit);
-  const [canDelete, setCanDelete] = useState(false);
+  const [canEdit] = useState(initialState.canEdit);
+  const [canDelete] = useState(initialState.canDelete);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [progressWidth, setProgressWidth] = useState(0);
   const backHref = isEdit && eventId ? `/clubs/${clubId}/schedule/${eventId}` : `/clubs/${clubId}/schedule`;
-
-  const loadDetail = useEffectEvent(async () => {
-    if (!eventId) {
-      return;
-    }
-
-    setLoading(true);
-    setError(null);
-    const result = await getClubScheduleEventDetail(clubId, eventId);
-    setLoading(false);
-    if (!result.ok || !result.data) {
-      setError(result.message ?? "일정 정보를 불러오지 못했습니다.");
-      return;
-    }
-
-    const payload: ClubScheduleEventDetailResponse = result.data;
-    setClubName(payload.clubName);
-    setTitle(payload.title);
-    setStartDate(payload.startDate);
-    setScheduleDateMode(payload.endDate ? "range" : "single");
-    setEndDate(payload.endDate ?? "");
-    setStartTime(payload.startTime ?? "");
-    setEndTime(payload.endTime ?? "");
-    setAttendeeLimit(payload.attendeeLimit ? String(payload.attendeeLimit) : "");
-    setLocationLabel(payload.locationLabel ?? "");
-    setParticipationConditionText(payload.participationConditionText ?? "");
-    setParticipationEnabled(payload.participationEnabled);
-    setFeeRequired(payload.feeRequired);
-    setFeeAmount(payload.feeAmount ? String(payload.feeAmount) : "");
-    setFeeAmountUndecided(payload.feeAmountUndecided);
-    setFeeNWaySplit(payload.feeNWaySplit);
-    setPostToBoard(payload.postedToBoard);
-    setPostToCalendar(payload.postedToCalendar);
-    setPinned(payload.pinned);
-    setCanEdit(payload.canEdit);
-    setCanDelete(payload.canDelete);
-  });
-
-  useEffect(() => {
-    if (!isEdit) {
-      return;
-    }
-    void loadDetail();
-  }, [isEdit]);
 
   const handleSubmit = async (formEvent: React.FormEvent<HTMLFormElement>) => {
     formEvent.preventDefault();
@@ -264,15 +307,21 @@ export function ClubScheduleEditorClient({
       return;
     }
 
-    const handleWindowScroll = () => {
+    let frameId = window.requestAnimationFrame(() => {
       syncProgressFromWindow();
+    });
+    const handleWindowScroll = () => {
+      window.cancelAnimationFrame(frameId);
+      frameId = window.requestAnimationFrame(() => {
+        syncProgressFromWindow();
+      });
     };
 
-    syncProgressFromWindow();
     window.addEventListener("scroll", handleWindowScroll, { passive: true });
     window.addEventListener("resize", handleWindowScroll);
 
     return () => {
+      window.cancelAnimationFrame(frameId);
       window.removeEventListener("scroll", handleWindowScroll);
       window.removeEventListener("resize", handleWindowScroll);
     };
@@ -280,7 +329,6 @@ export function ClubScheduleEditorClient({
 
   useEffect(() => {
     if (!isModal) {
-      syncProgressFromWindow();
       return;
     }
 
@@ -289,16 +337,18 @@ export function ClubScheduleEditorClient({
       return;
     }
 
-    updateProgressWidth(
-      mainElement.scrollTop,
-      mainElement.scrollHeight,
-      mainElement.clientHeight,
-    );
-  }, [isModal, loading, scheduleDateMode, participationEnabled, feeRequired, error]);
+    const frameId = window.requestAnimationFrame(() => {
+      updateProgressWidth(
+        mainElement.scrollTop,
+        mainElement.scrollHeight,
+        mainElement.clientHeight,
+      );
+    });
 
-  if (loading) {
-    return <ClubEditorLoadingShell presentation={presentation} />;
-  }
+    return () => {
+      window.cancelAnimationFrame(frameId);
+    };
+  }, [isModal, scheduleDateMode, participationEnabled, feeRequired, error]);
 
   return (
     <div
@@ -691,9 +741,9 @@ export function ClubScheduleEditorClient({
                 </div>
               ) : null}
 
-              {error ? (
+              {error || queryError ? (
                 <div className="rounded-xl bg-rose-50 px-4 py-3 text-sm font-medium text-rose-600">
-                  {error}
+                  {error ?? queryError}
                 </div>
               ) : null}
             </section>
@@ -748,5 +798,51 @@ export function ClubScheduleEditorClient({
         </AnimatePresence>
       </div>
     </div>
+  );
+}
+
+export function ClubScheduleEditorClient({
+  clubId,
+  eventId,
+  clubName: initialClubName,
+  presentation = "page",
+  initialEventDate,
+  onRequestClose,
+  onSaved,
+  onDeleted,
+}: ClubScheduleEditorClientProps) {
+  const isEdit = Boolean(eventId);
+  const { data: detailPayload, isLoading: loading, isError } = useQuery({
+    queryKey: clubKeys.schedule.eventDetail(clubId, eventId!),
+    queryFn: () => unwrap(getClubScheduleEventDetail(clubId, eventId!)),
+    enabled: isEdit,
+  });
+
+  if (loading) {
+    return <ClubEditorLoadingShell presentation={presentation} />;
+  }
+
+  const initialState = buildScheduleEditorInitialState({
+    detailPayload: detailPayload ?? null,
+    initialEventDate,
+    initialClubName,
+    isEdit,
+  });
+  const editorKey = isEdit ? `${eventId}:${detailPayload ? "loaded" : "empty"}` : "new";
+  const queryError = isError ? "일정 정보를 불러오지 못했습니다." : null;
+
+  return (
+    <ClubScheduleEditorForm
+      key={editorKey}
+      clubId={clubId}
+      eventId={eventId}
+      clubName={initialClubName}
+      presentation={presentation}
+      onRequestClose={onRequestClose}
+      onSaved={onSaved}
+      onDeleted={onDeleted}
+      initialState={initialState}
+      queryError={queryError}
+    />
   );
 }

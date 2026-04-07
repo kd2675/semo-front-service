@@ -1,5 +1,6 @@
 "use client";
 
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { RouterLink } from "@/app/components/RouterLink";
 import { ClubClassificationField } from "@/app/components/ClubClassificationField";
@@ -10,6 +11,8 @@ import { createClub } from "@/app/lib/clubs";
 import type { ActivityCategoryKey, ActivityTagKey, AffiliationTypeKey } from "@/app/lib/club-classification";
 import { uploadTempImage } from "@/app/lib/imageUpload";
 import { staggeredFadeUpMotion } from "@/app/lib/motion";
+import { unwrap } from "@/app/lib/query";
+import { homeQueryKeys } from "@/app/lib/queryKeys";
 import type { RegionScope } from "@/app/lib/regions";
 
 const VISIBILITY_OPTIONS = [
@@ -24,6 +27,7 @@ const MEMBERSHIP_OPTIONS = [
 
 export default function CreateClubPage() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const prefersReducedMotion = useReducedMotion();
   const reduceMotion = Boolean(prefersReducedMotion);
   const [name, setName] = useState("");
@@ -49,6 +53,42 @@ export default function CreateClubPage() {
       }
     };
   }, [photoPreviewUrl]);
+
+  const createClubMutation = useMutation({
+    mutationFn: (request: Parameters<typeof createClub>[0]) => unwrap(createClub(request)),
+    onSuccess: async (data) => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: homeQueryKeys.myClubs }),
+        queryClient.invalidateQueries({ queryKey: homeQueryKeys.discoverRoot }),
+      ]);
+
+      setFeedback(`클럽이 생성되었습니다. 클럽 ID ${data.clubId}.`);
+      setName("");
+      setDescription("");
+      setActivityCategory("SPORTS");
+      setActivityTags(["TENNIS"]);
+      setAffiliationType("INDEPENDENT");
+      setVisibilityStatus("PUBLIC");
+      setMembershipPolicy("APPROVAL");
+      setRegionScope("NATIONWIDE");
+      setRegionDepth1Code(null);
+      setRegionDepth2Code(null);
+      setUploadedPhotoFileName(null);
+      setPhotoPreviewUrl((current) => {
+        if (current?.startsWith("blob:")) {
+          URL.revokeObjectURL(current);
+        }
+        return null;
+      });
+
+      window.setTimeout(() => {
+        router.replace("/");
+      }, reduceMotion ? 180 : 520);
+    },
+    onError: (error) => {
+      setFeedback(error instanceof Error ? error.message : "클럽 생성에 실패했습니다.");
+    },
+  });
 
   const handlePhotoChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -100,7 +140,7 @@ export default function CreateClubPage() {
     setIsSubmitting(true);
 
     try {
-      const result = await createClub({
+      await createClubMutation.mutateAsync({
         name: name.trim(),
         description: description.trim() || null,
         activityCategory,
@@ -113,36 +153,6 @@ export default function CreateClubPage() {
         regionDepth2Code,
         fileName: uploadedPhotoFileName,
       });
-
-      if (!result.ok || !result.data) {
-        setFeedback(result.message ?? "클럽 생성에 실패했습니다.");
-        return;
-      }
-
-      setFeedback(`클럽이 생성되었습니다. 클럽 ID ${result.data.clubId}.`);
-      setName("");
-      setDescription("");
-      setActivityCategory("SPORTS");
-      setActivityTags(["TENNIS"]);
-      setAffiliationType("INDEPENDENT");
-      setVisibilityStatus("PUBLIC");
-      setMembershipPolicy("APPROVAL");
-      setRegionScope("NATIONWIDE");
-      setRegionDepth1Code(null);
-      setRegionDepth2Code(null);
-      setUploadedPhotoFileName(null);
-      setPhotoPreviewUrl((current) => {
-        if (current) {
-          if (current.startsWith("blob:")) {
-            URL.revokeObjectURL(current);
-          }
-        }
-        return null;
-      });
-
-      window.setTimeout(() => {
-        router.replace("/");
-      }, reduceMotion ? 180 : 520);
     } finally {
       setIsSubmitting(false);
     }

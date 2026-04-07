@@ -1,16 +1,28 @@
 import { postJson } from "@/app/lib/api";
-import { emitAuthChanged, emitAuthExpired } from "@/app/lib/authEvents";
+import {
+  emitAuthChanged,
+  emitAuthExpired,
+  type AuthExpireReason,
+} from "@/app/lib/authEvents";
 import type { LoginResponse, AuthUser } from "@/app/types/auth";
 
 const TOKEN_EXPIRY_LEEWAY_SECONDS = 300;
 let accessTokenMemory: string | null = null;
 let refreshInFlight: Promise<string | null> | null = null;
+let sessionRestoreSuppressed = false;
+
+export type AuthStatus = "unknown" | "in" | "out";
+export type AuthSnapshot = {
+  status: AuthStatus;
+  user: AuthUser | null;
+};
 
 export function getAccessToken(): string | null {
   return accessTokenMemory;
 }
 
 export function setAccessToken(token: string): void {
+  sessionRestoreSuppressed = false;
   accessTokenMemory = token;
   emitAuthChanged();
 }
@@ -18,6 +30,40 @@ export function setAccessToken(token: string): void {
 export function clearAccessToken(): void {
   accessTokenMemory = null;
   emitAuthChanged();
+}
+
+export function suspendSessionRestore(): void {
+  sessionRestoreSuppressed = true;
+}
+
+export function resumeSessionRestore(): void {
+  sessionRestoreSuppressed = false;
+}
+
+export function isSessionRestoreSuppressed(): boolean {
+  return sessionRestoreSuppressed;
+}
+
+export function readAuthSnapshot(): AuthSnapshot {
+  if (typeof window === "undefined") {
+    return { status: "unknown", user: null };
+  }
+
+  const token = getAccessToken();
+  if (!token) {
+    return { status: "out", user: null };
+  }
+
+  const user = getUserFromToken(token);
+  if (!user) {
+    return { status: "out", user: null };
+  }
+
+  if (user.exp && isTokenExpired(user.exp)) {
+    return { status: "out", user: null };
+  }
+
+  return { status: "in", user };
 }
 
 function decodeBase64Url(value: string): string | null {
@@ -102,8 +148,6 @@ export function scheduleTokenExpiry(
   return () => window.clearTimeout(timeoutId);
 }
 
-export type AuthExpireReason = "expired" | "refresh_failed";
-
 export function notifyAuthExpired(reason: AuthExpireReason = "expired"): void {
   emitAuthExpired(reason);
 }
@@ -138,6 +182,9 @@ export async function refreshAccessToken(): Promise<string | null> {
 export async function bootstrapAccessToken(): Promise<string | null> {
   if (accessTokenMemory) {
     return accessTokenMemory;
+  }
+  if (sessionRestoreSuppressed) {
+    return null;
   }
   return refreshAccessToken();
 }

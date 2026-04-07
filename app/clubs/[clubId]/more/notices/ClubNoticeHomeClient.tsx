@@ -1,5 +1,6 @@
 "use client";
 
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { RouteModal } from "@/app/components/RouteModal";
 import { ClubModeSwitchFab } from "@/app/components/ClubModeSwitchFab";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
@@ -7,11 +8,14 @@ import { ClubNoticeDetailModal } from "@/app/components/ClubDetailModals";
 import { ScheduleActionConfirmModal } from "@/app/clubs/[clubId]/schedule/ScheduleActionConfirmModal";
 import {
   deleteClubNotice,
+  getClubNoticeHome,
   type ClubNoticeHomeResponse,
   type ClubNoticeListItem,
 } from "@/app/lib/clubs";
 import { FAB_RIGHT_OFFSET_CLASS_NAME, getActionFabBottomClass } from "@/app/lib/fab";
 import { staggeredFadeUpMotion } from "@/app/lib/motion";
+import { unwrap } from "@/app/lib/query";
+import { clubKeys } from "@/app/lib/queryKeys";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useState, type CSSProperties } from "react";
 import { ClubNoticeEditorClient } from "../../board/ClubNoticeEditorClient";
@@ -19,9 +23,8 @@ import { NoticeManageCard } from "../../board/NoticeManageCard";
 
 type ClubNoticeHomeClientProps = {
   clubId: string;
-  payload: ClubNoticeHomeResponse;
+  initialData: ClubNoticeHomeResponse;
   mode?: "user" | "admin";
-  onReload: () => void;
 };
 
 function AdminInsightTile({
@@ -53,9 +56,8 @@ function AdminInsightTile({
 
 export function ClubNoticeHomeClient({
   clubId,
-  payload,
+  initialData,
   mode = "user",
-  onReload,
 }: ClubNoticeHomeClientProps) {
   const prefersReducedMotion = useReducedMotion();
   const reduceMotion = Boolean(prefersReducedMotion);
@@ -64,7 +66,22 @@ export function ClubNoticeHomeClient({
   const [editingNoticeId, setEditingNoticeId] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<ClubNoticeListItem | null>(null);
   const [activeMenuNoticeId, setActiveMenuNoticeId] = useState<number | null>(null);
-  const [deleting, setDeleting] = useState(false);
+  const queryClient = useQueryClient();
+
+  const { data: payload = initialData } = useQuery({
+    queryKey: clubKeys.notice.home(clubId),
+    queryFn: () => unwrap(getClubNoticeHome(clubId)),
+    initialData,
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (noticeId: number) => unwrap(deleteClubNotice(clubId, noticeId)),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: clubKeys.notice.home(clubId) });
+      setDeleteTarget(null);
+      setActiveMenuNoticeId(null);
+    },
+  });
 
   const accent = mode === "admin" ? "#f97316" : "#135bec";
   const background = mode === "admin" ? "#f6f6f8" : "#f6f6f8";
@@ -77,16 +94,7 @@ export function ClubNoticeHomeClient({
     if (!deleteTarget) {
       return;
     }
-
-    setDeleting(true);
-    const result = await deleteClubNotice(clubId, deleteTarget.noticeId);
-    setDeleting(false);
-    if (!result.ok) {
-      return;
-    }
-
-    setDeleteTarget(null);
-    onReload();
+    await deleteMutation.mutateAsync(deleteTarget.noticeId).catch(() => undefined);
   };
 
   return (
@@ -250,7 +258,7 @@ export function ClubNoticeHomeClient({
                 onRequestClose={() => setShowCreateModal(false)}
                 onSaved={(savedNoticeId) => {
                   setShowCreateModal(false);
-                  onReload();
+                  void queryClient.invalidateQueries({ queryKey: clubKeys.notice.home(clubId) });
                   setDetailNoticeId(String(savedNoticeId));
                 }}
               />
@@ -276,12 +284,12 @@ export function ClubNoticeHomeClient({
                 onRequestClose={() => setEditingNoticeId(null)}
                 onSaved={(savedNoticeId) => {
                   setEditingNoticeId(null);
-                  onReload();
+                  void queryClient.invalidateQueries({ queryKey: clubKeys.notice.home(clubId) });
                   setDetailNoticeId(String(savedNoticeId));
                 }}
                 onDeleted={() => {
                   setEditingNoticeId(null);
-                  onReload();
+                  void queryClient.invalidateQueries({ queryKey: clubKeys.notice.home(clubId) });
                 }}
               />
             </RouteModal>
@@ -294,9 +302,9 @@ export function ClubNoticeHomeClient({
             description={`‘${deleteTarget.title}’ 게시글은 삭제 후 복구할 수 없습니다.`}
             confirmLabel="삭제"
             busyLabel="삭제 중..."
-            busy={deleting}
+            busy={deleteMutation.isPending}
             onCancel={() => {
-              if (!deleting) {
+              if (!deleteMutation.isPending) {
                 setDeleteTarget(null);
               }
             }}

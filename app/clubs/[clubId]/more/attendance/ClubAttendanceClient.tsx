@@ -1,13 +1,16 @@
 "use client";
 
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion, useReducedMotion } from "motion/react";
 import { useState } from "react";
-import { EphemeralToast } from "@/app/components/EphemeralToast";
 import { ClubModeSwitchFab } from "@/app/components/ClubModeSwitchFab";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
-import { useEphemeralToast } from "@/app/components/useEphemeralToast";
+import { unwrap } from "@/app/lib/query";
+import { clubKeys } from "@/app/lib/queryKeys";
+import { useToast } from "@/app/hooks/useToast";
 import {
   checkInClubAttendance,
+  getClubAttendance,
   type ClubAttendanceResponse,
 } from "@/app/lib/clubs";
 import { staggeredFadeUpMotion } from "@/app/lib/motion";
@@ -27,48 +30,46 @@ export function ClubAttendanceClient({
 }: ClubAttendanceClientProps) {
   const prefersReducedMotion = useReducedMotion();
   const reduceMotion = Boolean(prefersReducedMotion);
-  const [attendance, setAttendance] = useState(initialData);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { toast, showToast, clearToast } = useEphemeralToast();
+  const toast = useToast();
+  const queryClient = useQueryClient();
+
+  const { data: attendance = initialData } = useQuery({
+    queryKey: clubKeys.attendance(clubId),
+    queryFn: () => unwrap(getClubAttendance(clubId)),
+    initialData,
+  });
 
   const todayAttendance = attendance.todayAttendance;
+
+  const checkInMutation = useMutation({
+    mutationFn: async () => unwrap(checkInClubAttendance(clubId)),
+    onMutate: () => {
+      setIsSubmitting(true);
+      toast.hide();
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: clubKeys.attendance(clubId) });
+      toast.success("출석 체크가 완료되었습니다.");
+    },
+    onError: (error) => {
+      toast.error(error instanceof Error ? error.message : "출석 체크에 실패했습니다.");
+    },
+    onSettled: () => {
+      setIsSubmitting(false);
+    },
+  });
 
   const handleCheckIn = async () => {
     if (!todayAttendance) {
       return;
     }
     if (!canPersist) {
-      showToast("Mock mode에서는 출석 저장이 되지 않습니다.", "info");
+      toast.info("Mock mode에서는 출석 저장이 되지 않습니다.");
       return;
     }
 
-    setIsSubmitting(true);
-    clearToast();
-    const result = await checkInClubAttendance(clubId);
-    setIsSubmitting(false);
-
-    if (!result.ok || !result.data) {
-      showToast(result.message ?? "출석 체크에 실패했습니다.", "error");
-      return;
-    }
-    const todayAttendanceResult = result.data;
-
-    setAttendance((current) => ({
-      ...current,
-      todayAttendance: todayAttendanceResult,
-      recentLogs: current.recentLogs.map((log, index) =>
-        index === 0
-          ? {
-              ...log,
-              checkedIn: true,
-              checkedInAtLabel: todayAttendanceResult.checkedInAtLabel,
-              checkedInCount: todayAttendanceResult.checkedInCount,
-              memberCount: todayAttendanceResult.memberCount,
-            }
-          : log,
-      ),
-    }));
-    showToast("출석 체크가 완료되었습니다.", "success");
+    await checkInMutation.mutateAsync().catch(() => undefined);
   };
 
   return (
@@ -169,7 +170,6 @@ export function ClubAttendanceClient({
         </main>
 
         {isAdmin ? <ClubModeSwitchFab clubId={clubId} mode="user" /> : null}
-        <EphemeralToast toastId={toast?.id ?? null} message={toast?.message ?? null} tone={toast?.tone} />
       </div>
     </div>
   );

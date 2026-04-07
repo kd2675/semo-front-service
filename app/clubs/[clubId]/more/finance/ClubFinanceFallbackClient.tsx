@@ -1,15 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import {
   getClubFinance,
   getClubFinanceRequests,
   getMyClub,
-  type ClubFinanceHomeResponse,
-  type ClubFinanceRequestFeedResponse,
-  type MyClubSummary,
 } from "@/app/lib/clubs";
+import { unwrap } from "@/app/lib/query";
+import { clubKeys } from "@/app/lib/queryKeys";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import { ClubFinanceClient } from "./ClubFinanceClient";
 
@@ -19,53 +19,31 @@ type ClubFinanceFallbackClientProps = {
 
 export function ClubFinanceFallbackClient({ clubId }: ClubFinanceFallbackClientProps) {
   const router = useRouter();
-  const [club, setClub] = useState<MyClubSummary | null>(null);
-  const [finance, setFinance] = useState<ClubFinanceHomeResponse | null>(null);
-  const [requestFeed, setRequestFeed] = useState<ClubFinanceRequestFeedResponse | null>(null);
+
+  const { data: club, isError: clubError } = useQuery({
+    queryKey: clubKeys.detail(clubId),
+    queryFn: () => unwrap(getMyClub(clubId)),
+  });
+
+  const { data: finance, isError: financeError } = useQuery({
+    queryKey: clubKeys.finance.home(clubId),
+    queryFn: () => unwrap(getClubFinance(clubId)),
+  });
+
+  const { data: requestFeed = { clubId: Number(clubId), clubName: finance?.clubName ?? "", items: [] }, isError: requestFeedError } = useQuery({
+    queryKey: clubKeys.finance.requests(clubId),
+    queryFn: () => unwrap(getClubFinanceRequests(clubId)),
+    enabled: !!finance,
+    retry: 1,
+  });
 
   useEffect(() => {
-    let cancelled = false;
+    if (clubError || financeError) {
+      router.replace(`/clubs/${clubId}`);
+    }
+  }, [clubError, financeError, clubId, router]);
 
-    void (async () => {
-      const [clubResult, financeResult, requestResult] = await Promise.all([
-        getMyClub(clubId),
-        getClubFinance(clubId),
-        getClubFinanceRequests(clubId),
-      ]);
-
-      if (cancelled) {
-        return;
-      }
-
-      if (
-        !clubResult.ok ||
-        !clubResult.data ||
-        !financeResult.ok ||
-        !financeResult.data
-      ) {
-        router.replace(`/clubs/${clubId}`);
-        return;
-      }
-
-      setClub(clubResult.data);
-      setFinance(financeResult.data);
-      setRequestFeed(
-        requestResult.ok && requestResult.data
-          ? requestResult.data
-          : {
-              clubId: financeResult.data.clubId,
-              clubName: financeResult.data.clubName,
-              items: [],
-            },
-      );
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [clubId, router]);
-
-  if (!club || !finance || !requestFeed) {
+  if (!club || !finance) {
     return (
       <div className="bg-[var(--background-light)] text-slate-900 antialiased">
         <div className="relative min-h-screen">
@@ -112,11 +90,20 @@ export function ClubFinanceFallbackClient({ clubId }: ClubFinanceFallbackClientP
   }
 
   return (
-    <ClubFinanceClient
-      clubId={clubId}
-      initialData={finance}
-      initialRequestFeed={requestFeed}
-      isAdmin={club.admin}
-    />
+    <>
+      {requestFeedError ? (
+        <div className="mx-auto max-w-md px-4 pt-2">
+          <div className="rounded-xl bg-amber-50 px-4 py-2.5 text-xs font-medium text-amber-700">
+            일부 데이터를 불러오지 못했습니다. 새로고침하면 다시 시도합니다.
+          </div>
+        </div>
+      ) : null}
+      <ClubFinanceClient
+        clubId={clubId}
+        initialData={finance}
+        initialRequestFeed={requestFeed}
+        isAdmin={club.admin}
+      />
+    </>
   );
 }

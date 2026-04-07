@@ -18,12 +18,15 @@ import {
   useSortable,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { EphemeralToast } from "@/app/components/EphemeralToast";
 import { RouterLink } from "@/app/components/RouterLink";
-import { useEphemeralToast } from "@/app/components/useEphemeralToast";
+import { useAppDispatch } from "@/app/store/hooks";
+import { showToast, hideToast } from "@/app/store/uiSlice";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { unwrap } from "@/app/lib/query";
+import { clubKeys } from "@/app/lib/queryKeys";
 import {
   getClubFeatures,
   updateClubFeatures,
@@ -170,13 +173,21 @@ export function AdminBottomNav({ clubId }: AdminBottomNavProps) {
   const reduceMotion = Boolean(prefersReducedMotion);
   const isDocked = useBottomNavScrollDocking({ routeKey: pathname });
   const [openMenuPathname, setOpenMenuPathname] = useState<string | null>(null);
-  const [enabledFeatures, setEnabledFeatures] = useState<ClubFeatureSummary[]>([]);
+  const queryClient = useQueryClient();
+  const { data: allFeatures } = useQuery({
+    queryKey: clubKeys.features(clubId),
+    queryFn: () => unwrap(getClubFeatures(clubId)),
+  });
+  const enabledFeatures = useMemo(
+    () => (allFeatures ?? []).filter((feature) => feature.enabled),
+    [allFeatures],
+  );
   const [reorderEnabled, setReorderEnabled] = useState(false);
   const [orderedMenuItems, setOrderedMenuItems] = useState<ClubFeatureSummary[]>([]);
   const [activeFeatureKey, setActiveFeatureKey] = useState<string | null>(null);
   const [isReorderSaving, setIsReorderSaving] = useState(false);
   const [reorderFeedback, setReorderFeedback] = useState<string | null>(null);
-  const { toast, showToast, clearToast } = useEphemeralToast();
+  const dispatch = useAppDispatch();
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
@@ -197,38 +208,7 @@ export function AdminBottomNav({ clubId }: AdminBottomNavProps) {
     return pathname === targetPath || pathname.startsWith(`${targetPath}/`);
   });
 
-  useEffect(() => {
-    let cancelled = false;
-
-    const loadFeatures = async () => {
-      const result = await getClubFeatures(clubId);
-      if (cancelled) {
-        return;
-      }
-
-      if (!result.ok || !result.data) {
-        setEnabledFeatures([]);
-        setOrderedMenuItems([]);
-        return;
-      }
-
-      const nextEnabled = result.data.filter((feature) => feature.enabled);
-      setEnabledFeatures(nextEnabled);
-      setOrderedMenuItems(nextEnabled);
-    };
-
-    void loadFeatures();
-
-    const onFeatureUpdate = () => {
-      void loadFeatures();
-    };
-
-    window.addEventListener("semo:club-features-updated", onFeatureUpdate);
-    return () => {
-      cancelled = true;
-      window.removeEventListener("semo:club-features-updated", onFeatureUpdate);
-    };
-  }, [clubId]);
+  useEffect(() => { setOrderedMenuItems(enabledFeatures); }, [enabledFeatures]);
 
   useEffect(() => {
     if (!isMoreOpen) {
@@ -254,7 +234,7 @@ export function AdminBottomNav({ clubId }: AdminBottomNavProps) {
   const persistFeatureOrder = async (nextOrderedFeatures: ClubFeatureSummary[]) => {
     setIsReorderSaving(true);
     setReorderFeedback(null);
-    clearToast();
+    dispatch(hideToast());
     const result = await updateClubFeatures(clubId, {
       enabledFeatureKeys: nextOrderedFeatures.map((feature) => feature.featureKey),
     });
@@ -262,16 +242,15 @@ export function AdminBottomNav({ clubId }: AdminBottomNavProps) {
 
     if (!result.ok || !result.data) {
       setReorderFeedback(result.message ?? "순서 저장에 실패했습니다.");
-      showToast(result.message ?? "순서 저장에 실패했습니다.", "error");
+      dispatch(showToast({ message: result.message ?? "순서 저장에 실패했습니다.", tone: "error" }));
       return;
     }
 
     const nextEnabled = result.data.filter((feature) => feature.enabled);
-    setEnabledFeatures(nextEnabled);
     setOrderedMenuItems(nextEnabled);
+    void queryClient.invalidateQueries({ queryKey: clubKeys.features(clubId) });
     setReorderFeedback(null);
-    showToast("순서를 저장했습니다.", "success");
-    window.dispatchEvent(new Event("semo:club-features-updated"));
+    dispatch(showToast({ message: "순서를 저장했습니다.", tone: "success" }));
   };
 
   const handleReorderDragStart = (event: DragStartEvent) => {
@@ -338,7 +317,7 @@ export function AdminBottomNav({ clubId }: AdminBottomNavProps) {
     setActiveFeatureKey(null);
     setOrderedMenuItems(enabledFeatures);
     setReorderFeedback(null);
-    clearToast();
+    dispatch(hideToast());
   };
 
   const closeMoreMenu = () => {
@@ -346,7 +325,7 @@ export function AdminBottomNav({ clubId }: AdminBottomNavProps) {
     setReorderEnabled(false);
     setActiveFeatureKey(null);
     setReorderFeedback(null);
-    clearToast();
+    dispatch(hideToast());
     setOrderedMenuItems(enabledFeatures);
   };
 
@@ -359,7 +338,7 @@ export function AdminBottomNav({ clubId }: AdminBottomNavProps) {
     setReorderEnabled(false);
     setActiveFeatureKey(null);
     setReorderFeedback(null);
-    clearToast();
+    dispatch(hideToast());
     setOrderedMenuItems(enabledFeatures);
     setOpenMenuPathname(pathname);
   };
@@ -609,8 +588,6 @@ export function AdminBottomNav({ clubId }: AdminBottomNavProps) {
           </>
         ) : null}
       </AnimatePresence>
-
-      <EphemeralToast toastId={toast?.id ?? null} message={toast?.message ?? null} tone={toast?.tone} />
 
       <AnimatePresence initial={false}>
         {isDocked ? (
