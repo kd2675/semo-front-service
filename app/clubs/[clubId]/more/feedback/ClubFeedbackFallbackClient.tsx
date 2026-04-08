@@ -1,15 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useQueries } from "@tanstack/react-query";
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { myClubQueryOptions } from "@/app/lib/react-query/club/queries";
 import {
-  getClubFeedbackDetail,
-  getClubFeedbackHome,
-  getMyClub,
-  type ClubFeedbackDetailResponse,
-  type ClubFeedbackHomeResponse,
-  type MyClubSummary,
-} from "@/app/lib/clubs";
+  feedbackDetailFallbackQueryOptions,
+  feedbackHomeQueryOptions,
+} from "@/app/lib/react-query/feedback/queries";
 import { ClubTimelineLoadingShell } from "../../ClubRouteLoadingShells";
 import { ClubFeedbackClient } from "./ClubFeedbackClient";
 
@@ -21,44 +19,40 @@ export function ClubFeedbackFallbackClient({
   clubId,
 }: ClubFeedbackFallbackClientProps) {
   const router = useRouter();
-  const [club, setClub] = useState<MyClubSummary | null>(null);
-  const [feedbackHome, setFeedbackHome] = useState<ClubFeedbackHomeResponse | null>(null);
-  const [initialDetail, setInitialDetail] = useState<ClubFeedbackDetailResponse | null>(null);
+  const [clubQuery, feedbackHomeQuery] = useQueries({
+    queries: [myClubQueryOptions(clubId), feedbackHomeQueryOptions(clubId)],
+  });
+  const club = clubQuery.data ?? null;
+  const feedbackHome = feedbackHomeQuery.data ?? null;
+  const firstFeedbackId = feedbackHome?.items[0]?.feedbackId ?? null;
+  const [initialDetailQuery] = useQueries({
+    queries: [
+      {
+        ...feedbackDetailFallbackQueryOptions(clubId, firstFeedbackId as number),
+        enabled: firstFeedbackId != null,
+      },
+    ],
+  });
+  const initialDetail = initialDetailQuery.data ?? null;
 
   useEffect(() => {
-    let cancelled = false;
-
-    void (async () => {
-      const [clubResult, feedbackResult] = await Promise.all([
-        getMyClub(clubId),
-        getClubFeedbackHome(clubId),
-      ]);
-
-      if (cancelled) {
-        return;
-      }
-
-      if (!clubResult.ok || !clubResult.data || !feedbackResult.ok || !feedbackResult.data) {
+    if (
+      !clubQuery.isPending &&
+      !feedbackHomeQuery.isPending &&
+      (clubQuery.isError || feedbackHomeQuery.isError || !club || !feedbackHome)
+    ) {
         router.replace(`/clubs/${clubId}`);
-        return;
-      }
-
-      const firstFeedbackId = feedbackResult.data.items[0]?.feedbackId;
-      const detailResult =
-        firstFeedbackId == null ? null : await getClubFeedbackDetail(clubId, firstFeedbackId);
-      if (cancelled) {
-        return;
-      }
-
-      setClub(clubResult.data);
-      setFeedbackHome(feedbackResult.data);
-      setInitialDetail(detailResult?.ok && detailResult.data ? detailResult.data : null);
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [clubId, router]);
+    }
+  }, [
+    club,
+    clubId,
+    clubQuery.isError,
+    clubQuery.isPending,
+    feedbackHome,
+    feedbackHomeQuery.isError,
+    feedbackHomeQuery.isPending,
+    router,
+  ]);
 
   if (!club || !feedbackHome) {
     return <ClubTimelineLoadingShell />;

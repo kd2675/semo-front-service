@@ -1,5 +1,6 @@
 "use client";
 
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import {
   startTransition,
@@ -21,20 +22,27 @@ import {
   type BoardItemReadStatusResponse,
   type ClubBoardFeedItem,
   type TournamentSummary,
-  deleteClubTournament,
-  deleteClubNotice,
-  deleteClubScheduleEvent,
-  deleteClubScheduleVote,
-  getClubBoardItemReadStatus,
-  getClubNoticeFeed,
   type ClubNoticeFeedResponse,
   type ClubNoticeListItem,
   type ClubScheduleEventSummary,
   type ClubScheduleVoteSummary,
-  recordClubBoardItemRead,
 } from "@/app/lib/clubs";
 import { staggeredFadeUpMotion } from "@/app/lib/motion";
 import { getShareTargetBadges } from "@/app/lib/content-badge";
+import { invalidateClubQueries } from "@/app/lib/react-query/common";
+import {
+  boardReadStatusQueryOptions,
+  noticeFeedQueryOptions,
+} from "@/app/lib/react-query/board/queries";
+import {
+  deleteNoticeMutationOptions,
+  recordBoardItemReadMutationOptions,
+} from "@/app/lib/react-query/board/mutations";
+import {
+  deleteScheduleEventMutationOptions,
+  deleteScheduleVoteMutationOptions,
+} from "@/app/lib/react-query/schedule/mutations";
+import { deleteTournamentMutationOptions } from "@/app/lib/react-query/tournaments/mutations";
 import { getVoteLifecycleLabel } from "@/app/lib/vote-status";
 import { ClubNoticeEditorClient } from "./ClubNoticeEditorClient";
 import { NoticeManageCard } from "./NoticeManageCard";
@@ -249,6 +257,7 @@ function BoardVoteCard({
 }
 
 export function ClubBoardFeedClient({ clubId }: ClubBoardFeedClientProps) {
+  const queryClient = useQueryClient();
   const prefersReducedMotion = useReducedMotion();
   const reduceMotion = Boolean(prefersReducedMotion);
   const [items, setItems] = useState<ClubBoardFeedItem[]>([]);
@@ -278,6 +287,11 @@ export function ClubBoardFeedClient({ clubId }: ClubBoardFeedClientProps) {
   const [cursor, setCursor] = useState<CursorState>({ boardItemId: null });
   const [sentinelNode, setSentinelNode] = useState<HTMLDivElement | null>(null);
   const loadingRef = useRef(false);
+  const deleteNoticeMutation = useMutation(deleteNoticeMutationOptions(clubId));
+  const deleteEventMutation = useMutation(deleteScheduleEventMutationOptions(clubId));
+  const deleteVoteMutation = useMutation(deleteScheduleVoteMutationOptions(clubId));
+  const deleteTournamentMutation = useMutation(deleteTournamentMutationOptions(clubId));
+  const recordReadMutation = useMutation(recordBoardItemReadMutationOptions(clubId));
 
   const loadFeed = useEffectEvent(async (mode: "reset" | "append") => {
     if (loadingRef.current) {
@@ -300,22 +314,25 @@ export function ClubBoardFeedClient({ clubId }: ClubBoardFeedClientProps) {
     setLoading(true);
     setError(null);
 
-    const result = await getClubNoticeFeed(clubId, {
-      pinnedOnly,
-      cursorBoardItemId: mode === "append" ? cursor.boardItemId : null,
-      size: 10,
-    });
-
+    let payload: ClubNoticeFeedResponse;
+    try {
+      payload = await queryClient.fetchQuery(
+        noticeFeedQueryOptions(clubId, {
+          pinnedOnly,
+          cursorBoardItemId: mode === "append" ? cursor.boardItemId : null,
+          size: 10,
+        }),
+      );
+    } catch {
+      loadingRef.current = false;
+      setLoading(false);
+      setInitialLoaded(true);
+      setError("게시판 피드를 불러오지 못했습니다.");
+      return;
+    }
     loadingRef.current = false;
     setLoading(false);
     setInitialLoaded(true);
-
-    if (!result.ok || !result.data) {
-      setError(result.message ?? "게시판 피드를 불러오지 못했습니다.");
-      return;
-    }
-
-    const payload: ClubNoticeFeedResponse = result.data;
     setClubName(payload.clubName);
     setIsAdmin(payload.admin);
     setHasNext(payload.hasNext);
@@ -356,7 +373,7 @@ export function ClubBoardFeedClient({ clubId }: ClubBoardFeedClientProps) {
     }
     setDeleting(true);
     setError(null);
-    const result = await deleteClubNotice(clubId, deleteTarget.noticeId);
+    const result = await deleteNoticeMutation.mutateAsync(deleteTarget.noticeId);
     setDeleting(false);
     if (!result.ok) {
       setError(result.message ?? "공지 삭제에 실패했습니다.");
@@ -364,12 +381,14 @@ export function ClubBoardFeedClient({ clubId }: ClubBoardFeedClientProps) {
     }
     setDeleteTarget(null);
     setActiveActionKey(null);
+    void invalidateClubQueries(queryClient, clubId);
     setReloadKey((current) => current + 1);
   };
 
   const handleModalSaved = (savedNoticeId: number) => {
     setEditingNoticeId(null);
     setActiveActionKey(null);
+    void invalidateClubQueries(queryClient, clubId);
     setReloadKey((current) => current + 1);
     setDetailNoticeId(String(savedNoticeId));
   };
@@ -380,7 +399,7 @@ export function ClubBoardFeedClient({ clubId }: ClubBoardFeedClientProps) {
     }
     setDeleting(true);
     setError(null);
-    const result = await deleteClubScheduleEvent(clubId, deleteEventTarget.eventId);
+    const result = await deleteEventMutation.mutateAsync(deleteEventTarget.eventId);
     setDeleting(false);
     if (!result.ok) {
       setError(result.message ?? "일정 삭제에 실패했습니다.");
@@ -388,6 +407,7 @@ export function ClubBoardFeedClient({ clubId }: ClubBoardFeedClientProps) {
     }
     setDeleteEventTarget(null);
     setActiveActionKey(null);
+    void invalidateClubQueries(queryClient, clubId);
     setReloadKey((current) => current + 1);
   };
 
@@ -397,7 +417,7 @@ export function ClubBoardFeedClient({ clubId }: ClubBoardFeedClientProps) {
     }
     setDeleting(true);
     setError(null);
-    const result = await deleteClubScheduleVote(clubId, deleteVoteTarget.voteId);
+    const result = await deleteVoteMutation.mutateAsync(deleteVoteTarget.voteId);
     setDeleting(false);
     if (!result.ok) {
       setError(result.message ?? "투표 삭제에 실패했습니다.");
@@ -405,6 +425,7 @@ export function ClubBoardFeedClient({ clubId }: ClubBoardFeedClientProps) {
     }
     setDeleteVoteTarget(null);
     setActiveActionKey(null);
+    void invalidateClubQueries(queryClient, clubId);
     setReloadKey((current) => current + 1);
   };
 
@@ -413,13 +434,14 @@ export function ClubBoardFeedClient({ clubId }: ClubBoardFeedClientProps) {
       return;
     }
     setDeleting(true);
-    const result = await deleteClubTournament(clubId, deleteTournamentTarget.tournamentRecordId);
+    const result = await deleteTournamentMutation.mutateAsync(deleteTournamentTarget.tournamentRecordId);
     setDeleting(false);
     if (!result.ok) {
       return;
     }
     setDeleteTournamentTarget(null);
     setActiveActionKey(null);
+    void invalidateClubQueries(queryClient, clubId);
     setReloadKey((current) => current + 1);
   };
 
@@ -434,11 +456,12 @@ export function ClubBoardFeedClient({ clubId }: ClubBoardFeedClientProps) {
   };
 
   const recordBoardItemRead = async (boardItemId: number) => {
-    const result = await recordClubBoardItemRead(clubId, boardItemId);
+    const result = await recordReadMutation.mutateAsync(boardItemId);
     if (!result.ok || !result.data) {
       return;
     }
     patchBoardItemReadCount(boardItemId, result.data.readCount);
+    void invalidateClubQueries(queryClient, clubId);
   };
 
   const openBoardItemDetail = (item: ClubBoardFeedItem) => {
@@ -464,12 +487,15 @@ export function ClubBoardFeedClient({ clubId }: ClubBoardFeedClientProps) {
 
   const openBoardReadStatus = async (boardItemId: number, title: string) => {
     setActiveActionKey(null);
-    const result = await getClubBoardItemReadStatus(clubId, boardItemId);
-    if (!result.ok || !result.data) {
-      setError(result.message ?? "읽음 현황을 불러오지 못했습니다.");
+    try {
+      const status = await queryClient.fetchQuery(
+        boardReadStatusQueryOptions(clubId, boardItemId),
+      );
+      setReadStatusModal({ title, status });
+    } catch {
+      setError("읽음 현황을 불러오지 못했습니다.");
       return;
     }
-    setReadStatusModal({ title, status: result.data });
   };
 
   if (!initialLoaded && !error) {

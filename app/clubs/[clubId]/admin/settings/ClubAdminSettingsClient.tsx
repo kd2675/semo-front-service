@@ -1,15 +1,18 @@
 "use client";
 
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Public_Sans } from "next/font/google";
 import { useRouter } from "next/navigation";
-import { startTransition, useState } from "react";
+import { startTransition, useEffect, useState } from "react";
 import type { CSSProperties } from "react";
 import { ClubClassificationField } from "@/app/components/ClubClassificationField";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import { ClubRegionField } from "@/app/components/ClubRegionField";
 import { useAppToast } from "@/app/hooks/useAppToast";
 import { getActivityCategoryLabel, getAffiliationTypeLabel, getPrimaryClubActivityLabel } from "@/app/lib/club-classification";
-import { updateClubSettings, type MyClubSummary } from "@/app/lib/clubs";
+import { type MyClubSummary } from "@/app/lib/clubs";
+import { invalidateClubQueries } from "@/app/lib/react-query/common";
+import { updateClubSettingsMutationOptions } from "@/app/lib/react-query/club/mutations";
 
 const publicSans = Public_Sans({
   subsets: ["latin"],
@@ -22,6 +25,7 @@ type ClubAdminSettingsClientProps = {
 };
 
 export function ClubAdminSettingsClient({ clubId, initialClub }: ClubAdminSettingsClientProps) {
+  const queryClient = useQueryClient();
   const router = useRouter();
   const [club, setClub] = useState(initialClub);
   const [activityCategory, setActivityCategory] = useState(initialClub.activityCategory);
@@ -43,6 +47,17 @@ export function ClubAdminSettingsClient({ clubId, initialClub }: ClubAdminSettin
   const currentClassificationSummary = [currentActivityCategoryLabel, currentAffiliationTypeLabel]
     .filter(Boolean)
     .join(" · ");
+  const saveSettingsMutation = useMutation(updateClubSettingsMutationOptions(clubId));
+
+  useEffect(() => {
+    setClub(initialClub);
+    setActivityCategory(initialClub.activityCategory);
+    setActivityTags(initialClub.activityTags);
+    setAffiliationType(initialClub.affiliationType);
+    setRegionScope(initialClub.regionScope);
+    setRegionDepth1Code(initialClub.regionDepth1Code);
+    setRegionDepth2Code(initialClub.regionDepth2Code);
+  }, [initialClub]);
 
   const handleSave = async () => {
     if (isSaving) {
@@ -53,7 +68,7 @@ export function ClubAdminSettingsClient({ clubId, initialClub }: ClubAdminSettin
     setFeedback(null);
 
     try {
-      const result = await updateClubSettings(clubId, {
+      const result = await saveSettingsMutation.mutateAsync({
         activityCategory,
         activityTags,
         affiliationType,
@@ -77,6 +92,7 @@ export function ClubAdminSettingsClient({ clubId, initialClub }: ClubAdminSettin
         setRegionDepth1Code(updatedClub.regionDepth1Code);
         setRegionDepth2Code(updatedClub.regionDepth2Code);
       });
+      void invalidateClubQueries(queryClient, clubId);
       showToast("모임 기본 정보를 저장했습니다.");
     } finally {
       setIsSaving(false);

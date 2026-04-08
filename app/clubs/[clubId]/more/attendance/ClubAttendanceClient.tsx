@@ -1,15 +1,15 @@
 "use client";
 
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion, useReducedMotion } from "motion/react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ClubModeSwitchFab } from "@/app/components/ClubModeSwitchFab";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import { useAppToast } from "@/app/hooks/useAppToast";
-import {
-  checkInClubAttendance,
-  type ClubAttendanceResponse,
-} from "@/app/lib/clubs";
+import { type ClubAttendanceResponse } from "@/app/lib/clubs";
 import { staggeredFadeUpMotion } from "@/app/lib/motion";
+import { checkInAttendanceMutationOptions } from "@/app/lib/react-query/attendance/mutations";
+import { invalidateClubQueries } from "@/app/lib/react-query/common";
 
 type ClubAttendanceClientProps = {
   clubId: string;
@@ -24,11 +24,17 @@ export function ClubAttendanceClient({
   isAdmin,
   canPersist = true,
 }: ClubAttendanceClientProps) {
+  const queryClient = useQueryClient();
   const prefersReducedMotion = useReducedMotion();
   const reduceMotion = Boolean(prefersReducedMotion);
   const [attendance, setAttendance] = useState(initialData);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { showToast, clearToast } = useAppToast();
+  const checkInMutation = useMutation(checkInAttendanceMutationOptions(clubId));
+
+  useEffect(() => {
+    setAttendance(initialData);
+  }, [initialData]);
 
   const todayAttendance = attendance.todayAttendance;
 
@@ -43,7 +49,7 @@ export function ClubAttendanceClient({
 
     setIsSubmitting(true);
     clearToast();
-    const result = await checkInClubAttendance(clubId);
+    const result = await checkInMutation.mutateAsync();
     setIsSubmitting(false);
 
     if (!result.ok || !result.data) {
@@ -67,6 +73,7 @@ export function ClubAttendanceClient({
           : log,
       ),
     }));
+    void invalidateClubQueries(queryClient, clubId);
     showToast("출석 체크가 완료되었습니다.", "success");
   };
 

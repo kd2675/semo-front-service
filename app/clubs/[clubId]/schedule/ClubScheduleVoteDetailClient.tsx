@@ -1,19 +1,25 @@
 "use client";
 
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { RouterLink } from "@/app/components/RouterLink";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import { motion, useReducedMotion } from "motion/react";
-import { useEffect, useEffectEvent, useState } from "react";
+import { useState } from "react";
 import { ClubModeSwitchFab } from "@/app/components/ClubModeSwitchFab";
 import { ScheduleActionConfirmModal } from "./ScheduleActionConfirmModal";
-import {
-  closeClubScheduleVote,
-  getClubScheduleVoteDetail,
-  submitClubScheduleVoteSelection,
-  type ClubScheduleVoteDetailResponse,
-} from "@/app/lib/clubs";
+import { type ClubScheduleVoteDetailResponse } from "@/app/lib/clubs";
 import { getShareTargetBadges } from "@/app/lib/content-badge";
 import { staggeredFadeUpMotion } from "@/app/lib/motion";
+import { getQueryErrorMessage } from "@/app/lib/query-utils";
+import { invalidateClubQueries } from "@/app/lib/react-query/common";
+import {
+  closeScheduleVoteMutationOptions,
+  submitScheduleVoteSelectionMutationOptions,
+} from "@/app/lib/react-query/schedule/mutations";
+import {
+  scheduleQueryKeys,
+  scheduleVoteDetailQueryOptions,
+} from "@/app/lib/react-query/schedule/queries";
 import { getVoteLifecycleBadgeClassName, getVoteLifecycleLabel } from "@/app/lib/vote-status";
 import { ClubDetailLoadingShell } from "../ClubRouteLoadingShells";
 
@@ -64,34 +70,30 @@ export function ClubScheduleVoteDetailClient({
 }: ClubScheduleVoteDetailClientProps) {
   const prefersReducedMotion = useReducedMotion();
   const reduceMotion = Boolean(prefersReducedMotion);
-  const [payload, setPayload] = useState<ClubScheduleVoteDetailResponse | null>(null);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
+  const {
+    data: queryPayload,
+    isPending: loading,
+    error: queryError,
+  } = useQuery(scheduleVoteDetailQueryOptions(clubId, voteId));
+  const [payloadState, setPayload] = useState<ClubScheduleVoteDetailResponse | null>(null);
   const [closing, setClosing] = useState(false);
   const [showCloseConfirm, setShowCloseConfirm] = useState(false);
   const [submittingVoteOptionId, setSubmittingVoteOptionId] = useState<number | null>(null);
-  const [selectedOptionId, setSelectedOptionId] = useState<number | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [selectedOptionId, setSelectedOptionId] = useState<number | null>(queryPayload?.mySelectedOptionId ?? null);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const submitVoteMutation = useMutation(
+    submitScheduleVoteSelectionMutationOptions(clubId, voteId),
+  );
+  const closeVoteMutation = useMutation(closeScheduleVoteMutationOptions(clubId, voteId));
+  const payload = payloadState ?? queryPayload ?? null;
+  const error = actionError ?? (queryError
+    ? getQueryErrorMessage(queryError, "투표 상세를 불러오지 못했습니다.")
+    : null);
   const shareBadges = getShareTargetBadges({
     postedToBoard: payload?.postedToBoard,
     postedToCalendar: payload?.postedToCalendar,
   });
-
-  const loadDetail = useEffectEvent(async () => {
-    setLoading(true);
-    setError(null);
-    const result = await getClubScheduleVoteDetail(clubId, voteId);
-    setLoading(false);
-    if (!result.ok || !result.data) {
-      setError(result.message ?? "투표 상세를 불러오지 못했습니다.");
-      return;
-    }
-    setPayload(result.data);
-    setSelectedOptionId(result.data.mySelectedOptionId);
-  });
-
-  useEffect(() => {
-    void loadDetail();
-  }, [clubId, voteId]);
 
   const handleVoteSubmit = async () => {
     if (!payload?.votingOpen || selectedOptionId == null) {
@@ -99,15 +101,17 @@ export function ClubScheduleVoteDetailClient({
     }
 
     setSubmittingVoteOptionId(selectedOptionId);
-    setError(null);
-    const result = await submitClubScheduleVoteSelection(clubId, voteId, { voteOptionId: selectedOptionId });
+    setActionError(null);
+    const result = await submitVoteMutation.mutateAsync(selectedOptionId);
     setSubmittingVoteOptionId(null);
     if (!result.ok || !result.data) {
-      setError(result.message ?? "투표 저장에 실패했습니다.");
+      setActionError(result.message ?? "투표 저장에 실패했습니다.");
       return;
     }
+    queryClient.setQueryData(scheduleQueryKeys.scheduleVoteDetail(clubId, voteId), result.data);
     setPayload(result.data);
     setSelectedOptionId(result.data.mySelectedOptionId);
+    void invalidateClubQueries(queryClient, clubId);
   };
 
   const handleCloseVote = async () => {
@@ -116,15 +120,17 @@ export function ClubScheduleVoteDetailClient({
     }
 
     setClosing(true);
-    setError(null);
-    const result = await closeClubScheduleVote(clubId, voteId);
+    setActionError(null);
+    const result = await closeVoteMutation.mutateAsync();
     setClosing(false);
     if (!result.ok || !result.data) {
-      setError(result.message ?? "투표 종료에 실패했습니다.");
+      setActionError(result.message ?? "투표 종료에 실패했습니다.");
       return;
     }
+    queryClient.setQueryData(scheduleQueryKeys.scheduleVoteDetail(clubId, voteId), result.data);
     setPayload(result.data);
     setSelectedOptionId(result.data.mySelectedOptionId);
+    void invalidateClubQueries(queryClient, clubId);
   };
 
   if (loading && !payload && !error) {

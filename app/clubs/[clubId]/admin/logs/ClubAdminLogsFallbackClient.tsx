@@ -1,13 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useQueries } from "@tanstack/react-query";
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import {
-  getClubAdminActivities,
-  getMyClub,
-  type ClubAdminActivityFeedResponse,
-  type MyClubSummary,
-} from "@/app/lib/clubs";
+import { adminActivitiesQueryOptions } from "@/app/lib/react-query/activities/queries";
+import { myClubQueryOptions } from "@/app/lib/react-query/club/queries";
 import { AdminHomeLoadingShell } from "../AdminRouteLoadingShells";
 import { ClubAdminLogsClient } from "./ClubAdminLogsClient";
 
@@ -17,40 +14,23 @@ type ClubAdminLogsFallbackClientProps = {
 
 export function ClubAdminLogsFallbackClient({ clubId }: ClubAdminLogsFallbackClientProps) {
   const router = useRouter();
-  const [club, setClub] = useState<MyClubSummary | null>(null);
-  const [initialData, setInitialData] = useState<ClubAdminActivityFeedResponse | null>(null);
+  const [clubQuery, logsQuery] = useQueries({
+    queries: [myClubQueryOptions(clubId), adminActivitiesQueryOptions(clubId, 20)],
+  });
+  const club = clubQuery.data ?? null;
+  const initialData = logsQuery.data ?? null;
 
   useEffect(() => {
-    let cancelled = false;
-
-    void (async () => {
-      const [clubResult, logsResult] = await Promise.all([
-        getMyClub(clubId),
-        getClubAdminActivities(clubId, { size: 20 }),
-      ]);
-
-      if (cancelled) {
-        return;
-      }
-
-      if (!clubResult.ok || !clubResult.data || !clubResult.data.admin) {
+    if (!clubQuery.isPending && (clubQuery.isError || !club || !club.admin)) {
         router.replace(`/clubs/${clubId}`);
-        return;
-      }
+    }
+  }, [club, clubId, clubQuery.isError, clubQuery.isPending, router]);
 
-      if (!logsResult.ok || !logsResult.data) {
+  useEffect(() => {
+    if (!logsQuery.isPending && logsQuery.isError) {
         router.replace(`/clubs/${clubId}/admin`);
-        return;
-      }
-
-      setClub(clubResult.data);
-      setInitialData(logsResult.data);
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [clubId, router]);
+    }
+  }, [clubId, logsQuery.isError, logsQuery.isPending, router]);
 
   if (!club || !initialData) {
     return <AdminHomeLoadingShell />;

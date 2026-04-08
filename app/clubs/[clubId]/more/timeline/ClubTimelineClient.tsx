@@ -1,31 +1,25 @@
 "use client";
 
+import { useInfiniteQuery } from "@tanstack/react-query";
 import { ClubModeSwitchFab } from "@/app/components/ClubModeSwitchFab";
 import {
-  getClubTimeline,
   type ClubTimelineEntry,
   type ClubTimelineResponse,
 } from "@/app/lib/clubs";
 import { motion, useReducedMotion } from "motion/react";
 import {
   useEffect,
-  useEffectEvent,
   useMemo,
-  useRef,
   useState,
 } from "react";
 import { staggeredFadeUpMotion } from "@/app/lib/motion";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
+import { timelineInfiniteQueryOptions } from "@/app/lib/react-query/activities/queries";
 
 type ClubTimelineClientProps = {
   clubId: string;
   initialData: ClubTimelineResponse;
   isAdmin: boolean;
-};
-
-type CursorState = {
-  createdAt: string | null;
-  activityId: number | null;
 };
 
 type TimelineListItem =
@@ -149,51 +143,24 @@ export function ClubTimelineClient({
 }: ClubTimelineClientProps) {
   const prefersReducedMotion = useReducedMotion();
   const reduceMotion = Boolean(prefersReducedMotion);
-  const [timeline, setTimeline] = useState(initialData);
-  const [loading, setLoading] = useState(false);
-  const [feedback, setFeedback] = useState<string | null>(null);
   const [sentinelNode, setSentinelNode] = useState<HTMLDivElement | null>(null);
-  const loadingRef = useRef(false);
-
-  const cursor: CursorState = {
-    createdAt: timeline.nextCursorCreatedAt,
-    activityId: timeline.nextCursorActivityId,
-  };
-
-  const loadTimeline = useEffectEvent(async (mode: "reset" | "append") => {
-    if (loadingRef.current) {
-      return;
+  const timelineQuery = useInfiniteQuery(timelineInfiniteQueryOptions(clubId, initialData));
+  const timeline = useMemo<ClubTimelineResponse>(() => {
+    const pages = timelineQuery.data?.pages;
+    if (!pages || pages.length === 0) {
+      return initialData;
     }
-
-    loadingRef.current = true;
-    setLoading(true);
-    setFeedback(null);
-
-    const result = await getClubTimeline(clubId, {
-      cursorCreatedAt: mode === "append" ? cursor.createdAt : null,
-      cursorActivityId: mode === "append" ? cursor.activityId : null,
-      size: 12,
-    });
-
-    loadingRef.current = false;
-    setLoading(false);
-
-    if (!result.ok || !result.data) {
-      setFeedback(result.message ?? "타임라인을 불러오지 못했습니다.");
-      return;
-    }
-
-    const nextTimeline = result.data;
-
-    setTimeline((current) => ({
-      ...nextTimeline,
-      entries:
-        mode === "append" ? [...current.entries, ...nextTimeline.entries] : nextTimeline.entries,
-    }));
-  });
+    const lastPage = pages[pages.length - 1] ?? initialData;
+    return {
+      ...lastPage,
+      entries: pages.flatMap((page: ClubTimelineResponse) => page.entries),
+    };
+  }, [initialData, timelineQuery.data]);
+  const loading = timelineQuery.isFetchingNextPage;
+  const feedback = timelineQuery.isFetchNextPageError ? "타임라인을 불러오지 못했습니다." : null;
 
   useEffect(() => {
-    if (!sentinelNode || !timeline.hasNext || loading) {
+    if (!sentinelNode || !timelineQuery.hasNextPage || loading) {
       return;
     }
 
@@ -202,7 +169,7 @@ export function ClubTimelineClient({
         if (!entries[0]?.isIntersecting) {
           return;
         }
-        void loadTimeline("append");
+        void timelineQuery.fetchNextPage();
       },
       { rootMargin: "220px 0px" },
     );
@@ -211,7 +178,7 @@ export function ClubTimelineClient({
     return () => {
       observer.disconnect();
     };
-  }, [loading, sentinelNode, timeline.hasNext]);
+  }, [loading, sentinelNode, timelineQuery]);
 
   const renderedItems = useMemo<TimelineListItem[]>(() => {
     const items: TimelineListItem[] = [];

@@ -1,8 +1,12 @@
 "use client";
 
-import { startTransition, useEffect, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { getClubNoticeHome, type ClubNoticeHomeResponse } from "@/app/lib/clubs";
+import {
+  boardQueryKeys,
+  noticeHomeQueryOptions,
+} from "@/app/lib/react-query/board/queries";
 import { ClubBoardFeedLoadingShell } from "../../ClubRouteLoadingShells";
 import { ClubNoticeHomeClient } from "./ClubNoticeHomeClient";
 
@@ -16,41 +20,27 @@ export function ClubNoticeHomeFallbackClient({
   mode = "user",
 }: ClubNoticeHomeFallbackClientProps) {
   const router = useRouter();
-  const [payload, setPayload] = useState<ClubNoticeHomeResponse | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [reloadKey, setReloadKey] = useState(0);
+  const queryClient = useQueryClient();
+  const {
+    data: payload,
+    isPending,
+    isFetching,
+    isError,
+  } = useQuery(noticeHomeQueryOptions(clubId));
 
   useEffect(() => {
-    let cancelled = false;
-
-    void (async () => {
-      setLoading(true);
-      const result = await getClubNoticeHome(clubId);
-      if (cancelled) {
-        return;
-      }
-
-      setLoading(false);
-      if (!result.ok || !result.data) {
-        router.replace(mode === "admin" ? `/clubs/${clubId}/admin` : `/clubs/${clubId}`);
-        return;
-      }
-
-      setPayload(result.data);
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [clubId, mode, reloadKey, router]);
+    if (isError) {
+      router.replace(mode === "admin" ? `/clubs/${clubId}/admin` : `/clubs/${clubId}`);
+    }
+  }, [clubId, isError, mode, router]);
 
   const handleReload = () => {
-    startTransition(() => {
-      setReloadKey((current) => current + 1);
-    });
+      void queryClient.invalidateQueries({
+        queryKey: boardQueryKeys.noticeHome(clubId),
+      });
   };
 
-  if (loading || !payload) {
+  if (isPending || isFetching || !payload) {
     return <ClubBoardFeedLoadingShell />;
   }
 

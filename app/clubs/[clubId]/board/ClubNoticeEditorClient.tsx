@@ -1,5 +1,6 @@
 "use client";
 
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import Image from "next/image";
 import { AnimatePresence } from "motion/react";
 import { RouterLink } from "@/app/components/RouterLink";
@@ -9,13 +10,12 @@ import { TimePopoverField } from "@/app/components/TimePopoverField";
 import { useRouter } from "next/navigation";
 import { useEffect, useEffectEvent, useId, useState } from "react";
 import { uploadTempImage } from "@/app/lib/imageUpload";
+import { invalidateClubQueries } from "@/app/lib/react-query/common";
 import {
-  createClubNotice,
-  deleteClubNotice,
-  getClubNoticeDetail,
-  updateClubNotice,
-  type ClubNoticeDetailResponse,
-} from "@/app/lib/clubs";
+  deleteNoticeMutationOptions,
+  saveNoticeMutationOptions,
+} from "@/app/lib/react-query/board/mutations";
+import { noticeDetailQueryOptions } from "@/app/lib/react-query/board/queries";
 import { ClubEditorLoadingShell } from "../ClubRouteLoadingShells";
 import { ScheduleActionConfirmModal } from "../schedule/ScheduleActionConfirmModal";
 
@@ -95,6 +95,7 @@ export function ClubNoticeEditorClient({
   onSaved,
   onDeleted,
 }: ClubNoticeEditorClientProps) {
+  const queryClient = useQueryClient();
   const router = useRouter();
   const formId = useId();
   const isEdit = Boolean(noticeId);
@@ -127,6 +128,8 @@ export function ClubNoticeEditorClient({
   const [canEdit, setCanEdit] = useState(!isEdit);
   const [canDelete, setCanDelete] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const saveNoticeMutation = useMutation(saveNoticeMutationOptions(clubId, noticeId));
+  const deleteNoticeMutation = useMutation(deleteNoticeMutationOptions(clubId, noticeId));
   const resolvedBasePath = basePath ?? `/clubs/${clubId}/more/notices`;
   const backHref = isEdit && noticeId ? `${resolvedBasePath}/${noticeId}` : resolvedBasePath;
 
@@ -135,35 +138,37 @@ export function ClubNoticeEditorClient({
       return;
     }
     setLoading(true);
-    const result = await getClubNoticeDetail(clubId, noticeId);
-    setLoading(false);
-    if (!result.ok || !result.data) {
-      setError(result.message ?? "공지 정보를 불러오지 못했습니다.");
+    try {
+      const payload = await queryClient.fetchQuery(noticeDetailQueryOptions(clubId, noticeId));
+      setLoading(false);
+      setError(null);
+      setClubName(payload.clubName);
+      setTitle(payload.title);
+      setContent(payload.content);
+      setFileName(payload.fileName);
+      setImageUrl(payload.imageUrl);
+      setThumbnailUrl(payload.thumbnailUrl);
+      setLocationLabel(payload.locationLabel ?? "");
+      setScheduleAtDate(toDatePart(payload.scheduleAt));
+      setScheduleAtTime(toTimePart(payload.scheduleAt));
+      setScheduleEndAtDate(toDatePart(payload.scheduleEndAt));
+      setScheduleEndAtTime(toTimePart(payload.scheduleEndAt));
+      setScheduleDateMode(
+        payload.scheduleAt && payload.scheduleEndAt && toDatePart(payload.scheduleAt) !== toDatePart(payload.scheduleEndAt)
+          ? "range"
+          : "single",
+      );
+      setScheduleTimeEnabled(payload.scheduleTimeEnabled);
+      setPostToBoard(payload.postedToBoard);
+      setPostToCalendar(payload.postedToCalendar);
+      setPinned(payload.pinned);
+      setCanEdit(payload.canEdit);
+      setCanDelete(payload.canDelete);
+    } catch {
+      setLoading(false);
+      setError("공지 정보를 불러오지 못했습니다.");
       return;
     }
-    const payload: ClubNoticeDetailResponse = result.data;
-    setClubName(payload.clubName);
-    setTitle(payload.title);
-    setContent(payload.content);
-    setFileName(payload.fileName);
-    setImageUrl(payload.imageUrl);
-    setThumbnailUrl(payload.thumbnailUrl);
-    setLocationLabel(payload.locationLabel ?? "");
-    setScheduleAtDate(toDatePart(payload.scheduleAt));
-    setScheduleAtTime(toTimePart(payload.scheduleAt));
-    setScheduleEndAtDate(toDatePart(payload.scheduleEndAt));
-    setScheduleEndAtTime(toTimePart(payload.scheduleEndAt));
-    setScheduleDateMode(
-      payload.scheduleAt && payload.scheduleEndAt && toDatePart(payload.scheduleAt) !== toDatePart(payload.scheduleEndAt)
-        ? "range"
-        : "single",
-    );
-    setScheduleTimeEnabled(payload.scheduleTimeEnabled);
-    setPostToBoard(payload.postedToBoard);
-    setPostToCalendar(payload.postedToCalendar);
-    setPinned(payload.pinned);
-    setCanEdit(payload.canEdit);
-    setCanDelete(payload.canDelete);
   });
 
   useEffect(() => {
@@ -239,14 +244,13 @@ export function ClubNoticeEditorClient({
       postToCalendar,
       pinned,
     };
-    const result = isEdit && noticeId
-      ? await updateClubNotice(clubId, noticeId, request)
-      : await createClubNotice(clubId, request);
+    const result = await saveNoticeMutation.mutateAsync(request);
     setSaving(false);
     if (!result.ok || !result.data) {
       setError(result.message ?? "공지 저장에 실패했습니다.");
       return;
     }
+    void invalidateClubQueries(queryClient, clubId);
     if (onSaved) {
       onSaved(result.data.noticeId);
       return;
@@ -286,12 +290,13 @@ export function ClubNoticeEditorClient({
     }
     setDeleting(true);
     setError(null);
-    const result = await deleteClubNotice(clubId, noticeId);
+    const result = await deleteNoticeMutation.mutateAsync(noticeId);
     setDeleting(false);
     if (!result.ok) {
       setError(result.message ?? "공지 삭제에 실패했습니다.");
       return;
     }
+    void invalidateClubQueries(queryClient, clubId);
     setShowDeleteModal(false);
     if (onDeleted) {
       onDeleted();

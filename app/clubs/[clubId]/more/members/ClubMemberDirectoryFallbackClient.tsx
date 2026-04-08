@@ -1,13 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useQueries } from "@tanstack/react-query";
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import {
-  getClubMemberDirectory,
-  getMyClub,
-  type ClubMemberDirectoryResponse,
-  type MyClubSummary,
-} from "@/app/lib/clubs";
+import { myClubQueryOptions } from "@/app/lib/react-query/club/queries";
+import { memberDirectoryQueryOptions } from "@/app/lib/react-query/members/queries";
 import { ClubTimelineLoadingShell } from "../../ClubRouteLoadingShells";
 import { ClubMemberDirectoryClient } from "./ClubMemberDirectoryClient";
 
@@ -19,35 +16,30 @@ export function ClubMemberDirectoryFallbackClient({
   clubId,
 }: ClubMemberDirectoryFallbackClientProps) {
   const router = useRouter();
-  const [club, setClub] = useState<MyClubSummary | null>(null);
-  const [directory, setDirectory] = useState<ClubMemberDirectoryResponse | null>(null);
+  const [clubQuery, directoryQuery] = useQueries({
+    queries: [myClubQueryOptions(clubId), memberDirectoryQueryOptions(clubId)],
+  });
+  const club = clubQuery.data ?? null;
+  const directory = directoryQuery.data ?? null;
 
   useEffect(() => {
-    let cancelled = false;
-
-    void (async () => {
-      const [clubResult, directoryResult] = await Promise.all([
-        getMyClub(clubId),
-        getClubMemberDirectory(clubId),
-      ]);
-
-      if (cancelled) {
-        return;
-      }
-
-      if (!clubResult.ok || !clubResult.data || !directoryResult.ok || !directoryResult.data) {
+    if (
+      !clubQuery.isPending &&
+      !directoryQuery.isPending &&
+      (clubQuery.isError || directoryQuery.isError || !club || !directory)
+    ) {
         router.replace(`/clubs/${clubId}`);
-        return;
-      }
-
-      setClub(clubResult.data);
-      setDirectory(directoryResult.data);
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [clubId, router]);
+    }
+  }, [
+    club,
+    clubId,
+    clubQuery.isError,
+    clubQuery.isPending,
+    directory,
+    directoryQuery.isError,
+    directoryQuery.isPending,
+    router,
+  ]);
 
   if (!club || !directory) {
     return <ClubTimelineLoadingShell />;

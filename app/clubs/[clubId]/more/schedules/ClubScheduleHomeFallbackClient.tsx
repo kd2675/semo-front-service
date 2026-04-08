@@ -1,8 +1,12 @@
 "use client";
 
-import { startTransition, useEffect, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { getClubScheduleHome, type ClubScheduleHomeResponse } from "@/app/lib/clubs";
+import {
+  scheduleHomeQueryOptions,
+  scheduleQueryKeys,
+} from "@/app/lib/react-query/schedule/queries";
 import { ClubScheduleHomeLoadingShell } from "../../ClubRouteLoadingShells";
 import { ClubScheduleHomeClient } from "./ClubScheduleHomeClient";
 
@@ -16,41 +20,24 @@ export function ClubScheduleHomeFallbackClient({
   mode = "user",
 }: ClubScheduleHomeFallbackClientProps) {
   const router = useRouter();
-  const [payload, setPayload] = useState<ClubScheduleHomeResponse | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [reloadKey, setReloadKey] = useState(0);
+  const queryClient = useQueryClient();
+  const { data: payload, isPending, isFetching, isError } = useQuery(
+    scheduleHomeQueryOptions(clubId),
+  );
 
   useEffect(() => {
-    let cancelled = false;
-
-    void (async () => {
-      setLoading(true);
-      const result = await getClubScheduleHome(clubId);
-      if (cancelled) {
-        return;
-      }
-
-      setLoading(false);
-      if (!result.ok || !result.data) {
+    if (!isPending && isError) {
         router.replace(mode === "admin" ? `/clubs/${clubId}/admin` : `/clubs/${clubId}`);
-        return;
-      }
-
-      setPayload(result.data);
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [clubId, mode, reloadKey, router]);
+    }
+  }, [clubId, isError, isPending, mode, router]);
 
   const handleReload = () => {
-    startTransition(() => {
-      setReloadKey((current) => current + 1);
+    void queryClient.invalidateQueries({
+      queryKey: scheduleQueryKeys.scheduleHome(clubId),
     });
   };
 
-  if (loading || !payload) {
+  if (isPending || isFetching || !payload) {
     return <ClubScheduleHomeLoadingShell mode={mode} />;
   }
 

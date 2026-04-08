@@ -1,5 +1,6 @@
 "use client";
 
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   DndContext,
   DragOverlay,
@@ -27,11 +28,10 @@ import { Public_Sans } from "next/font/google";
 import { motion, useReducedMotion } from "motion/react";
 import { startTransition, useEffect, useMemo, useState } from "react";
 import type { CSSProperties } from "react";
-import {
-  updateClubFeatures,
-  type ClubFeatureSummary,
-} from "@/app/lib/clubs";
+import { type ClubFeatureSummary } from "@/app/lib/clubs";
 import { staggeredFadeUpMotion } from "@/app/lib/motion";
+import { updateClubFeaturesMutationOptions } from "@/app/lib/react-query/club/mutations";
+import { invalidateClubQueries } from "@/app/lib/react-query/common";
 
 const publicSans = Public_Sans({
   subsets: ["latin"],
@@ -154,6 +154,7 @@ export function ClubAdminMenuClient({
   initialFeatures,
   canPersist = true,
 }: ClubAdminMenuClientProps) {
+  const queryClient = useQueryClient();
   const prefersReducedMotion = useReducedMotion();
   const reduceMotion = Boolean(prefersReducedMotion);
   const [features, setFeatures] = useState(() => cloneFeatures(initialFeatures));
@@ -209,6 +210,7 @@ export function ClubAdminMenuClient({
       savedEnabledFeatureKeys.some((featureKey, index) => featureKey !== currentEnabledFeatureKeys[index]),
     [currentEnabledFeatureKeys, savedEnabledFeatureKeys],
   );
+  const saveFeaturesMutation = useMutation(updateClubFeaturesMutationOptions(clubId));
 
   const handleToggle = (featureKey: string) => {
     startTransition(() => {
@@ -268,11 +270,11 @@ export function ClubAdminMenuClient({
 
     setIsSaving(true);
     clearToast();
-    const result = await updateClubFeatures(clubId, {
-      enabledFeatureKeys: features
+    const result = await saveFeaturesMutation.mutateAsync(
+      features
         .filter((feature) => feature.enabled)
         .map((feature) => feature.featureKey),
-    });
+    );
     setIsSaving(false);
 
     if (!result.ok || !result.data) {
@@ -283,6 +285,7 @@ export function ClubAdminMenuClient({
     setFeatures(cloneFeatures(result.data));
     setSavedFeatures(cloneFeatures(result.data));
     setSavedEnabledFeatureKeys(extractEnabledFeatureKeys(result.data));
+    void invalidateClubQueries(queryClient, clubId);
     showToast("기능 설정이 저장되었습니다.", "success");
     window.dispatchEvent(new Event("semo:club-features-updated"));
   };

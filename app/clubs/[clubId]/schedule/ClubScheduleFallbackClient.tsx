@@ -1,7 +1,8 @@
 "use client";
 
-import { startTransition, useEffect, useState } from "react";
-import { getClubSchedule, type ClubScheduleResponse } from "@/app/lib/clubs";
+import { useQuery } from "@tanstack/react-query";
+import { startTransition, useState } from "react";
+import { clubScheduleQueryOptions } from "@/app/lib/react-query/schedule/queries";
 import { ScheduleClient } from "./ScheduleClient";
 import { ClubScheduleLoadingShell } from "../ClubRouteLoadingShells";
 
@@ -13,32 +14,11 @@ export function ClubScheduleFallbackClient({ clubId }: ClubScheduleFallbackClien
   const today = new Date();
   const [activeYear, setActiveYear] = useState(today.getFullYear());
   const [activeMonth, setActiveMonth] = useState(today.getMonth() + 1);
-  const [payload, setPayload] = useState<ClubScheduleResponse | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isMonthLoading, setIsMonthLoading] = useState(false);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    void (async () => {
-      setIsMonthLoading(true);
-      const result = await getClubSchedule(clubId, { year: activeYear, month: activeMonth });
-      if (cancelled) {
-        return;
-      }
-
-      setIsLoading(false);
-      setIsMonthLoading(false);
-      if (!result.ok || !result.data) {
-        return;
-      }
-      setPayload(result.data);
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [activeMonth, activeYear, clubId]);
+  const {
+    data: payload,
+    isPending,
+    isFetching,
+  } = useQuery(clubScheduleQueryOptions(clubId, activeYear, activeMonth));
 
   const handleMonthChange = (year: number, month: number) => {
     startTransition(() => {
@@ -47,7 +27,7 @@ export function ClubScheduleFallbackClient({ clubId }: ClubScheduleFallbackClien
     });
   };
 
-  if (isLoading) {
+  if (isPending && !payload) {
     return <ClubScheduleLoadingShell />;
   }
 
@@ -76,7 +56,7 @@ export function ClubScheduleFallbackClient({ clubId }: ClubScheduleFallbackClien
       }
       activeYear={payload?.calendarYear ?? activeYear}
       activeMonth={payload?.calendarMonth ?? activeMonth}
-      isMonthLoading={isMonthLoading}
+      isMonthLoading={isFetching}
       onChangeMonth={handleMonthChange}
     />
   );

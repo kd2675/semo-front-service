@@ -1,22 +1,26 @@
 "use client";
 
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import { useAppToast } from "@/app/hooks/useAppToast";
 import { useAppAlert } from "@/app/hooks/useAppAlert";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { startTransition, useDeferredValue, useMemo, useState } from "react";
+import { startTransition, useDeferredValue, useEffect, useMemo, useState } from "react";
 import type { CSSProperties } from "react";
 import {
   getClubAdminJoinRequests,
   getClubAdminMembers,
-  reviewClubAdminJoinRequest,
-  updateClubAdminMemberRole,
-  updateClubAdminMemberStatus,
   type ClubAdminJoinRequest,
   type ClubAdminMember,
 } from "@/app/lib/clubs";
 import { overlayFadeMotion, popInMotion, staggeredFadeUpMotion } from "@/app/lib/motion";
+import { invalidateClubQueries } from "@/app/lib/react-query/common";
+import {
+  reviewJoinRequestMutationOptions,
+  updateMemberRoleMutationOptions,
+  updateMemberStatusMutationOptions,
+} from "@/app/lib/react-query/members/mutations";
 
 const plusJakartaSans = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -230,6 +234,7 @@ export function ClubAdminMembersClient({
   initialMembers,
   initialJoinRequests,
 }: ClubAdminMembersClientProps) {
+  const queryClient = useQueryClient();
   const prefersReducedMotion = useReducedMotion();
   const reduceMotion = Boolean(prefersReducedMotion);
   const [query, setQuery] = useState("");
@@ -242,6 +247,17 @@ export function ClubAdminMembersClient({
   const deferredQuery = useDeferredValue(query.trim().toLowerCase());
   const { showAlert } = useAppAlert();
   const { showToast } = useAppToast();
+  const reviewJoinRequestMutation = useMutation(reviewJoinRequestMutationOptions(clubId));
+  const updateMemberRoleMutation = useMutation(updateMemberRoleMutationOptions(clubId));
+  const updateMemberStatusMutation = useMutation(updateMemberStatusMutationOptions(clubId));
+
+  useEffect(() => {
+    setMembers(initialMembers);
+  }, [initialMembers]);
+
+  useEffect(() => {
+    setJoinRequests(initialJoinRequests);
+  }, [initialJoinRequests]);
 
   const filteredJoinRequests = useMemo(() => {
     if (deferredQuery.length === 0) {
@@ -301,7 +317,8 @@ export function ClubAdminMembersClient({
     requestStatus: "APPROVED" | "REJECTED",
   ) => {
     setReviewingJoinRequestId(request.clubJoinRequestId);
-    const result = await reviewClubAdminJoinRequest(clubId, request.clubJoinRequestId, {
+    const result = await reviewJoinRequestMutation.mutateAsync({
+      clubJoinRequestId: request.clubJoinRequestId,
       requestStatus,
     });
     if (!result.ok || !result.data) {
@@ -316,6 +333,7 @@ export function ClubAdminMembersClient({
 
     try {
       await reloadAdminData();
+      void invalidateClubQueries(queryClient, clubId);
       showToast(
         requestStatus === "APPROVED"
           ? `${request.displayName} 가입 신청을 승인했습니다.`
@@ -344,7 +362,8 @@ export function ClubAdminMembersClient({
     setSaving(true);
 
     if (currentMember.roleCode !== nextRoleCode) {
-      const roleResult = await updateClubAdminMemberRole(clubId, currentMember.clubMemberId, {
+      const roleResult = await updateMemberRoleMutation.mutateAsync({
+        clubMemberId: currentMember.clubMemberId,
         roleCode: nextRoleCode,
       });
       if (!roleResult.ok || !roleResult.data) {
@@ -361,7 +380,8 @@ export function ClubAdminMembersClient({
     }
 
     if (currentMember.membershipStatus !== nextMembershipStatus) {
-      const statusResult = await updateClubAdminMemberStatus(clubId, currentMember.clubMemberId, {
+      const statusResult = await updateMemberStatusMutation.mutateAsync({
+        clubMemberId: currentMember.clubMemberId,
         membershipStatus: nextMembershipStatus,
       });
       if (!statusResult.ok || !statusResult.data) {
@@ -379,6 +399,7 @@ export function ClubAdminMembersClient({
 
     setSaving(false);
     setSelectedMember(null);
+    void invalidateClubQueries(queryClient, clubId);
     showToast(`${currentMember.displayName} 정보를 저장했습니다.`);
   };
 

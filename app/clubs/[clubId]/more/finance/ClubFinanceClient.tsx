@@ -1,5 +1,6 @@
 "use client";
 
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { startTransition, useMemo, useState, type ReactNode } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { ClubModeSwitchFab } from "@/app/components/ClubModeSwitchFab";
@@ -7,7 +8,6 @@ import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import { RouteModal } from "@/app/components/RouteModal";
 import { useAppToast } from "@/app/hooks/useAppToast";
 import {
-  createClubFinanceRequest,
   type ClubFinanceHomeResponse,
   type ClubFinancePayment,
   type ClubFinanceRequest,
@@ -16,6 +16,8 @@ import {
 } from "@/app/lib/clubs";
 import { FAB_RIGHT_OFFSET_CLASS_NAME, getActionFabBottomClass } from "@/app/lib/fab";
 import { staggeredFadeUpMotion } from "@/app/lib/motion";
+import { invalidateClubQueries } from "@/app/lib/react-query/common";
+import { createFinanceRequestMutationOptions } from "@/app/lib/react-query/finance/mutations";
 
 type ClubFinanceClientProps = {
   clubId: string;
@@ -113,15 +115,22 @@ export function ClubFinanceClient({
   initialRequestFeed,
   isAdmin,
 }: ClubFinanceClientProps) {
+  const queryClient = useQueryClient();
   const prefersReducedMotion = useReducedMotion();
   const reduceMotion = Boolean(prefersReducedMotion);
   const finance = initialData;
-  const [requests, setRequests] = useState(initialRequestFeed.items);
+  const [createdRequests, setCreatedRequests] = useState<ClubFinanceRequest[]>([]);
   const [showActionSheet, setShowActionSheet] = useState(false);
   const [activeAction, setActiveAction] = useState<MemberFabAction | null>(null);
   const [draft, setDraft] = useState<MemberRequestDraft>(createDraft("ADVANCE"));
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { showToast, clearToast } = useAppToast();
+  const createFinanceRequestMutation = useMutation(createFinanceRequestMutationOptions(clubId));
+
+  const requests = useMemo(() => {
+    const initialRequestIds = new Set(initialRequestFeed.items.map((request) => request.requestId));
+    return [...createdRequests.filter((request) => !initialRequestIds.has(request.requestId)), ...initialRequestFeed.items];
+  }, [createdRequests, initialRequestFeed.items]);
 
   const paidHistory = useMemo(
     () =>
@@ -181,7 +190,7 @@ export function ClubFinanceClient({
 
     setIsSubmitting(true);
     clearToast();
-    const result = await createClubFinanceRequest(clubId, {
+    const result = await createFinanceRequestMutation.mutateAsync({
       requestTypeCode: activeAction,
       title: draft.title.trim(),
       amount: parsedAmount,
@@ -196,9 +205,10 @@ export function ClubFinanceClient({
     }
 
     startTransition(() => {
-      setRequests((current) => [result.data!, ...current]);
+      setCreatedRequests((current) => [result.data!, ...current]);
       setActiveAction(null);
     });
+    void invalidateClubQueries(queryClient, clubId);
     showToast(`${result.data.requestTypeLabel}이 운영진에게 제출되었습니다.`, "success");
   };
 

@@ -1,18 +1,20 @@
 "use client";
 
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Manrope } from "next/font/google";
 import { motion, useReducedMotion } from "motion/react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import { useAppToast } from "@/app/hooks/useAppToast";
 import {
-  updateClubAdminMemberDirectorySettings,
   type ClubAdminMemberDirectorySettingsResponse,
   type ClubMemberDirectoryMember,
   type ClubMemberDirectorySettings,
 } from "@/app/lib/clubs";
 import { staggeredFadeUpMotion } from "@/app/lib/motion";
+import { invalidateClubQueries } from "@/app/lib/react-query/common";
+import { updateMemberDirectorySettingsMutationOptions } from "@/app/lib/react-query/members/mutations";
 
 const manrope = Manrope({
   subsets: ["latin"],
@@ -404,12 +406,21 @@ export function ClubAdminMemberDirectoryClient({
   clubId,
   initialData,
 }: ClubAdminMemberDirectoryClientProps) {
+  const queryClient = useQueryClient();
   const prefersReducedMotion = useReducedMotion();
   const reduceMotion = Boolean(prefersReducedMotion);
   const [settings, setSettings] = useState(initialData.settings);
   const [savedSettings, setSavedSettings] = useState(initialData.settings);
   const [saving, setSaving] = useState(false);
   const { showToast, clearToast } = useAppToast();
+  const saveDirectorySettingsMutation = useMutation(
+    updateMemberDirectorySettingsMutationOptions(clubId),
+  );
+
+  useEffect(() => {
+    setSettings(initialData.settings);
+    setSavedSettings(initialData.settings);
+  }, [initialData]);
 
   const previewMembers = useMemo(() => initialData.previewMembers.slice(0, 3), [initialData.previewMembers]);
   const enabledVisibilityCount = useMemo(
@@ -438,7 +449,7 @@ export function ClubAdminMemberDirectoryClient({
 
     setSaving(true);
     clearToast();
-    const result = await updateClubAdminMemberDirectorySettings(clubId, {
+    const result = await saveDirectorySettingsMutation.mutateAsync({
       showPositions: settings.showPositions,
       showTagline: settings.showTagline,
       showRecentActivity: settings.showRecentActivity,
@@ -452,6 +463,7 @@ export function ClubAdminMemberDirectoryClient({
 
     setSettings(result.data.settings);
     setSavedSettings(result.data.settings);
+    void invalidateClubQueries(queryClient, clubId);
     showToast("회원 디렉터리 설정을 저장했습니다.", "success");
   };
 

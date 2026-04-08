@@ -1,14 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useQueries } from "@tanstack/react-query";
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import {
-  getClubTodos,
-  getMyClub,
-  type ClubTodoResponse,
-  type MyClubSummary,
-} from "@/app/lib/clubs";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
+import { myClubQueryOptions } from "@/app/lib/react-query/club/queries";
+import { todoQueryOptions } from "@/app/lib/react-query/todos/queries";
 import { ClubTodoClient } from "./ClubTodoClient";
 
 type ClubTodoFallbackClientProps = {
@@ -17,35 +14,30 @@ type ClubTodoFallbackClientProps = {
 
 export function ClubTodoFallbackClient({ clubId }: ClubTodoFallbackClientProps) {
   const router = useRouter();
-  const [club, setClub] = useState<MyClubSummary | null>(null);
-  const [todoData, setTodoData] = useState<ClubTodoResponse | null>(null);
+  const [clubQuery, todoQuery] = useQueries({
+    queries: [myClubQueryOptions(clubId), todoQueryOptions(clubId)],
+  });
+  const club = clubQuery.data ?? null;
+  const todoData = todoQuery.data ?? null;
 
   useEffect(() => {
-    let cancelled = false;
-
-    void (async () => {
-      const [clubResult, todoResult] = await Promise.all([
-        getMyClub(clubId),
-        getClubTodos(clubId),
-      ]);
-
-      if (cancelled) {
-        return;
-      }
-
-      if (!clubResult.ok || !clubResult.data || !todoResult.ok || !todoResult.data) {
-        router.replace(`/clubs/${clubId}`);
-        return;
-      }
-
-      setClub(clubResult.data);
-      setTodoData(todoResult.data);
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [clubId, router]);
+    if (
+      !clubQuery.isPending &&
+      !todoQuery.isPending &&
+      (clubQuery.isError || todoQuery.isError || !club || !todoData)
+    ) {
+      router.replace(`/clubs/${clubId}`);
+    }
+  }, [
+    club,
+    clubId,
+    clubQuery.isError,
+    clubQuery.isPending,
+    router,
+    todoData,
+    todoQuery.isError,
+    todoQuery.isPending,
+  ]);
 
   if (!club || !todoData) {
     return (

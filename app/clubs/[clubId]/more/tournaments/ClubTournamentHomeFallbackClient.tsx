@@ -1,13 +1,13 @@
 "use client";
 
-import { startTransition, useEffect, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
-  getClubAdminTournamentHome,
-  getClubTournamentHome,
-  type ClubAdminTournamentHomeResponse,
-  type ClubTournamentHomeResponse,
-} from "@/app/lib/clubs";
+  adminTournamentHomeQueryOptions,
+  tournamentHomeQueryOptions,
+  tournamentQueryKeys,
+} from "@/app/lib/react-query/tournaments/queries";
 import { ClubBoardFeedLoadingShell } from "../../ClubRouteLoadingShells";
 import { ClubTournamentHomeClient } from "./ClubTournamentHomeClient";
 
@@ -21,43 +21,36 @@ export function ClubTournamentHomeFallbackClient({
   mode = "user",
 }: ClubTournamentHomeFallbackClientProps) {
   const router = useRouter();
-  const [payload, setPayload] = useState<ClubTournamentHomeResponse | ClubAdminTournamentHomeResponse | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [reloadKey, setReloadKey] = useState(0);
+  const queryClient = useQueryClient();
+  const isAdminMode = mode === "admin";
+  const queryKey =
+    isAdminMode
+      ? tournamentQueryKeys.adminTournamentHome(clubId)
+      : tournamentQueryKeys.tournamentHome(clubId);
+  const adminQuery = useQuery({
+    ...adminTournamentHomeQueryOptions(clubId),
+    enabled: isAdminMode,
+  });
+  const userQuery = useQuery({
+    ...tournamentHomeQueryOptions(clubId),
+    enabled: !isAdminMode,
+  });
+  const payload = isAdminMode ? adminQuery.data : userQuery.data;
+  const isPending = isAdminMode ? adminQuery.isPending : userQuery.isPending;
+  const isFetching = isAdminMode ? adminQuery.isFetching : userQuery.isFetching;
+  const isError = isAdminMode ? adminQuery.isError : userQuery.isError;
 
   useEffect(() => {
-    let cancelled = false;
-
-    void (async () => {
-      setLoading(true);
-      const result = mode === "admin"
-        ? await getClubAdminTournamentHome(clubId)
-        : await getClubTournamentHome(clubId);
-      if (cancelled) {
-        return;
-      }
-
-      setLoading(false);
-      if (!result.ok || !result.data) {
-        router.replace(mode === "admin" ? `/clubs/${clubId}/admin` : `/clubs/${clubId}`);
-        return;
-      }
-
-      setPayload(result.data);
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [clubId, mode, reloadKey, router]);
+    if (!isPending && isError) {
+      router.replace(isAdminMode ? `/clubs/${clubId}/admin` : `/clubs/${clubId}`);
+    }
+  }, [clubId, isAdminMode, isError, isPending, router]);
 
   const handleReload = () => {
-    startTransition(() => {
-      setReloadKey((current) => current + 1);
-    });
+    void queryClient.invalidateQueries({ queryKey });
   };
 
-  if (loading || !payload) {
+  if (isPending || isFetching || !payload) {
     return <ClubBoardFeedLoadingShell />;
   }
 

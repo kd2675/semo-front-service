@@ -1,14 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useMutation, useQueries, useQueryClient } from "@tanstack/react-query";
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import {
-  createClubAdminRole,
-  getClubAdminRoleManagement,
-  getMyClub,
-  type ClubAdminRoleManagementResponse,
-  type CreateClubPositionRequest,
-} from "@/app/lib/clubs";
+import { type CreateClubPositionRequest } from "@/app/lib/clubs";
+import { invalidateClubQueries } from "@/app/lib/react-query/common";
+import { myClubQueryOptions } from "@/app/lib/react-query/club/queries";
+import { createRoleMutationOptions } from "@/app/lib/react-query/roles/mutations";
+import { adminRoleManagementQueryOptions } from "@/app/lib/react-query/roles/queries";
 import { AdminFeatureSettingsLoadingShell } from "../../../AdminRouteLoadingShells";
 import { RoleEditorForm } from "../RoleEditorForm";
 
@@ -19,35 +18,33 @@ type ClubAdminRoleCreateFallbackClientProps = {
 export function ClubAdminRoleCreateFallbackClient({
   clubId,
 }: ClubAdminRoleCreateFallbackClientProps) {
+  const queryClient = useQueryClient();
   const router = useRouter();
-  const [payload, setPayload] = useState<ClubAdminRoleManagementResponse | null>(null);
+  const [clubQuery, payloadQuery] = useQueries({
+    queries: [myClubQueryOptions(clubId), adminRoleManagementQueryOptions(clubId)],
+  });
+  const club = clubQuery.data ?? null;
+  const payload = payloadQuery.data ?? null;
+  const createRoleMutation = useMutation(createRoleMutationOptions(clubId));
 
   useEffect(() => {
-    let cancelled = false;
-
-    void (async () => {
-      const [clubResult, roleResult] = await Promise.all([
-        getMyClub(clubId),
-        getClubAdminRoleManagement(clubId),
-      ]);
-      if (cancelled) {
-        return;
-      }
-      if (!clubResult.ok || !clubResult.data || !clubResult.data.admin) {
-        router.replace(`/clubs/${clubId}`);
-        return;
-      }
-      if (!roleResult.ok || !roleResult.data) {
-        router.replace(`/clubs/${clubId}/admin`);
-        return;
-      }
-      setPayload(roleResult.data);
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [clubId, router]);
+    if (
+      !clubQuery.isPending &&
+      !payloadQuery.isPending &&
+      (clubQuery.isError || payloadQuery.isError || !club || !payload || !club.admin)
+    ) {
+      router.replace(club?.admin === false ? `/clubs/${clubId}` : `/clubs/${clubId}/admin`);
+    }
+  }, [
+    club,
+    clubId,
+    clubQuery.isError,
+    clubQuery.isPending,
+    payload,
+    payloadQuery.isError,
+    payloadQuery.isPending,
+    router,
+  ]);
 
   if (!payload) {
     return <AdminFeatureSettingsLoadingShell />;
@@ -69,10 +66,11 @@ export function ClubAdminRoleCreateFallbackClient({
           colorHex: value.colorHex,
           permissionKeys: value.permissionKeys,
         };
-        const result = await createClubAdminRole(clubId, request);
+        const result = await createRoleMutation.mutateAsync(request);
         if (!result.ok || !result.data) {
           return { success: false };
         }
+        await invalidateClubQueries(queryClient, clubId);
         return {
           success: true,
           nextHref: `/clubs/${clubId}/admin/more/roles/${result.data.position.clubPositionId}/edit`,

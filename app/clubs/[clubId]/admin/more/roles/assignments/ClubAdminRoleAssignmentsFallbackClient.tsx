@@ -1,12 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useQueries } from "@tanstack/react-query";
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import {
-  getClubAdminMembers,
-  getMyClub,
-  type ClubAdminMembersResponse,
-} from "@/app/lib/clubs";
+import { myClubQueryOptions } from "@/app/lib/react-query/club/queries";
+import { adminMembersQueryOptions } from "@/app/lib/react-query/members/queries";
 import { AdminFeatureSettingsLoadingShell } from "../../../AdminRouteLoadingShells";
 import { ClubAdminRoleAssignmentsClient } from "./ClubAdminRoleAssignmentsClient";
 
@@ -18,37 +16,30 @@ export function ClubAdminRoleAssignmentsFallbackClient({
   clubId,
 }: ClubAdminRoleAssignmentsFallbackClientProps) {
   const router = useRouter();
-  const [payload, setPayload] = useState<ClubAdminMembersResponse | null>(null);
+  const [clubQuery, payloadQuery] = useQueries({
+    queries: [myClubQueryOptions(clubId), adminMembersQueryOptions(clubId)],
+  });
+  const club = clubQuery.data ?? null;
+  const payload = payloadQuery.data ?? null;
 
   useEffect(() => {
-    let cancelled = false;
-
-    void (async () => {
-      const [clubResult, memberResult] = await Promise.all([
-        getMyClub(clubId),
-        getClubAdminMembers(clubId),
-      ]);
-      if (cancelled) {
-        return;
-      }
-
-      if (!clubResult.ok || !clubResult.data || !clubResult.data.admin) {
-        router.replace(`/clubs/${clubId}`);
-        return;
-      }
-
-      if (!memberResult.ok || !memberResult.data) {
-        router.replace(`/clubs/${clubId}/admin/more/roles`);
-        return;
-      }
-
-      setPayload(memberResult.data);
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [clubId, router]);
+    if (
+      !clubQuery.isPending &&
+      !payloadQuery.isPending &&
+      (clubQuery.isError || payloadQuery.isError || !club || !payload || !club.admin)
+    ) {
+      router.replace(club?.admin === false ? `/clubs/${clubId}` : `/clubs/${clubId}/admin/more/roles`);
+    }
+  }, [
+    club,
+    clubId,
+    clubQuery.isError,
+    clubQuery.isPending,
+    payload,
+    payloadQuery.isError,
+    payloadQuery.isPending,
+    router,
+  ]);
 
   if (!payload) {
     return <AdminFeatureSettingsLoadingShell />;

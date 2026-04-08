@@ -1,5 +1,6 @@
 "use client";
 
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { RouterLink } from "@/app/components/RouterLink";
 import { RouteModal } from "@/app/components/RouteModal";
 import { useAppToast } from "@/app/hooks/useAppToast";
@@ -7,7 +8,6 @@ import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import {
   startTransition,
   useDeferredValue,
-  useEffect,
   useState,
 } from "react";
 import { useRouter } from "next/navigation";
@@ -18,15 +18,12 @@ import {
   getPrimaryClubActivityLabel,
 } from "@/app/lib/club-classification";
 import {
-  cancelClubJoinRequest,
-  getDiscoverClubs,
-  getMyClubs,
-  submitClubJoinRequest,
-  type ClubDiscoverResponse,
   type ClubDiscoverSummary,
-  type MyClubSummary,
 } from "@/app/lib/clubs";
 import { overlayFadeMotion, popInMotion, staggeredFadeUpMotion } from "@/app/lib/motion";
+import { getQueryErrorMessage } from "@/app/lib/query-utils";
+import { cancelClubJoinMutationOptions, submitClubJoinMutationOptions } from "@/app/lib/react-query/home/mutations";
+import { discoverClubsQueryOptions, myClubsQueryOptions } from "@/app/lib/react-query/home/queries";
 import type { AuthUser } from "@/app/types/auth";
 import { useAppAlert } from "@/app/hooks/useAppAlert";
 import { useAppSelector } from "@/app/redux/hooks";
@@ -198,19 +195,15 @@ export default function Home() {
   const user = useAppSelector((state) => state.auth.user);
   const [searchQuery, setSearchQuery] = useState("");
   const [isSigningOut, setIsSigningOut] = useState(false);
-  const [myClubs, setMyClubs] = useState<MyClubSummary[]>([]);
-  const [isLoadingMyClubs, setIsLoadingMyClubs] = useState(true);
-  const [myClubsError, setMyClubsError] = useState<string | null>(null);
-  const [discoverPayload, setDiscoverPayload] = useState<ClubDiscoverResponse | null>(null);
-  const [isLoadingDiscover, setIsLoadingDiscover] = useState(true);
-  const [discoverError, setDiscoverError] = useState<string | null>(null);
   const [selectedClub, setSelectedClub] = useState<ClubDiscoverSummary | null>(null);
   const [requestMessage, setRequestMessage] = useState("");
-  const [isSubmittingJoinAction, setIsSubmittingJoinAction] = useState(false);
-  const [pendingJoinClubId, setPendingJoinClubId] = useState<number | null>(null);
   const deferredSearchQuery = useDeferredValue(searchQuery.trim());
   const { showAlert } = useAppAlert();
   const { showToast } = useAppToast();
+  const myClubsQuery = useQuery(myClubsQueryOptions());
+  const discoverQuery = useQuery(discoverClubsQueryOptions(deferredSearchQuery));
+  const submitJoinMutation = useMutation(submitClubJoinMutationOptions());
+  const cancelJoinMutation = useMutation(cancelClubJoinMutationOptions());
 
   const handleSignOut = async () => {
     if (isSigningOut) {
@@ -235,82 +228,31 @@ export default function Home() {
   const roleLabel = normalizeRole(user?.role) ?? "GUEST";
   const profileLabel = createProfileLabel(user);
   const userName = user?.username ?? "익명 사용자";
+  const myClubs = myClubsQuery.data ?? [];
+  const isLoadingMyClubs = myClubsQuery.isPending;
+  const myClubsError = myClubsQuery.isError
+    ? getQueryErrorMessage(myClubsQuery.error, "내 클럽을 불러오지 못했습니다.")
+    : null;
+  const discoverPayload = discoverQuery.data ?? null;
+  const isLoadingDiscover = discoverQuery.isPending;
+  const discoverError = discoverQuery.isError
+    ? getQueryErrorMessage(discoverQuery.error, "클럽 탐색 목록을 불러오지 못했습니다.")
+    : null;
+  const isSubmittingJoinAction = submitJoinMutation.isPending;
+  const pendingJoinClubId = cancelJoinMutation.isPending
+    ? cancelJoinMutation.variables?.clubId ?? null
+    : null;
 
-  const refreshHomeData = async (query: string) => {
-    const [myClubsResult, discoverResult] = await Promise.all([
-      getMyClubs(),
-      getDiscoverClubs(query),
+  const refreshHomeData = async () => {
+    const [, discoverResult] = await Promise.all([
+      myClubsQuery.refetch(),
+      discoverQuery.refetch(),
     ]);
 
-    if (!myClubsResult.ok || !myClubsResult.data) {
-      setMyClubs([]);
-      setMyClubsError(myClubsResult.message ?? "내 클럽을 불러오지 못했습니다.");
-    } else {
-      setMyClubsError(null);
-      setMyClubs(myClubsResult.data);
+    if (discoverResult.error) {
+      throw discoverResult.error;
     }
-
-    if (!discoverResult.ok || !discoverResult.data) {
-      setDiscoverPayload(null);
-      setDiscoverError(discoverResult.message ?? "클럽 탐색 목록을 불러오지 못했습니다.");
-      throw new Error(discoverResult.message ?? "클럽 탐색 목록을 불러오지 못했습니다.");
-    }
-
-    setDiscoverError(null);
-    setDiscoverPayload(discoverResult.data);
   };
-
-  useEffect(() => {
-    let cancelled = false;
-
-    void (async () => {
-      setIsLoadingMyClubs(true);
-      setMyClubsError(null);
-      const result = await getMyClubs();
-      if (cancelled) {
-        return;
-      }
-      if (!result.ok || !result.data) {
-        setMyClubs([]);
-        setMyClubsError(result.message ?? "내 클럽을 불러오지 못했습니다.");
-        setIsLoadingMyClubs(false);
-        return;
-      }
-
-      setMyClubs(result.data);
-      setIsLoadingMyClubs(false);
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    void (async () => {
-      setIsLoadingDiscover(true);
-      setDiscoverError(null);
-      const result = await getDiscoverClubs(deferredSearchQuery);
-      if (cancelled) {
-        return;
-      }
-      if (!result.ok || !result.data) {
-        setDiscoverPayload(null);
-        setDiscoverError(result.message ?? "클럽 탐색 목록을 불러오지 못했습니다.");
-        setIsLoadingDiscover(false);
-        return;
-      }
-
-      setDiscoverPayload(result.data);
-      setIsLoadingDiscover(false);
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [deferredSearchQuery]);
 
   const handleOpenClubAction = (club: ClubDiscoverSummary) => {
     setSelectedClub(club);
@@ -322,57 +264,55 @@ export default function Home() {
       return;
     }
 
-    setIsSubmittingJoinAction(true);
-    const result = await submitClubJoinRequest(selectedClub.clubId, {
-      requestMessage:
-        selectedClub.membershipPolicy === "APPROVAL" ? requestMessage.trim() || null : null,
-    });
-    setIsSubmittingJoinAction(false);
-
-    if (!result.ok || !result.data) {
-      showAlert({
-        title: "가입 처리 실패",
-        message: result.message ?? "가입 처리에 실패했습니다.",
-        tone: "danger",
-      });
-      return;
-    }
-
-    setSelectedClub(null);
-    setRequestMessage("");
+    const targetClub = selectedClub;
 
     try {
-      await refreshHomeData(deferredSearchQuery);
-      showToast(
-        result.data.actionType === "JOINED"
-          ? `${selectedClub.name}에 가입했습니다.`
-          : `${selectedClub.name} 가입 신청을 보냈습니다.`,
-      );
-    } catch {
+      const result = await submitJoinMutation.mutateAsync({
+        clubId: targetClub.clubId,
+        requestMessage:
+          targetClub.membershipPolicy === "APPROVAL" ? requestMessage.trim() || null : null,
+      });
+
+      setSelectedClub(null);
+      setRequestMessage("");
+
+      try {
+        await refreshHomeData();
+        showToast(
+          result.actionType === "JOINED"
+            ? `${targetClub.name}에 가입했습니다.`
+            : `${targetClub.name} 가입 신청을 보냈습니다.`,
+        );
+      } catch {
+        showAlert({
+          title: "화면 갱신 실패",
+          message: "가입 상태를 다시 불러오지 못했습니다.",
+          tone: "danger",
+        });
+      }
+    } catch (error) {
       showAlert({
-        title: "화면 갱신 실패",
-        message: "가입 상태를 다시 불러오지 못했습니다.",
+        title: "가입 처리 실패",
+        message: getQueryErrorMessage(error, "가입 처리에 실패했습니다."),
         tone: "danger",
       });
     }
   };
 
   const handleCancelJoinRequest = async (club: ClubDiscoverSummary) => {
-    setPendingJoinClubId(club.clubId);
-    const result = await cancelClubJoinRequest(club.clubId);
-    setPendingJoinClubId(null);
-
-    if (!result.ok || !result.data) {
+    try {
+      await cancelJoinMutation.mutateAsync({ clubId: club.clubId });
+    } catch (error) {
       showAlert({
         title: "가입 신청 취소 실패",
-        message: result.message ?? "가입 신청을 취소하지 못했습니다.",
+        message: getQueryErrorMessage(error, "가입 신청을 취소하지 못했습니다."),
         tone: "danger",
       });
       return;
     }
 
     try {
-      await refreshHomeData(deferredSearchQuery);
+      await refreshHomeData();
       showToast(`${club.name} 가입 신청을 취소했습니다.`, "info");
     } catch {
       showAlert({

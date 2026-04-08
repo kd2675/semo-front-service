@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { getMyClub, type MyClubSummary } from "@/app/lib/clubs";
+import { myClubQueryOptions } from "@/app/lib/react-query/club/queries";
 import { AdminStatsLoadingShell } from "../AdminRouteLoadingShells";
 import { ClubAdminStatsClient } from "./ClubAdminStatsClient";
 
@@ -12,24 +13,13 @@ type ClubAdminStatsFallbackClientProps = {
 
 export function ClubAdminStatsFallbackClient({ clubId }: ClubAdminStatsFallbackClientProps) {
   const router = useRouter();
-  const [club, setClub] = useState<MyClubSummary | null>(null);
+  const { data: club, isPending, isError } = useQuery(myClubQueryOptions(clubId));
 
   useEffect(() => {
-    let cancelled = false;
-
-    void (async () => {
-      const result = await getMyClub(clubId);
-      if (cancelled || !result.ok || !result.data || !result.data.admin) {
+    if (!isPending && (isError || !club || !club.admin)) {
         router.replace(`/clubs/${clubId}`);
-        return;
-      }
-      setClub(result.data);
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [clubId, router]);
+    }
+  }, [club, clubId, isError, isPending, router]);
 
   const metrics = useMemo(
     () => [

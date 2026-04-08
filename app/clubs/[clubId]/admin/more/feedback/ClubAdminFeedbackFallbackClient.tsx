@@ -1,15 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useQueries } from "@tanstack/react-query";
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { myClubQueryOptions } from "@/app/lib/react-query/club/queries";
 import {
-  getClubAdminFeedback,
-  getClubAdminFeedbackDetail,
-  getMyClub,
-  type ClubAdminFeedbackResponse,
-  type ClubFeedbackDetailResponse,
-  type MyClubSummary,
-} from "@/app/lib/clubs";
+  adminFeedbackDetailFallbackQueryOptions,
+  adminFeedbackHomeQueryOptions,
+} from "@/app/lib/react-query/feedback/queries";
 import { AdminFeatureSettingsLoadingShell } from "../../AdminRouteLoadingShells";
 import { ClubAdminFeedbackClient } from "./ClubAdminFeedbackClient";
 
@@ -21,49 +19,40 @@ export function ClubAdminFeedbackFallbackClient({
   clubId,
 }: ClubAdminFeedbackFallbackClientProps) {
   const router = useRouter();
-  const [club, setClub] = useState<MyClubSummary | null>(null);
-  const [feedbackHome, setFeedbackHome] = useState<ClubAdminFeedbackResponse | null>(null);
-  const [initialDetail, setInitialDetail] = useState<ClubFeedbackDetailResponse | null>(null);
+  const [clubQuery, feedbackHomeQuery] = useQueries({
+    queries: [myClubQueryOptions(clubId), adminFeedbackHomeQueryOptions(clubId)],
+  });
+  const club = clubQuery.data ?? null;
+  const feedbackHome = feedbackHomeQuery.data ?? null;
+  const firstFeedbackId = feedbackHome?.items[0]?.feedbackId ?? null;
+  const [initialDetailQuery] = useQueries({
+    queries: [
+      {
+        ...adminFeedbackDetailFallbackQueryOptions(clubId, firstFeedbackId as number),
+        enabled: firstFeedbackId != null,
+      },
+    ],
+  });
+  const initialDetail = initialDetailQuery.data ?? null;
 
   useEffect(() => {
-    let cancelled = false;
-
-    void (async () => {
-      const [clubResult, feedbackResult] = await Promise.all([
-        getMyClub(clubId),
-        getClubAdminFeedback(clubId),
-      ]);
-
-      if (cancelled) {
-        return;
-      }
-
-      if (!clubResult.ok || !clubResult.data || !clubResult.data.admin) {
-        router.replace(`/clubs/${clubId}`);
-        return;
-      }
-
-      if (!feedbackResult.ok || !feedbackResult.data) {
-        router.replace(`/clubs/${clubId}/admin`);
-        return;
-      }
-
-      const firstFeedbackId = feedbackResult.data.items[0]?.feedbackId;
-      const detailResult =
-        firstFeedbackId == null ? null : await getClubAdminFeedbackDetail(clubId, firstFeedbackId);
-      if (cancelled) {
-        return;
-      }
-
-      setClub(clubResult.data);
-      setFeedbackHome(feedbackResult.data);
-      setInitialDetail(detailResult?.ok && detailResult.data ? detailResult.data : null);
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [clubId, router]);
+    if (
+      !clubQuery.isPending &&
+      !feedbackHomeQuery.isPending &&
+      (clubQuery.isError || feedbackHomeQuery.isError || !club || !feedbackHome || !club.admin)
+    ) {
+      router.replace(club?.admin === false ? `/clubs/${clubId}` : `/clubs/${clubId}/admin`);
+    }
+  }, [
+    club,
+    clubId,
+    clubQuery.isError,
+    clubQuery.isPending,
+    feedbackHome,
+    feedbackHomeQuery.isError,
+    feedbackHomeQuery.isPending,
+    router,
+  ]);
 
   if (!club || !feedbackHome) {
     return <AdminFeatureSettingsLoadingShell />;

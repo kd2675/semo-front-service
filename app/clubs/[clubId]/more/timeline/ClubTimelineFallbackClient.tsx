@@ -1,13 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useQueries } from "@tanstack/react-query";
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import {
-  getClubTimeline,
-  getMyClub,
-  type ClubTimelineResponse,
-  type MyClubSummary,
-} from "@/app/lib/clubs";
+import { timelineQueryOptions } from "@/app/lib/react-query/activities/queries";
+import { myClubQueryOptions } from "@/app/lib/react-query/club/queries";
 import { ClubTimelineLoadingShell } from "../../ClubRouteLoadingShells";
 import { ClubTimelineClient } from "./ClubTimelineClient";
 
@@ -19,35 +16,30 @@ export function ClubTimelineFallbackClient({
   clubId,
 }: ClubTimelineFallbackClientProps) {
   const router = useRouter();
-  const [club, setClub] = useState<MyClubSummary | null>(null);
-  const [timeline, setTimeline] = useState<ClubTimelineResponse | null>(null);
+  const [clubQuery, timelineQuery] = useQueries({
+    queries: [myClubQueryOptions(clubId), timelineQueryOptions(clubId)],
+  });
+  const club = clubQuery.data ?? null;
+  const timeline = timelineQuery.data ?? null;
 
   useEffect(() => {
-    let cancelled = false;
-
-    void (async () => {
-      const [clubResult, timelineResult] = await Promise.all([
-        getMyClub(clubId),
-        getClubTimeline(clubId),
-      ]);
-
-      if (cancelled) {
-        return;
-      }
-
-      if (!clubResult.ok || !clubResult.data || !timelineResult.ok || !timelineResult.data) {
+    if (
+      !clubQuery.isPending &&
+      !timelineQuery.isPending &&
+      (clubQuery.isError || timelineQuery.isError || !club || !timeline)
+    ) {
         router.replace(`/clubs/${clubId}`);
-        return;
-      }
-
-      setClub(clubResult.data);
-      setTimeline(timelineResult.data);
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [clubId, router]);
+    }
+  }, [
+    club,
+    clubId,
+    clubQuery.isError,
+    clubQuery.isPending,
+    router,
+    timeline,
+    timelineQuery.isError,
+    timelineQuery.isPending,
+  ]);
 
   if (!club || !timeline) {
     return <ClubTimelineLoadingShell />;

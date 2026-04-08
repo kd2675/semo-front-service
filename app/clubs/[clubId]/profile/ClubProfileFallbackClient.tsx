@@ -1,13 +1,17 @@
 "use client";
 
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import Image from "next/image";
 import { motion, useReducedMotion } from "motion/react";
-import { startTransition, useEffect, useRef, useState, type ChangeEvent } from "react";
+import { startTransition, useRef, useState, type ChangeEvent } from "react";
 import { ClubModeSwitchFab } from "@/app/components/ClubModeSwitchFab";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
-import { getClubProfile, type ClubProfileResponse, updateClubProfile } from "@/app/lib/clubs";
 import { uploadTempImage } from "@/app/lib/imageUpload";
 import { staggeredFadeUpMotion } from "@/app/lib/motion";
+import { getQueryErrorMessage } from "@/app/lib/query-utils";
+import { updateClubProfileMutationOptions } from "@/app/lib/react-query/club/mutations";
+import { clubProfileQueryOptions } from "@/app/lib/react-query/club/queries";
+import { invalidateClubQueries } from "@/app/lib/react-query/common";
 import { ClubProfileLoadingShell } from "../ClubRouteLoadingShells";
 
 type ClubProfileFallbackClientProps = {
@@ -15,35 +19,23 @@ type ClubProfileFallbackClientProps = {
 };
 
 export function ClubProfileFallbackClient({ clubId }: ClubProfileFallbackClientProps) {
+  const queryClient = useQueryClient();
   const prefersReducedMotion = useReducedMotion();
   const reduceMotion = Boolean(prefersReducedMotion);
-  const [payload, setPayload] = useState<ClubProfileResponse | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [displayName, setDisplayName] = useState("");
+  const { data: queryPayload, isPending, isError, error: queryError } = useQuery(
+    clubProfileQueryOptions(clubId),
+  );
+  const [payloadState, setPayload] = useState<typeof queryPayload | null>(null);
+  const [displayNameState, setDisplayName] = useState<string | null>(null);
   const [savingDisplayName, setSavingDisplayName] = useState(false);
   const [savingAvatar, setSavingAvatar] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    void (async () => {
-      const result = await getClubProfile(clubId);
-      if (cancelled) {
-        return;
-      }
-      setIsLoading(false);
-      if (cancelled || !result.ok || !result.data) {
-        setError(result.message ?? "프로필을 불러오지 못했습니다.");
-        return;
-      }
-      setPayload(result.data);
-      setDisplayName(result.data.clubProfile.displayName ?? "");
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [clubId]);
+  const updateProfileMutation = useMutation(updateClubProfileMutationOptions(clubId));
+  const payload = payloadState ?? queryPayload ?? null;
+  const displayName = displayNameState ?? payload?.clubProfile.displayName ?? "";
+  const error =
+    actionError ?? (isError ? getQueryErrorMessage(queryError, "프로필을 불러오지 못했습니다.") : null);
 
   const appProfile = payload?.appProfile;
   const clubProfile = payload?.clubProfile;
@@ -63,24 +55,25 @@ export function ClubProfileFallbackClient({ clubId }: ClubProfileFallbackClientP
     }
 
     setSavingAvatar(true);
-    setError(null);
+    setActionError(null);
     const uploadResult = await uploadTempImage(file);
     if (!uploadResult.data?.fileName) {
       setSavingAvatar(false);
-      setError(uploadResult.error ?? "프로필 사진 업로드에 실패했습니다.");
+      setActionError(uploadResult.error ?? "프로필 사진 업로드에 실패했습니다.");
       return;
     }
 
-    const updateResult = await updateClubProfile(clubId, {
+    const updateResult = await updateProfileMutation.mutateAsync({
       avatarFileName: uploadResult.data.fileName,
       removeAvatar: false,
     });
     setSavingAvatar(false);
     if (!updateResult.ok || !updateResult.data) {
-      setError(updateResult.message ?? "프로필 사진 저장에 실패했습니다.");
+      setActionError(updateResult.message ?? "프로필 사진 저장에 실패했습니다.");
       return;
     }
     setPayload(updateResult.data);
+    void invalidateClubQueries(queryClient, clubId);
   };
 
   const handleDeleteAvatar = async () => {
@@ -88,14 +81,15 @@ export function ClubProfileFallbackClient({ clubId }: ClubProfileFallbackClientP
       return;
     }
     setSavingAvatar(true);
-    setError(null);
-    const result = await updateClubProfile(clubId, { removeAvatar: true });
+    setActionError(null);
+    const result = await updateProfileMutation.mutateAsync({ removeAvatar: true });
     setSavingAvatar(false);
     if (!result.ok || !result.data) {
-      setError(result.message ?? "프로필 사진 삭제에 실패했습니다.");
+      setActionError(result.message ?? "프로필 사진 삭제에 실패했습니다.");
       return;
     }
     setPayload(result.data);
+    void invalidateClubQueries(queryClient, clubId);
   };
 
   const handleSaveDisplayName = async () => {
@@ -104,7 +98,7 @@ export function ClubProfileFallbackClient({ clubId }: ClubProfileFallbackClientP
     }
     const normalized = displayName.trim();
     if (!normalized) {
-      setError("닉네임은 비워둘 수 없습니다.");
+      setActionError("닉네임은 비워둘 수 없습니다.");
       return;
     }
     if (normalized === payload.clubProfile.displayName) {
@@ -112,21 +106,22 @@ export function ClubProfileFallbackClient({ clubId }: ClubProfileFallbackClientP
     }
 
     setSavingDisplayName(true);
-    setError(null);
-    const result = await updateClubProfile(clubId, {
+    setActionError(null);
+    const result = await updateProfileMutation.mutateAsync({
       displayName: normalized,
       removeAvatar: false,
     });
     setSavingDisplayName(false);
     if (!result.ok || !result.data) {
-      setError(result.message ?? "닉네임 저장에 실패했습니다.");
+      setActionError(result.message ?? "닉네임 저장에 실패했습니다.");
       return;
     }
     setPayload(result.data);
     setDisplayName(result.data.clubProfile.displayName ?? normalized);
+    void invalidateClubQueries(queryClient, clubId);
   };
 
-  if (isLoading) {
+  if (isPending && !payload) {
     return <ClubProfileLoadingShell />;
   }
 

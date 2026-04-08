@@ -1,14 +1,15 @@
 "use client";
 
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { RouterLink } from "@/app/components/RouterLink";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
-  getClubFeatures,
   type ClubFeatureSummary,
 } from "@/app/lib/clubs";
 import { overlayFadeMotion, popInMotion } from "@/app/lib/motion";
+import { clubFeaturesQueryOptions, clubQueryKeys } from "@/app/lib/react-query/club/queries";
 import { useBottomNavScrollDocking } from "@/app/components/useBottomNavScrollDocking";
 
 type ClubBottomNavProps = {
@@ -79,7 +80,11 @@ export function ClubBottomNav({ clubId, isAdmin = false }: ClubBottomNavProps) {
   const reduceMotion = Boolean(prefersReducedMotion);
   const isDocked = useBottomNavScrollDocking({ routeKey: pathname });
   const [openMenuPathname, setOpenMenuPathname] = useState<string | null>(null);
-  const [enabledFeatures, setEnabledFeatures] = useState<ClubFeatureSummary[]>([]);
+  const queryClient = useQueryClient();
+  const { data: featureData } = useQuery(clubFeaturesQueryOptions(clubId));
+  const enabledFeatures: ClubFeatureSummary[] = (featureData ?? []).filter(
+    (feature) => feature.enabled && feature.navigationScope !== "ADMIN_ONLY",
+  );
   const menuItems = enabledFeatures;
   const isMoreOpen = openMenuPathname === pathname;
   const isFeatureRouteActive = menuItems.some((feature) => {
@@ -88,38 +93,17 @@ export function ClubBottomNav({ clubId, isAdmin = false }: ClubBottomNavProps) {
   });
 
   useEffect(() => {
-    let cancelled = false;
-
-    const loadFeatures = async () => {
-      const result = await getClubFeatures(clubId);
-      if (cancelled) {
-        return;
-      }
-
-      if (!result.ok || !result.data) {
-        setEnabledFeatures([]);
-        return;
-      }
-
-      setEnabledFeatures(
-        result.data.filter(
-          (feature) => feature.enabled && feature.navigationScope !== "ADMIN_ONLY",
-        ),
-      );
-    };
-
-    void loadFeatures();
-
     const onFeatureUpdate = () => {
-      void loadFeatures();
+      void queryClient.invalidateQueries({
+        queryKey: clubQueryKeys.features(clubId),
+      });
     };
 
     window.addEventListener("semo:club-features-updated", onFeatureUpdate);
     return () => {
-      cancelled = true;
       window.removeEventListener("semo:club-features-updated", onFeatureUpdate);
     };
-  }, [clubId]);
+  }, [clubId, queryClient]);
 
   useEffect(() => {
     if (!isMoreOpen) {

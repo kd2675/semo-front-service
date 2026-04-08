@@ -1,19 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useQueries } from "@tanstack/react-query";
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { myClubQueryOptions } from "@/app/lib/react-query/club/queries";
 import {
-  getClubAdminFinance,
-  getClubAdminFinanceExpenses,
-  getClubAdminFinanceObligations,
-  getClubAdminFinanceRequests,
-  getMyClub,
-  type ClubAdminFinanceHomeResponse,
-  type ClubAdminFinanceObligationFeedResponse,
-  type ClubFinanceExpenseFeedResponse,
-  type ClubFinanceRequestFeedResponse,
-  type MyClubSummary,
-} from "@/app/lib/clubs";
+  adminFinanceExpensesFallbackQueryOptions,
+  adminFinanceHomeQueryOptions,
+  adminFinanceObligationsQueryOptions,
+  adminFinanceRequestsFallbackQueryOptions,
+} from "@/app/lib/react-query/finance/queries";
 import { ClubAdminFinanceClient } from "./ClubAdminFinanceClient";
 import { AdminAttendanceLoadingShell } from "../../AdminRouteLoadingShells";
 
@@ -23,69 +19,57 @@ type ClubAdminFinanceFallbackClientProps = {
 
 export function ClubAdminFinanceFallbackClient({ clubId }: ClubAdminFinanceFallbackClientProps) {
   const router = useRouter();
-  const [club, setClub] = useState<MyClubSummary | null>(null);
-  const [finance, setFinance] = useState<ClubAdminFinanceHomeResponse | null>(null);
-  const [obligationFeed, setObligationFeed] = useState<ClubAdminFinanceObligationFeedResponse | null>(null);
-  const [requestFeed, setRequestFeed] = useState<ClubFinanceRequestFeedResponse | null>(null);
-  const [expenseFeed, setExpenseFeed] = useState<ClubFinanceExpenseFeedResponse | null>(null);
+  const [clubQuery, financeQuery, obligationFeedQuery, requestFeedQuery, expenseFeedQuery] = useQueries({
+    queries: [
+      myClubQueryOptions(clubId),
+      adminFinanceHomeQueryOptions(clubId),
+      adminFinanceObligationsQueryOptions(clubId, { size: 10 }),
+      adminFinanceRequestsFallbackQueryOptions(clubId),
+      adminFinanceExpensesFallbackQueryOptions(clubId),
+    ],
+  });
+  const club = clubQuery.data ?? null;
+  const finance = financeQuery.data ?? null;
+  const obligationFeed = obligationFeedQuery.data ?? null;
+  const requestFeed =
+    requestFeedQuery.data && finance
+      ? {
+          ...requestFeedQuery.data,
+          clubId: requestFeedQuery.data.clubId || finance.clubId,
+          clubName: requestFeedQuery.data.clubName || finance.clubName,
+        }
+      : null;
+  const expenseFeed =
+    expenseFeedQuery.data && finance
+      ? {
+          ...expenseFeedQuery.data,
+          clubId: expenseFeedQuery.data.clubId || finance.clubId,
+          clubName: expenseFeedQuery.data.clubName || finance.clubName,
+        }
+      : null;
 
   useEffect(() => {
-    let cancelled = false;
-
-    void (async () => {
-      const [clubResult, financeResult, obligationFeedResult, requestFeedResult, expenseFeedResult] = await Promise.all([
-        getMyClub(clubId),
-        getClubAdminFinance(clubId),
-        getClubAdminFinanceObligations(clubId, { size: 10 }),
-        getClubAdminFinanceRequests(clubId),
-        getClubAdminFinanceExpenses(clubId),
-      ]);
-
-      if (cancelled) {
-        return;
-      }
-
-      if (!clubResult.ok || !clubResult.data) {
-        router.replace(`/clubs/${clubId}`);
-        return;
-      }
-      if (
-        !financeResult.ok ||
-        !financeResult.data ||
-        !obligationFeedResult.ok ||
-        !obligationFeedResult.data
-      ) {
-        router.replace(`/clubs/${clubId}`);
-        return;
-      }
-
-      setClub(clubResult.data);
-      setFinance(financeResult.data);
-      setObligationFeed(obligationFeedResult.data);
-      setRequestFeed(
-        requestFeedResult.ok && requestFeedResult.data
-          ? requestFeedResult.data
-          : {
-              clubId: financeResult.data.clubId,
-              clubName: financeResult.data.clubName,
-              items: [],
-            },
-      );
-      setExpenseFeed(
-        expenseFeedResult.ok && expenseFeedResult.data
-          ? expenseFeedResult.data
-          : {
-              clubId: financeResult.data.clubId,
-              clubName: financeResult.data.clubName,
-              items: [],
-            },
-      );
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [clubId, router]);
+    if (
+      !clubQuery.isPending &&
+      !financeQuery.isPending &&
+      !obligationFeedQuery.isPending &&
+      (clubQuery.isError || financeQuery.isError || obligationFeedQuery.isError || !club || !finance || !obligationFeed)
+    ) {
+      router.replace(`/clubs/${clubId}`);
+    }
+  }, [
+    club,
+    clubId,
+    clubQuery.isError,
+    clubQuery.isPending,
+    finance,
+    financeQuery.isError,
+    financeQuery.isPending,
+    obligationFeed,
+    obligationFeedQuery.isError,
+    obligationFeedQuery.isPending,
+    router,
+  ]);
 
   if (!club || !finance || !obligationFeed || !requestFeed || !expenseFeed) {
     return <AdminAttendanceLoadingShell />;

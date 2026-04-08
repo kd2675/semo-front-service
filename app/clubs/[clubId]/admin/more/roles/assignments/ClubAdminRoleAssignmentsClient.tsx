@@ -1,10 +1,10 @@
 "use client";
 
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { RouterLink } from "@/app/components/RouterLink";
 import { useAppAlert } from "@/app/hooks/useAppAlert";
 import { staggeredFadeUpMotion } from "@/app/lib/motion";
 import {
-  updateClubAdminMemberPositions,
   type ClubAdminMember,
   type ClubAdminMembersResponse,
 } from "@/app/lib/clubs";
@@ -12,6 +12,8 @@ import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { Inter, Manrope } from "next/font/google";
 import { startTransition, useDeferredValue, useMemo, useState } from "react";
 import type { CSSProperties } from "react";
+import { invalidateClubQueries } from "@/app/lib/react-query/common";
+import { updateMemberPositionsMutationOptions } from "@/app/lib/react-query/roles/mutations";
 
 const manrope = Manrope({
   subsets: ["latin"],
@@ -41,9 +43,10 @@ export function ClubAdminRoleAssignmentsClient({
   clubId,
   initialData,
 }: ClubAdminRoleAssignmentsClientProps) {
+  const queryClient = useQueryClient();
   const prefersReducedMotion = useReducedMotion();
   const reduceMotion = Boolean(prefersReducedMotion);
-  const [members, setMembers] = useState(initialData.members);
+  const [memberOverrides, setMemberOverrides] = useState<Record<number, ClubAdminMember>>({});
   const [selectedRoleId, setSelectedRoleId] = useState<number | null>(
     initialData.availablePositions[0]?.clubPositionId ?? null,
   );
@@ -51,6 +54,13 @@ export function ClubAdminRoleAssignmentsClient({
   const [saving, setSaving] = useState(false);
   const deferredQuery = useDeferredValue(query.trim().toLowerCase());
   const { showAlert } = useAppAlert();
+  const updateMemberPositionsMutation = useMutation(
+    updateMemberPositionsMutationOptions(clubId),
+  );
+  const members = useMemo(
+    () => initialData.members.map((member) => memberOverrides[member.clubMemberId] ?? member),
+    [initialData.members, memberOverrides],
+  );
 
   const selectedRole = useMemo(
     () =>
@@ -102,7 +112,8 @@ export function ClubAdminRoleAssignmentsClient({
       : currentIds.filter((positionId) => positionId !== selectedRole.clubPositionId);
 
     setSaving(true);
-    const result = await updateClubAdminMemberPositions(clubId, member.clubMemberId, {
+    const result = await updateMemberPositionsMutation.mutateAsync({
+      clubMemberId: member.clubMemberId,
       clubPositionIds: nextIds,
     });
     setSaving(false);
@@ -115,10 +126,13 @@ export function ClubAdminRoleAssignmentsClient({
       });
       return;
     }
+    const updatedMember = result.data;
 
-    setMembers((current) =>
-      current.map((item) => (item.clubMemberId === result.data?.clubMemberId ? result.data : item)),
-    );
+    setMemberOverrides((current) => ({
+      ...current,
+      [updatedMember.clubMemberId]: updatedMember,
+    }));
+    void invalidateClubQueries(queryClient, clubId);
   };
 
   if (!selectedRole) {

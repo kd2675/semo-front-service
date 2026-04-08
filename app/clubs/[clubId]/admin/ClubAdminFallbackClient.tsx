@@ -1,19 +1,16 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useQueries } from "@tanstack/react-query";
+import { useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { ClubAdminHomeClient } from "./ClubAdminHomeClient";
 import { AdminHomeLoadingShell } from "./AdminRouteLoadingShells";
+import { adminActivitiesPreviewQueryOptions } from "@/app/lib/react-query/activities/queries";
 import {
-  getClubAdminActivities,
-  getClubAdminJoinRequests,
-  getClubAdminMembers,
-  getMyClub,
-  type ClubAdminActivityItem,
-  type ClubAdminJoinRequestsResponse,
-  type ClubAdminMembersResponse,
-  type MyClubSummary,
-} from "@/app/lib/clubs";
+  adminJoinRequestsQueryOptions,
+  adminMembersQueryOptions,
+} from "@/app/lib/react-query/members/queries";
+import { myClubQueryOptions } from "@/app/lib/react-query/club/queries";
 
 type ClubAdminFallbackClientProps = {
   clubId: string;
@@ -21,50 +18,47 @@ type ClubAdminFallbackClientProps = {
 
 export function ClubAdminFallbackClient({ clubId }: ClubAdminFallbackClientProps) {
   const router = useRouter();
-  const [club, setClub] = useState<MyClubSummary | null>(null);
-  const [membersPayload, setMembersPayload] = useState<ClubAdminMembersResponse | null>(null);
-  const [joinRequestsPayload, setJoinRequestsPayload] = useState<ClubAdminJoinRequestsResponse | null>(null);
-  const [activities, setActivities] = useState<ClubAdminActivityItem[]>([]);
+  const [clubQuery, membersQuery, joinRequestsQuery, activitiesQuery] = useQueries({
+    queries: [
+      myClubQueryOptions(clubId),
+      adminMembersQueryOptions(clubId),
+      adminJoinRequestsQueryOptions(clubId),
+      adminActivitiesPreviewQueryOptions(clubId, 5),
+    ],
+  });
+  const club = clubQuery.data ?? null;
+  const membersPayload = membersQuery.data ?? null;
+  const joinRequestsPayload = joinRequestsQuery.data ?? null;
+  const activities = activitiesQuery.data?.activities ?? [];
 
   useEffect(() => {
-    let cancelled = false;
-
-    void (async () => {
-      const [clubResult, membersResult, joinRequestsResult, activitiesResult] = await Promise.all([
-        getMyClub(clubId),
-        getClubAdminMembers(clubId),
-        getClubAdminJoinRequests(clubId),
-        getClubAdminActivities(clubId, { size: 5 }),
-      ]);
-
-      if (
-        cancelled ||
-        !clubResult.ok ||
-        !clubResult.data ||
-        !membersResult.ok ||
-        !membersResult.data ||
-        !joinRequestsResult.ok ||
-        !joinRequestsResult.data
-      ) {
+    if (
+      !clubQuery.isPending &&
+      !membersQuery.isPending &&
+      !joinRequestsQuery.isPending &&
+      (clubQuery.isError ||
+        membersQuery.isError ||
+        joinRequestsQuery.isError ||
+        !club ||
+        !membersPayload ||
+        !joinRequestsPayload ||
+        !club.admin)
+    ) {
         router.replace(`/clubs/${clubId}`);
-        return;
-      }
-
-      if (!clubResult.data.admin) {
-        router.replace(`/clubs/${clubId}`);
-        return;
-      }
-
-      setClub(clubResult.data);
-      setMembersPayload(membersResult.data);
-      setJoinRequestsPayload(joinRequestsResult.data);
-      setActivities(activitiesResult.ok && activitiesResult.data ? activitiesResult.data.activities : []);
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [clubId, router]);
+    }
+  }, [
+    club,
+    clubId,
+    clubQuery.isError,
+    clubQuery.isPending,
+    joinRequestsPayload,
+    joinRequestsQuery.isError,
+    joinRequestsQuery.isPending,
+    membersPayload,
+    membersQuery.isError,
+    membersQuery.isPending,
+    router,
+  ]);
 
   const metrics = useMemo(
     () => {

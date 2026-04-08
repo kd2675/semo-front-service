@@ -1,17 +1,18 @@
 "use client";
 
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { RouterLink } from "@/app/components/RouterLink";
 import { staggeredFadeUpMotion } from "@/app/lib/motion";
 import type {
   ClubAdminRoleManagementResponse,
   ClubPositionSummary,
 } from "@/app/lib/clubs";
-import { getClubAdminRoleManagement } from "@/app/lib/clubs";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { Manrope, Inter } from "next/font/google";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useMemo, useState } from "react";
 import type { CSSProperties } from "react";
+import { adminRoleManagementQueryOptions } from "@/app/lib/react-query/roles/queries";
 import { RoleEditSheet } from "./RoleEditSheet";
 
 const manrope = Manrope({
@@ -267,13 +268,19 @@ function normalizeRoleSheetTab(value: string | null): RoleSheetTab {
 export function ClubAdminRolesClient({ clubId, initialData }: ClubAdminRolesClientProps) {
   const prefersReducedMotion = useReducedMotion();
   const reduceMotion = Boolean(prefersReducedMotion);
+  const queryClient = useQueryClient();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const featureFilter = searchParams.get("feature")?.trim().toUpperCase() ?? "";
   const requestedEditPositionId = Number(searchParams.get("editPositionId") ?? "");
   const requestedEditTab = normalizeRoleSheetTab(searchParams.get("tab"));
-  const [roleManagement, setRoleManagement] = useState(initialData);
+  const roleManagementQuery = useQuery({
+    ...adminRoleManagementQueryOptions(clubId),
+    initialData,
+  });
+  const [roleManagementState, setRoleManagement] = useState<ClubAdminRoleManagementResponse | null>(null);
+  const roleManagement = roleManagementState ?? roleManagementQuery.data;
   const [selectedSheetState, setSelectedSheetState] = useState<{
     positionId: number;
     tab: RoleSheetTab;
@@ -362,12 +369,13 @@ export function ClubAdminRolesClient({ clubId, initialData }: ClubAdminRolesClie
   };
 
   const refreshRoleManagement = async () => {
-    const result = await getClubAdminRoleManagement(clubId);
-    if (!result.ok || !result.data) {
+    try {
+      const result = await queryClient.fetchQuery(adminRoleManagementQueryOptions(clubId));
+      setRoleManagement(result);
+      return true;
+    } catch {
       return false;
     }
-    setRoleManagement(result.data);
-    return true;
   };
 
   const handleOpenRoleSheet = (role: ClubPositionSummary, tab: RoleSheetTab) => {

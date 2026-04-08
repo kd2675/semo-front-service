@@ -1,17 +1,15 @@
 "use client";
 
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { RouterLink } from "@/app/components/RouterLink";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import { DatePopoverField } from "@/app/components/DatePopoverField";
 import { TimePopoverField } from "@/app/components/TimePopoverField";
 import { useRouter } from "next/navigation";
 import { useEffect, useEffectEvent, useId, useState } from "react";
-import {
-  createClubScheduleVote,
-  getClubScheduleVoteDetail,
-  updateClubScheduleVote,
-  type ClubScheduleVoteDetailResponse,
-} from "@/app/lib/clubs";
+import { invalidateClubQueries } from "@/app/lib/react-query/common";
+import { saveScheduleVoteMutationOptions } from "@/app/lib/react-query/schedule/mutations";
+import { scheduleVoteDetailQueryOptions } from "@/app/lib/react-query/schedule/queries";
 import { ClubEditorLoadingShell } from "../ClubRouteLoadingShells";
 
 type ClubScheduleVoteEditorClientProps = {
@@ -33,6 +31,7 @@ export function ClubScheduleVoteEditorClient({
   onRequestClose,
   onSaved,
 }: ClubScheduleVoteEditorClientProps) {
+  const queryClient = useQueryClient();
   const router = useRouter();
   const formId = useId();
   const isEdit = Boolean(voteId);
@@ -51,6 +50,7 @@ export function ClubScheduleVoteEditorClient({
   const [loading, setLoading] = useState(isEdit);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const saveVoteMutation = useMutation(saveScheduleVoteMutationOptions(clubId, voteId));
   const resolvedBasePath = basePath ?? `/clubs/${clubId}/more/polls`;
   const backHref = isEdit && voteId ? `${resolvedBasePath}/${voteId}` : resolvedBasePath;
 
@@ -61,24 +61,26 @@ export function ClubScheduleVoteEditorClient({
 
     setLoading(true);
     setError(null);
-    const result = await getClubScheduleVoteDetail(clubId, voteId);
-    setLoading(false);
-    if (!result.ok || !result.data) {
-      setError(result.message ?? "투표 정보를 불러오지 못했습니다.");
+    try {
+      const payload = await queryClient.fetchQuery({
+        ...scheduleVoteDetailQueryOptions(clubId, voteId),
+      });
+      setLoading(false);
+      setTitle(payload.title);
+      setVoteStartDate(payload.voteStartDate);
+      setVoteEndDate(payload.voteEndDate);
+      setVoteStartTime(payload.voteStartTime ?? "");
+      setVoteEndTime(payload.voteEndTime ?? "");
+      setOptions(payload.options.map((option) => option.label));
+      setPostToBoard(payload.postedToBoard);
+      setPostToCalendar(payload.postedToCalendar);
+      setPinned(payload.pinned);
+      setCanEdit(payload.canEdit);
+    } catch {
+      setLoading(false);
+      setError("투표 정보를 불러오지 못했습니다.");
       return;
     }
-
-    const payload: ClubScheduleVoteDetailResponse = result.data;
-    setTitle(payload.title);
-    setVoteStartDate(payload.voteStartDate);
-    setVoteEndDate(payload.voteEndDate);
-    setVoteStartTime(payload.voteStartTime ?? "");
-    setVoteEndTime(payload.voteEndTime ?? "");
-    setOptions(payload.options.map((option) => option.label));
-    setPostToBoard(payload.postedToBoard);
-    setPostToCalendar(payload.postedToCalendar);
-    setPinned(payload.pinned);
-    setCanEdit(payload.canEdit);
   });
 
   useEffect(() => {
@@ -128,15 +130,14 @@ export function ClubScheduleVoteEditorClient({
       pinned,
     };
 
-    const result = isEdit && voteId
-      ? await updateClubScheduleVote(clubId, voteId, request)
-      : await createClubScheduleVote(clubId, request);
+    const result = await saveVoteMutation.mutateAsync(request);
 
     setSaving(false);
     if (!result.ok || !result.data) {
       setError(result.message ?? "투표 저장에 실패했습니다.");
       return;
     }
+    void invalidateClubQueries(queryClient, clubId);
 
     if (onSaved) {
       onSaved(result.data.voteId);

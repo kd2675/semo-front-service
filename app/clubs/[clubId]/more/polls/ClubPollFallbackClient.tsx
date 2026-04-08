@@ -1,8 +1,9 @@
 "use client";
 
-import { startTransition, useEffect, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { getClubPollHome, type ClubPollHomeResponse } from "@/app/lib/clubs";
+import { boardQueryKeys, pollHomeQueryOptions } from "@/app/lib/react-query/board/queries";
 import { ClubPollHomeLoadingShell } from "../../ClubRouteLoadingShells";
 import { ClubPollHomeClient } from "./ClubPollHomeClient";
 
@@ -16,41 +17,24 @@ export function ClubPollFallbackClient({
   mode = "user",
 }: ClubPollFallbackClientProps) {
   const router = useRouter();
-  const [payload, setPayload] = useState<ClubPollHomeResponse | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [reloadKey, setReloadKey] = useState(0);
+  const queryClient = useQueryClient();
+  const { data: payload, isPending, isFetching, isError } = useQuery(
+    pollHomeQueryOptions(clubId),
+  );
 
   useEffect(() => {
-    let cancelled = false;
-
-    void (async () => {
-      setLoading(true);
-      const result = await getClubPollHome(clubId);
-      if (cancelled) {
-        return;
-      }
-
-      setLoading(false);
-      if (!result.ok || !result.data) {
+    if (!isPending && isError) {
         router.replace(mode === "admin" ? `/clubs/${clubId}/admin` : `/clubs/${clubId}`);
-        return;
-      }
-
-      setPayload(result.data);
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [clubId, mode, reloadKey, router]);
+    }
+  }, [clubId, isError, isPending, mode, router]);
 
   const handleReload = () => {
-    startTransition(() => {
-      setReloadKey((current) => current + 1);
+    void queryClient.invalidateQueries({
+      queryKey: boardQueryKeys.pollHome(clubId),
     });
   };
 
-  if (loading || !payload) {
+  if (isPending || isFetching || !payload) {
     return <ClubPollHomeLoadingShell mode={mode} />;
   }
 

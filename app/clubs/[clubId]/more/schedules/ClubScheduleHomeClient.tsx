@@ -1,5 +1,6 @@
 "use client";
 
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { RouteModal } from "@/app/components/RouteModal";
 import { ClubModeSwitchFab } from "@/app/components/ClubModeSwitchFab";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
@@ -7,13 +8,11 @@ import { ClubScheduleEventDetailModal } from "@/app/components/ClubDetailModals"
 import { ScheduleActionConfirmModal } from "@/app/clubs/[clubId]/schedule/ScheduleActionConfirmModal";
 import { ClubScheduleEditorClient } from "@/app/clubs/[clubId]/schedule/ClubScheduleEditorClient";
 import { BoardScheduleManageCard } from "@/app/clubs/[clubId]/board/BoardScheduleManageCard";
-import {
-  deleteClubScheduleEvent,
-  type ClubScheduleEventSummary,
-  type ClubScheduleHomeResponse,
-} from "@/app/lib/clubs";
+import { type ClubScheduleEventSummary, type ClubScheduleHomeResponse } from "@/app/lib/clubs";
 import { FAB_RIGHT_OFFSET_CLASS_NAME, getActionFabBottomClass } from "@/app/lib/fab";
 import { staggeredFadeUpMotion } from "@/app/lib/motion";
+import { invalidateClubQueries } from "@/app/lib/react-query/common";
+import { deleteScheduleEventMutationOptions } from "@/app/lib/react-query/schedule/mutations";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { startTransition, useDeferredValue, useMemo, useState, type CSSProperties } from "react";
 
@@ -74,6 +73,7 @@ export function ClubScheduleHomeClient({
   mode = "user",
   onReload,
 }: ClubScheduleHomeClientProps) {
+  const queryClient = useQueryClient();
   const prefersReducedMotion = useReducedMotion();
   const reduceMotion = Boolean(prefersReducedMotion);
   const hasModeSwitchFab = mode === "user" && payload.admin;
@@ -85,6 +85,7 @@ export function ClubScheduleHomeClient({
   const [deleteEventTarget, setDeleteEventTarget] = useState<ClubScheduleEventSummary | null>(null);
   const [activeActionKey, setActiveActionKey] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const deleteEventMutation = useMutation(deleteScheduleEventMutationOptions(clubId));
 
   const accent = mode === "admin" ? "#f97316" : "#135bec";
   const background = "#f6f6f8";
@@ -125,13 +126,14 @@ export function ClubScheduleHomeClient({
       return;
     }
     setDeleting(true);
-    const result = await deleteClubScheduleEvent(clubId, deleteEventTarget.eventId);
+    const result = await deleteEventMutation.mutateAsync(deleteEventTarget.eventId);
     setDeleting(false);
     if (!result.ok) {
       return;
     }
     setDeleteEventTarget(null);
     setActiveActionKey(null);
+    void invalidateClubQueries(queryClient, clubId);
     onReload();
   };
 

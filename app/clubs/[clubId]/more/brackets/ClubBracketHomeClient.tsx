@@ -1,5 +1,6 @@
 "use client";
 
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState, type CSSProperties } from "react";
 import { AnimatePresence } from "motion/react";
 import { ClubModeSwitchFab } from "@/app/components/ClubModeSwitchFab";
@@ -8,12 +9,6 @@ import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import { RouteModal } from "@/app/components/RouteModal";
 import { ScheduleActionConfirmModal } from "@/app/clubs/[clubId]/schedule/ScheduleActionConfirmModal";
 import {
-  createClubBracket,
-  deleteClubBracket,
-  getClubBracketDetail,
-  reviewClubBracket,
-  submitClubBracket,
-  updateClubBracket,
   type BracketDetailResponse,
   type BracketImportTournament,
   type BracketSummary,
@@ -22,6 +17,14 @@ import {
   type UpsertBracketRequest,
 } from "@/app/lib/clubs";
 import { FAB_RIGHT_OFFSET_CLASS_NAME, getActionFabBottomClass } from "@/app/lib/fab";
+import { invalidateClubQueries } from "@/app/lib/react-query/common";
+import { bracketDetailQueryOptions } from "@/app/lib/react-query/brackets/queries";
+import {
+  deleteBracketMutationOptions,
+  reviewBracketMutationOptions,
+  saveBracketDraftMutationOptions,
+  submitBracketMutationOptions,
+} from "@/app/lib/react-query/brackets/mutations";
 
 type ClubBracketHomeClientProps = {
   clubId: string;
@@ -192,6 +195,7 @@ export function ClubBracketHomeClient({
   mode = "user",
   onReload,
 }: ClubBracketHomeClientProps) {
+  const queryClient = useQueryClient();
   const isAdminMode = mode === "admin";
   const userPayload = !isAdminMode ? (payload as ClubBracketHomeResponse) : null;
   const adminPayload = isAdminMode ? (payload as ClubAdminBracketHomeResponse) : null;
@@ -205,6 +209,10 @@ export function ClubBracketHomeClient({
   const [submitting, setSubmitting] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const saveBracketMutation = useMutation(saveBracketDraftMutationOptions(clubId));
+  const submitBracketMutation = useMutation(submitBracketMutationOptions(clubId));
+  const reviewBracketMutation = useMutation(reviewBracketMutationOptions(clubId));
+  const deleteBracketMutation = useMutation(deleteBracketMutationOptions(clubId));
 
   const updateParticipants = (
     updater: (participants: EditableParticipant[]) => EditableParticipant[],
@@ -216,12 +224,12 @@ export function ClubBracketHomeClient({
   };
 
   const fetchDetail = async (bracketRecordId: number) => {
-    const result = await getClubBracketDetail(clubId, bracketRecordId);
-    if (!result.ok || !result.data) {
-      setError(result.message ?? "대진표 상세를 불러오지 못했습니다.");
+    try {
+      return await queryClient.fetchQuery(bracketDetailQueryOptions(clubId, bracketRecordId));
+    } catch {
+      setError("대진표 상세를 불러오지 못했습니다.");
       return null;
     }
-    return result.data;
   };
 
   const openCreateForm = () => {
@@ -284,9 +292,10 @@ export function ClubBracketHomeClient({
     }
     setSubmitting(true);
     const request = toRequest(form);
-    const result = editingBracketId == null
-      ? await createClubBracket(clubId, request)
-      : await updateClubBracket(clubId, editingBracketId, request);
+    const result = await saveBracketMutation.mutateAsync({
+      request,
+      editingBracketId,
+    });
     setSubmitting(false);
     if (!result.ok || !result.data) {
       setFormError(result.message ?? "대진표 저장에 실패했습니다.");
@@ -294,6 +303,7 @@ export function ClubBracketHomeClient({
     }
     setFeedback(editingBracketId == null ? "대진표 초안을 만들었습니다." : "대진표 초안을 수정했습니다.");
     setFormOpen(false);
+    void invalidateClubQueries(queryClient, clubId);
     onReload();
   };
 
@@ -301,13 +311,14 @@ export function ClubBracketHomeClient({
     setSubmitting(true);
     setFeedback(null);
     setError(null);
-    const result = await submitClubBracket(clubId, bracketRecordId);
+    const result = await submitBracketMutation.mutateAsync(bracketRecordId);
     setSubmitting(false);
     if (!result.ok || !result.data) {
       setError(result.message ?? "대진표 제출에 실패했습니다.");
       return;
     }
     setFeedback("대진표를 승인 요청 상태로 제출했습니다.");
+    void invalidateClubQueries(queryClient, clubId);
     onReload();
   };
 
@@ -321,7 +332,8 @@ export function ClubBracketHomeClient({
     setSubmitting(true);
     setFeedback(null);
     setError(null);
-    const result = await reviewClubBracket(clubId, bracketRecordId, {
+    const result = await reviewBracketMutation.mutateAsync({
+      bracketRecordId,
       approvalStatus,
       rejectionReason,
     });
@@ -331,6 +343,7 @@ export function ClubBracketHomeClient({
       return;
     }
     setFeedback(approvalStatus === "APPROVED" ? "대진표를 승인했습니다." : "대진표를 반려했습니다.");
+    void invalidateClubQueries(queryClient, clubId);
     onReload();
   };
 
@@ -338,7 +351,7 @@ export function ClubBracketHomeClient({
     setSubmitting(true);
     setFeedback(null);
     setError(null);
-    const result = await deleteClubBracket(clubId, bracketRecordId);
+    const result = await deleteBracketMutation.mutateAsync(bracketRecordId);
     setSubmitting(false);
     if (!result.ok) {
       setError(result.message ?? "대진표 삭제에 실패했습니다.");
@@ -348,6 +361,7 @@ export function ClubBracketHomeClient({
       setDetailBracketId(null);
     }
     setFeedback("대진표를 삭제했습니다.");
+    void invalidateClubQueries(queryClient, clubId);
     onReload();
   };
 

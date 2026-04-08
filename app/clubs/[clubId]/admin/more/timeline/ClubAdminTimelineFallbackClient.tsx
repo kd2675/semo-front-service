@@ -1,13 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useQueries } from "@tanstack/react-query";
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import {
-  getClubAdminTimeline,
-  getMyClub,
-  type ClubAdminTimelineResponse,
-  type MyClubSummary,
-} from "@/app/lib/clubs";
+import { adminTimelineQueryOptions } from "@/app/lib/react-query/activities/queries";
+import { myClubQueryOptions } from "@/app/lib/react-query/club/queries";
 import { AdminTimelineLoadingShell } from "../../AdminRouteLoadingShells";
 import { ClubAdminTimelineClient } from "./ClubAdminTimelineClient";
 
@@ -19,40 +16,23 @@ export function ClubAdminTimelineFallbackClient({
   clubId,
 }: ClubAdminTimelineFallbackClientProps) {
   const router = useRouter();
-  const [club, setClub] = useState<MyClubSummary | null>(null);
-  const [timeline, setTimeline] = useState<ClubAdminTimelineResponse | null>(null);
+  const [clubQuery, timelineQuery] = useQueries({
+    queries: [myClubQueryOptions(clubId), adminTimelineQueryOptions(clubId)],
+  });
+  const club = clubQuery.data ?? null;
+  const timeline = timelineQuery.data ?? null;
 
   useEffect(() => {
-    let cancelled = false;
-
-    void (async () => {
-      const [clubResult, timelineResult] = await Promise.all([
-        getMyClub(clubId),
-        getClubAdminTimeline(clubId),
-      ]);
-
-      if (cancelled) {
-        return;
-      }
-
-      if (!clubResult.ok || !clubResult.data || !clubResult.data.admin) {
+    if (!clubQuery.isPending && (clubQuery.isError || !club || !club.admin)) {
         router.replace(`/clubs/${clubId}`);
-        return;
-      }
+    }
+  }, [club, clubId, clubQuery.isError, clubQuery.isPending, router]);
 
-      if (!timelineResult.ok || !timelineResult.data) {
+  useEffect(() => {
+    if (!timelineQuery.isPending && timelineQuery.isError) {
         router.replace(`/clubs/${clubId}/admin`);
-        return;
-      }
-
-      setClub(clubResult.data);
-      setTimeline(timelineResult.data);
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [clubId, router]);
+    }
+  }, [clubId, router, timelineQuery.isError, timelineQuery.isPending]);
 
   if (!club || !timeline) {
     return <AdminTimelineLoadingShell />;

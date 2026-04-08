@@ -18,6 +18,7 @@ import {
   useSortable,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CSS } from "@dnd-kit/utilities";
 import { RouterLink } from "@/app/components/RouterLink";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
@@ -26,19 +27,14 @@ import { ClubModeSwitchFab } from "@/app/components/ClubModeSwitchFab";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import { useAppToast } from "@/app/hooks/useAppToast";
 import {
-  checkInClubAttendance,
   getClubAttendance,
   getClubFinance,
   getClubBoard,
   getClubBracketHome,
-  getClubDashboardWidgetEditor,
-  getClubDashboardWidgets,
   getClubMemberDirectory,
-  getMyClub,
   getClubPollHome,
   getClubSchedule,
   getClubTournamentHome,
-  updateClubDashboardWidgets,
   type ClubAttendanceResponse,
   type ClubBoardResponse,
   type ClubBracketHomeResponse,
@@ -47,12 +43,23 @@ import {
   type ClubPollHomeResponse,
   type ClubPollSummary,
   type ClubTournamentHomeResponse,
-  type ClubDashboardEditorResponse,
   type ClubDashboardWidgetSummary,
   type ClubScheduleResponse,
-  type MyClubSummary,
 } from "@/app/lib/clubs";
 import { staggeredFadeUpMotion } from "@/app/lib/motion";
+import { getQueryErrorMessage } from "@/app/lib/query-utils";
+import {
+  checkInAttendanceMutationOptions,
+} from "@/app/lib/react-query/attendance/mutations";
+import {
+  updateDashboardWidgetsMutationOptions,
+} from "@/app/lib/react-query/club/mutations";
+import {
+  dashboardWidgetEditorQueryOptions,
+  dashboardWidgetsQueryOptions,
+  myClubQueryOptions,
+} from "@/app/lib/react-query/club/queries";
+import { invalidateClubQueries } from "@/app/lib/react-query/common";
 import { getTournamentFeeLabel, getTournamentFormatLabel, getTournamentStatusLabel } from "@/app/lib/tournament";
 import {
   ClubDashboardLoadingShell,
@@ -1046,17 +1053,13 @@ function DashboardWidgetCard({
 export function ClubDashboardFallbackClient({
   clubId,
 }: ClubDashboardFallbackClientProps) {
+  const queryClient = useQueryClient();
   const prefersReducedMotion = useReducedMotion();
   const reduceMotion = Boolean(prefersReducedMotion);
-  const [club, setClub] = useState<MyClubSummary | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [dashboardError, setDashboardError] = useState<string | null>(null);
-  const [dashboardLoading, setDashboardLoading] = useState(true);
-  const [widgets, setWidgets] = useState<ClubDashboardWidgetSummary[]>([]);
-  const [, setEditor] = useState<ClubDashboardEditorResponse | null>(null);
-  const [editorWidgets, setEditorWidgets] = useState<ClubDashboardWidgetSummary[]>([]);
-  const [savedEditorWidgets, setSavedEditorWidgets] = useState<ClubDashboardWidgetSummary[]>([]);
+  const clubQuery = useQuery(myClubQueryOptions(clubId));
+  const club = clubQuery.data ?? null;
+  const [editorWidgetsState, setEditorWidgets] = useState<ClubDashboardWidgetSummary[] | null>(null);
+  const [savedEditorWidgetsState, setSavedEditorWidgets] = useState<ClubDashboardWidgetSummary[] | null>(null);
   const [editMode, setEditMode] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [activeEditorWidgetKey, setActiveEditorWidgetKey] = useState<string | null>(null);
@@ -1087,6 +1090,16 @@ export function ClubDashboardFallbackClient({
   const [attendancePulseToken, setAttendancePulseToken] = useState(0);
   const [isCheckingInAttendance, setIsCheckingInAttendance] = useState(false);
   const { showToast, clearToast } = useAppToast();
+  const saveWidgetsMutation = useMutation(updateDashboardWidgetsMutationOptions(clubId, "USER_HOME"));
+  const checkInAttendanceMutation = useMutation(checkInAttendanceMutationOptions(clubId));
+  const editorQuery = useQuery({
+    ...dashboardWidgetEditorQueryOptions(clubId, "USER_HOME"),
+    enabled: club?.admin === true,
+  });
+  const widgetsQuery = useQuery({
+    ...dashboardWidgetsQueryOptions(clubId, "USER_HOME"),
+    enabled: club?.admin === false,
+  });
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
@@ -1105,67 +1118,35 @@ export function ClubDashboardFallbackClient({
   );
 
   useEffect(() => {
-    let cancelled = false;
-
-    void (async () => {
-      setIsLoading(true);
-      setDashboardLoading(true);
-      setError(null);
-      setDashboardError(null);
-      clearToast();
-
-      const clubResult = await getMyClub(clubId);
-      if (cancelled) {
-        return;
-      }
-      if (!clubResult.ok || !clubResult.data) {
-        setClub(null);
-        setError(clubResult.message ?? "클럽 정보를 불러오지 못했습니다.");
-        setIsLoading(false);
-        setDashboardLoading(false);
-        return;
-      }
-
-      const clubData = clubResult.data;
-      setClub(clubData);
-      setIsLoading(false);
-
-      if (clubData.admin) {
-        const editorResult = await getClubDashboardWidgetEditor(clubId, "USER_HOME");
-        if (cancelled) {
-          return;
-        }
-        if (!editorResult.ok || !editorResult.data) {
-          setEditor(null);
-          setDashboardError(editorResult.message ?? "홈 위젯 편집 정보를 불러오지 못했습니다.");
-          setDashboardLoading(false);
-          return;
-        }
-        setEditor(editorResult.data);
-        setEditorWidgets(cloneWidgets(editorResult.data.widgets));
-        setSavedEditorWidgets(cloneWidgets(editorResult.data.widgets));
-        setDashboardLoading(false);
-        return;
-      }
-
-      const widgetResult = await getClubDashboardWidgets(clubId, "USER_HOME");
-      if (cancelled) {
-        return;
-      }
-      if (!widgetResult.ok || !widgetResult.data) {
-        setWidgets([]);
-        setDashboardError(widgetResult.message ?? "홈 위젯을 불러오지 못했습니다.");
-        setDashboardLoading(false);
-        return;
-      }
-      setWidgets(widgetResult.data);
-      setDashboardLoading(false);
-    })();
-
-    return () => {
-      cancelled = true;
-    };
+    clearToast();
   }, [clearToast, clubId]);
+
+  const error =
+    !clubQuery.isPending && clubQuery.isError
+      ? getQueryErrorMessage(clubQuery.error, "클럽 정보를 불러오지 못했습니다.")
+      : null;
+  const isLoading = clubQuery.isPending;
+  const widgets = useMemo(() => widgetsQuery.data ?? [], [widgetsQuery.data]);
+  const editorWidgets = useMemo(
+    () => editorWidgetsState ?? (editorQuery.data ? cloneWidgets(editorQuery.data.widgets) : []),
+    [editorQuery.data, editorWidgetsState],
+  );
+  const savedEditorWidgets = useMemo(
+    () =>
+      savedEditorWidgetsState ?? (editorQuery.data ? cloneWidgets(editorQuery.data.widgets) : []),
+    [editorQuery.data, savedEditorWidgetsState],
+  );
+  const dashboardLoading = club?.admin === true ? editorQuery.isPending : club?.admin === false ? widgetsQuery.isPending : false;
+  const dashboardError =
+    club?.admin === true
+      ? !editorQuery.isPending && editorQuery.isError
+        ? getQueryErrorMessage(editorQuery.error, "홈 위젯 편집 정보를 불러오지 못했습니다.")
+        : null
+      : club?.admin === false
+        ? !widgetsQuery.isPending && widgetsQuery.isError
+          ? getQueryErrorMessage(widgetsQuery.error, "홈 위젯을 불러오지 못했습니다.")
+          : null
+        : null;
 
   const dashboardWidgetSource = useMemo(() => {
     if (club?.admin) {
@@ -1442,16 +1423,7 @@ export function ClubDashboardFallbackClient({
 
       setIsSaving(true);
       clearToast();
-      const result = await updateClubDashboardWidgets(clubId, {
-        scope: "USER_HOME",
-        widgets: nextWidgets.map((widget) => ({
-          widgetKey: widget.widgetKey,
-          enabled: widget.enabled,
-          sortOrder: widget.sortOrder,
-          columnSpan: widget.columnSpan,
-          rowSpan: widget.rowSpan,
-        })),
-      });
+      const result = await saveWidgetsMutation.mutateAsync(nextWidgets);
       setIsSaving(false);
 
       if (!result.ok || !result.data) {
@@ -1459,13 +1431,13 @@ export function ClubDashboardFallbackClient({
         return;
       }
 
-      setEditor(result.data);
       setEditorWidgets(cloneWidgets(result.data.widgets));
       setSavedEditorWidgets(cloneWidgets(result.data.widgets));
+      void invalidateClubQueries(queryClient, clubId);
       showToast(successMessage, "success");
       window.dispatchEvent(new Event("semo:dashboard-widgets-updated"));
     },
-    [clearToast, club?.admin, clubId, showToast],
+    [clearToast, club?.admin, clubId, queryClient, saveWidgetsMutation, showToast],
   );
 
   const handleRemoveWidget = (widgetKey: string) => {
@@ -1474,10 +1446,10 @@ export function ClubDashboardFallbackClient({
     }
 
     startTransition(() => {
-      setEditorWidgets((current) =>
+      setEditorWidgets(
         normalizeSortOrder(
-          current.map((widget) =>
-        widget.widgetKey === widgetKey ? { ...widget, enabled: false } : widget,
+          editorWidgets.map((widget) =>
+            widget.widgetKey === widgetKey ? { ...widget, enabled: false } : widget,
           ),
         ),
       );
@@ -1490,10 +1462,10 @@ export function ClubDashboardFallbackClient({
     }
 
     startTransition(() => {
-      setEditorWidgets((current) =>
+      setEditorWidgets(
         normalizeSortOrder(
-          current.map((widget) =>
-        widget.widgetKey === widgetKey ? { ...widget, enabled: true } : widget,
+          editorWidgets.map((widget) =>
+            widget.widgetKey === widgetKey ? { ...widget, enabled: true } : widget,
           ),
         ),
       );
@@ -1507,12 +1479,10 @@ export function ClubDashboardFallbackClient({
       }
 
       startTransition(() => {
-        setEditorWidgets((current) =>
-          reorderEnabledWidgets(current, sourceWidgetKey, targetWidgetKey),
-        );
+        setEditorWidgets(reorderEnabledWidgets(editorWidgets, sourceWidgetKey, targetWidgetKey));
       });
     },
-    [club?.admin, isSaving],
+    [club?.admin, editorWidgets, isSaving],
   );
 
   const handleEditorDragStart = (event: DragStartEvent) => {
@@ -1646,7 +1616,7 @@ export function ClubDashboardFallbackClient({
 
     setIsCheckingInAttendance(true);
     clearToast();
-    const result = await checkInClubAttendance(clubId);
+    const result = await checkInAttendanceMutation.mutateAsync();
     setIsCheckingInAttendance(false);
 
     if (!result.ok || !result.data) {
@@ -1656,8 +1626,18 @@ export function ClubDashboardFallbackClient({
 
     showToast("출석이 완료되었습니다.", "success");
     setAttendancePulseToken((current) => current + 1);
+    void invalidateClubQueries(queryClient, clubId);
     await loadAttendanceData();
-  }, [attendanceData?.todayAttendance, clearToast, clubId, isCheckingInAttendance, loadAttendanceData, showToast]);
+  }, [
+    attendanceData?.todayAttendance,
+    checkInAttendanceMutation,
+    clearToast,
+    clubId,
+    isCheckingInAttendance,
+    loadAttendanceData,
+    queryClient,
+    showToast,
+  ]);
 
   if (isLoading && !club && !error) {
     return <ClubDashboardLoadingShell />;

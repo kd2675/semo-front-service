@@ -1,13 +1,13 @@
 "use client";
 
-import { startTransition, useEffect, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
-  getClubAdminBracketHome,
-  getClubBracketHome,
-  type ClubAdminBracketHomeResponse,
-  type ClubBracketHomeResponse,
-} from "@/app/lib/clubs";
+  adminBracketHomeQueryOptions,
+  bracketHomeQueryOptions,
+  bracketQueryKeys,
+} from "@/app/lib/react-query/brackets/queries";
 import { ClubBoardFeedLoadingShell } from "../../ClubRouteLoadingShells";
 import { ClubBracketHomeClient } from "./ClubBracketHomeClient";
 
@@ -21,43 +21,36 @@ export function ClubBracketHomeFallbackClient({
   mode = "user",
 }: ClubBracketHomeFallbackClientProps) {
   const router = useRouter();
-  const [payload, setPayload] = useState<ClubBracketHomeResponse | ClubAdminBracketHomeResponse | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [reloadKey, setReloadKey] = useState(0);
+  const queryClient = useQueryClient();
+  const isAdminMode = mode === "admin";
+  const queryKey =
+    isAdminMode
+      ? bracketQueryKeys.adminBracketHome(clubId)
+      : bracketQueryKeys.bracketHome(clubId);
+  const adminQuery = useQuery({
+    ...adminBracketHomeQueryOptions(clubId),
+    enabled: isAdminMode,
+  });
+  const userQuery = useQuery({
+    ...bracketHomeQueryOptions(clubId),
+    enabled: !isAdminMode,
+  });
+  const payload = isAdminMode ? adminQuery.data : userQuery.data;
+  const isPending = isAdminMode ? adminQuery.isPending : userQuery.isPending;
+  const isFetching = isAdminMode ? adminQuery.isFetching : userQuery.isFetching;
+  const isError = isAdminMode ? adminQuery.isError : userQuery.isError;
 
   useEffect(() => {
-    let cancelled = false;
-
-    void (async () => {
-      setLoading(true);
-      const result = mode === "admin"
-        ? await getClubAdminBracketHome(clubId)
-        : await getClubBracketHome(clubId);
-      if (cancelled) {
-        return;
-      }
-
-      setLoading(false);
-      if (!result.ok || !result.data) {
-        router.replace(mode === "admin" ? `/clubs/${clubId}/admin` : `/clubs/${clubId}`);
-        return;
-      }
-
-      setPayload(result.data);
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [clubId, mode, reloadKey, router]);
+    if (!isPending && isError) {
+      router.replace(isAdminMode ? `/clubs/${clubId}/admin` : `/clubs/${clubId}`);
+    }
+  }, [clubId, isAdminMode, isError, isPending, router]);
 
   const handleReload = () => {
-    startTransition(() => {
-      setReloadKey((current) => current + 1);
-    });
+    void queryClient.invalidateQueries({ queryKey });
   };
 
-  if (loading || !payload) {
+  if (isPending || isFetching || !payload) {
     return <ClubBoardFeedLoadingShell />;
   }
 

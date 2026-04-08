@@ -1,19 +1,23 @@
 "use client";
 
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion, useReducedMotion } from "motion/react";
 import { useState } from "react";
 import { ClubModeSwitchFab } from "@/app/components/ClubModeSwitchFab";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import { useAppToast } from "@/app/hooks/useAppToast";
 import {
-  applyClubTodo,
-  cancelMyClubTodoApplication,
-  completeClubTodo,
-  getClubTodos,
   type ClubTodoResponse,
   type TodoSummary,
 } from "@/app/lib/clubs";
 import { staggeredFadeUpMotion } from "@/app/lib/motion";
+import { invalidateClubQueries } from "@/app/lib/react-query/common";
+import {
+  applyTodoMutationOptions,
+  cancelTodoMutationOptions,
+  completeTodoMutationOptions,
+} from "@/app/lib/react-query/todos/mutations";
+import { todoQueryOptions } from "@/app/lib/react-query/todos/queries";
 
 type ClubTodoClientProps = {
   clubId: string;
@@ -22,26 +26,33 @@ type ClubTodoClientProps = {
 };
 
 export function ClubTodoClient({ clubId, initialData, isAdmin }: ClubTodoClientProps) {
+  const queryClient = useQueryClient();
   const prefersReducedMotion = useReducedMotion();
   const reduceMotion = Boolean(prefersReducedMotion);
-  const [todoData, setTodoData] = useState(initialData);
+  const todoQuery = useQuery({
+    ...todoQueryOptions(clubId),
+    initialData,
+  });
+  const todoData = todoQuery.data;
   const [pendingTodoId, setPendingTodoId] = useState<number | null>(null);
   const { showToast, clearToast } = useAppToast();
+  const applyTodoMutation = useMutation(applyTodoMutationOptions(clubId));
+  const cancelTodoMutation = useMutation(cancelTodoMutationOptions(clubId));
+  const completeTodoMutation = useMutation(completeTodoMutationOptions(clubId));
 
   const reloadTodos = async () => {
-    const result = await getClubTodos(clubId);
-    if (!result.ok || !result.data) {
-      showToast(result.message ?? "할 일 정보를 다시 불러오지 못했습니다.", "error");
+    const result = await todoQuery.refetch();
+    if (!result.data) {
+      showToast("할 일 정보를 다시 불러오지 못했습니다.", "error");
       return false;
     }
-    setTodoData(result.data);
     return true;
   };
 
   const handleApply = async (todoItemId: number) => {
     setPendingTodoId(todoItemId);
     clearToast();
-    const result = await applyClubTodo(clubId, todoItemId);
+    const result = await applyTodoMutation.mutateAsync(todoItemId);
     setPendingTodoId(null);
 
     if (!result.ok || !result.data) {
@@ -49,13 +60,14 @@ export function ClubTodoClient({ clubId, initialData, isAdmin }: ClubTodoClientP
       return;
     }
     await reloadTodos();
+    void invalidateClubQueries(queryClient, clubId);
     showToast("업무를 신청했습니다.", "success");
   };
 
   const handleCancelApplication = async (todoItemId: number) => {
     setPendingTodoId(todoItemId);
     clearToast();
-    const result = await cancelMyClubTodoApplication(clubId, todoItemId);
+    const result = await cancelTodoMutation.mutateAsync(todoItemId);
     setPendingTodoId(null);
 
     if (!result.ok || !result.data) {
@@ -63,13 +75,14 @@ export function ClubTodoClient({ clubId, initialData, isAdmin }: ClubTodoClientP
       return;
     }
     await reloadTodos();
+    void invalidateClubQueries(queryClient, clubId);
     showToast("업무 신청을 취소했습니다.", "success");
   };
 
   const handleComplete = async (todoItemId: number) => {
     setPendingTodoId(todoItemId);
     clearToast();
-    const result = await completeClubTodo(clubId, todoItemId);
+    const result = await completeTodoMutation.mutateAsync(todoItemId);
     setPendingTodoId(null);
 
     if (!result.ok || !result.data) {
@@ -77,6 +90,7 @@ export function ClubTodoClient({ clubId, initialData, isAdmin }: ClubTodoClientP
       return;
     }
     await reloadTodos();
+    void invalidateClubQueries(queryClient, clubId);
     showToast("업무를 완료 처리했습니다.", "success");
   };
 

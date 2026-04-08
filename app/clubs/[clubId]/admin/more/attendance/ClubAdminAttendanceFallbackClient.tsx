@@ -1,13 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useQueries } from "@tanstack/react-query";
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import {
-  getClubAdminAttendance,
-  getMyClub,
-  type ClubAdminAttendanceResponse,
-  type MyClubSummary,
-} from "@/app/lib/clubs";
+import { adminAttendanceQueryOptions } from "@/app/lib/react-query/attendance/queries";
+import { myClubQueryOptions } from "@/app/lib/react-query/club/queries";
 import { ClubAdminAttendanceClient } from "./ClubAdminAttendanceClient";
 import { AdminAttendanceLoadingShell } from "../../AdminRouteLoadingShells";
 
@@ -19,39 +16,23 @@ export function ClubAdminAttendanceFallbackClient({
   clubId,
 }: ClubAdminAttendanceFallbackClientProps) {
   const router = useRouter();
-  const [club, setClub] = useState<MyClubSummary | null>(null);
-  const [attendance, setAttendance] = useState<ClubAdminAttendanceResponse | null>(null);
+  const [clubQuery, attendanceQuery] = useQueries({
+    queries: [myClubQueryOptions(clubId), adminAttendanceQueryOptions(clubId)],
+  });
+  const club = clubQuery.data ?? null;
+  const attendance = attendanceQuery.data ?? null;
 
   useEffect(() => {
-    let cancelled = false;
-
-    void (async () => {
-      const [clubResult, attendanceResult] = await Promise.all([
-        getMyClub(clubId),
-        getClubAdminAttendance(clubId),
-      ]);
-
-      if (cancelled) {
-        return;
-      }
-
-      if (!clubResult.ok || !clubResult.data || !clubResult.data.admin) {
+    if (!clubQuery.isPending && (clubQuery.isError || !club || !club.admin)) {
         router.replace(`/clubs/${clubId}`);
-        return;
-      }
+    }
+  }, [club, clubId, clubQuery.isError, clubQuery.isPending, router]);
 
-      if (!attendanceResult.ok || !attendanceResult.data) {
+  useEffect(() => {
+    if (!attendanceQuery.isPending && attendanceQuery.isError) {
         router.replace(`/clubs/${clubId}/admin`);
-        return;
-      }
-      setClub(clubResult.data);
-      setAttendance(attendanceResult.data);
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [clubId, router]);
+    }
+  }, [attendanceQuery.isError, attendanceQuery.isPending, clubId, router]);
 
   if (!club || !attendance) {
     return <AdminAttendanceLoadingShell />;

@@ -1,17 +1,18 @@
 "use client";
 
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import { DatePopoverField } from "@/app/components/DatePopoverField";
 import { TimePopoverField } from "@/app/components/TimePopoverField";
 import { useRouter } from "next/navigation";
 import { useEffect, useId, useState } from "react";
 import {
-  createClubTournament,
-  getClubTournamentDetail,
-  updateClubTournament,
   type TournamentDetailResponse,
   type UpsertTournamentRequest,
 } from "@/app/lib/clubs";
+import { invalidateClubQueries } from "@/app/lib/react-query/common";
+import { saveTournamentMutationOptions } from "@/app/lib/react-query/tournaments/mutations";
+import { tournamentDetailQueryOptions } from "@/app/lib/react-query/tournaments/queries";
 import { ClubEditorLoadingShell } from "../../ClubRouteLoadingShells";
 
 type ClubTournamentEditorClientProps = {
@@ -40,6 +41,7 @@ export function ClubTournamentEditorClient({
   onRequestClose,
   onSaved,
 }: ClubTournamentEditorClientProps) {
+  const queryClient = useQueryClient();
   const router = useRouter();
   const formId = useId();
   const isEdit = Boolean(tournamentRecordId);
@@ -67,6 +69,9 @@ export function ClubTournamentEditorClient({
   const [loading, setLoading] = useState(isEdit);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const saveTournamentMutation = useMutation(
+    saveTournamentMutationOptions(clubId, tournamentRecordId),
+  );
 
   useEffect(() => {
     if (!isEdit) {
@@ -80,17 +85,23 @@ export function ClubTournamentEditorClient({
       }
       setLoading(true);
       setError(null);
-      const result = await getClubTournamentDetail(clubId, tournamentRecordId);
+      let payload: TournamentDetailResponse;
+      try {
+        payload = await queryClient.fetchQuery(
+          tournamentDetailQueryOptions(clubId, tournamentRecordId),
+        );
+      } catch {
+        if (cancelled) {
+          return;
+        }
+        setLoading(false);
+        setError("대회 정보를 불러오지 못했습니다.");
+        return;
+      }
       if (cancelled) {
         return;
       }
       setLoading(false);
-      if (!result.ok || !result.data) {
-        setError(result.message ?? "대회 정보를 불러오지 못했습니다.");
-        return;
-      }
-
-      const payload: TournamentDetailResponse = result.data;
       setTitle(payload.title);
       setSummaryText(payload.summaryText ?? "");
       setDetailText(payload.detailText ?? "");
@@ -116,7 +127,7 @@ export function ClubTournamentEditorClient({
     return () => {
       cancelled = true;
     };
-  }, [clubId, isEdit, tournamentRecordId]);
+  }, [clubId, isEdit, queryClient, tournamentRecordId]);
 
   const handleApplicationStartDateChange = (value: string) => {
     setApplicationStartDate(value);
@@ -186,15 +197,14 @@ export function ClubTournamentEditorClient({
       pinned,
     };
 
-    const result = isEdit && tournamentRecordId
-      ? await updateClubTournament(clubId, tournamentRecordId, request)
-      : await createClubTournament(clubId, request);
+    const result = await saveTournamentMutation.mutateAsync(request);
     setSaving(false);
     if (!result.ok || !result.data) {
       setError(result.message ?? "대회 저장에 실패했습니다.");
       return;
     }
 
+    void invalidateClubQueries(queryClient, clubId);
     if (onSaved) {
       onSaved(result.data.tournamentRecordId);
       return;

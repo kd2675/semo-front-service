@@ -1,5 +1,6 @@
 "use client";
 
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Public_Sans } from "next/font/google";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useState } from "react";
@@ -12,19 +13,24 @@ import { TodoApplicationManagerModal } from "@/app/components/TodoApplicationMan
 import { useAppToast } from "@/app/hooks/useAppToast";
 import { ScheduleActionConfirmModal } from "@/app/clubs/[clubId]/schedule/ScheduleActionConfirmModal";
 import {
-  createClubTodo,
-  deleteClubTodo,
   getClubAdminTodoApplications,
-  getClubAdminTodos,
-  reviewClubTodoApplication,
-  updateClubTodo,
-  updateClubTodoStatus,
   type ClubAdminTodoResponse,
   type TodoItemApplicationsResponse,
   type TodoSummary,
 } from "@/app/lib/clubs";
 import { FAB_RIGHT_OFFSET_CLASS_NAME, getActionFabBottomClass } from "@/app/lib/fab";
 import { staggeredFadeUpMotion } from "@/app/lib/motion";
+import { invalidateClubQueries } from "@/app/lib/react-query/common";
+import {
+  deleteTodoMutationOptions,
+  reviewTodoApplicationMutationOptions,
+  saveTodoMutationOptions,
+  updateTodoStatusMutationOptions,
+} from "@/app/lib/react-query/todos/mutations";
+import {
+  adminTodoApplicationsQueryOptions,
+  adminTodosQueryOptions,
+} from "@/app/lib/react-query/todos/queries";
 
 const publicSans = Public_Sans({
   subsets: ["latin"],
@@ -217,6 +223,7 @@ function getApplicationFilterLabel(value: ApplicationFilter) {
 }
 
 export function ClubAdminTodoClient({ clubId, initialData }: ClubAdminTodoClientProps) {
+  const queryClient = useQueryClient();
   const prefersReducedMotion = useReducedMotion();
   const reduceMotion = Boolean(prefersReducedMotion);
   const [todoData, setTodoData] = useState(initialData);
@@ -248,6 +255,10 @@ export function ClubAdminTodoClient({ clubId, initialData }: ClubAdminTodoClient
   const [reviewingApplicationId, setReviewingApplicationId] = useState<number | null>(null);
   const [deletingTodoItem, setDeletingTodoItem] = useState<TodoSummary | null>(null);
   const { showToast, clearToast } = useAppToast();
+  const saveTodoMutation = useMutation(saveTodoMutationOptions(clubId));
+  const updateTodoStatusMutation = useMutation(updateTodoStatusMutationOptions(clubId));
+  const reviewTodoApplicationMutation = useMutation(reviewTodoApplicationMutationOptions(clubId));
+  const deleteTodoMutation = useMutation(deleteTodoMutationOptions(clubId));
 
   const editingItem = editorModal?.mode === "edit" ? editorModal.original : null;
   const assignedMember = todoData.availableMembers.find(
@@ -270,18 +281,14 @@ export function ClubAdminTodoClient({ clubId, initialData }: ClubAdminTodoClient
     { showErrorToast = true }: { showErrorToast?: boolean } = {},
   ) => {
     try {
-      const result = await getClubAdminTodos(clubId, {
-        statusFilter: nextStatusFilter,
-        assignmentFilter: nextAssignmentFilter,
-        applicationFilter: nextApplicationFilter,
-      });
-      if (!result.ok || !result.data) {
-        if (showErrorToast) {
-          showToast(result.message ?? "할 일 운영 정보를 다시 불러오지 못했습니다.", "error");
-        }
-        return false;
-      }
-      setTodoData(result.data);
+      const data = await queryClient.fetchQuery(
+        adminTodosQueryOptions(clubId, {
+          statusFilter: nextStatusFilter,
+          assignmentFilter: nextAssignmentFilter,
+          applicationFilter: nextApplicationFilter,
+        }),
+      );
+      setTodoData(data);
       return true;
     } catch (error) {
       if (showErrorToast) {
@@ -401,9 +408,10 @@ export function ClubAdminTodoClient({ clubId, initialData }: ClubAdminTodoClient
     };
 
     try {
-      const result = isEditMode
-        ? await updateClubTodo(clubId, editorModal.todoItemId, request)
-        : await createClubTodo(clubId, request);
+      const result = await saveTodoMutation.mutateAsync({
+        request,
+        todoItemId: isEditMode ? editorModal.todoItemId : undefined,
+      });
 
       if (!result.ok || !result.data) {
         showToast(result.message ?? "할 일을 저장하지 못했습니다.", "error");
@@ -422,6 +430,7 @@ export function ClubAdminTodoClient({ clubId, initialData }: ClubAdminTodoClient
         return;
       }
 
+      void invalidateClubQueries(queryClient, clubId);
       showToast(isEditMode ? "할 일을 수정했습니다." : "할 일을 등록했습니다.", "success");
     } catch (error) {
       showToast(
@@ -439,7 +448,7 @@ export function ClubAdminTodoClient({ clubId, initialData }: ClubAdminTodoClient
     const messages = getStatusUpdateMessages(nextStatus);
 
     try {
-      const result = await updateClubTodoStatus(clubId, todoItemId, { statusCode: nextStatus });
+      const result = await updateTodoStatusMutation.mutateAsync({ todoItemId, statusCode: nextStatus });
 
       if (!result.ok || !result.data) {
         showToast(result.message ?? messages.failure, "error");
@@ -452,6 +461,7 @@ export function ClubAdminTodoClient({ clubId, initialData }: ClubAdminTodoClient
         return;
       }
 
+      void invalidateClubQueries(queryClient, clubId);
       showToast(messages.success, "success");
     } catch (error) {
       showToast(resolveErrorMessage(error, messages.failure), "error");
@@ -466,18 +476,14 @@ export function ClubAdminTodoClient({ clubId, initialData }: ClubAdminTodoClient
     }
     setIsLoadingMore(true);
     try {
-      const result = await getClubAdminTodos(clubId, {
-        statusFilter,
-        assignmentFilter,
-        applicationFilter,
-        cursorTodoItemId: todoData.nextCursorTodoItemId,
-      });
-
-      if (!result.ok || !result.data) {
-        showToast(result.message ?? "목록을 더 불러오지 못했습니다.", "error");
-        return;
-      }
-      const nextData = result.data;
+      const nextData = await queryClient.fetchQuery(
+        adminTodosQueryOptions(clubId, {
+          statusFilter,
+          assignmentFilter,
+          applicationFilter,
+          cursorTodoItemId: todoData.nextCursorTodoItemId,
+        }),
+      );
 
       setTodoData((current) => ({
         ...nextData,
@@ -497,13 +503,10 @@ export function ClubAdminTodoClient({ clubId, initialData }: ClubAdminTodoClient
     clearToast();
 
     try {
-      const result = await getClubAdminTodoApplications(clubId, item.todoItemId);
-      if (!result.ok || !result.data) {
-        showToast(result.message ?? "업무 신청 목록을 불러오지 못했습니다.", "error");
-        setApplicationModalItem(null);
-        return;
-      }
-      setApplicationModalData(result.data);
+      const data = await queryClient.fetchQuery(
+        adminTodoApplicationsQueryOptions(clubId, item.todoItemId),
+      );
+      setApplicationModalData(data);
     } catch (error) {
       showToast(resolveErrorMessage(error, "업무 신청 목록을 불러오지 못했습니다."), "error");
       setApplicationModalItem(null);
@@ -531,12 +534,11 @@ export function ClubAdminTodoClient({ clubId, initialData }: ClubAdminTodoClient
     clearToast();
 
     try {
-      const result = await reviewClubTodoApplication(
-        clubId,
-        applicationModalItem.todoItemId,
-        application.todoItemApplicationId,
-        { applicationStatus: nextStatus },
-      );
+      const result = await reviewTodoApplicationMutation.mutateAsync({
+        todoItemId: applicationModalItem.todoItemId,
+        todoItemApplicationId: application.todoItemApplicationId,
+        applicationStatus: nextStatus,
+      });
       if (!result.ok || !result.data) {
         showToast(result.message ?? "신청 검토에 실패했습니다.", "error");
         return;
@@ -556,6 +558,7 @@ export function ClubAdminTodoClient({ clubId, initialData }: ClubAdminTodoClient
         return;
       }
 
+      void invalidateClubQueries(queryClient, clubId);
       showToast(nextStatus === "SELECTED" ? "신청자를 선정했습니다." : "신청을 반려했습니다.", "success");
     } catch (error) {
       showToast(resolveErrorMessage(error, "신청 검토에 실패했습니다."), "error");
@@ -572,7 +575,7 @@ export function ClubAdminTodoClient({ clubId, initialData }: ClubAdminTodoClient
     clearToast();
 
     try {
-      const result = await deleteClubTodo(clubId, deletingTodoItem.todoItemId);
+      const result = await deleteTodoMutation.mutateAsync(deletingTodoItem.todoItemId);
       if (!result.ok) {
         showToast(result.message ?? "할 일을 삭제하지 못했습니다.", "error");
         return;
@@ -585,6 +588,7 @@ export function ClubAdminTodoClient({ clubId, initialData }: ClubAdminTodoClient
         return;
       }
 
+      void invalidateClubQueries(queryClient, clubId);
       showToast("할 일을 삭제했습니다.", "success");
     } catch (error) {
       showToast(resolveErrorMessage(error, "할 일을 삭제하지 못했습니다."), "error");

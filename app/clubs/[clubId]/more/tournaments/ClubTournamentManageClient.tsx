@@ -1,16 +1,12 @@
 "use client";
 
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { RouterLink } from "@/app/components/RouterLink";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import { RouteModal } from "@/app/components/RouteModal";
 import { ClubTournamentEditorClient } from "@/app/clubs/[clubId]/more/tournaments/ClubTournamentEditorClient";
 import { ScheduleActionConfirmModal } from "@/app/clubs/[clubId]/schedule/ScheduleActionConfirmModal";
 import {
-  cancelClubTournament,
-  deleteClubTournament,
-  getClubTournamentDetail,
-  reviewClubTournament,
-  reviewClubTournamentApplication,
   type TournamentApplicationSummary,
   type TournamentDetailResponse,
 } from "@/app/lib/clubs";
@@ -21,7 +17,19 @@ import {
   getTournamentStatusLabel,
 } from "@/app/lib/tournament";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
+import { getQueryErrorMessage } from "@/app/lib/query-utils";
+import { invalidateClubQueries } from "@/app/lib/react-query/common";
+import {
+  cancelTournamentMutationOptions,
+  deleteTournamentMutationOptions,
+  reviewTournamentApplicationMutationOptions,
+  reviewTournamentMutationOptions,
+} from "@/app/lib/react-query/tournaments/mutations";
+import {
+  tournamentDetailQueryOptions,
+  tournamentQueryKeys,
+} from "@/app/lib/react-query/tournaments/queries";
 import { ClubDetailLoadingShell } from "../../ClubRouteLoadingShells";
 
 type ClubTournamentManageClientProps = {
@@ -47,53 +55,41 @@ export function ClubTournamentManageClient({
 }: ClubTournamentManageClientProps) {
   const prefersReducedMotion = useReducedMotion();
   const reduceMotion = Boolean(prefersReducedMotion);
-  const [payload, setPayload] = useState<TournamentDetailResponse | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const queryClient = useQueryClient();
+  const {
+    data: queryPayload,
+    isPending: loading,
+    refetch,
+    error: queryError,
+  } = useQuery(tournamentDetailQueryOptions(clubId, tournamentRecordId));
+  const [payloadState, setPayload] = useState<TournamentDetailResponse | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showCancelTournament, setShowCancelTournament] = useState(false);
   const [showDeleteTournament, setShowDeleteTournament] = useState(false);
   const [tournamentReviewStatus, setTournamentReviewStatus] = useState<"APPROVED" | "REJECTED">("APPROVED");
   const [tournamentRejectionReason, setTournamentRejectionReason] = useState("");
+  const reviewApplicationMutation = useMutation(
+    reviewTournamentApplicationMutationOptions(clubId, tournamentRecordId),
+  );
+  const reviewTournamentMutation = useMutation(
+    reviewTournamentMutationOptions(clubId, tournamentRecordId),
+  );
+  const cancelTournamentMutation = useMutation(
+    cancelTournamentMutationOptions(clubId, tournamentRecordId),
+  );
+  const deleteTournamentMutation = useMutation(
+    deleteTournamentMutationOptions(clubId, tournamentRecordId),
+  );
+  const payload = payloadState ?? queryPayload ?? null;
+  const error =
+    actionError ?? (queryError
+      ? getQueryErrorMessage(queryError, "대회 관리 정보를 불러오지 못했습니다.")
+      : null);
 
   const isModal = presentation === "modal";
   const fallbackBasePath = basePath ?? `/clubs/${clubId}/more/tournaments`;
-
-  const loadDetail = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    const result = await getClubTournamentDetail(clubId, tournamentRecordId);
-    setLoading(false);
-    if (!result.ok || !result.data) {
-      setError(result.message ?? "대회 관리 정보를 불러오지 못했습니다.");
-      return;
-    }
-    setPayload(result.data);
-  }, [clubId, tournamentRecordId]);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    void (async () => {
-      setLoading(true);
-      setError(null);
-      const result = await getClubTournamentDetail(clubId, tournamentRecordId);
-      if (cancelled) {
-        return;
-      }
-      setLoading(false);
-      if (!result.ok || !result.data) {
-        setError(result.message ?? "대회 관리 정보를 불러오지 못했습니다.");
-        return;
-      }
-      setPayload(result.data);
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [clubId, tournamentRecordId]);
 
   useEffect(() => {
     if (!payload || !initialSection) {
@@ -128,23 +124,28 @@ export function ClubTournamentManageClient({
     applicationStatus: "APPROVED" | "REJECTED",
   ) => {
     setSaving(true);
-    const result = await reviewClubTournamentApplication(
-      clubId,
-      tournamentRecordId,
-      application.tournamentApplicationId,
-      { applicationStatus },
-    );
+    setActionError(null);
+    const result = await reviewApplicationMutation.mutateAsync({
+      tournamentApplicationId: application.tournamentApplicationId,
+      applicationStatus,
+    });
     setSaving(false);
     if (!result.ok || !result.data) {
-      setError(result.message ?? "참가 신청 처리에 실패했습니다.");
+      setActionError(result.message ?? "참가 신청 처리에 실패했습니다.");
       return;
     }
+    queryClient.setQueryData(
+      tournamentQueryKeys.tournamentDetail(clubId, tournamentRecordId),
+      result.data,
+    );
     setPayload(result.data);
+    void invalidateClubQueries(queryClient, clubId);
   };
 
   const handleReviewTournament = async () => {
     setSaving(true);
-    const result = await reviewClubTournament(clubId, tournamentRecordId, {
+    setActionError(null);
+    const result = await reviewTournamentMutation.mutateAsync({
       approvalStatus: tournamentReviewStatus,
       rejectionReason: tournamentReviewStatus === "REJECTED"
         ? tournamentRejectionReason.trim() || null
@@ -152,10 +153,15 @@ export function ClubTournamentManageClient({
     });
     setSaving(false);
     if (!result.ok || !result.data) {
-      setError(result.message ?? "대회 승인 검토에 실패했습니다.");
+      setActionError(result.message ?? "대회 승인 검토에 실패했습니다.");
       return;
     }
+    queryClient.setQueryData(
+      tournamentQueryKeys.tournamentDetail(clubId, tournamentRecordId),
+      result.data,
+    );
     setPayload(result.data);
+    void invalidateClubQueries(queryClient, clubId);
     if (result.data.approvalStatus !== "REJECTED") {
       setTournamentRejectionReason("");
       setTournamentReviewStatus("APPROVED");
@@ -164,25 +170,33 @@ export function ClubTournamentManageClient({
 
   const handleCancelTournament = async () => {
     setSaving(true);
-    const result = await cancelClubTournament(clubId, tournamentRecordId, { cancelReason: "작성자가 조기 취소" });
+    setActionError(null);
+    const result = await cancelTournamentMutation.mutateAsync();
     setSaving(false);
     setShowCancelTournament(false);
     if (!result.ok || !result.data) {
-      setError(result.message ?? "대회 취소에 실패했습니다.");
+      setActionError(result.message ?? "대회 취소에 실패했습니다.");
       return;
     }
+    queryClient.setQueryData(
+      tournamentQueryKeys.tournamentDetail(clubId, tournamentRecordId),
+      result.data,
+    );
     setPayload(result.data);
+    void invalidateClubQueries(queryClient, clubId);
   };
 
   const handleDeleteTournament = async () => {
     setSaving(true);
-    const result = await deleteClubTournament(clubId, tournamentRecordId);
+    setActionError(null);
+    const result = await deleteTournamentMutation.mutateAsync(tournamentRecordId);
     setSaving(false);
     setShowDeleteTournament(false);
     if (!result.ok) {
-      setError(result.message ?? "대회 삭제에 실패했습니다.");
+      setActionError(result.message ?? "대회 삭제에 실패했습니다.");
       return;
     }
+    void invalidateClubQueries(queryClient, clubId);
     if (onDeleted) {
       onDeleted();
       return;
@@ -463,7 +477,7 @@ export function ClubTournamentManageClient({
                 onRequestClose={() => setShowEditModal(false)}
                 onSaved={() => {
                   setShowEditModal(false);
-                  void loadDetail();
+                  void refetch();
                 }}
               />
             </RouteModal>

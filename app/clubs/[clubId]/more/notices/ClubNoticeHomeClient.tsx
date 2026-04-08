@@ -1,17 +1,16 @@
 "use client";
 
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { RouteModal } from "@/app/components/RouteModal";
 import { ClubModeSwitchFab } from "@/app/components/ClubModeSwitchFab";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import { ClubNoticeDetailModal } from "@/app/components/ClubDetailModals";
 import { ScheduleActionConfirmModal } from "@/app/clubs/[clubId]/schedule/ScheduleActionConfirmModal";
-import {
-  deleteClubNotice,
-  type ClubNoticeHomeResponse,
-  type ClubNoticeListItem,
-} from "@/app/lib/clubs";
+import { type ClubNoticeHomeResponse, type ClubNoticeListItem } from "@/app/lib/clubs";
 import { FAB_RIGHT_OFFSET_CLASS_NAME, getActionFabBottomClass } from "@/app/lib/fab";
 import { staggeredFadeUpMotion } from "@/app/lib/motion";
+import { deleteNoticeMutationOptions } from "@/app/lib/react-query/board/mutations";
+import { invalidateClubQueries } from "@/app/lib/react-query/common";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useState, type CSSProperties } from "react";
 import { ClubNoticeEditorClient } from "../../board/ClubNoticeEditorClient";
@@ -57,6 +56,7 @@ export function ClubNoticeHomeClient({
   mode = "user",
   onReload,
 }: ClubNoticeHomeClientProps) {
+  const queryClient = useQueryClient();
   const prefersReducedMotion = useReducedMotion();
   const reduceMotion = Boolean(prefersReducedMotion);
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -65,6 +65,7 @@ export function ClubNoticeHomeClient({
   const [deleteTarget, setDeleteTarget] = useState<ClubNoticeListItem | null>(null);
   const [activeMenuNoticeId, setActiveMenuNoticeId] = useState<number | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const deleteNoticeMutation = useMutation(deleteNoticeMutationOptions(clubId));
 
   const accent = mode === "admin" ? "#f97316" : "#135bec";
   const background = mode === "admin" ? "#f6f6f8" : "#f6f6f8";
@@ -79,13 +80,14 @@ export function ClubNoticeHomeClient({
     }
 
     setDeleting(true);
-    const result = await deleteClubNotice(clubId, deleteTarget.noticeId);
+    const result = await deleteNoticeMutation.mutateAsync(deleteTarget.noticeId);
     setDeleting(false);
     if (!result.ok) {
       return;
     }
 
     setDeleteTarget(null);
+    void invalidateClubQueries(queryClient, clubId);
     onReload();
   };
 

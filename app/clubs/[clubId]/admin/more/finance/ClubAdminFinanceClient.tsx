@@ -1,5 +1,6 @@
 "use client";
 
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Public_Sans } from "next/font/google";
 import {
   startTransition,
@@ -18,16 +19,6 @@ import { TimePopoverField } from "@/app/components/TimePopoverField";
 import { useAppToast } from "@/app/hooks/useAppToast";
 import { ScheduleActionConfirmModal } from "@/app/clubs/[clubId]/schedule/ScheduleActionConfirmModal";
 import {
-  createClubAdminFinanceExpense,
-  createClubFinanceObligation,
-  deleteClubFinanceObligation,
-  getClubAdminFinance,
-  getClubAdminFinanceExpenses,
-  getClubAdminFinanceObligationDetail,
-  getClubAdminFinanceObligations,
-  getClubAdminFinanceRequests,
-  reviewClubFinanceRequest,
-  updateClubFinancePaymentStatus,
   type ClubAdminFinanceHomeResponse,
   type ClubAdminFinanceObligation,
   type ClubAdminFinanceObligationDetailResponse,
@@ -41,6 +32,21 @@ import {
 } from "@/app/lib/clubs";
 import { FAB_RIGHT_OFFSET_CLASS_NAME, getActionFabBottomClass } from "@/app/lib/fab";
 import { staggeredFadeUpMotion } from "@/app/lib/motion";
+import { invalidateClubQueries } from "@/app/lib/react-query/common";
+import {
+  createAdminFinanceExpenseMutationOptions,
+  createFinanceObligationMutationOptions,
+  deleteFinanceObligationMutationOptions,
+  reviewFinanceRequestMutationOptions,
+  updateFinancePaymentStatusMutationOptions,
+} from "@/app/lib/react-query/finance/mutations";
+import {
+  adminFinanceExpensesQueryOptions,
+  adminFinanceHomeQueryOptions,
+  adminFinanceObligationDetailQueryOptions,
+  adminFinanceObligationsQueryOptions,
+  adminFinanceRequestsQueryOptions,
+} from "@/app/lib/react-query/finance/queries";
 
 const publicSans = Public_Sans({
   subsets: ["latin"],
@@ -128,6 +134,7 @@ export function ClubAdminFinanceClient({
   initialRequestFeed,
   initialExpenseFeed,
 }: ClubAdminFinanceClientProps) {
+  const queryClient = useQueryClient();
   const prefersReducedMotion = useReducedMotion();
   const reduceMotion = Boolean(prefersReducedMotion);
   const [finance, setFinance] = useState(initialData);
@@ -177,6 +184,11 @@ export function ClubAdminFinanceClient({
   const [activeRequestId, setActiveRequestId] = useState<number | null>(null);
   const [pendingDeleteObligation, setPendingDeleteObligation] = useState<ClubAdminFinanceObligation | null>(null);
   const { showToast, clearToast } = useAppToast();
+  const createObligationMutation = useMutation(createFinanceObligationMutationOptions(clubId));
+  const createExpenseMutation = useMutation(createAdminFinanceExpenseMutationOptions(clubId));
+  const updatePaymentStatusMutation = useMutation(updateFinancePaymentStatusMutationOptions(clubId));
+  const deleteObligationMutation = useMutation(deleteFinanceObligationMutationOptions(clubId));
+  const reviewFinanceRequestMutation = useMutation(reviewFinanceRequestMutationOptions(clubId));
   const loadingMoreRef = useRef(false);
   const didMountFilterRef = useRef(false);
 
@@ -216,41 +228,42 @@ export function ClubAdminFinanceClient({
   );
 
   const reloadOverview = async () => {
-    const result = await getClubAdminFinance(clubId);
-    if (!result.ok || !result.data) {
-      showToast(result.message ?? "재정 요약 정보를 다시 불러오지 못했습니다.", "error");
+    try {
+      const data = await queryClient.fetchQuery(adminFinanceHomeQueryOptions(clubId));
+      startTransition(() => {
+        setFinance(data);
+      });
+      return data;
+    } catch {
+      showToast("재정 요약 정보를 다시 불러오지 못했습니다.", "error");
       return null;
     }
-    const data = result.data;
-
-    startTransition(() => {
-      setFinance(data);
-    });
-    return data;
   };
 
   const reloadRequestFeed = async () => {
-    const result = await getClubAdminFinanceRequests(clubId);
-    if (!result.ok || !result.data) {
-      showToast(result.message ?? "재정 요청 목록을 다시 불러오지 못했습니다.", "error");
+    try {
+      const data = await queryClient.fetchQuery(adminFinanceRequestsQueryOptions(clubId));
+      startTransition(() => {
+        setRequests(data.items);
+      });
+      return data;
+    } catch {
+      showToast("재정 요청 목록을 다시 불러오지 못했습니다.", "error");
       return null;
     }
-    startTransition(() => {
-      setRequests(result.data!.items);
-    });
-    return result.data;
   };
 
   const reloadExpenseFeed = async () => {
-    const result = await getClubAdminFinanceExpenses(clubId);
-    if (!result.ok || !result.data) {
-      showToast(result.message ?? "지출 목록을 다시 불러오지 못했습니다.", "error");
+    try {
+      const data = await queryClient.fetchQuery(adminFinanceExpensesQueryOptions(clubId));
+      startTransition(() => {
+        setExpenses(data.items);
+      });
+      return data;
+    } catch {
+      showToast("지출 목록을 다시 불러오지 못했습니다.", "error");
       return null;
     }
-    startTransition(() => {
-      setExpenses(result.data!.items);
-    });
-    return result.data;
   };
 
   const loadObligationFeed = async (mode: "reset" | "append") => {
@@ -267,22 +280,24 @@ export function ClubAdminFinanceClient({
       setLoadError(null);
     }
 
-    const result = await getClubAdminFinanceObligations(clubId, {
-      query: deferredSearchQuery,
-      obligationFilter,
-      cursorObligationId: mode === "append" ? nextCursorObligationId : null,
-      size: 10,
-    });
-
-    loadingMoreRef.current = false;
-    setIsLoadingMore(false);
-
-    if (!result.ok || !result.data) {
-      setLoadError(result.message ?? "재정 항목을 불러오지 못했습니다.");
+    let data: ClubAdminFinanceObligationFeedResponse;
+    try {
+      data = await queryClient.fetchQuery(
+        adminFinanceObligationsQueryOptions(clubId, {
+          query: deferredSearchQuery,
+          obligationFilter,
+          cursorObligationId: mode === "append" ? nextCursorObligationId : null,
+          size: 10,
+        }),
+      );
+    } catch {
+      loadingMoreRef.current = false;
+      setIsLoadingMore(false);
+      setLoadError("재정 항목을 불러오지 못했습니다.");
       return false;
     }
-
-    const data = result.data;
+    loadingMoreRef.current = false;
+    setIsLoadingMore(false);
     startTransition(() => {
       setObligations((current) => (mode === "append" ? [...current, ...data.items] : data.items));
       setNextCursorObligationId(data.nextCursorObligationId);
@@ -317,17 +332,19 @@ export function ClubAdminFinanceClient({
       return next;
     });
 
-    const result = await getClubAdminFinanceObligationDetail(clubId, obligationId);
-
-    setLoadingDetailIds((current) => current.filter((id) => id !== obligationId));
-
-    if (!result.ok || !result.data) {
-      const message = result.message ?? "재정 상세를 불러오지 못했습니다.";
+    let detail: ClubAdminFinanceObligationDetailResponse;
+    try {
+      detail = await queryClient.fetchQuery(
+        adminFinanceObligationDetailQueryOptions(clubId, obligationId),
+      );
+    } catch {
+      setLoadingDetailIds((current) => current.filter((id) => id !== obligationId));
+      const message = "재정 상세를 불러오지 못했습니다.";
       setObligationDetailErrors((current) => ({ ...current, [obligationId]: message }));
       return null;
     }
 
-    const detail = result.data;
+    setLoadingDetailIds((current) => current.filter((id) => id !== obligationId));
     startTransition(() => {
       setObligationDetailsById((current) => ({ ...current, [obligationId]: detail }));
       setObligations((current) => mergeObligationSummary(current, detail.obligation));
@@ -418,7 +435,7 @@ export function ClubAdminFinanceClient({
 
     setIsCreating(true);
     clearToast();
-    const result = await createClubFinanceObligation(clubId, {
+    const result = await createObligationMutation.mutateAsync({
       title: title.trim(),
       amount: parsedAmount,
       dueAt: combineDateTimeValue(dueAtDate, dueAtTime),
@@ -437,6 +454,7 @@ export function ClubAdminFinanceClient({
     if (!overview) {
       return;
     }
+    void invalidateClubQueries(queryClient, clubId);
     setShowCreateModal(false);
     resetCreateForm();
     showToast(`${result.data.title} 항목을 ${result.data.createdCount}명에게 발행했습니다.`, "success");
@@ -459,7 +477,7 @@ export function ClubAdminFinanceClient({
 
     setIsCreatingExpense(true);
     clearToast();
-    const result = await createClubAdminFinanceExpense(clubId, {
+    const result = await createExpenseMutation.mutateAsync({
       title: expenseTitle.trim(),
       categoryCode: expenseCategory,
       amount: parsedAmount,
@@ -478,6 +496,7 @@ export function ClubAdminFinanceClient({
     if (!expenseFeed) {
       return;
     }
+    void invalidateClubQueries(queryClient, clubId);
     setShowExpenseModal(false);
     resetExpenseForm();
     showToast(`${result.data.title} 지출을 장부에 추가했습니다.`, "success");
@@ -494,7 +513,8 @@ export function ClubAdminFinanceClient({
 
     setActivePaymentId(paymentId);
     clearToast();
-    const result = await updateClubFinancePaymentStatus(clubId, paymentId, {
+    const result = await updatePaymentStatusMutation.mutateAsync({
+      paymentId,
       paymentStatusCode: paymentStatus,
     });
     setActivePaymentId(null);
@@ -511,6 +531,7 @@ export function ClubAdminFinanceClient({
     if (!overview || !detail) {
       return;
     }
+    void invalidateClubQueries(queryClient, clubId);
     showToast(`${result.data.memberDisplayName} 재정 상태를 변경했습니다.`, "success");
   };
 
@@ -521,7 +542,7 @@ export function ClubAdminFinanceClient({
 
     setActiveObligationId(obligation.obligationId);
     clearToast();
-    const result = await deleteClubFinanceObligation(clubId, obligation.obligationId);
+    const result = await deleteObligationMutation.mutateAsync(obligation.obligationId);
     setActiveObligationId(null);
 
     if (!result.ok) {
@@ -533,6 +554,7 @@ export function ClubAdminFinanceClient({
     if (!overview) {
       return;
     }
+    void invalidateClubQueries(queryClient, clubId);
     showToast(`${obligation.title} 재정 항목을 삭제했습니다.`, "success");
   };
 
@@ -550,7 +572,8 @@ export function ClubAdminFinanceClient({
 
     setActiveRequestId(requestId);
     clearToast();
-    const result = await reviewClubFinanceRequest(clubId, requestId, {
+    const result = await reviewFinanceRequestMutation.mutateAsync({
+      requestId,
       statusCode,
       reviewNote: statusCode === "APPROVED" ? "운영진 검토 완료" : "운영진 검토 후 반려",
     });
@@ -565,6 +588,7 @@ export function ClubAdminFinanceClient({
     if (!requestFeed) {
       return;
     }
+    void invalidateClubQueries(queryClient, clubId);
     showToast(`${result.data.requestTypeLabel}을 ${result.data.statusLabel} 처리했습니다.`, "success");
   };
 

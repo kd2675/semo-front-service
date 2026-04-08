@@ -1,14 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useQueries } from "@tanstack/react-query";
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import {
-  getClubAttendance,
-  getMyClub,
-  type ClubAttendanceResponse,
-  type MyClubSummary,
-} from "@/app/lib/clubs";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
+import { attendanceQueryOptions } from "@/app/lib/react-query/attendance/queries";
+import { myClubQueryOptions } from "@/app/lib/react-query/club/queries";
 import { ClubAttendanceClient } from "./ClubAttendanceClient";
 
 type ClubAttendanceFallbackClientProps = {
@@ -19,35 +16,30 @@ export function ClubAttendanceFallbackClient({
   clubId,
 }: ClubAttendanceFallbackClientProps) {
   const router = useRouter();
-  const [club, setClub] = useState<MyClubSummary | null>(null);
-  const [attendance, setAttendance] = useState<ClubAttendanceResponse | null>(null);
+  const [clubQuery, attendanceQuery] = useQueries({
+    queries: [myClubQueryOptions(clubId), attendanceQueryOptions(clubId)],
+  });
+  const club = clubQuery.data ?? null;
+  const attendance = attendanceQuery.data ?? null;
 
   useEffect(() => {
-    let cancelled = false;
-
-    void (async () => {
-      const [clubResult, attendanceResult] = await Promise.all([
-        getMyClub(clubId),
-        getClubAttendance(clubId),
-      ]);
-
-      if (cancelled) {
-        return;
-      }
-
-      if (!clubResult.ok || !clubResult.data || !attendanceResult.ok || !attendanceResult.data) {
+    if (
+      !clubQuery.isPending &&
+      !attendanceQuery.isPending &&
+      (clubQuery.isError || attendanceQuery.isError || !club || !attendance)
+    ) {
         router.replace(`/clubs/${clubId}`);
-        return;
-      }
-
-      setClub(clubResult.data);
-      setAttendance(attendanceResult.data);
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [clubId, router]);
+    }
+  }, [
+    attendance,
+    attendanceQuery.isError,
+    attendanceQuery.isPending,
+    club,
+    clubId,
+    clubQuery.isError,
+    clubQuery.isPending,
+    router,
+  ]);
 
   if (!club || !attendance) {
     return (

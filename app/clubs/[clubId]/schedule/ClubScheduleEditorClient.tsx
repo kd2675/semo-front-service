@@ -1,5 +1,6 @@
 "use client";
 
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { RouterLink } from "@/app/components/RouterLink";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import { DatePopoverField } from "@/app/components/DatePopoverField";
@@ -7,13 +8,12 @@ import { TimePopoverField } from "@/app/components/TimePopoverField";
 import { AnimatePresence } from "motion/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useEffectEvent, useId, useRef, useState, type UIEvent } from "react";
+import { invalidateClubQueries } from "@/app/lib/react-query/common";
 import {
-  createClubScheduleEvent,
-  deleteClubScheduleEvent,
-  getClubScheduleEventDetail,
-  updateClubScheduleEvent,
-  type ClubScheduleEventDetailResponse,
-} from "@/app/lib/clubs";
+  deleteScheduleEventMutationOptions,
+  saveScheduleEventMutationOptions,
+} from "@/app/lib/react-query/schedule/mutations";
+import { scheduleEventDetailQueryOptions } from "@/app/lib/react-query/schedule/queries";
 import { ClubEditorLoadingShell } from "../ClubRouteLoadingShells";
 import { ScheduleActionConfirmModal } from "./ScheduleActionConfirmModal";
 
@@ -44,6 +44,7 @@ export function ClubScheduleEditorClient({
   onSaved,
   onDeleted,
 }: ClubScheduleEditorClientProps) {
+  const queryClient = useQueryClient();
   const router = useRouter();
   const formId = useId();
   const mainRef = useRef<HTMLElement | null>(null);
@@ -75,6 +76,8 @@ export function ClubScheduleEditorClient({
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [progressWidth, setProgressWidth] = useState(0);
+  const saveScheduleMutation = useMutation(saveScheduleEventMutationOptions(clubId, eventId));
+  const deleteScheduleMutation = useMutation(deleteScheduleEventMutationOptions(clubId, eventId));
   const backHref = isEdit && eventId ? `/clubs/${clubId}/schedule/${eventId}` : `/clubs/${clubId}/schedule`;
 
   const loadDetail = useEffectEvent(async () => {
@@ -84,34 +87,36 @@ export function ClubScheduleEditorClient({
 
     setLoading(true);
     setError(null);
-    const result = await getClubScheduleEventDetail(clubId, eventId);
-    setLoading(false);
-    if (!result.ok || !result.data) {
-      setError(result.message ?? "일정 정보를 불러오지 못했습니다.");
+    try {
+      const payload = await queryClient.fetchQuery(
+        scheduleEventDetailQueryOptions(clubId, eventId),
+      );
+      setLoading(false);
+      setClubName(payload.clubName);
+      setTitle(payload.title);
+      setStartDate(payload.startDate);
+      setScheduleDateMode(payload.endDate ? "range" : "single");
+      setEndDate(payload.endDate ?? "");
+      setStartTime(payload.startTime ?? "");
+      setEndTime(payload.endTime ?? "");
+      setAttendeeLimit(payload.attendeeLimit ? String(payload.attendeeLimit) : "");
+      setLocationLabel(payload.locationLabel ?? "");
+      setParticipationConditionText(payload.participationConditionText ?? "");
+      setParticipationEnabled(payload.participationEnabled);
+      setFeeRequired(payload.feeRequired);
+      setFeeAmount(payload.feeAmount ? String(payload.feeAmount) : "");
+      setFeeAmountUndecided(payload.feeAmountUndecided);
+      setFeeNWaySplit(payload.feeNWaySplit);
+      setPostToBoard(payload.postedToBoard);
+      setPostToCalendar(payload.postedToCalendar);
+      setPinned(payload.pinned);
+      setCanEdit(payload.canEdit);
+      setCanDelete(payload.canDelete);
+    } catch {
+      setLoading(false);
+      setError("일정 정보를 불러오지 못했습니다.");
       return;
     }
-
-    const payload: ClubScheduleEventDetailResponse = result.data;
-    setClubName(payload.clubName);
-    setTitle(payload.title);
-    setStartDate(payload.startDate);
-    setScheduleDateMode(payload.endDate ? "range" : "single");
-    setEndDate(payload.endDate ?? "");
-    setStartTime(payload.startTime ?? "");
-    setEndTime(payload.endTime ?? "");
-    setAttendeeLimit(payload.attendeeLimit ? String(payload.attendeeLimit) : "");
-    setLocationLabel(payload.locationLabel ?? "");
-    setParticipationConditionText(payload.participationConditionText ?? "");
-    setParticipationEnabled(payload.participationEnabled);
-    setFeeRequired(payload.feeRequired);
-    setFeeAmount(payload.feeAmount ? String(payload.feeAmount) : "");
-    setFeeAmountUndecided(payload.feeAmountUndecided);
-    setFeeNWaySplit(payload.feeNWaySplit);
-    setPostToBoard(payload.postedToBoard);
-    setPostToCalendar(payload.postedToCalendar);
-    setPinned(payload.pinned);
-    setCanEdit(payload.canEdit);
-    setCanDelete(payload.canDelete);
   });
 
   useEffect(() => {
@@ -149,15 +154,14 @@ export function ClubScheduleEditorClient({
       pinned,
     };
 
-    const result = isEdit && eventId
-      ? await updateClubScheduleEvent(clubId, eventId, request)
-      : await createClubScheduleEvent(clubId, request);
+    const result = await saveScheduleMutation.mutateAsync(request);
 
     setSaving(false);
     if (!result.ok || !result.data) {
       setError(result.message ?? "일정 저장에 실패했습니다.");
       return;
     }
+    void invalidateClubQueries(queryClient, clubId);
 
     if (onSaved) {
       onSaved(result.data.eventId);
@@ -220,13 +224,14 @@ export function ClubScheduleEditorClient({
 
     setDeleting(true);
     setError(null);
-    const result = await deleteClubScheduleEvent(clubId, eventId);
+    const result = await deleteScheduleMutation.mutateAsync(eventId);
     setDeleting(false);
     if (!result.ok) {
       setError(result.message ?? "일정 삭제에 실패했습니다.");
       return;
     }
 
+    void invalidateClubQueries(queryClient, clubId);
     setShowDeleteModal(false);
     if (onDeleted) {
       onDeleted();

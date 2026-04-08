@@ -1,14 +1,16 @@
 "use client";
 
+import { useQuery } from "@tanstack/react-query";
 import Image from "next/image";
 import { RouterLink } from "@/app/components/RouterLink";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import { motion, useReducedMotion } from "motion/react";
-import { useEffect, useEffectEvent, useState } from "react";
 import { ClubModeSwitchFab } from "@/app/components/ClubModeSwitchFab";
-import { getClubNoticeDetail, type ClubNoticeDetailResponse } from "@/app/lib/clubs";
+import { type ClubNoticeDetailResponse } from "@/app/lib/clubs";
 import { getLinkedContentBadge, getShareTargetBadges } from "@/app/lib/content-badge";
 import { staggeredFadeUpMotion } from "@/app/lib/motion";
+import { getQueryErrorMessage } from "@/app/lib/query-utils";
+import { noticeDetailQueryOptions } from "@/app/lib/react-query/board/queries";
 import { ClubDetailLoadingShell } from "../../ClubRouteLoadingShells";
 
 type ClubNoticeDetailClientProps = {
@@ -130,25 +132,15 @@ export function ClubNoticeDetailClient({
 }: ClubNoticeDetailClientProps) {
   const prefersReducedMotion = useReducedMotion();
   const reduceMotion = Boolean(prefersReducedMotion);
-  const [payload, setPayload] = useState<ClubNoticeDetailResponse | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const loadDetail = useEffectEvent(async () => {
-    setLoading(true);
-    setError(null);
-    const result = await getClubNoticeDetail(clubId, noticeId);
-    setLoading(false);
-    if (!result.ok || !result.data) {
-      setError(result.message ?? "공지 상세를 불러오지 못했습니다.");
-      return;
-    }
-    setPayload(result.data);
-  });
-
-  useEffect(() => {
-    void loadDetail();
-  }, [clubId, noticeId]);
+  const {
+    data: queryPayload,
+    isPending: loading,
+    error: queryError,
+  } = useQuery(noticeDetailQueryOptions(clubId, noticeId));
+  const error = queryError
+    ? getQueryErrorMessage(queryError, "공지 상세를 불러오지 못했습니다.")
+    : null;
+  const payload = queryPayload ?? null;
 
   if (loading && !payload && !error) {
     return <ClubDetailLoadingShell />;

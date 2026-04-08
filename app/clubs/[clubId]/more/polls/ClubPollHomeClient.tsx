@@ -1,15 +1,18 @@
 "use client";
 
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { RouteModal } from "@/app/components/RouteModal";
 import { ClubModeSwitchFab } from "@/app/components/ClubModeSwitchFab";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import { ClubPollDetailModal } from "@/app/components/ClubDetailModals";
 import { ClubScheduleVoteEditorClient } from "@/app/clubs/[clubId]/schedule/ClubScheduleVoteEditorClient";
 import { ScheduleActionConfirmModal } from "@/app/clubs/[clubId]/schedule/ScheduleActionConfirmModal";
-import { deleteClubScheduleVote, type ClubPollHomeResponse, type ClubPollSummary } from "@/app/lib/clubs";
+import { type ClubPollHomeResponse, type ClubPollSummary } from "@/app/lib/clubs";
 import { getShareTargetBadges } from "@/app/lib/content-badge";
 import { FAB_RIGHT_OFFSET_CLASS_NAME, getActionFabBottomClass } from "@/app/lib/fab";
 import { staggeredFadeUpMotion } from "@/app/lib/motion";
+import { invalidateClubQueries } from "@/app/lib/react-query/common";
+import { deleteScheduleVoteMutationOptions } from "@/app/lib/react-query/schedule/mutations";
 import { getVoteLifecycleBadgeClassName, getVoteLifecycleLabel } from "@/app/lib/vote-status";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import Image from "next/image";
@@ -228,6 +231,7 @@ export function ClubPollHomeClient({
   mode = "user",
   onReload,
 }: ClubPollHomeClientProps) {
+  const queryClient = useQueryClient();
   const prefersReducedMotion = useReducedMotion();
   const reduceMotion = Boolean(prefersReducedMotion);
   const hasModeSwitchFab = mode === "user" && payload.admin;
@@ -240,6 +244,7 @@ export function ClubPollHomeClient({
   const [deleteTarget, setDeleteTarget] = useState<ClubPollSummary | null>(null);
   const [activeActionKey, setActiveActionKey] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const deleteVoteMutation = useMutation(deleteScheduleVoteMutationOptions(clubId));
 
   const accent = mode === "admin" ? "#ec5b13" : "#135bec";
   const background = mode === "admin" ? "#f8f6f6" : "#f6f6f8";
@@ -280,7 +285,7 @@ export function ClubPollHomeClient({
     }
 
     setDeleting(true);
-    const result = await deleteClubScheduleVote(clubId, deleteTarget.voteId);
+    const result = await deleteVoteMutation.mutateAsync(deleteTarget.voteId);
     setDeleting(false);
     if (!result.ok) {
       return;
@@ -288,6 +293,7 @@ export function ClubPollHomeClient({
 
     setDeleteTarget(null);
     setActiveActionKey(null);
+    void invalidateClubQueries(queryClient, clubId);
     onReload();
   };
 

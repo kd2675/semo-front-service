@@ -1,15 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { AdminMenuLoadingShell } from "../AdminRouteLoadingShells";
 import { ClubAdminMenuClient } from "./ClubAdminMenuClient";
 import {
-  getClubFeatures,
-  getMyClub,
-  type ClubFeatureSummary,
-  type MyClubSummary,
-} from "@/app/lib/clubs";
+  clubFeaturesQueryOptions,
+  myClubQueryOptions,
+  clubQueryKeys,
+} from "@/app/lib/react-query/club/queries";
 
 type ClubAdminMenuFallbackClientProps = {
   clubId: string;
@@ -17,45 +17,33 @@ type ClubAdminMenuFallbackClientProps = {
 
 export function ClubAdminMenuFallbackClient({ clubId }: ClubAdminMenuFallbackClientProps) {
   const router = useRouter();
-  const [club, setClub] = useState<MyClubSummary | null>(null);
-  const [features, setFeatures] = useState<ClubFeatureSummary[]>([]);
+  const queryClient = useQueryClient();
+  const {
+    data: club,
+    isPending: isClubPending,
+    isError: isClubError,
+  } = useQuery(myClubQueryOptions(clubId));
+  const { data: features = [] } = useQuery(clubFeaturesQueryOptions(clubId));
 
   useEffect(() => {
-    let cancelled = false;
+    if (!isClubPending && (isClubError || !club || !club.admin)) {
+      router.replace(`/clubs/${clubId}`);
+    }
+  }, [club, clubId, isClubError, isClubPending, router]);
 
-    const loadInitial = async () => {
-      const [clubResult, featureResult] = await Promise.all([
-        getMyClub(clubId),
-        getClubFeatures(clubId),
-      ]);
-      if (cancelled || !clubResult.ok || !clubResult.data || !clubResult.data.admin) {
-        router.replace(`/clubs/${clubId}`);
-        return;
-      }
-      setClub(clubResult.data);
-      setFeatures(featureResult.ok && featureResult.data ? featureResult.data : []);
-    };
-
-    const reloadFeatures = async () => {
-      const featureResult = await getClubFeatures(clubId);
-      if (cancelled || !featureResult.ok || !featureResult.data) {
-        return;
-      }
-      setFeatures(featureResult.data);
-    };
-
-    void loadInitial();
-
+  useEffect(() => {
     const onFeatureUpdate = () => {
-      void reloadFeatures();
+      void queryClient.invalidateQueries({
+        queryKey: clubQueryKeys.features(clubId),
+      });
     };
+
     window.addEventListener("semo:club-features-updated", onFeatureUpdate);
 
     return () => {
-      cancelled = true;
       window.removeEventListener("semo:club-features-updated", onFeatureUpdate);
     };
-  }, [clubId, router]);
+  }, [clubId, queryClient]);
 
   if (!club) {
     return <AdminMenuLoadingShell />;

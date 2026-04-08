@@ -1,13 +1,9 @@
 "use client";
 
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { RouterLink } from "@/app/components/RouterLink";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
-import {
-  applyClubTournament,
-  cancelClubTournamentApplication,
-  getClubTournamentDetail,
-  type TournamentDetailResponse,
-} from "@/app/lib/clubs";
+import { type TournamentDetailResponse } from "@/app/lib/clubs";
 import { getShareTargetBadges } from "@/app/lib/content-badge";
 import { staggeredFadeUpMotion } from "@/app/lib/motion";
 import {
@@ -19,7 +15,17 @@ import {
   getTournamentStatusLabel,
 } from "@/app/lib/tournament";
 import { motion, useReducedMotion } from "motion/react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { getQueryErrorMessage } from "@/app/lib/query-utils";
+import { invalidateClubQueries } from "@/app/lib/react-query/common";
+import {
+  applyTournamentMutationOptions,
+  cancelTournamentApplicationMutationOptions,
+} from "@/app/lib/react-query/tournaments/mutations";
+import {
+  tournamentDetailQueryOptions,
+  tournamentQueryKeys,
+} from "@/app/lib/react-query/tournaments/queries";
 import { ClubDetailLoadingShell } from "../../ClubRouteLoadingShells";
 
 type ClubTournamentDetailClientProps = {
@@ -41,10 +47,26 @@ export function ClubTournamentDetailClient({
 }: ClubTournamentDetailClientProps) {
   const prefersReducedMotion = useReducedMotion();
   const reduceMotion = Boolean(prefersReducedMotion);
-  const [payload, setPayload] = useState<TournamentDetailResponse | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const queryClient = useQueryClient();
+  const {
+    data: queryPayload,
+    isPending: loading,
+    error: queryError,
+  } = useQuery(tournamentDetailQueryOptions(clubId, tournamentRecordId));
+  const [payloadState, setPayload] = useState<TournamentDetailResponse | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const applyTournamentMutation = useMutation(
+    applyTournamentMutationOptions(clubId, tournamentRecordId),
+  );
+  const cancelTournamentApplicationMutation = useMutation(
+    cancelTournamentApplicationMutationOptions(clubId, tournamentRecordId),
+  );
+  const payload = payloadState ?? queryPayload ?? null;
+  const error =
+    actionError ?? (queryError
+      ? getQueryErrorMessage(queryError, "대회 상세를 불러오지 못했습니다.")
+      : null);
 
   const isModal = presentation === "modal";
   const fallbackBasePath = basePath ?? `/clubs/${clubId}/more/tournaments`;
@@ -53,49 +75,38 @@ export function ClubTournamentDetailClient({
     postedToCalendar: payload?.postedToCalendar,
   });
 
-  useEffect(() => {
-    let cancelled = false;
-
-    void (async () => {
-      setLoading(true);
-      setError(null);
-      const result = await getClubTournamentDetail(clubId, tournamentRecordId);
-      if (cancelled) {
-        return;
-      }
-      setLoading(false);
-      if (!result.ok || !result.data) {
-        setError(result.message ?? "대회 상세를 불러오지 못했습니다.");
-        return;
-      }
-      setPayload(result.data);
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [clubId, tournamentRecordId]);
-
   const handleApply = async () => {
     setSaving(true);
-    const result = await applyClubTournament(clubId, tournamentRecordId, {});
+    setActionError(null);
+    const result = await applyTournamentMutation.mutateAsync();
     setSaving(false);
     if (!result.ok || !result.data) {
-      setError(result.message ?? "대회 참가 신청에 실패했습니다.");
+      setActionError(result.message ?? "대회 참가 신청에 실패했습니다.");
       return;
     }
+    queryClient.setQueryData(
+      tournamentQueryKeys.tournamentDetail(clubId, tournamentRecordId),
+      result.data,
+    );
     setPayload(result.data);
+    void invalidateClubQueries(queryClient, clubId);
   };
 
   const handleCancelApplication = async () => {
     setSaving(true);
-    const result = await cancelClubTournamentApplication(clubId, tournamentRecordId);
+    setActionError(null);
+    const result = await cancelTournamentApplicationMutation.mutateAsync();
     setSaving(false);
     if (!result.ok || !result.data) {
-      setError(result.message ?? "참가 신청 취소에 실패했습니다.");
+      setActionError(result.message ?? "참가 신청 취소에 실패했습니다.");
       return;
     }
+    queryClient.setQueryData(
+      tournamentQueryKeys.tournamentDetail(clubId, tournamentRecordId),
+      result.data,
+    );
     setPayload(result.data);
+    void invalidateClubQueries(queryClient, clubId);
   };
 
   if (loading && !payload) {

@@ -1,5 +1,6 @@
 "use client";
 
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion, useReducedMotion } from "motion/react";
 import { startTransition, useMemo, useState } from "react";
 import type { CSSProperties } from "react";
@@ -7,9 +8,6 @@ import { ClubModeSwitchFab } from "@/app/components/ClubModeSwitchFab";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import { useAppToast } from "@/app/hooks/useAppToast";
 import {
-  createClubFeedback,
-  getClubFeedbackDetail,
-  getClubFeedbackHome,
   type ClubFeedbackDetailResponse,
   type ClubFeedbackHomeResponse,
   type ClubFeedbackStatusCode,
@@ -17,6 +15,13 @@ import {
   type ClubFeedbackType,
 } from "@/app/lib/clubs";
 import { staggeredFadeUpMotion } from "@/app/lib/motion";
+import { invalidateClubQueries } from "@/app/lib/react-query/common";
+import { createFeedbackMutationOptions } from "@/app/lib/react-query/feedback/mutations";
+import {
+  feedbackDetailQueryOptions,
+  feedbackHomeQueryOptions,
+  feedbackQueryKeys,
+} from "@/app/lib/react-query/feedback/queries";
 
 type ClubFeedbackClientProps = {
   clubId: string;
@@ -75,7 +80,12 @@ export function ClubFeedbackClient({
 }: ClubFeedbackClientProps) {
   const prefersReducedMotion = useReducedMotion();
   const reduceMotion = Boolean(prefersReducedMotion);
-  const [feedbackHome, setFeedbackHome] = useState(initialData);
+  const queryClient = useQueryClient();
+  const feedbackHomeQuery = useQuery({
+    ...feedbackHomeQueryOptions(clubId),
+    initialData,
+  });
+  const feedbackHome = feedbackHomeQuery.data;
   const [activeFilter, setActiveFilter] = useState<FeedbackFilterKey>("all");
   const [selectedFeedbackId, setSelectedFeedbackId] = useState<number | null>(
     initialDetail?.feedbackId ?? initialData.items[0]?.feedbackId ?? null,
@@ -90,6 +100,7 @@ export function ClubFeedbackClient({
   const [content, setContent] = useState("");
   const [anonymous, setAnonymous] = useState(false);
   const { showToast, clearToast } = useAppToast();
+  const createFeedbackMutation = useMutation(createFeedbackMutationOptions(clubId));
 
   const filteredItems = useMemo(
     () => feedbackHome.items.filter((item) => matchesFilter(item, activeFilter)),
@@ -98,23 +109,25 @@ export function ClubFeedbackClient({
 
   const loadDetail = async (feedbackId: number) => {
     setIsDetailLoading(true);
-    const result = await getClubFeedbackDetail(clubId, feedbackId);
-    setIsDetailLoading(false);
-    if (!result.ok || !result.data) {
-      showToast(result.message ?? "피드백 상세를 불러오지 못했습니다.", "error");
-      return;
+    try {
+      const detail = await queryClient.fetchQuery({
+        ...feedbackDetailQueryOptions(clubId, feedbackId),
+      });
+      setSelectedFeedbackId(feedbackId);
+      setSelectedDetail(detail);
+    } catch {
+      showToast("피드백 상세를 불러오지 못했습니다.", "error");
+    } finally {
+      setIsDetailLoading(false);
     }
-    setSelectedFeedbackId(feedbackId);
-    setSelectedDetail(result.data);
   };
 
   const refreshHome = async (nextSelectedFeedbackId?: number | null) => {
-    const result = await getClubFeedbackHome(clubId);
-    if (!result.ok || !result.data) {
-      showToast(result.message ?? "피드백 목록을 새로고침하지 못했습니다.", "error");
+    const result = await feedbackHomeQuery.refetch();
+    if (!result.data) {
+      showToast("피드백 목록을 새로고침하지 못했습니다.", "error");
       return;
     }
-    setFeedbackHome(result.data);
     const fallbackFeedbackId = result.data.items[0]?.feedbackId ?? null;
     const resolvedFeedbackId = nextSelectedFeedbackId ?? fallbackFeedbackId;
     if (resolvedFeedbackId != null) {
@@ -137,7 +150,7 @@ export function ClubFeedbackClient({
 
     setIsSubmitting(true);
     clearToast();
-    const result = await createClubFeedback(clubId, {
+    const result = await createFeedbackMutation.mutateAsync({
       feedbackType,
       title: title.trim(),
       content: content.trim(),
@@ -156,6 +169,11 @@ export function ClubFeedbackClient({
       setAnonymous(false);
       setFeedbackType("SUGGESTION");
     });
+    queryClient.setQueryData(
+      feedbackQueryKeys.feedbackDetail(clubId, result.data.feedbackId),
+      result.data,
+    );
+    void invalidateClubQueries(queryClient, clubId);
     setSelectedFeedbackId(result.data.feedbackId);
     setSelectedDetail(result.data);
     showToast("피드백을 등록했습니다.", "success");

@@ -1,14 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useQueries } from "@tanstack/react-query";
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import {
-  getClubAdminTodos,
-  getMyClub,
-  type ClubAdminTodoResponse,
-  type MyClubSummary,
-} from "@/app/lib/clubs";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
+import { myClubQueryOptions } from "@/app/lib/react-query/club/queries";
+import { adminTodosQueryOptions } from "@/app/lib/react-query/todos/queries";
+import { getQueryErrorMessage } from "@/app/lib/query-utils";
 import { ClubAdminTodoClient } from "./ClubAdminTodoClient";
 
 type ClubAdminTodoFallbackClientProps = {
@@ -17,54 +15,35 @@ type ClubAdminTodoFallbackClientProps = {
 
 export function ClubAdminTodoFallbackClient({ clubId }: ClubAdminTodoFallbackClientProps) {
   const router = useRouter();
-  const [club, setClub] = useState<MyClubSummary | null>(null);
-  const [todoData, setTodoData] = useState<ClubAdminTodoResponse | null>(null);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [reloadKey, setReloadKey] = useState(0);
+  const [clubQuery, todoQuery] = useQueries({
+    queries: [myClubQueryOptions(clubId), adminTodosQueryOptions(clubId)],
+  });
+  const club = clubQuery.data ?? null;
+  const todoData = todoQuery.data ?? null;
+  const errorMessage =
+    !clubQuery.isPending && clubQuery.isError
+      ? getQueryErrorMessage(clubQuery.error, "모임 정보를 다시 불러오지 못했습니다.")
+      : !todoQuery.isPending && todoQuery.isError
+        ? getQueryErrorMessage(todoQuery.error, "할 일 운영 정보를 다시 불러오지 못했습니다.")
+        : null;
 
   useEffect(() => {
-    let cancelled = false;
-
-    void (async () => {
-      setErrorMessage(null);
-      const [clubResult, todoResult] = await Promise.all([
-        getMyClub(clubId),
-        getClubAdminTodos(clubId),
-      ]);
-
-      if (cancelled) {
-        return;
-      }
-
-      if (!clubResult.ok || !clubResult.data) {
-        if (clubResult.status === 403 || clubResult.status === 404) {
-          router.replace(`/clubs/${clubId}`);
-          return;
-        }
-        setClub(null);
-        setTodoData(null);
-        setErrorMessage(clubResult.message ?? "모임 정보를 다시 불러오지 못했습니다.");
-        return;
-      }
-      setClub(clubResult.data);
-
-      if (!todoResult.ok || !todoResult.data) {
-        if (todoResult.status === 403 || todoResult.status === 404) {
-          router.replace(`/clubs/${clubId}/more/todos`);
-          return;
-        }
-        setTodoData(null);
-        setErrorMessage(todoResult.message ?? "할 일 운영 정보를 다시 불러오지 못했습니다.");
-        return;
-      }
-
-      setTodoData(todoResult.data);
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [clubId, reloadKey, router]);
+    if (!clubQuery.isPending && clubQuery.isError && !club) {
+      router.replace(`/clubs/${clubId}`);
+      return;
+    }
+    if (!todoQuery.isPending && todoQuery.isError && club) {
+      router.replace(`/clubs/${clubId}/more/todos`);
+    }
+  }, [
+    club,
+    clubId,
+    clubQuery.isError,
+    clubQuery.isPending,
+    router,
+    todoQuery.isError,
+    todoQuery.isPending,
+  ]);
 
   if (errorMessage) {
     return (
@@ -82,7 +61,10 @@ export function ClubAdminTodoFallbackClient({ clubId }: ClubAdminTodoFallbackCli
             <p className="mt-2 text-sm leading-6 text-slate-600">{errorMessage}</p>
             <button
               type="button"
-              onClick={() => setReloadKey((current) => current + 1)}
+              onClick={() => {
+                void clubQuery.refetch();
+                void todoQuery.refetch();
+              }}
               className="mt-4 rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white"
             >
               다시 시도

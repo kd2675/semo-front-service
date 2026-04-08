@@ -1,14 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useQueries } from "@tanstack/react-query";
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { AdminMembersLoadingShell } from "../AdminRouteLoadingShells";
 import {
-  getClubAdminJoinRequests,
-  getClubAdminMembers,
-  type ClubAdminJoinRequestsResponse,
-  type ClubAdminMembersResponse,
-} from "@/app/lib/clubs";
+  adminJoinRequestsQueryOptions,
+  adminMembersQueryOptions,
+} from "@/app/lib/react-query/members/queries";
 import { ClubAdminMembersClient } from "./ClubAdminMembersClient";
 
 type ClubAdminMembersFallbackClientProps = {
@@ -19,39 +18,35 @@ export function ClubAdminMembersFallbackClient({
   clubId,
 }: ClubAdminMembersFallbackClientProps) {
   const router = useRouter();
-  const [payload, setPayload] = useState<ClubAdminMembersResponse | null>(null);
-  const [joinRequestsPayload, setJoinRequestsPayload] = useState<ClubAdminJoinRequestsResponse | null>(null);
+  const [membersQuery, joinRequestsQuery] = useQueries({
+    queries: [adminMembersQueryOptions(clubId), adminJoinRequestsQueryOptions(clubId)],
+  });
+  const payload = membersQuery.data ?? null;
+  const joinRequestsPayload = joinRequestsQuery.data ?? null;
 
   useEffect(() => {
-    let cancelled = false;
-
-    void (async () => {
-      const [membersResult, joinRequestsResult] = await Promise.all([
-        getClubAdminMembers(clubId),
-        getClubAdminJoinRequests(clubId),
-      ]);
-      if (cancelled) {
-        return;
-      }
-      if (
-        !membersResult.ok ||
-        !membersResult.data ||
-        !membersResult.data.admin ||
-        !joinRequestsResult.ok ||
-        !joinRequestsResult.data ||
-        !joinRequestsResult.data.admin
-      ) {
+    if (
+      !membersQuery.isPending &&
+      !joinRequestsQuery.isPending &&
+      (membersQuery.isError ||
+        joinRequestsQuery.isError ||
+        !payload ||
+        !joinRequestsPayload ||
+        !payload.admin ||
+        !joinRequestsPayload.admin)
+    ) {
         router.replace(`/clubs/${clubId}`);
-        return;
-      }
-      setPayload(membersResult.data);
-      setJoinRequestsPayload(joinRequestsResult.data);
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [clubId, router]);
+    }
+  }, [
+    clubId,
+    joinRequestsPayload,
+    joinRequestsQuery.isError,
+    joinRequestsQuery.isPending,
+    membersQuery.isError,
+    membersQuery.isPending,
+    payload,
+    router,
+  ]);
 
   if (!payload || !joinRequestsPayload) {
     return <AdminMembersLoadingShell />;

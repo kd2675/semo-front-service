@@ -1,14 +1,12 @@
 "use client";
 
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion, useReducedMotion } from "motion/react";
 import { useMemo, useState } from "react";
 import type { CSSProperties } from "react";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import { useAppToast } from "@/app/hooks/useAppToast";
 import {
-  getClubAdminFeedback,
-  getClubAdminFeedbackDetail,
-  updateClubAdminFeedback,
   type ClubAdminFeedbackResponse,
   type ClubFeedbackDetailResponse,
   type ClubFeedbackStatusCode,
@@ -17,6 +15,13 @@ import {
   type ClubFeedbackVisibilityScope,
 } from "@/app/lib/clubs";
 import { staggeredFadeUpMotion } from "@/app/lib/motion";
+import { invalidateClubQueries } from "@/app/lib/react-query/common";
+import { updateFeedbackMutationOptions } from "@/app/lib/react-query/feedback/mutations";
+import {
+  adminFeedbackDetailQueryOptions,
+  adminFeedbackHomeQueryOptions,
+  feedbackQueryKeys,
+} from "@/app/lib/react-query/feedback/queries";
 
 type ClubAdminFeedbackClientProps = {
   clubId: string;
@@ -88,7 +93,12 @@ export function ClubAdminFeedbackClient({
 }: ClubAdminFeedbackClientProps) {
   const prefersReducedMotion = useReducedMotion();
   const reduceMotion = Boolean(prefersReducedMotion);
-  const [feedbackHome, setFeedbackHome] = useState(initialData);
+  const queryClient = useQueryClient();
+  const feedbackHomeQuery = useQuery({
+    ...adminFeedbackHomeQueryOptions(clubId),
+    initialData,
+  });
+  const feedbackHome = feedbackHomeQuery.data;
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("ALL");
   const [visibilityFilter, setVisibilityFilter] = useState<VisibilityFilter>("ALL");
   const [selectedFeedbackId, setSelectedFeedbackId] = useState<number | null>(
@@ -110,6 +120,7 @@ export function ClubAdminFeedbackClient({
   );
   const [adminAnswer, setAdminAnswer] = useState(initialDetail?.adminAnswer ?? "");
   const { showToast, clearToast } = useAppToast();
+  const updateFeedbackMutation = useMutation(updateFeedbackMutationOptions(clubId, selectedFeedbackId ?? 0));
 
   const filteredItems = useMemo(
     () =>
@@ -121,27 +132,29 @@ export function ClubAdminFeedbackClient({
 
   const loadDetail = async (feedbackId: number) => {
     setIsDetailLoading(true);
-    const result = await getClubAdminFeedbackDetail(clubId, feedbackId);
-    setIsDetailLoading(false);
-    if (!result.ok || !result.data) {
-      showToast(result.message ?? "피드백 상세를 불러오지 못했습니다.", "error");
-      return;
+    try {
+      const detail = await queryClient.fetchQuery({
+        ...adminFeedbackDetailQueryOptions(clubId, feedbackId),
+      });
+      setSelectedFeedbackId(feedbackId);
+      setSelectedDetail(detail);
+      setFeedbackType(detail.feedbackType);
+      setStatusCode(detail.statusCode);
+      setVisibilityScope(detail.visibilityScope);
+      setAdminAnswer(detail.adminAnswer ?? "");
+    } catch {
+      showToast("피드백 상세를 불러오지 못했습니다.", "error");
+    } finally {
+      setIsDetailLoading(false);
     }
-    setSelectedFeedbackId(feedbackId);
-    setSelectedDetail(result.data);
-    setFeedbackType(result.data.feedbackType);
-    setStatusCode(result.data.statusCode);
-    setVisibilityScope(result.data.visibilityScope);
-    setAdminAnswer(result.data.adminAnswer ?? "");
   };
 
   const refreshAdminHome = async (nextSelectedFeedbackId?: number | null) => {
-    const result = await getClubAdminFeedback(clubId);
-    if (!result.ok || !result.data) {
-      showToast(result.message ?? "피드백 관리 목록을 새로고침하지 못했습니다.", "error");
+    const result = await feedbackHomeQuery.refetch();
+    if (!result.data) {
+      showToast("피드백 관리 목록을 새로고침하지 못했습니다.", "error");
       return;
     }
-    setFeedbackHome(result.data);
     const fallbackFeedbackId = result.data.items[0]?.feedbackId ?? null;
     const resolvedFeedbackId = nextSelectedFeedbackId ?? fallbackFeedbackId;
     if (resolvedFeedbackId != null) {
@@ -158,7 +171,7 @@ export function ClubAdminFeedbackClient({
     }
     clearToast();
     setIsSaving(true);
-    const result = await updateClubAdminFeedback(clubId, selectedFeedbackId, {
+    const result = await updateFeedbackMutation.mutateAsync({
       feedbackType,
       statusCode,
       visibilityScope,
@@ -171,6 +184,11 @@ export function ClubAdminFeedbackClient({
       return;
     }
 
+    queryClient.setQueryData(
+      feedbackQueryKeys.adminFeedbackDetail(clubId, result.data.feedbackId),
+      result.data,
+    );
+    void invalidateClubQueries(queryClient, clubId);
     setSelectedDetail(result.data);
     setFeedbackType(result.data.feedbackType);
     setStatusCode(result.data.statusCode);

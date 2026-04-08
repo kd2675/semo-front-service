@@ -1,14 +1,20 @@
 "use client";
 
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { RouterLink } from "@/app/components/RouterLink";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
+import { type BracketDetailResponse } from "@/app/lib/clubs";
+import { useState, type CSSProperties } from "react";
+import { getQueryErrorMessage } from "@/app/lib/query-utils";
+import { invalidateClubQueries } from "@/app/lib/react-query/common";
 import {
-  getClubBracketDetail,
-  reviewClubBracket,
-  submitClubBracket,
-  type BracketDetailResponse,
-} from "@/app/lib/clubs";
-import { useEffect, useState, type CSSProperties } from "react";
+  reviewBracketMutationOptions,
+  submitBracketMutationOptions,
+} from "@/app/lib/react-query/brackets/mutations";
+import {
+  bracketDetailQueryOptions,
+  bracketQueryKeys,
+} from "@/app/lib/react-query/brackets/queries";
 import { ClubDetailLoadingShell } from "../../ClubRouteLoadingShells";
 
 type ClubBracketDetailClientProps = {
@@ -70,12 +76,24 @@ export function ClubBracketDetailClient({
   onRequestClose,
   onReload,
 }: ClubBracketDetailClientProps) {
-  const [payload, setPayload] = useState<BracketDetailResponse | null>(null);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
+  const {
+    data: queryPayload,
+    isPending: loading,
+    error: queryError,
+  } = useQuery(bracketDetailQueryOptions(clubId, bracketRecordId));
+  const [payloadState, setPayload] = useState<BracketDetailResponse | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const submitBracketMutation = useMutation(submitBracketMutationOptions(clubId));
+  const reviewBracketMutation = useMutation(reviewBracketMutationOptions(clubId));
   const isModal = presentation === "modal";
   const isAdminMode = mode === "admin";
+  const payload = payloadState ?? queryPayload ?? null;
+  const error =
+    actionError ?? (queryError
+      ? getQueryErrorMessage(queryError, "대진표 상세를 불러오지 못했습니다.")
+      : null);
   const fallbackBasePath = basePath ?? (isAdminMode
     ? `/clubs/${clubId}/admin/more/brackets`
     : `/clubs/${clubId}/more/brackets`);
@@ -83,42 +101,21 @@ export function ClubBracketDetailClient({
     ? "bg-[linear-gradient(135deg,#fff3eb_0%,#ffffff_55%,#fff7f1_100%)] shadow-[0_18px_50px_rgba(236,91,19,0.12)] ring-orange-100"
     : "bg-[linear-gradient(135deg,#eaf1ff_0%,#ffffff_55%,#f5f8ff_100%)] shadow-[0_18px_50px_rgba(19,91,236,0.12)] ring-sky-100";
 
-  useEffect(() => {
-    let cancelled = false;
-
-    void (async () => {
-      setLoading(true);
-      setError(null);
-      const result = await getClubBracketDetail(clubId, bracketRecordId);
-      if (cancelled) {
-        return;
-      }
-      setLoading(false);
-      if (!result.ok || !result.data) {
-        setError(result.message ?? "대진표 상세를 불러오지 못했습니다.");
-        return;
-      }
-      setPayload(result.data);
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [bracketRecordId, clubId]);
-
   const handleSubmit = async () => {
     if (!payload) {
       return;
     }
     setSubmitting(true);
-    setError(null);
-    const result = await submitClubBracket(clubId, payload.bracketRecordId);
+    setActionError(null);
+    const result = await submitBracketMutation.mutateAsync(payload.bracketRecordId);
     setSubmitting(false);
     if (!result.ok || !result.data) {
-      setError(result.message ?? "대진표 제출에 실패했습니다.");
+      setActionError(result.message ?? "대진표 제출에 실패했습니다.");
       return;
     }
+    queryClient.setQueryData(bracketQueryKeys.bracketDetail(clubId, bracketRecordId), result.data);
     setPayload(result.data);
+    void invalidateClubQueries(queryClient, clubId);
     onReload?.();
   };
 
@@ -134,17 +131,20 @@ export function ClubBracketDetailClient({
     }
 
     setSubmitting(true);
-    setError(null);
-    const result = await reviewClubBracket(clubId, payload.bracketRecordId, {
+    setActionError(null);
+    const result = await reviewBracketMutation.mutateAsync({
+      bracketRecordId: payload.bracketRecordId,
       approvalStatus,
       rejectionReason,
     });
     setSubmitting(false);
     if (!result.ok || !result.data) {
-      setError(result.message ?? "대진표 검토에 실패했습니다.");
+      setActionError(result.message ?? "대진표 검토에 실패했습니다.");
       return;
     }
+    queryClient.setQueryData(bracketQueryKeys.bracketDetail(clubId, bracketRecordId), result.data);
     setPayload(result.data);
+    void invalidateClubQueries(queryClient, clubId);
     onReload?.();
   };
 
