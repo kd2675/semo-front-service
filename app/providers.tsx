@@ -8,7 +8,7 @@ import { Provider } from "react-redux";
 import AuthGate from "@/app/components/AuthGate";
 import AuthWatcher from "@/app/components/AuthWatcher";
 import { GlobalModalViewport } from "@/app/components/GlobalModalViewport";
-import { createQueryClient } from "@/app/lib/query-client";
+import { createQueryClient } from "@/app/lib/queryClient";
 import { useAppSelector } from "@/app/redux/hooks";
 import { store } from "@/app/redux/store";
 

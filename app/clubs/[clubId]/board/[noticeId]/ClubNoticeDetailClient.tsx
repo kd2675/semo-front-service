@@ -7,9 +7,9 @@ import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import { motion, useReducedMotion } from "motion/react";
 import { ClubModeSwitchFab } from "@/app/components/ClubModeSwitchFab";
 import { type ClubNoticeDetailResponse } from "@/app/lib/clubs";
-import { getLinkedContentBadge, getShareTargetBadges } from "@/app/lib/content-badge";
+import { getLinkedContentBadge, getShareTargetBadges } from "@/app/lib/contentBadge";
 import { staggeredFadeUpMotion } from "@/app/lib/motion";
-import { getQueryErrorMessage } from "@/app/lib/query-utils";
+import { getQueryErrorMessage } from "@/app/lib/queryUtils";
 import { noticeDetailQueryOptions } from "@/app/lib/react-query/board/queries";
 import { ClubDetailLoadingShell } from "../../ClubRouteLoadingShells";
 

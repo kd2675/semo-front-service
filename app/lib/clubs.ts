@@ -1,5 +1,5 @@
 import { deleteJson, getJson, patchJson, postJson, putJson } from "@/app/lib/api";
-import type { ActivityCategoryKey, ActivityTagKey, AffiliationTypeKey } from "@/app/lib/club-classification";
+import type { ActivityCategoryKey, ActivityTagKey, AffiliationTypeKey } from "@/app/lib/clubClassification";
 import type { RegionScope } from "@/app/lib/regions";
 
 export type CreateClubRequest = {

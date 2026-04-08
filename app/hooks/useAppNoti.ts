@@ -4,14 +4,14 @@ import { useCallback } from "react";
 import {
   clearModalCallbacks,
   registerModalCallbacks,
-} from "@/app/redux/modal-callback-registry";
+} from "@/app/redux/modalCallbackRegistry";
 import { useAppDispatch, useAppSelector } from "@/app/redux/hooks";
 import {
   addNoti,
   deleteAllNoti,
   deleteNoti,
   type NotiTone,
-} from "@/app/redux/slices/modal-slice";
+} from "@/app/redux/slices/modalSlice";
 
 export function useAppNoti() {
   const dispatch = useAppDispatch();

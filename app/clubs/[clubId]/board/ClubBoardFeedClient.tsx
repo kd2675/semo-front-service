@@ -28,7 +28,7 @@ import {
   type ClubScheduleVoteSummary,
 } from "@/app/lib/clubs";
 import { staggeredFadeUpMotion } from "@/app/lib/motion";
-import { getShareTargetBadges } from "@/app/lib/content-badge";
+import { getShareTargetBadges } from "@/app/lib/contentBadge";
 import { invalidateClubQueries } from "@/app/lib/react-query/common";
 import {
   boardReadStatusQueryOptions,
@@ -43,7 +43,7 @@ import {
   deleteScheduleVoteMutationOptions,
 } from "@/app/lib/react-query/schedule/mutations";
 import { deleteTournamentMutationOptions } from "@/app/lib/react-query/tournaments/mutations";
-import { getVoteLifecycleLabel } from "@/app/lib/vote-status";
+import { getVoteLifecycleLabel } from "@/app/lib/voteStatus";
 import { ClubNoticeEditorClient } from "./ClubNoticeEditorClient";
 import { NoticeManageCard } from "./NoticeManageCard";
 import { BoardScheduleManageCard } from "./BoardScheduleManageCard";

@@ -8,9 +8,9 @@ import { useState } from "react";
 import { ClubModeSwitchFab } from "@/app/components/ClubModeSwitchFab";
 import { ScheduleActionConfirmModal } from "./ScheduleActionConfirmModal";
 import { type ClubScheduleVoteDetailResponse } from "@/app/lib/clubs";
-import { getShareTargetBadges } from "@/app/lib/content-badge";
+import { getShareTargetBadges } from "@/app/lib/contentBadge";
 import { staggeredFadeUpMotion } from "@/app/lib/motion";
-import { getQueryErrorMessage } from "@/app/lib/query-utils";
+import { getQueryErrorMessage } from "@/app/lib/queryUtils";
 import { invalidateClubQueries } from "@/app/lib/react-query/common";
 import {
   closeScheduleVoteMutationOptions,
@@ -20,7 +20,7 @@ import {
   scheduleQueryKeys,
   scheduleVoteDetailQueryOptions,
 } from "@/app/lib/react-query/schedule/queries";
-import { getVoteLifecycleBadgeClassName, getVoteLifecycleLabel } from "@/app/lib/vote-status";
+import { getVoteLifecycleBadgeClassName, getVoteLifecycleLabel } from "@/app/lib/voteStatus";
 import { ClubDetailLoadingShell } from "../ClubRouteLoadingShells";
 
 type ClubScheduleVoteDetailClientProps = {

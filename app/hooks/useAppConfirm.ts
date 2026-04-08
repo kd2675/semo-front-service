@@ -4,13 +4,13 @@ import { useCallback } from "react";
 import {
   clearModalCallbacks,
   registerModalCallbacks,
-} from "@/app/redux/modal-callback-registry";
+} from "@/app/redux/modalCallbackRegistry";
 import { useAppDispatch, useAppSelector } from "@/app/redux/hooks";
 import {
   addConfirm,
   deleteConfirm,
   type ConfirmTone,
-} from "@/app/redux/slices/modal-slice";
+} from "@/app/redux/slices/modalSlice";
 
 export function useAppConfirm() {
   const dispatch = useAppDispatch();

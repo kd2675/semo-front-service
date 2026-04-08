@@ -17,7 +17,7 @@ import {
   setHydrated,
   setRestoring,
   type AuthStatus,
-} from "@/app/redux/slices/auth-slice";
+} from "@/app/redux/slices/authSlice";
 import type { AuthUser } from "@/app/types/auth";
 
 export default function useAuthSession() {

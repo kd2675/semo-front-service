@@ -8,9 +8,9 @@ import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useState } from "react";
 import { ClubModeSwitchFab } from "@/app/components/ClubModeSwitchFab";
 import { type ClubScheduleEventDetailResponse } from "@/app/lib/clubs";
-import { getShareTargetBadges } from "@/app/lib/content-badge";
+import { getShareTargetBadges } from "@/app/lib/contentBadge";
 import { staggeredFadeUpMotion } from "@/app/lib/motion";
-import { getQueryErrorMessage } from "@/app/lib/query-utils";
+import { getQueryErrorMessage } from "@/app/lib/queryUtils";
 import { invalidateClubQueries } from "@/app/lib/react-query/common";
 import { updateScheduleParticipationMutationOptions } from "@/app/lib/react-query/schedule/mutations";
 import {

@@ -1,6 +1,6 @@
 import { queryOptions } from "@tanstack/react-query";
 import { getClubAdminTodoApplications, getClubAdminTodos, getClubTodos } from "@/app/lib/clubs";
-import { requireApiData } from "@/app/lib/query-utils";
+import { requireApiData } from "@/app/lib/queryUtils";
 
 export const todoQueryKeys = {
   todos: (clubId: string) => ["semo", "clubs", clubId, "todos"] as const,

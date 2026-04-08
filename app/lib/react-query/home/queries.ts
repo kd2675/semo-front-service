@@ -1,6 +1,6 @@
 import { queryOptions } from "@tanstack/react-query";
 import { getDiscoverClubs, getMyClubs } from "@/app/lib/clubs";
-import { requireApiData } from "@/app/lib/query-utils";
+import { requireApiData } from "@/app/lib/queryUtils";
 
 export const homeQueryKeys = {
   myClubs: () => ["semo", "my-clubs"] as const,

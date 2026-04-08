@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { RouterLink } from "@/app/components/RouterLink";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import { type TournamentDetailResponse } from "@/app/lib/clubs";
-import { getShareTargetBadges } from "@/app/lib/content-badge";
+import { getShareTargetBadges } from "@/app/lib/contentBadge";
 import { staggeredFadeUpMotion } from "@/app/lib/motion";
 import {
   getTournamentApprovalBadgeClassName,
@@ -16,7 +16,7 @@ import {
 } from "@/app/lib/tournament";
 import { motion, useReducedMotion } from "motion/react";
 import { useState } from "react";
-import { getQueryErrorMessage } from "@/app/lib/query-utils";
+import { getQueryErrorMessage } from "@/app/lib/queryUtils";
 import { invalidateClubQueries } from "@/app/lib/react-query/common";
 import {
   applyTournamentMutationOptions,

@@ -5,7 +5,7 @@ import {
   setAuthExpired,
   setAuthSnapshot,
   setRestoring,
-} from "@/app/redux/slices/auth-slice";
+} from "@/app/redux/slices/authSlice";
 import { store } from "@/app/redux/store";
 import type { AuthExpireReason, LoginResponse, AuthUser } from "@/app/types/auth";
 

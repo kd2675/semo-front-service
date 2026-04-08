@@ -7,7 +7,7 @@ import { ClubRegionField } from "@/app/components/ClubRegionField";
 import { motion, useReducedMotion } from "motion/react";
 import { useEffect, useState } from "react";
 import { createClub } from "@/app/lib/clubs";
-import type { ActivityCategoryKey, ActivityTagKey, AffiliationTypeKey } from "@/app/lib/club-classification";
+import type { ActivityCategoryKey, ActivityTagKey, AffiliationTypeKey } from "@/app/lib/clubClassification";
 import { uploadTempImage } from "@/app/lib/imageUpload";
 import { staggeredFadeUpMotion } from "@/app/lib/motion";
 import type { RegionScope } from "@/app/lib/regions";

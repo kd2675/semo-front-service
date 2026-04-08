@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import type { TournamentSummary } from "@/app/lib/clubs";
-import { getShareTargetBadges } from "@/app/lib/content-badge";
+import { getShareTargetBadges } from "@/app/lib/contentBadge";
 import {
   getTournamentFeeLabel,
   getTournamentFormatLabel,

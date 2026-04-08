@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, useReducedMotion } from "motion/react";
-import type { NotiItem } from "@/app/redux/slices/modal-slice";
+import type { NotiItem } from "@/app/redux/slices/modalSlice";
 
 function getNotiToneStyles(tone: NotiItem["tone"]) {
   switch (tone) {

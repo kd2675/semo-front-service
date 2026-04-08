@@ -1,27 +1,26 @@
 "use client";
 
 import { useMutation, useQuery } from "@tanstack/react-query";
+import { DiscoverClubModal } from "@/app/home/DiscoverClubModal";
+import { DiscoverSection } from "@/app/home/DiscoverSection";
 import { RouterLink } from "@/app/components/RouterLink";
-import { RouteModal } from "@/app/components/RouteModal";
 import { useAppToast } from "@/app/hooks/useAppToast";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import {
-  startTransition,
   useDeferredValue,
   useState,
 } from "react";
 import { useRouter } from "next/navigation";
 import { clearAccessToken, logout, normalizeRole } from "@/app/lib/auth";
 import {
-  getActivityCategoryLabel,
   getAffiliationTypeLabel,
   getPrimaryClubActivityLabel,
-} from "@/app/lib/club-classification";
+} from "@/app/lib/clubClassification";
 import {
   type ClubDiscoverSummary,
 } from "@/app/lib/clubs";
 import { overlayFadeMotion, popInMotion, staggeredFadeUpMotion } from "@/app/lib/motion";
-import { getQueryErrorMessage } from "@/app/lib/query-utils";
+import { getQueryErrorMessage } from "@/app/lib/queryUtils";
 import { cancelClubJoinMutationOptions, submitClubJoinMutationOptions } from "@/app/lib/react-query/home/mutations";
 import { discoverClubsQueryOptions, myClubsQueryOptions } from "@/app/lib/react-query/home/queries";
 import type { AuthUser } from "@/app/types/auth";
@@ -35,157 +34,6 @@ function createProfileLabel(user: AuthUser | null): string {
   }
 
   return source.slice(0, 1).toUpperCase();
-}
-
-function getMembershipPolicyLabel(membershipPolicy: string) {
-  return membershipPolicy === "OPEN" ? "바로 가입" : "승인 후 가입";
-}
-
-function getJoinStatusLabel(joinStatus: string) {
-  return (
-    {
-      PENDING: "신청 대기",
-      REJECTED: "재신청 가능",
-      CANCELED: "신청 취소됨",
-    }[joinStatus] ?? null
-  );
-}
-
-function getJoinActionLabel(club: ClubDiscoverSummary) {
-  if (club.joinStatus === "PENDING") {
-    return "신청 취소";
-  }
-  if (club.membershipPolicy === "OPEN") {
-    return "바로 가입";
-  }
-  if (club.joinStatus === "REJECTED") {
-    return "다시 신청";
-  }
-  return "가입 신청";
-}
-
-function getJoinActionTone(club: ClubDiscoverSummary) {
-  if (club.joinStatus === "PENDING") {
-    return "secondary";
-  }
-  return club.membershipPolicy === "OPEN" ? "primary" : "default";
-}
-
-function DiscoverClubModal({
-  club,
-  requestMessage,
-  isSubmitting,
-  onClose,
-  onRequestMessageChange,
-  onSubmit,
-}: {
-  club: ClubDiscoverSummary;
-  requestMessage: string;
-  isSubmitting: boolean;
-  onClose: () => void;
-  onRequestMessageChange: (value: string) => void;
-  onSubmit: () => Promise<void>;
-}) {
-  const actionLabel = getJoinActionLabel(club);
-  const showRequestMessage = club.membershipPolicy === "APPROVAL";
-
-  return (
-    <RouteModal onDismiss={onClose} contentClassName="max-w-[30rem] rounded-[2rem] sm:rounded-[2rem]">
-      <div className="overflow-y-auto bg-white px-5 py-5">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <div className="flex flex-wrap items-center gap-2">
-              <h3 className="text-xl font-bold tracking-tight text-slate-900">{club.name}</h3>
-              {club.recommendedByTags || club.recommendedByCategory ? (
-                <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold uppercase text-emerald-600">
-                  추천
-                </span>
-              ) : null}
-            </div>
-            <p className="mt-2 text-sm leading-6 text-slate-500">
-              {club.description ?? club.summary ?? "클럽 소개가 아직 없습니다."}
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="flex size-10 items-center justify-center rounded-full bg-slate-100 text-slate-500"
-            aria-label="가입 신청 모달 닫기"
-          >
-            <span className="material-symbols-outlined">close</span>
-          </button>
-        </div>
-
-        <div className="mt-5 grid grid-cols-2 gap-3">
-          <div className="rounded-2xl bg-slate-50 px-4 py-3">
-            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">CATEGORY</p>
-            <p className="mt-1 text-sm font-semibold text-slate-700">
-              {getPrimaryClubActivityLabel(club.activityTags, club.activityCategory, club.categoryKey)}
-            </p>
-          </div>
-          <div className="rounded-2xl bg-slate-50 px-4 py-3">
-            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">TYPE</p>
-            <p className="mt-1 text-sm font-semibold text-slate-700">
-              {[
-                getActivityCategoryLabel(club.activityCategory),
-                getAffiliationTypeLabel(club.affiliationType),
-              ]
-                .filter(Boolean)
-                .join(" · ") || "기타 · 독립"}
-            </p>
-          </div>
-          <div className="rounded-2xl bg-slate-50 px-4 py-3">
-            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">JOIN RULE</p>
-            <p className="mt-1 text-sm font-semibold text-slate-700">{getMembershipPolicyLabel(club.membershipPolicy)}</p>
-          </div>
-          <div className="rounded-2xl bg-slate-50 px-4 py-3">
-            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">VISIBILITY</p>
-            <p className="mt-1 text-sm font-semibold text-slate-700">
-              {club.visibilityStatus === "PUBLIC" ? "공개 클럽" : "비공개 클럽"}
-            </p>
-          </div>
-          <div className="rounded-2xl bg-slate-50 px-4 py-3">
-            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">MEMBERS</p>
-            <p className="mt-1 text-sm font-semibold text-slate-700">{club.activeMemberCount.toLocaleString("ko-KR")}명</p>
-          </div>
-          <div className="rounded-2xl bg-slate-50 px-4 py-3">
-            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">REGION</p>
-            <p className="mt-1 text-sm font-semibold text-slate-700">{club.regionLabel ?? "전국"}</p>
-          </div>
-        </div>
-
-        {showRequestMessage ? (
-          <div className="mt-5">
-            <label className="mb-2 block text-sm font-bold text-slate-900">가입 메시지</label>
-            <textarea
-              value={requestMessage}
-              onChange={(event) => onRequestMessageChange(event.target.value)}
-              placeholder="모임에 관심 있는 이유나 활동 계획을 남겨 주세요."
-              className="form-input min-h-28 w-full resize-none rounded-2xl border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-[var(--primary)]/40"
-            />
-          </div>
-        ) : null}
-
-        <div className="mt-6 flex gap-3">
-          <button
-            type="button"
-            onClick={onClose}
-            className="flex-1 rounded-2xl bg-slate-100 px-4 py-3 text-sm font-bold text-slate-600"
-          >
-            닫기
-          </button>
-          <button
-            type="button"
-            onClick={() => void onSubmit()}
-            disabled={isSubmitting}
-            className="flex-1 rounded-2xl bg-[var(--primary)] px-4 py-3 text-sm font-bold text-white disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500"
-          >
-            {isSubmitting ? "처리 중..." : actionLabel}
-          </button>
-        </div>
-      </div>
-    </RouteModal>
-  );
 }
 
 export default function Home() {
@@ -399,25 +247,6 @@ export default function Home() {
             </div>
           </motion.header>
 
-          <motion.div className="px-4 py-4" {...staggeredFadeUpMotion(1, reduceMotion)}>
-            <label className="flex w-full flex-col">
-              <div className="flex h-12 w-full items-stretch rounded-xl border border-transparent bg-slate-100 transition-all focus-within:border-[var(--primary)]/50">
-                <div className="flex items-center justify-center pl-4 text-slate-500">
-                  <span className="material-symbols-outlined text-xl">search</span>
-                </div>
-                <input
-                  className="form-input flex w-full border-none bg-transparent px-3 text-base font-normal text-slate-900 placeholder:text-slate-500 focus:ring-0"
-                  placeholder="클럽 이름이나 소개를 검색해 보세요."
-                  value={searchQuery}
-                  onChange={(event) => {
-                    const nextValue = event.target.value;
-                    startTransition(() => setSearchQuery(nextValue));
-                  }}
-                />
-              </div>
-            </label>
-          </motion.div>
-
           <motion.section className="px-4 pb-2" {...staggeredFadeUpMotion(2, reduceMotion)}>
             <div className="flex items-center justify-between rounded-xl bg-gradient-to-br from-[var(--primary)] to-blue-600 p-4 shadow-lg shadow-[var(--primary)]/20">
               <div className="flex-1">
@@ -511,135 +340,20 @@ export default function Home() {
             )}
           </motion.section>
 
-          <motion.section className="px-4 pb-3 pt-6" {...staggeredFadeUpMotion(6, reduceMotion)}>
-            <div className="flex items-baseline gap-2">
-              <h2 className="text-lg font-bold text-slate-900">{discoverTitle}</h2>
-              <span className="text-[10px] font-medium text-slate-400">클럽 찾기/가입신청</span>
-            </div>
-            <p className="mt-1 text-xs text-slate-500">{discoverSubtitle}</p>
-          </motion.section>
-
-          <section className="flex flex-1 flex-col gap-4 px-4 pb-20">
-            {isLoadingDiscover ? (
-              <motion.div
-                className="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-10 text-center"
-                {...staggeredFadeUpMotion(7, reduceMotion)}
-              >
-                <p className="text-sm font-semibold text-slate-700">클럽을 탐색하는 중입니다.</p>
-                <p className="mt-1 text-xs text-slate-500">공개 클럽과 가입 상태를 확인하고 있습니다.</p>
-              </motion.div>
-            ) : discoverClubs.length > 0 ? (
-              discoverClubs.map((club, index) => {
-                const joinStatusLabel = getJoinStatusLabel(club.joinStatus);
-                const actionTone = getJoinActionTone(club);
-                return (
-                  <motion.article
-                    key={club.clubId}
-                    className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm"
-                    {...staggeredFadeUpMotion(index + 7, reduceMotion)}
-                  >
-                    <div className="flex gap-4">
-                      <div
-                        className="size-20 shrink-0 rounded-2xl bg-slate-100 bg-cover bg-center"
-                        style={club.imageUrl ? { backgroundImage: `url("${club.imageUrl}")` } : undefined}
-                      >
-                        {!club.imageUrl ? (
-                          <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-[var(--primary)]/12 to-blue-100 text-[var(--primary)]">
-                            <span className="material-symbols-outlined text-3xl">groups</span>
-                          </div>
-                        ) : null}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <p className="text-base font-bold text-slate-900">{club.name}</p>
-                          <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold uppercase text-slate-600">
-                            {getPrimaryClubActivityLabel(club.activityTags, club.activityCategory, club.categoryKey)}
-                          </span>
-                          {club.recommendedByTags || club.recommendedByCategory ? (
-                            <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold uppercase text-emerald-600">
-                              추천
-                            </span>
-                          ) : null}
-                          {joinStatusLabel ? (
-                            <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-bold uppercase text-amber-700">
-                              {joinStatusLabel}
-                            </span>
-                          ) : null}
-                        </div>
-                        <p className="mt-1 line-clamp-2 text-sm leading-6 text-slate-500">
-                          {club.summary ?? club.description ?? "클럽 소개가 아직 없습니다."}
-                        </p>
-                        <div className="mt-3 flex flex-wrap items-center gap-2 text-[11px] font-semibold text-slate-500">
-                          <span className="rounded-full bg-slate-100 px-2.5 py-1">
-                            멤버 {club.activeMemberCount.toLocaleString("ko-KR")}명
-                          </span>
-                          <span className="rounded-full bg-slate-100 px-2.5 py-1">
-                            {getMembershipPolicyLabel(club.membershipPolicy)}
-                          </span>
-                          {club.affiliationType ? (
-                            <span className="rounded-full bg-slate-100 px-2.5 py-1">
-                              {getAffiliationTypeLabel(club.affiliationType)}
-                            </span>
-                          ) : null}
-                          {club.regionLabel ? (
-                            <span className="rounded-full bg-slate-100 px-2.5 py-1">{club.regionLabel}</span>
-                          ) : null}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="mt-4 flex flex-wrap gap-2">
-                      <button
-                        type="button"
-                        onClick={() => handleOpenClubAction(club)}
-                        className="rounded-xl bg-slate-100 px-4 py-2 text-sm font-bold text-slate-600 transition-colors hover:bg-slate-200"
-                      >
-                        소개 보기
-                      </button>
-                      {club.joinStatus === "PENDING" ? (
-                        <button
-                          type="button"
-                          disabled={pendingJoinClubId === club.clubId}
-                          onClick={() => void handleCancelJoinRequest(club)}
-                          className="rounded-xl bg-[var(--secondary)]/10 px-4 py-2 text-sm font-bold text-[var(--secondary)] transition-colors hover:bg-[var(--secondary)]/20 disabled:cursor-not-allowed disabled:opacity-50"
-                        >
-                          {pendingJoinClubId === club.clubId ? "처리 중..." : "신청 취소"}
-                        </button>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={() => handleOpenClubAction(club)}
-                          className={`rounded-xl px-4 py-2 text-sm font-bold transition-colors ${
-                            actionTone === "primary"
-                              ? "bg-[var(--primary)] text-white hover:bg-[var(--primary)]/90"
-                              : actionTone === "secondary"
-                                ? "bg-[var(--secondary)] text-white hover:bg-[var(--secondary)]/90"
-                                : "bg-[var(--primary)]/10 text-[var(--primary)] hover:bg-[var(--primary)]/20"
-                          }`}
-                        >
-                          {getJoinActionLabel(club)}
-                        </button>
-                      )}
-                    </div>
-                  </motion.article>
-                );
-              })
-            ) : (
-              <motion.div
-                className="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-10 text-center"
-                {...staggeredFadeUpMotion(7, reduceMotion)}
-              >
-                <p className="text-sm font-semibold text-slate-700">
-                  {discoverError ?? "표시할 공개 클럽이 없습니다."}
-                </p>
-                <p className="mt-1 text-xs text-slate-500">
-                  {deferredSearchQuery.length > 0
-                    ? "검색어를 바꾸거나 다른 키워드로 다시 찾아보세요."
-                    : "새 클럽이 등록되면 이 영역에 추천이 표시됩니다."}
-                </p>
-              </motion.div>
-            )}
-          </section>
+          <DiscoverSection
+            searchQuery={searchQuery}
+            onSearchQueryChange={setSearchQuery}
+            discoverTitle={discoverTitle}
+            discoverSubtitle={discoverSubtitle}
+            discoverClubs={discoverClubs}
+            isLoadingDiscover={isLoadingDiscover}
+            discoverError={discoverError}
+            hasSearchQuery={deferredSearchQuery.length > 0}
+            pendingJoinClubId={pendingJoinClubId}
+            reduceMotion={reduceMotion}
+            onOpenClub={handleOpenClubAction}
+            onCancelJoinRequest={handleCancelJoinRequest}
+          />
 
           <motion.div
             className="fixed bottom-6 right-[max(1.5rem,calc(50%-180px))] z-20 flex size-14 items-center justify-center rounded-full bg-[var(--primary)] text-white shadow-2xl transition-transform active:scale-90"

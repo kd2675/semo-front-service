@@ -7,7 +7,7 @@ import {
   getClubNoticeHome,
   getClubPollHome,
 } from "@/app/lib/clubs";
-import { requireApiData } from "@/app/lib/query-utils";
+import { requireApiData } from "@/app/lib/queryUtils";
 
 export const boardQueryKeys = {
   board: (clubId: string) => ["semo", "clubs", clubId, "board"] as const,

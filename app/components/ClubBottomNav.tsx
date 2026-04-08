@@ -10,7 +10,7 @@ import {
 } from "@/app/lib/clubs";
 import { overlayFadeMotion, popInMotion } from "@/app/lib/motion";
 import { clubFeaturesQueryOptions, clubQueryKeys } from "@/app/lib/react-query/club/queries";
-import { useBottomNavScrollDocking } from "@/app/components/useBottomNavScrollDocking";
+import { useBottomNavScrollDocking } from "@/app/hooks/useBottomNavScrollDocking";
 
 type ClubBottomNavProps = {
   clubId: string;

@@ -1,6 +1,6 @@
 import { mutationOptions } from "@tanstack/react-query";
 import { cancelClubJoinRequest, submitClubJoinRequest } from "@/app/lib/clubs";
-import { requireApiData } from "@/app/lib/query-utils";
+import { requireApiData } from "@/app/lib/queryUtils";
 
 export function submitClubJoinMutationOptions() {
   return mutationOptions({

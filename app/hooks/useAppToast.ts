@@ -1,9 +1,9 @@
 "use client";
 
 import { useCallback } from "react";
-import { clearModalCallbacks } from "@/app/redux/modal-callback-registry";
+import { clearModalCallbacks } from "@/app/redux/modalCallbackRegistry";
 import { useAppDispatch, useAppSelector } from "@/app/redux/hooks";
-import { addToast, deleteToast, type ToastTone } from "@/app/redux/slices/modal-slice";
+import { addToast, deleteToast, type ToastTone } from "@/app/redux/slices/modalSlice";
 
 export function useAppToast(durationMs = 2000) {
   const dispatch = useAppDispatch();

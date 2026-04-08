@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useAppDispatch, useAppSelector } from "@/app/redux/hooks";
-import { clearAuthExpired } from "@/app/redux/slices/auth-slice";
+import { clearAuthExpired } from "@/app/redux/slices/authSlice";
 
 export default function AuthWatcher() {
   const dispatch = useAppDispatch();

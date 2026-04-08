@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, useReducedMotion } from "motion/react";
-import type { AlertItem } from "@/app/redux/slices/modal-slice";
+import type { AlertItem } from "@/app/redux/slices/modalSlice";
 
 function getAlertToneStyles(tone: AlertItem["tone"]) {
   switch (tone) {

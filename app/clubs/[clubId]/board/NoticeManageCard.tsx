@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import type { ClubNoticeListItem } from "@/app/lib/clubs";
-import { getLinkedContentBadge, getShareTargetBadges } from "@/app/lib/content-badge";
+import { getLinkedContentBadge, getShareTargetBadges } from "@/app/lib/contentBadge";
 
 type NoticeManageCardProps = {
   notice: ClubNoticeListItem;

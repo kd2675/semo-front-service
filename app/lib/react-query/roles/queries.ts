@@ -1,6 +1,6 @@
 import { queryOptions } from "@tanstack/react-query";
 import { getClubAdminRoleDetail, getClubAdminRoleManagement } from "@/app/lib/clubs";
-import { requireApiData } from "@/app/lib/query-utils";
+import { requireApiData } from "@/app/lib/queryUtils";
 
 export const roleQueryKeys = {
   adminRoleManagement: (clubId: string) =>

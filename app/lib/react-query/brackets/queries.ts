@@ -1,6 +1,6 @@
 import { queryOptions } from "@tanstack/react-query";
 import { getClubAdminBracketHome, getClubBracketDetail, getClubBracketHome } from "@/app/lib/clubs";
-import { requireApiData } from "@/app/lib/query-utils";
+import { requireApiData } from "@/app/lib/queryUtils";
 
 export const bracketQueryKeys = {
   bracketHome: (clubId: string) => ["semo", "clubs", clubId, "bracket-home"] as const,

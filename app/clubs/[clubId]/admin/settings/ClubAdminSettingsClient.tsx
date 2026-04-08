@@ -9,7 +9,7 @@ import { ClubClassificationField } from "@/app/components/ClubClassificationFiel
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import { ClubRegionField } from "@/app/components/ClubRegionField";
 import { useAppToast } from "@/app/hooks/useAppToast";
-import { getActivityCategoryLabel, getAffiliationTypeLabel, getPrimaryClubActivityLabel } from "@/app/lib/club-classification";
+import { getActivityCategoryLabel, getAffiliationTypeLabel, getPrimaryClubActivityLabel } from "@/app/lib/clubClassification";
 import { type MyClubSummary } from "@/app/lib/clubs";
 import { invalidateClubQueries } from "@/app/lib/react-query/common";
 import { updateClubSettingsMutationOptions } from "@/app/lib/react-query/club/mutations";

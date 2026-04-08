@@ -4,7 +4,7 @@ import {
   getClubTournamentDetail,
   getClubTournamentHome,
 } from "@/app/lib/clubs";
-import { requireApiData } from "@/app/lib/query-utils";
+import { requireApiData } from "@/app/lib/queryUtils";
 
 export const tournamentQueryKeys = {
   tournamentHome: (clubId: string) => ["semo", "clubs", clubId, "tournament-home"] as const,

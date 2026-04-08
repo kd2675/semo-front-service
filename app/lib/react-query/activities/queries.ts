@@ -6,7 +6,7 @@ import {
   getClubAdminTimeline,
   getClubTimeline,
 } from "@/app/lib/clubs";
-import { getApiDataOrFallback, requireApiData } from "@/app/lib/query-utils";
+import { getApiDataOrFallback, requireApiData } from "@/app/lib/queryUtils";
 
 export const activityQueryKeys = {
   adminActivities: (clubId: string, size: number) =>

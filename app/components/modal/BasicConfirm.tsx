@@ -1,7 +1,7 @@
 "use client";
 
 import { RouteModal } from "@/app/components/RouteModal";
-import type { ConfirmItem } from "@/app/redux/slices/modal-slice";
+import type { ConfirmItem } from "@/app/redux/slices/modalSlice";
 
 function getConfirmToneStyles(tone: ConfirmItem["tone"]) {
   switch (tone) {

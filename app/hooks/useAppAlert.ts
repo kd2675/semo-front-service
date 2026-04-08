@@ -7,7 +7,7 @@ import {
   deleteAlert,
   deleteAllAlert,
   type AlertTone,
-} from "@/app/redux/slices/modal-slice";
+} from "@/app/redux/slices/modalSlice";
 
 export function useAppAlert() {
   const dispatch = useAppDispatch();

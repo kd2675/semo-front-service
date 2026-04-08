@@ -10,7 +10,7 @@ import {
   ClubScheduleEventDetailModal,
   ClubTournamentDetailModal,
 } from "@/app/components/ClubDetailModals";
-import { getShareTargetBadges } from "@/app/lib/content-badge";
+import { getShareTargetBadges } from "@/app/lib/contentBadge";
 import { staggeredFadeUpMotion } from "@/app/lib/motion";
 import {
   getTournamentFeeLabel,
@@ -18,7 +18,7 @@ import {
   getTournamentStatusBadgeClassName,
   getTournamentStatusLabel,
 } from "@/app/lib/tournament";
-import { getVoteLifecycleLabel } from "@/app/lib/vote-status";
+import { getVoteLifecycleLabel } from "@/app/lib/voteStatus";
 import type {
   ClubCalendarFeedItem,
   ClubNoticeListItem,

@@ -8,7 +8,7 @@ import {
   getClubFinance,
   getClubFinanceRequests,
 } from "@/app/lib/clubs";
-import { getApiDataOrFallback, requireApiData } from "@/app/lib/query-utils";
+import { getApiDataOrFallback, requireApiData } from "@/app/lib/queryUtils";
 
 export const financeQueryKeys = {
   financeHome: (clubId: string) => ["semo", "clubs", clubId, "finance"] as const,

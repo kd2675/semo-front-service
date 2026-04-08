@@ -4,9 +4,9 @@ import Image from "next/image";
 import { A11y, Pagination } from "swiper/modules";
 import { Swiper, SwiperSlide } from "swiper/react";
 import type { ClubBoardFeedItem } from "@/app/lib/clubs";
-import { getLinkedContentBadge, getShareTargetBadges } from "@/app/lib/content-badge";
+import { getLinkedContentBadge, getShareTargetBadges } from "@/app/lib/contentBadge";
 import { getTournamentFormatLabel, getTournamentStatusLabel } from "@/app/lib/tournament";
-import { getVoteLifecycleLabel } from "@/app/lib/vote-status";
+import { getVoteLifecycleLabel } from "@/app/lib/voteStatus";
 
 type PinnedBoardCarouselProps = {
   items: ClubBoardFeedItem[];

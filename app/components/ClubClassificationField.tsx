@@ -8,7 +8,7 @@ import {
   type ActivityCategoryKey,
   type ActivityTagKey,
   type AffiliationTypeKey,
-} from "@/app/lib/club-classification";
+} from "@/app/lib/clubClassification";
 
 type ClubClassificationFieldValue = {
   activityCategory: ActivityCategoryKey | null;

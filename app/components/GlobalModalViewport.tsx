@@ -2,10 +2,10 @@
 
 import { AnimatePresence } from "motion/react";
 import { useEffect, useState } from "react";
-import { BasicAlert } from "@/app/components/modal/basic-alert";
-import { BasicConfirm } from "@/app/components/modal/basic-confirm";
-import { BasicNoti } from "@/app/components/modal/basic-noti";
-import { BasicToast } from "@/app/components/modal/basic-toast";
+import { BasicAlert } from "@/app/components/modal/BasicAlert";
+import { BasicConfirm } from "@/app/components/modal/BasicConfirm";
+import { BasicNoti } from "@/app/components/modal/BasicNoti";
+import { BasicToast } from "@/app/components/modal/BasicToast";
 import { useAppDispatch, useAppSelector } from "@/app/redux/hooks";
 import {
   deleteAllAlert,
@@ -15,11 +15,11 @@ import {
   deleteToast,
   type ConfirmItem,
   type NotiItem,
-} from "@/app/redux/slices/modal-slice";
+} from "@/app/redux/slices/modalSlice";
 import {
   clearModalCallbacks,
   invokeModalCallback,
-} from "@/app/redux/modal-callback-registry";
+} from "@/app/redux/modalCallbackRegistry";
 
 function GlobalAlertLayer() {
   const dispatch = useAppDispatch();

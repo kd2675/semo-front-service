@@ -4,7 +4,7 @@ import Image from "next/image";
 import { A11y, Pagination } from "swiper/modules";
 import { Swiper, SwiperSlide } from "swiper/react";
 import type { ClubNoticeListItem } from "@/app/lib/clubs";
-import { getLinkedContentBadge } from "@/app/lib/content-badge";
+import { getLinkedContentBadge } from "@/app/lib/contentBadge";
 
 type PinnedNoticeCarouselProps = {
   notices: ClubNoticeListItem[];

@@ -5,7 +5,7 @@ import { RouterLink } from "@/app/components/RouterLink";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import { type BracketDetailResponse } from "@/app/lib/clubs";
 import { useState, type CSSProperties } from "react";
-import { getQueryErrorMessage } from "@/app/lib/query-utils";
+import { getQueryErrorMessage } from "@/app/lib/queryUtils";
 import { invalidateClubQueries } from "@/app/lib/react-query/common";
 import {
   reviewBracketMutationOptions,

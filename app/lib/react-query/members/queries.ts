@@ -5,7 +5,7 @@ import {
   getClubAdminMembers,
   getClubMemberDirectory,
 } from "@/app/lib/clubs";
-import { requireApiData } from "@/app/lib/query-utils";
+import { requireApiData } from "@/app/lib/queryUtils";
 
 export const memberQueryKeys = {
   adminMembers: (clubId: string) => ["semo", "clubs", clubId, "admin-members"] as const,

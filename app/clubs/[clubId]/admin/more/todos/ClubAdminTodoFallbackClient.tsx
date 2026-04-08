@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import { myClubQueryOptions } from "@/app/lib/react-query/club/queries";
 import { adminTodosQueryOptions } from "@/app/lib/react-query/todos/queries";
-import { getQueryErrorMessage } from "@/app/lib/query-utils";
+import { getQueryErrorMessage } from "@/app/lib/queryUtils";
 import { ClubAdminTodoClient } from "./ClubAdminTodoClient";
 
 type ClubAdminTodoFallbackClientProps = {

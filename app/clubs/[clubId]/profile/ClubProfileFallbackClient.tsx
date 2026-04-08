@@ -8,7 +8,7 @@ import { ClubModeSwitchFab } from "@/app/components/ClubModeSwitchFab";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import { uploadTempImage } from "@/app/lib/imageUpload";
 import { staggeredFadeUpMotion } from "@/app/lib/motion";
-import { getQueryErrorMessage } from "@/app/lib/query-utils";
+import { getQueryErrorMessage } from "@/app/lib/queryUtils";
 import { updateClubProfileMutationOptions } from "@/app/lib/react-query/club/mutations";
 import { clubProfileQueryOptions } from "@/app/lib/react-query/club/queries";
 import { invalidateClubQueries } from "@/app/lib/react-query/common";

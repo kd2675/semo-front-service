@@ -5,7 +5,7 @@ import {
   getClubFeedbackDetail,
   getClubFeedbackHome,
 } from "@/app/lib/clubs";
-import { getApiDataOrFallback, requireApiData } from "@/app/lib/query-utils";
+import { getApiDataOrFallback, requireApiData } from "@/app/lib/queryUtils";
 
 export const feedbackQueryKeys = {
   feedbackHome: (clubId: string) => ["semo", "clubs", clubId, "feedback-home"] as const,

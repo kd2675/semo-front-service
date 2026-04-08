@@ -47,7 +47,7 @@ import {
   type ClubScheduleResponse,
 } from "@/app/lib/clubs";
 import { staggeredFadeUpMotion } from "@/app/lib/motion";
-import { getQueryErrorMessage } from "@/app/lib/query-utils";
+import { getQueryErrorMessage } from "@/app/lib/queryUtils";
 import {
   checkInAttendanceMutationOptions,
 } from "@/app/lib/react-query/attendance/mutations";

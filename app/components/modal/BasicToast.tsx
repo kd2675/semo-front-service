@@ -3,7 +3,7 @@
 import type { ComponentType } from "react";
 import { Progress } from "@material-tailwind/react";
 import { RouteModal } from "@/app/components/RouteModal";
-import type { ToastItem } from "@/app/redux/slices/modal-slice";
+import type { ToastItem } from "@/app/redux/slices/modalSlice";
 
 type SafeProgressProps = {
   value: number;
