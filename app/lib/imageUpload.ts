@@ -1,3 +1,5 @@
+import axios from "axios";
+
 const IMAGE_BASE = process.env.NEXT_PUBLIC_IMAGE_BASE_URL ?? "http://localhost:8081";
 
 export type TempImageUploadResponse = {
@@ -18,19 +20,18 @@ export async function uploadTempImage(file: File): Promise<TempImageUploadResult
   formData.append("file", file);
 
   try {
-    const response = await fetch(`${IMAGE_BASE}/upload/temp`, {
-      method: "POST",
-      body: formData,
+    const response = await axios.post<TempImageUploadResponse>(`${IMAGE_BASE}/upload/temp`, formData, {
+      validateStatus: () => true,
     });
 
-    if (!response.ok) {
+    if (response.status < 200 || response.status >= 300) {
       return {
         data: null,
         error: response.statusText || "이미지 업로드에 실패했습니다.",
       };
     }
 
-    const parsed = (await response.json()) as TempImageUploadResponse;
+    const parsed = response.data;
     if (!parsed?.fileName) {
       return {
         data: null,

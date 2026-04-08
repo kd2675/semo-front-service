@@ -1,3 +1,4 @@
+import axios from "axios";
 import type { ResponseEnvelope } from "@/app/types/response";
 import {
   clearAccessToken,
@@ -23,6 +24,12 @@ type RequestOptions = {
   credentials?: RequestCredentials;
 };
 
+const apiClient = axios.create({
+  baseURL: API_BASE,
+  transformResponse: [(value) => value],
+  validateStatus: () => true,
+});
+
 function isEnvelope<T>(value: unknown): value is ResponseEnvelope<T> {
   if (!value || typeof value !== "object") {
     return false;
@@ -35,6 +42,10 @@ function isEnvelope<T>(value: unknown): value is ResponseEnvelope<T> {
     typeof record.message === "string" &&
     "data" in record
   );
+}
+
+function shouldSendCredentials(credentials?: RequestCredentials): boolean {
+  return (credentials ?? "include") === "include";
 }
 
 async function requestJson<T>(
@@ -54,14 +65,15 @@ async function requestJson<T>(
   }
 
   try {
-    const response = await fetch(`${API_BASE}${path}`, {
+    const response = await apiClient.request<string>({
+      url: path,
       method,
       headers,
-      credentials: options.credentials ?? "include",
-      body: options.body === undefined ? undefined : JSON.stringify(options.body),
+      withCredentials: shouldSendCredentials(options.credentials),
+      data: options.body === undefined ? undefined : JSON.stringify(options.body),
     });
 
-    if (response.status === 401 && !retried) {
+    if (response.status === 401 && !retried && path !== "/auth/refresh") {
       const refreshedToken = await refreshAccessToken();
       if (refreshedToken) {
         return requestJson<T>(path, options, true);
@@ -70,11 +82,11 @@ async function requestJson<T>(
       notifyAuthExpired("refresh_failed");
     }
 
-    const text = await response.text();
+    const text = response.data;
     const parsed: unknown = text ? JSON.parse(text) : null;
 
     if (isEnvelope<T>(parsed)) {
-      if (response.ok && parsed.success) {
+      if (response.status >= 200 && response.status < 300 && parsed.success) {
         return {
           ok: true,
           status: response.status,
@@ -93,7 +105,7 @@ async function requestJson<T>(
       };
     }
 
-    if (response.ok) {
+    if (response.status >= 200 && response.status < 300) {
       return {
         ok: true,
         status: response.status,
