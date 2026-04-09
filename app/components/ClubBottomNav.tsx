@@ -33,6 +33,7 @@ const BASE_NAV_ITEMS: NavItem[] = [
 ];
 
 const FEATURE_ACCENT_CLASS: Record<string, string> = {
+  JOIN_REQUEST: "bg-blue-50 text-blue-600",
   ATTENDANCE: "bg-blue-50 text-blue-600",
   TIMELINE: "bg-indigo-50 text-indigo-600",
   NOTICE: "bg-blue-50 text-blue-600",

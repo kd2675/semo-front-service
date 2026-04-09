@@ -18,6 +18,7 @@
   - 관리자 홈
   - 메뉴 관리
   - 멤버 관리
+  - 신규가입 운영
   - 통계
   - 활동 로그
   - `/admin/more` 기능 화면
@@ -126,6 +127,7 @@ NEXT_PUBLIC_IMAGE_BASE_URL=http://localhost:8081
 - `/clubs/[clubId]/more/timeline`
 - `/clubs/[clubId]/more/attendance`
 - `/clubs/[clubId]/more/todos`
+- `/clubs/[clubId]/more/join-requests`
 - `/clubs/[clubId]/more/members`
 - `/clubs/[clubId]/more/finance`
 - `/clubs/[clubId]/more/tournaments`
@@ -150,6 +152,7 @@ NEXT_PUBLIC_IMAGE_BASE_URL=http://localhost:8081
 - `/clubs/[clubId]/admin/more/timeline`
 - `/clubs/[clubId]/admin/more/attendance`
 - `/clubs/[clubId]/admin/more/todos`
+- `/clubs/[clubId]/admin/more/join-requests`
 - `/clubs/[clubId]/admin/more/members`
 - `/clubs/[clubId]/admin/more/finance`
 - `/clubs/[clubId]/admin/more/tournaments`
@@ -165,6 +168,8 @@ NEXT_PUBLIC_IMAGE_BASE_URL=http://localhost:8081
 ### Home / dashboard
 - 사용자 홈은 위젯 API로 공지, 일정, 투표, 프로필, 출석, 회비, 대회, 대진표 정보를 조합합니다.
 - 관리자 홈은 멤버 수, 승인 대기, 최근 활동, 운영 진입 액션을 보여줍니다.
+- 가입 신청은 루트 홈에서 접수하고, 클럽 내부에서는 `/more/join-requests`와 `/admin/more/join-requests`로 운영/조회 동선을 분리합니다.
+- 레거시 `/admin/join-requests` 경로는 제거했고, 신규가입 관련 내부 동선은 모두 `more/join-requests` 기준으로 통일합니다.
 
 ### Board / schedule / poll
 - 게시판 피드에는 공지, 일정, 투표, 대회가 섞여 노출될 수 있습니다.
@@ -175,6 +180,7 @@ NEXT_PUBLIC_IMAGE_BASE_URL=http://localhost:8081
 - 대회는 사용자 작성 -> 관리자 승인 -> 참가 신청/승인 흐름을 가집니다.
 - 대진표는 직접 작성 또는 대회 참가자 불러오기 후 제출/승인 흐름을 가집니다.
 - 재정관리는 사용자 조회 화면과 관리자 발행/납부 처리 화면이 분리됩니다.
+- 신규가입은 사용자 `/more/join-requests`에서 현재 대기열을 보고, 관리자 `/admin/more/join-requests`에서 승인/반려를 처리합니다.
 - 회원 디렉터리는 사용자 `/more/members`에서 다른 회원을 보고, 관리자 `/admin/more/members`에서 직책/한줄소개/최근 활동 노출 여부를 설정합니다.
 - 직책관리는 `ADMIN_ONLY` 기능으로, 직책 생성/수정/삭제와 멤버 할당 화면이 따로 있습니다.
 

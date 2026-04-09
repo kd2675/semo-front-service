@@ -7,7 +7,7 @@ import { ClubAdminHomeClient } from "./ClubAdminHomeClient";
 import { AdminHomeLoadingShell } from "./AdminRouteLoadingShells";
 import { adminActivitiesPreviewQueryOptions } from "@/app/lib/react-query/activities/queries";
 import {
-  adminJoinRequestsQueryOptions,
+  adminJoinRequestInboxQueryOptions,
   adminMembersQueryOptions,
 } from "@/app/lib/react-query/members/queries";
 import { myClubQueryOptions } from "@/app/lib/react-query/club/queries";
@@ -22,7 +22,7 @@ export function ClubAdminFallbackClient({ clubId }: ClubAdminFallbackClientProps
     queries: [
       myClubQueryOptions(clubId),
       adminMembersQueryOptions(clubId),
-      adminJoinRequestsQueryOptions(clubId),
+      adminJoinRequestInboxQueryOptions(clubId),
       adminActivitiesPreviewQueryOptions(clubId, 5),
     ],
   });
@@ -63,7 +63,7 @@ export function ClubAdminFallbackClient({ clubId }: ClubAdminFallbackClientProps
   const metrics = useMemo(
     () => {
       const members = membersPayload?.members ?? [];
-      const pendingCount = joinRequestsPayload?.requests.length ?? 0;
+      const pendingCount = joinRequestsPayload?.pendingRequestCount ?? 0;
       const activeCount = members.filter((member) => member.membershipStatus === "ACTIVE").length;
 
       return [
@@ -107,9 +107,16 @@ export function ClubAdminFallbackClient({ clubId }: ClubAdminFallbackClientProps
         href: `/clubs/${clubId}/admin/menu`,
       },
       {
+        id: "join-requests",
+        title: "신규가입",
+        description: "가입 신청 대기열을 확인하고 승인, 반려를 처리합니다.",
+        icon: "group_add",
+        href: `/clubs/${clubId}/admin/more/join-requests`,
+      },
+      {
         id: "members",
         title: "멤버 관리",
-        description: "멤버, 권한, 활동 상태를 한 번에 관리합니다.",
+        description: "가입 완료 멤버의 권한과 활동 상태를 관리합니다.",
         icon: "groups",
         href: `/clubs/${clubId}/admin/members`,
       },

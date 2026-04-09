@@ -1,6 +1,7 @@
 "use client";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { RouterLink } from "@/app/components/RouterLink";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import { useAppToast } from "@/app/hooks/useAppToast";
 import { useAppAlert } from "@/app/hooks/useAppAlert";
@@ -8,16 +9,10 @@ import { Plus_Jakarta_Sans } from "next/font/google";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { startTransition, useDeferredValue, useEffect, useMemo, useState } from "react";
 import type { CSSProperties } from "react";
-import {
-  getClubAdminJoinRequests,
-  getClubAdminMembers,
-  type ClubAdminJoinRequest,
-  type ClubAdminMember,
-} from "@/app/lib/clubs";
+import { type ClubAdminMember } from "@/app/lib/clubs";
 import { overlayFadeMotion, popInMotion, staggeredFadeUpMotion } from "@/app/lib/motion";
 import { invalidateClubQueries } from "@/app/lib/react-query/common";
 import {
-  reviewJoinRequestMutationOptions,
   updateMemberRoleMutationOptions,
   updateMemberStatusMutationOptions,
 } from "@/app/lib/react-query/members/mutations";
@@ -45,7 +40,6 @@ type ClubAdminMembersClientProps = {
   clubId: string;
   clubName: string;
   initialMembers: ClubAdminMember[];
-  initialJoinRequests: ClubAdminJoinRequest[];
 };
 
 function getRoleLabel(roleCode: string) {
@@ -97,17 +91,6 @@ function MemberAvatar({ member }: { member: ClubAdminMember }) {
   return (
     <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[var(--primary)]/10 text-sm font-bold text-[var(--primary)] ring-2 ring-[var(--primary)]/10">
       {member.displayName.slice(0, 2)}
-    </div>
-  );
-}
-
-function JoinRequestAvatar({ request }: { request: ClubAdminJoinRequest }) {
-  return (
-    <div
-      className="flex h-14 w-14 items-center justify-center rounded-full text-sm font-bold text-white shadow-sm"
-      style={{ backgroundColor: request.profileColor ?? "#135bec" }}
-    >
-      {request.displayName.slice(0, 2)}
     </div>
   );
 }
@@ -232,7 +215,6 @@ export function ClubAdminMembersClient({
   clubId,
   clubName,
   initialMembers,
-  initialJoinRequests,
 }: ClubAdminMembersClientProps) {
   const queryClient = useQueryClient();
   const prefersReducedMotion = useReducedMotion();
@@ -240,36 +222,17 @@ export function ClubAdminMembersClient({
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("전체");
   const [members, setMembers] = useState(initialMembers);
-  const [joinRequests, setJoinRequests] = useState(initialJoinRequests);
   const [selectedMember, setSelectedMember] = useState<ClubAdminMember | null>(null);
   const [saving, setSaving] = useState(false);
-  const [reviewingJoinRequestId, setReviewingJoinRequestId] = useState<number | null>(null);
   const deferredQuery = useDeferredValue(query.trim().toLowerCase());
   const { showAlert } = useAppAlert();
   const { showToast } = useAppToast();
-  const reviewJoinRequestMutation = useMutation(reviewJoinRequestMutationOptions(clubId));
   const updateMemberRoleMutation = useMutation(updateMemberRoleMutationOptions(clubId));
   const updateMemberStatusMutation = useMutation(updateMemberStatusMutationOptions(clubId));
 
   useEffect(() => {
     setMembers(initialMembers);
   }, [initialMembers]);
-
-  useEffect(() => {
-    setJoinRequests(initialJoinRequests);
-  }, [initialJoinRequests]);
-
-  const filteredJoinRequests = useMemo(() => {
-    if (deferredQuery.length === 0) {
-      return joinRequests;
-    }
-
-    return joinRequests.filter((request) => {
-      const requestText = `${request.displayName} ${request.tagline ?? ""} ${request.requestMessage ?? ""}`
-        .toLowerCase();
-      return requestText.includes(deferredQuery);
-    });
-  }, [deferredQuery, joinRequests]);
 
   const filteredMembers = useMemo(() => {
     const baseMembers = members.filter((member) => {
@@ -289,18 +252,6 @@ export function ClubAdminMembersClient({
     );
   }, [deferredQuery, members, statusFilter]);
 
-  const reloadAdminData = async () => {
-    const [membersResult, joinRequestsResult] = await Promise.all([
-      getClubAdminMembers(clubId),
-      getClubAdminJoinRequests(clubId),
-    ]);
-    if (!membersResult.ok || !membersResult.data || !joinRequestsResult.ok || !joinRequestsResult.data) {
-      throw new Error("멤버관리 데이터를 새로고침하지 못했습니다.");
-    }
-    setMembers(membersResult.data.members);
-    setJoinRequests(joinRequestsResult.data.requests);
-  };
-
   const replaceMember = (nextMember: ClubAdminMember) => {
     setMembers((current) =>
       current.map((member) =>
@@ -310,44 +261,6 @@ export function ClubAdminMembersClient({
     setSelectedMember((current) =>
       current?.clubMemberId === nextMember.clubMemberId ? nextMember : current,
     );
-  };
-
-  const handleReviewJoinRequest = async (
-    request: ClubAdminJoinRequest,
-    requestStatus: "APPROVED" | "REJECTED",
-  ) => {
-    setReviewingJoinRequestId(request.clubJoinRequestId);
-    const result = await reviewJoinRequestMutation.mutateAsync({
-      clubJoinRequestId: request.clubJoinRequestId,
-      requestStatus,
-    });
-    if (!result.ok || !result.data) {
-      setReviewingJoinRequestId(null);
-      showAlert({
-        title: requestStatus === "APPROVED" ? "가입 승인 실패" : "가입 반려 실패",
-        message: result.message ?? "가입 신청 처리에 실패했습니다.",
-        tone: "danger",
-      });
-      return;
-    }
-
-    try {
-      await reloadAdminData();
-      void invalidateClubQueries(queryClient, clubId);
-      showToast(
-        requestStatus === "APPROVED"
-          ? `${request.displayName} 가입 신청을 승인했습니다.`
-          : `${request.displayName} 가입 신청을 반려했습니다.`,
-      );
-    } catch (error) {
-      showAlert({
-        title: "목록 새로고침 실패",
-        message: error instanceof Error ? error.message : "데이터를 다시 불러오지 못했습니다.",
-        tone: "danger",
-      });
-    } finally {
-      setReviewingJoinRequestId(null);
-    }
   };
 
   const handleManageSave = async (
@@ -433,7 +346,7 @@ export function ClubAdminMembersClient({
                   const nextValue = event.target.value;
                   startTransition(() => setQuery(nextValue));
                 }}
-                placeholder="신청자 이름, 멤버 이름, 메시지 검색"
+                placeholder="멤버 이름, 역할 검색"
                 className="h-11 w-full rounded-xl border-none bg-slate-100 pl-10 pr-4 text-sm placeholder:text-slate-500 focus:ring-2 focus:ring-[var(--primary)]/50"
               />
             </label>
@@ -464,73 +377,35 @@ export function ClubAdminMembersClient({
 
         <main className="semo-nav-bottom-space mx-auto w-full max-w-5xl space-y-6 px-4 py-4">
           <motion.section {...staggeredFadeUpMotion(0, reduceMotion)}>
-            <div className="mb-3 flex items-center justify-between">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-                  가입 신청 {filteredJoinRequests.length}
-                </p>
-                <h2 className="mt-1 text-lg font-bold text-slate-900">대기 중인 가입 신청</h2>
+            <div className="rounded-[28px] border border-[#ec5b13]/10 bg-[linear-gradient(160deg,rgba(255,255,255,0.96)_0%,rgba(255,246,240,0.96)_54%,rgba(255,235,223,0.92)_100%)] p-5 shadow-[0_20px_48px_rgba(15,23,42,0.08)]">
+              <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-[var(--primary)]">
+                Join Request
+              </p>
+              <h2 className="mt-3 text-2xl font-black tracking-[-0.04em] text-slate-900">
+                신규가입 심사는 이제 멤버관리와 분리해서 운영합니다.
+              </h2>
+              <p className="mt-3 text-sm leading-6 text-slate-600">
+                승인과 반려는 더보기의 신규가입 화면에서 처리하고, 이 화면은 가입 완료 이후 멤버의 역할과
+                상태를 관리하는 용도로만 유지합니다.
+              </p>
+              <div className="mt-4 flex flex-wrap gap-2">
+                <RouterLink
+                  href={`/clubs/${clubId}/admin/more/join-requests`}
+                  className="rounded-2xl bg-[var(--secondary)] px-4 py-2.5 text-sm font-bold text-white transition-opacity hover:opacity-90"
+                >
+                  신규가입 운영 열기
+                </RouterLink>
+                <RouterLink
+                  href={`/clubs/${clubId}/admin/more/roles`}
+                  className="rounded-2xl bg-white px-4 py-2.5 text-sm font-bold text-slate-700 transition hover:bg-slate-100"
+                >
+                  직책 관리 열기
+                </RouterLink>
               </div>
             </div>
-
-            {filteredJoinRequests.length === 0 ? (
-              <div className="rounded-2xl border border-dashed border-slate-200 bg-white px-5 py-8 text-center text-sm text-slate-500 shadow-sm">
-                대기 중인 가입 신청이 없습니다.
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {filteredJoinRequests.map((request, index) => (
-                  <motion.article
-                    key={request.clubJoinRequestId}
-                    className="rounded-2xl border border-amber-100 bg-white p-4 shadow-sm"
-                    {...staggeredFadeUpMotion(index + 1, reduceMotion)}
-                  >
-                    <div className="flex items-start gap-4">
-                      <JoinRequestAvatar request={request} />
-                      <div className="min-w-0 flex-1">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <p className="text-base font-bold text-slate-900">{request.displayName}</p>
-                          <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase text-amber-700">
-                            가입 신청
-                          </span>
-                        </div>
-                        <p className="mt-1 text-xs font-medium text-slate-500">
-                          신청일: {request.requestedAtLabel ?? "-"}
-                        </p>
-                        {request.tagline ? (
-                          <p className="mt-2 text-sm text-slate-600">{request.tagline}</p>
-                        ) : null}
-                        <div className="mt-3 rounded-2xl bg-slate-50 px-4 py-3 text-sm leading-6 text-slate-600">
-                          {request.requestMessage?.trim() || "신청 메시지가 없습니다."}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="mt-4 flex flex-wrap gap-2">
-                      <button
-                        type="button"
-                        disabled={reviewingJoinRequestId === request.clubJoinRequestId}
-                        onClick={() => void handleReviewJoinRequest(request, "APPROVED")}
-                        className="rounded-xl bg-[var(--secondary)] px-4 py-2 text-sm font-bold text-white transition-opacity disabled:cursor-not-allowed disabled:opacity-50"
-                      >
-                        {reviewingJoinRequestId === request.clubJoinRequestId ? "처리 중..." : "승인"}
-                      </button>
-                      <button
-                        type="button"
-                        disabled={reviewingJoinRequestId === request.clubJoinRequestId}
-                        onClick={() => void handleReviewJoinRequest(request, "REJECTED")}
-                        className="rounded-xl bg-rose-50 px-4 py-2 text-sm font-bold text-rose-600 transition-colors hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-50"
-                      >
-                        반려
-                      </button>
-                    </div>
-                  </motion.article>
-                ))}
-              </div>
-            )}
           </motion.section>
 
-          <motion.section {...staggeredFadeUpMotion(filteredJoinRequests.length + 2, reduceMotion)}>
+          <motion.section {...staggeredFadeUpMotion(1, reduceMotion)}>
             <div className="mb-3 flex items-center justify-between px-1">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
@@ -540,68 +415,74 @@ export function ClubAdminMembersClient({
               </div>
             </div>
 
-            <div className="space-y-3">
-              {filteredMembers.map((member, index) => (
-                <motion.article
-                  key={member.clubMemberId}
-                  className="rounded-xl border border-slate-100 bg-white p-4 shadow-sm"
-                  {...staggeredFadeUpMotion(filteredJoinRequests.length + index + 3, reduceMotion)}
-                >
-                  <div className="flex items-center gap-4">
-                    <MemberAvatar member={member} />
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
-                        <p className="truncate text-base font-bold">{member.displayName}</p>
-                        <span
-                          className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${getStatusBadgeClassName(member.membershipStatus)}`}
-                        >
-                          {getStatusLabel(member.membershipStatus)}
-                        </span>
-                      </div>
-                      <p className="mt-0.5 text-xs font-medium text-slate-500">
-                        가입일: {member.joinedAtLabel ?? "-"}
-                      </p>
-                      <div className="mt-1 flex items-center gap-2 text-xs font-semibold">
-                        <span className={getRoleAccentClassName(member.roleCode)}>
-                          {getRoleLabel(member.roleCode)}
-                        </span>
-                        {member.lastActivityAtLabel ? (
-                          <>
-                            <span className="text-slate-300">•</span>
-                            <span className="text-slate-500">최근 활동 {member.lastActivityAtLabel}</span>
-                          </>
-                        ) : null}
+            {filteredMembers.length === 0 ? (
+              <div className="rounded-2xl border border-dashed border-slate-200 bg-white px-5 py-8 text-center text-sm text-slate-500 shadow-sm">
+                검색 조건에 맞는 멤버가 없습니다.
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {filteredMembers.map((member, index) => (
+                  <motion.article
+                    key={member.clubMemberId}
+                    className="rounded-xl border border-slate-100 bg-white p-4 shadow-sm"
+                    {...staggeredFadeUpMotion(index + 2, reduceMotion)}
+                  >
+                    <div className="flex items-center gap-4">
+                      <MemberAvatar member={member} />
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <p className="truncate text-base font-bold">{member.displayName}</p>
+                          <span
+                            className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${getStatusBadgeClassName(member.membershipStatus)}`}
+                          >
+                            {getStatusLabel(member.membershipStatus)}
+                          </span>
+                        </div>
+                        <p className="mt-0.5 text-xs font-medium text-slate-500">
+                          가입일: {member.joinedAtLabel ?? "-"}
+                        </p>
+                        <div className="mt-1 flex items-center gap-2 text-xs font-semibold">
+                          <span className={getRoleAccentClassName(member.roleCode)}>
+                            {getRoleLabel(member.roleCode)}
+                          </span>
+                          {member.lastActivityAtLabel ? (
+                            <>
+                              <span className="text-slate-300">•</span>
+                              <span className="text-slate-500">최근 활동 {member.lastActivityAtLabel}</span>
+                            </>
+                          ) : null}
+                        </div>
                       </div>
                     </div>
-                  </div>
 
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        showAlert({
-                          title: "메시지 기능",
-                          message: "메시지 기능은 작업중입니다.",
-                          tone: "warning",
-                        });
-                      }}
-                      className="rounded-lg bg-slate-100 px-3 py-1.5 text-xs font-bold text-slate-600 transition-colors hover:bg-slate-200"
-                    >
-                      메시지
-                    </button>
-                    {member.canManage ? (
+                    <div className="mt-4 flex flex-wrap gap-2">
                       <button
                         type="button"
-                        onClick={() => setSelectedMember(member)}
-                        className="rounded-lg bg-[var(--primary)]/10 px-3 py-1.5 text-xs font-bold text-[var(--primary)] transition-colors hover:bg-[var(--primary)]/20"
+                        onClick={() => {
+                          showAlert({
+                            title: "메시지 기능",
+                            message: "메시지 기능은 작업중입니다.",
+                            tone: "warning",
+                          });
+                        }}
+                        className="rounded-lg bg-slate-100 px-3 py-1.5 text-xs font-bold text-slate-600 transition-colors hover:bg-slate-200"
                       >
-                        관리
+                        메시지
                       </button>
-                    ) : null}
-                  </div>
-                </motion.article>
-              ))}
-            </div>
+                      {member.canManage ? (
+                        <button
+                          type="button"
+                          onClick={() => setSelectedMember(member)}
+                          className="rounded-lg bg-[var(--primary)]/10 px-3 py-1.5 text-xs font-bold text-[var(--primary)] transition-colors hover:bg-[var(--primary)]/20"
+                        >
+                          관리
+                        </button>
+                      ) : null}
+                    </div>
+                  </motion.article>
+                ))}
+              </div>
+            )}
           </motion.section>
         </main>
 

@@ -1,6 +1,6 @@
 import { mutationOptions } from "@tanstack/react-query";
 import {
-  reviewClubAdminJoinRequest,
+  reviewClubAdminJoinRequestInbox,
   updateClubAdminMemberDirectorySettings,
   updateClubAdminMemberRole,
   updateClubAdminMemberStatus,
@@ -13,8 +13,8 @@ export function reviewJoinRequestMutationOptions(clubId: string) {
       requestStatus,
     }: {
       clubJoinRequestId: number;
-      requestStatus: Parameters<typeof reviewClubAdminJoinRequest>[2]["requestStatus"];
-    }) => reviewClubAdminJoinRequest(clubId, clubJoinRequestId, { requestStatus }),
+      requestStatus: Parameters<typeof reviewClubAdminJoinRequestInbox>[2]["requestStatus"];
+    }) => reviewClubAdminJoinRequestInbox(clubId, clubJoinRequestId, { requestStatus }),
   });
 }
 

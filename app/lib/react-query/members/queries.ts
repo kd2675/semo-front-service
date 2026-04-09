@@ -1,6 +1,7 @@
 import { queryOptions } from "@tanstack/react-query";
 import {
-  getClubAdminJoinRequests,
+  getClubJoinRequestInbox,
+  getClubAdminJoinRequestInbox,
   getClubAdminMemberDirectorySettings,
   getClubAdminMembers,
   getClubMemberDirectory,
@@ -9,8 +10,9 @@ import { requireApiData } from "@/app/lib/queryUtils";
 
 export const memberQueryKeys = {
   adminMembers: (clubId: string) => ["semo", "clubs", clubId, "admin-members"] as const,
-  adminJoinRequests: (clubId: string) =>
-    ["semo", "clubs", clubId, "admin-join-requests"] as const,
+  joinRequestInbox: (clubId: string) => ["semo", "clubs", clubId, "join-request-inbox"] as const,
+  adminJoinRequestInbox: (clubId: string) =>
+    ["semo", "clubs", clubId, "admin-join-request-inbox"] as const,
   memberDirectory: (clubId: string) =>
     ["semo", "clubs", clubId, "member-directory"] as const,
   adminMemberDirectorySettings: (clubId: string) =>
@@ -25,12 +27,20 @@ export function adminMembersQueryOptions(clubId: string) {
   });
 }
 
-export function adminJoinRequestsQueryOptions(clubId: string) {
+export function joinRequestInboxQueryOptions(clubId: string) {
   return queryOptions({
-    queryKey: memberQueryKeys.adminJoinRequests(clubId),
+    queryKey: memberQueryKeys.joinRequestInbox(clubId),
+    queryFn: async () =>
+      requireApiData(await getClubJoinRequestInbox(clubId), "가입 신청 정보를 불러오지 못했습니다."),
+  });
+}
+
+export function adminJoinRequestInboxQueryOptions(clubId: string) {
+  return queryOptions({
+    queryKey: memberQueryKeys.adminJoinRequestInbox(clubId),
     queryFn: async () =>
       requireApiData(
-        await getClubAdminJoinRequests(clubId),
+        await getClubAdminJoinRequestInbox(clubId),
         "가입 신청 정보를 불러오지 못했습니다.",
       ),
   });

@@ -938,7 +938,7 @@ export type ClubAdminMembersResponse = {
   members: ClubAdminMember[];
 };
 
-export type ClubAdminJoinRequest = {
+export type ClubJoinRequestInboxItem = {
   clubJoinRequestId: number;
   clubId: number;
   profileId: number;
@@ -951,11 +951,15 @@ export type ClubAdminJoinRequest = {
   requestStatus: "PENDING" | "APPROVED" | "REJECTED" | "CANCELED" | string;
 };
 
-export type ClubAdminJoinRequestsResponse = {
+export type ClubJoinRequestInboxResponse = {
   clubId: number;
   clubName: string;
   admin: boolean;
-  requests: ClubAdminJoinRequest[];
+  pendingRequestCount: number;
+  requestedTodayCount: number;
+  messageAttachedCount: number;
+  latestRequestedAtLabel: string | null;
+  requests: ClubJoinRequestInboxItem[];
 };
 
 export type ClubAdminActivityItem = {
@@ -2247,12 +2251,18 @@ export function getClubAttendance(clubId: string | number) {
   return getJson<ClubAttendanceResponse>(`/api/semo/v1/clubs/${clubId}/more/attendance`);
 }
 
+export function getClubJoinRequestInbox(clubId: string | number) {
+  return getJson<ClubJoinRequestInboxResponse>(`/api/semo/v1/clubs/${clubId}/more/join-requests`);
+}
+
 export function getClubAdminMembers(clubId: string | number) {
   return getJson<ClubAdminMembersResponse>(`/api/semo/v1/clubs/${clubId}/admin/members`);
 }
 
-export function getClubAdminJoinRequests(clubId: string | number) {
-  return getJson<ClubAdminJoinRequestsResponse>(`/api/semo/v1/clubs/${clubId}/admin/join-requests`);
+export function getClubAdminJoinRequestInbox(clubId: string | number) {
+  return getJson<ClubJoinRequestInboxResponse>(
+    `/api/semo/v1/clubs/${clubId}/admin/more/join-requests`,
+  );
 }
 
 export function getClubAdminActivities(
@@ -2333,13 +2343,13 @@ export function cancelClubJoinRequest(clubId: string | number) {
   return deleteJson<ClubJoinActionResponse>(`/api/semo/v1/clubs/${clubId}/join-requests/me`);
 }
 
-export function reviewClubAdminJoinRequest(
+export function reviewClubAdminJoinRequestInbox(
   clubId: string | number,
   clubJoinRequestId: string | number,
   request: ReviewClubJoinRequestRequest,
 ) {
   return putJson<ClubJoinActionResponse>(
-    `/api/semo/v1/clubs/${clubId}/admin/join-requests/${clubJoinRequestId}/review`,
+    `/api/semo/v1/clubs/${clubId}/admin/more/join-requests/${clubJoinRequestId}/review`,
     request,
   );
 }

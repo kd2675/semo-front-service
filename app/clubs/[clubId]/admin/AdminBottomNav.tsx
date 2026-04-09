@@ -52,6 +52,7 @@ const ADMIN_ITEMS: AdminNavItem[] = [
 ];
 
 const FEATURE_ACCENT_CLASS: Record<string, string> = {
+  JOIN_REQUEST: "bg-sky-50 text-sky-700",
   ATTENDANCE: "bg-orange-50 text-orange-500",
   TIMELINE: "bg-orange-50 text-[#ec5b13]",
   NOTICE: "bg-orange-50 text-[#ec5b13]",
