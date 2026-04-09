@@ -33,7 +33,7 @@
 - ESLint `9` + `eslint-config-next 16.1.6`
 - React Compiler 활성화 (`next.config.ts`)
 
-참고로 `axios` 의존성은 `package.json`에 남아 있지만, 현재 공통 API 호출은 `app/lib/api.ts`의 `fetch` 래퍼가 기준입니다.
+공통 API 호출은 `app/lib/api.ts`의 `axios` 래퍼가 기준입니다.
 
 ## Runtime and Environment
 
@@ -63,7 +63,8 @@ NEXT_PUBLIC_IMAGE_BASE_URL=http://localhost:8081
 - `app/lib/api.ts`
   - 공통 JSON 요청 래퍼
   - `401` 발생 시 `/auth/refresh` 재시도
-  - 응답 envelope과 일반 JSON 둘 다 처리
+  - `web-common-core`의 `{ success, code, message }` 래퍼와 일반 JSON 둘 다 처리
+  - 에러 응답도 `data` 없는 공통 envelope으로 파싱합니다.
 - `app/lib/clubs.ts`
   - semo 도메인 API 타입과 함수 집합
 - `app/lib/imageUpload.ts`

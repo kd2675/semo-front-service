@@ -39,9 +39,20 @@ function isEnvelope<T>(value: unknown): value is ResponseEnvelope<T> {
   return (
     typeof record.success === "boolean" &&
     (typeof record.code === "number" || typeof record.code === "string") &&
-    typeof record.message === "string" &&
-    "data" in record
+    typeof record.message === "string"
   );
+}
+
+function parseResponseBody(text: string): unknown {
+  if (!text) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(text);
+  } catch {
+    return text;
+  }
 }
 
 function shouldSendCredentials(credentials?: RequestCredentials): boolean {
@@ -83,7 +94,7 @@ async function requestJson<T>(
     }
 
     const text = response.data;
-    const parsed: unknown = text ? JSON.parse(text) : null;
+    const parsed = parseResponseBody(text);
 
     if (isEnvelope<T>(parsed)) {
       if (response.status >= 200 && response.status < 300 && parsed.success) {
@@ -117,7 +128,10 @@ async function requestJson<T>(
       ok: false,
       status: response.status,
       data: null,
-      message: response.statusText || "요청 처리에 실패했습니다.",
+      message:
+        (typeof parsed === "string" && parsed.trim()) ||
+        response.statusText ||
+        "요청 처리에 실패했습니다.",
     };
   } catch (error) {
     if (error instanceof Error) {
