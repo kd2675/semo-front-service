@@ -219,6 +219,11 @@ npm run build
 npm run start
 ```
 
+## Related Docs
+
+- `AGENTS.md`
+- `AGENTS_SEMO_MORE_FEATURE_CHECKLIST.md`
+
 ## Source Notes
 
 - App Router 페이지는 `params: Promise<...>` 패턴을 사용합니다.
