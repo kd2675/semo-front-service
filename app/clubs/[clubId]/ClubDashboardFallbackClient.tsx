@@ -31,7 +31,6 @@ import {
   getClubFinance,
   getClubBoard,
   getClubBracketHome,
-  getClubMemberDirectory,
   getClubPollHome,
   getClubSchedule,
   getClubTournamentHome,
@@ -39,7 +38,6 @@ import {
   type ClubBoardResponse,
   type ClubBracketHomeResponse,
   type ClubFinanceHomeResponse,
-  type ClubMemberDirectoryResponse,
   type ClubPollHomeResponse,
   type ClubPollSummary,
   type ClubTournamentHomeResponse,
@@ -70,17 +68,75 @@ type ClubDashboardFallbackClientProps = {
   clubId: string;
 };
 
+const ATTENDANCE_WIDGET_KEYS = new Set(["ATTENDANCE_STATUS", "ATTENDANCE_RECENT"]);
+const BOARD_WIDGET_KEYS = new Set(["BOARD_NOTICE", "BOARD_STRIP"]);
+const BRACKET_WIDGET_KEYS = new Set(["BRACKET_LATEST", "BRACKET_WORKBENCH"]);
+const FINANCE_WIDGET_KEYS = new Set(["FINANCE_STATUS", "FINANCE_LEDGER"]);
+const POLL_WIDGET_KEYS = new Set(["POLL_STATUS", "POLL_PULSE"]);
+const SCHEDULE_WIDGET_KEYS = new Set(["SCHEDULE_OVERVIEW", "SCHEDULE_INSIGHT"]);
+const TOURNAMENT_WIDGET_KEYS = new Set([
+  "TOURNAMENT_RECORD_LATEST",
+  "TOURNAMENT_RECORD_MINE",
+]);
+
 const WIDGET_ACCENT_CLASS: Record<string, string> = {
   BOARD_NOTICE: "bg-blue-50 text-blue-600",
+  BOARD_STRIP: "bg-sky-50 text-sky-600",
   SCHEDULE_OVERVIEW: "bg-amber-50 text-amber-600",
+  SCHEDULE_INSIGHT: "bg-orange-50 text-orange-600",
   POLL_STATUS: "bg-amber-50 text-amber-500",
+  POLL_PULSE: "bg-orange-50 text-orange-500",
   PROFILE_SUMMARY: "bg-emerald-50 text-emerald-600",
   ATTENDANCE_STATUS: "bg-indigo-50 text-indigo-600",
+  ATTENDANCE_RECENT: "bg-violet-50 text-violet-600",
   FINANCE_STATUS: "bg-emerald-50 text-emerald-700",
-  MEMBER_DIRECTORY_HIGHLIGHT: "bg-rose-50 text-rose-600",
+  FINANCE_LEDGER: "bg-teal-50 text-teal-700",
   TOURNAMENT_RECORD_LATEST: "bg-emerald-50 text-emerald-700",
+  TOURNAMENT_RECORD_MINE: "bg-lime-50 text-lime-700",
   BRACKET_LATEST: "bg-amber-50 text-amber-700",
+  BRACKET_WORKBENCH: "bg-yellow-50 text-yellow-700",
 };
+
+function isAttendanceWidgetKey(widgetKey: string) {
+  return ATTENDANCE_WIDGET_KEYS.has(widgetKey);
+}
+
+function isBoardWidgetKey(widgetKey: string) {
+  return BOARD_WIDGET_KEYS.has(widgetKey);
+}
+
+function isBracketWidgetKey(widgetKey: string) {
+  return BRACKET_WIDGET_KEYS.has(widgetKey);
+}
+
+function isFinanceWidgetKey(widgetKey: string) {
+  return FINANCE_WIDGET_KEYS.has(widgetKey);
+}
+
+function isPollWidgetKey(widgetKey: string) {
+  return POLL_WIDGET_KEYS.has(widgetKey);
+}
+
+function isScheduleWidgetKey(widgetKey: string) {
+  return SCHEDULE_WIDGET_KEYS.has(widgetKey);
+}
+
+function isTournamentWidgetKey(widgetKey: string) {
+  return TOURNAMENT_WIDGET_KEYS.has(widgetKey);
+}
+
+function getScheduleItemDate(item: ClubScheduleResponse["items"][number]) {
+  if (item.contentType === "SCHEDULE_EVENT" && item.event) {
+    return item.event.startDate;
+  }
+  if (item.contentType === "SCHEDULE_VOTE" && item.vote) {
+    return item.vote.voteStartDate;
+  }
+  if (item.contentType === "NOTICE" && item.notice?.scheduleAt) {
+    return item.notice.scheduleAt.slice(0, 10);
+  }
+  return null;
+}
 
 function getFinanceStatusClassName(paymentStatusCode: string) {
   if (paymentStatusCode === "PAID") {
@@ -269,9 +325,6 @@ function DashboardWidgetCard({
   attendanceData,
   attendanceLoading,
   attendanceError,
-  memberDirectoryData,
-  memberDirectoryLoading,
-  memberDirectoryError,
   financeData,
   financeLoading,
   financeError,
@@ -311,9 +364,6 @@ function DashboardWidgetCard({
   attendanceData: ClubAttendanceResponse | null;
   attendanceLoading: boolean;
   attendanceError: string | null;
-  memberDirectoryData: ClubMemberDirectoryResponse | null;
-  memberDirectoryLoading: boolean;
-  memberDirectoryError: string | null;
   financeData: ClubFinanceHomeResponse | null;
   financeLoading: boolean;
   financeError: string | null;
@@ -342,22 +392,39 @@ function DashboardWidgetCard({
   onDragEnd: () => void;
   onTouchDragStart: (widgetKey: string) => void;
 }) {
-  const spanClass = widget.columnSpan >= 2 ? "md:col-span-2" : "";
+  const spanClass = [
+    widget.columnSpan >= 2 ? "md:col-span-2" : "",
+    widget.rowSpan >= 3 ? "md:row-span-3" : widget.rowSpan === 2 ? "md:row-span-2" : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
   const accentClass = WIDGET_ACCENT_CLASS[widget.widgetKey] ?? "bg-slate-100 text-slate-600";
   const isEditMode = isAdmin && editMode;
-  const isAttendanceWidget = widget.widgetKey === "ATTENDANCE_STATUS";
-  const isMemberDirectoryWidget = widget.widgetKey === "MEMBER_DIRECTORY_HIGHLIGHT";
-  const isFinanceWidget = widget.widgetKey === "FINANCE_STATUS";
+  const isAttendanceStatusWidget = widget.widgetKey === "ATTENDANCE_STATUS";
+  const isAttendanceRecentWidget = widget.widgetKey === "ATTENDANCE_RECENT";
+  const isAttendanceWidget = isAttendanceWidgetKey(widget.widgetKey);
+  const isFinanceStatusWidget = widget.widgetKey === "FINANCE_STATUS";
+  const isFinanceLedgerWidget = widget.widgetKey === "FINANCE_LEDGER";
   const isBoardNoticeWidget = widget.widgetKey === "BOARD_NOTICE";
-  const isScheduleWidget = widget.widgetKey === "SCHEDULE_OVERVIEW";
-  const isPollWidget = widget.widgetKey === "POLL_STATUS";
-  const isTournamentWidget = widget.widgetKey === "TOURNAMENT_RECORD_LATEST";
-  const isBracketWidget = widget.widgetKey === "BRACKET_LATEST";
+  const isBoardStripWidget = widget.widgetKey === "BOARD_STRIP";
+  const isScheduleOverviewWidget = widget.widgetKey === "SCHEDULE_OVERVIEW";
+  const isScheduleInsightWidget = widget.widgetKey === "SCHEDULE_INSIGHT";
+  const isPollStatusWidget = widget.widgetKey === "POLL_STATUS";
+  const isPollPulseWidget = widget.widgetKey === "POLL_PULSE";
+  const isTournamentLatestWidget = widget.widgetKey === "TOURNAMENT_RECORD_LATEST";
+  const isTournamentMineWidget = widget.widgetKey === "TOURNAMENT_RECORD_MINE";
+  const isBracketLatestWidget = widget.widgetKey === "BRACKET_LATEST";
+  const isBracketWorkbenchWidget = widget.widgetKey === "BRACKET_WORKBENCH";
   const todayAttendance = attendanceData?.todayAttendance;
   const recentLog = attendanceData?.recentLogs?.[0] ?? null;
-  const featuredMembers = memberDirectoryData?.members.slice(0, 3) ?? [];
+  const recentAttendanceLogs = useMemo(
+    () => attendanceData?.recentLogs.slice(0, 3) ?? [],
+    [attendanceData],
+  );
   const nextFinanceObligation = financeData?.nextPayableObligation ?? null;
+  const recentFinancePayments = financeData?.recentPayments.slice(0, 2) ?? [];
   const latestNotice = boardData?.notices?.[0] ?? null;
+  const boardStripNotices = boardData?.notices?.slice(0, 3) ?? [];
   const latestOngoingPoll = useMemo<ClubPollSummary | null>(() => {
     if (!pollData) {
       return null;
@@ -394,8 +461,47 @@ function DashboardWidgetCard({
       })
       .slice(0, 3);
   }, [scheduleData]);
+  const upcomingScheduleItems = useMemo(() => {
+    if (!scheduleData) {
+      return [];
+    }
+
+    const today = new Date();
+    const todayLabel = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+
+    return [...scheduleData.items]
+      .filter((item) => {
+        const itemDate = getScheduleItemDate(item);
+        return itemDate ? itemDate >= todayLabel : false;
+      })
+      .sort((left, right) => {
+        const leftDate = getScheduleItemDate(left) ?? "";
+        const rightDate = getScheduleItemDate(right) ?? "";
+        return leftDate.localeCompare(rightDate);
+      });
+  }, [scheduleData]);
+  const nextUpcomingScheduleItem = upcomingScheduleItems[0] ?? null;
+  const pendingVoteCount = useMemo(() => {
+    if (!scheduleData) {
+      return 0;
+    }
+
+    return scheduleData.items.filter(
+      (item) =>
+        item.contentType === "SCHEDULE_VOTE" &&
+        item.vote &&
+        item.vote.voteStatus !== "CLOSED",
+    ).length;
+  }, [scheduleData]);
+  const upcomingEventCount = upcomingScheduleItems.filter(
+    (item) => item.contentType === "SCHEDULE_EVENT",
+  ).length;
+  const upcomingNoticeCount = upcomingScheduleItems.filter(
+    (item) => item.contentType === "NOTICE",
+  ).length;
   const featuredTournament = tournamentData?.featuredTournament ?? null;
   const closestMyTournament = tournamentData?.myTournaments?.[0] ?? null;
+  const myTournamentCount = tournamentData?.myTournaments.length ?? 0;
   const tournamentHero =
     closestMyTournament ?? featuredTournament ?? tournamentData?.tournaments?.[0] ?? null;
   const latestMyBracket = bracketData?.myBrackets?.[0] ?? null;
@@ -412,6 +518,19 @@ function DashboardWidgetCard({
       ? "bg-emerald-100 text-emerald-600"
       : "bg-blue-100 text-blue-600"
     : "bg-slate-200 text-slate-500";
+  const recentAttendanceRate = useMemo(() => {
+    if (recentAttendanceLogs.length === 0) {
+      return null;
+    }
+
+    const totalRate = recentAttendanceLogs.reduce((sum, log) => {
+      if (log.memberCount <= 0) {
+        return sum;
+      }
+      return sum + log.checkedInCount / log.memberCount;
+    }, 0);
+    return Math.round((totalRate / recentAttendanceLogs.length) * 100);
+  }, [recentAttendanceLogs]);
   const shouldPulseAttendance = isAttendanceWidget && attendancePulseToken > 0 && !reduceMotion;
   const baseBoxShadow = "0 1px 2px rgba(15, 23, 42, 0.06)";
 
@@ -510,7 +629,7 @@ function DashboardWidgetCard({
           ) : null}
         </div>
       </div>
-      {isAttendanceWidget ? (
+      {isAttendanceStatusWidget ? (
         <div className="space-y-2">
           {attendanceLoading ? (
             <>
@@ -570,82 +689,59 @@ function DashboardWidgetCard({
             </>
           )}
         </div>
-      ) : isMemberDirectoryWidget ? (
+      ) : isAttendanceRecentWidget ? (
         <div className="space-y-3">
-          {memberDirectoryLoading ? (
+          {attendanceLoading ? (
             <>
               <div className="h-4 w-28 rounded-full bg-slate-100" />
               <div className="h-20 w-full rounded-xl bg-slate-50" />
             </>
-          ) : memberDirectoryError ? (
-            <p className="text-sm text-slate-500">회원 디렉터리 정보를 가져오지 못했습니다.</p>
-          ) : memberDirectoryData ? (
-            <RouterLink
-              href={`/clubs/${clubId}/more/members`}
-              className="block rounded-xl border border-rose-100 bg-white p-4 shadow-sm transition-all hover:border-rose-300"
-            >
+          ) : attendanceError ? (
+            <p className="text-sm text-slate-500">출석 기록을 가져오지 못했습니다.</p>
+          ) : recentAttendanceLogs.length > 0 ? (
+            <>
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-rose-600">
-                    Member Directory
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-violet-600">
+                    Recent Attendance
                   </p>
                   <p className="mt-2 text-base font-bold text-slate-900">
-                    활동 멤버 {memberDirectoryData.totalMemberCount}명
+                    평균 출석률 {recentAttendanceRate ?? 0}%
                   </p>
                 </div>
-                <span className="rounded-full bg-rose-50 px-2 py-0.5 text-[11px] font-bold text-rose-700">
-                  More
+                <span className="rounded-full bg-violet-50 px-2 py-0.5 text-[11px] font-bold text-violet-700">
+                  최근 {recentAttendanceLogs.length}회
                 </span>
               </div>
-              <div className="mt-4 space-y-2">
-                {featuredMembers.length > 0 ? (
-                  featuredMembers.map((member) => (
+              <div className="space-y-2">
+                {recentAttendanceLogs.map((log) => {
+                  const completionRate =
+                    log.memberCount > 0
+                      ? Math.round((log.checkedInCount / log.memberCount) * 100)
+                      : 0;
+                  return (
                     <div
-                      key={member.clubProfileId}
-                      className="flex items-center justify-between gap-3 rounded-2xl bg-slate-50 px-3 py-2"
+                      key={`${widget.widgetKey}-${log.attendanceDateLabel}`}
+                      className="rounded-xl border border-violet-100 bg-violet-50/40 px-3 py-2"
                     >
-                      <div className="min-w-0">
-                        <p className="truncate text-sm font-semibold text-slate-900">{member.displayName}</p>
-                          <p className="truncate text-xs text-slate-500">
-                          {memberDirectoryData.settings.showRecentActivity
-                            ? member.recentActivity?.createdAtLabel
-                            : memberDirectoryData.settings.showTagline
-                              ? member.tagline
-                              : null}
-                          {!(memberDirectoryData.settings.showRecentActivity
-                            ? member.recentActivity?.createdAtLabel
-                            : memberDirectoryData.settings.showTagline
-                              ? member.tagline
-                              : null)
-                            ? "회원 디렉터리 바로가기"
-                            : ""}
-                        </p>
+                      <div className="flex items-center justify-between gap-3">
+                        <p className="text-sm font-semibold text-slate-900">{log.attendanceDateLabel}</p>
+                        <span className="text-[11px] font-bold text-violet-700">{completionRate}%</span>
                       </div>
-                      {memberDirectoryData.settings.showPositions && member.positions[0] ? (
-                        <span
-                          className="shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold"
-                          style={{
-                            backgroundColor: member.positions[0].colorHex
-                              ? `${member.positions[0].colorHex}1A`
-                              : "#ffe4e6",
-                            color: member.positions[0].colorHex ?? "#be123c",
-                          }}
-                        >
-                          {member.positions[0].displayName}
-                        </span>
-                      ) : null}
+                      <p className="mt-1 text-xs text-slate-500">
+                        {log.checkedInCount}/{log.memberCount}명 출석
+                        {log.checkedIn ? ` · ${log.checkedInAtLabel ?? "내 출석 완료"}` : ""}
+                      </p>
                     </div>
-                  ))
-                ) : (
-                  <p className="text-sm text-slate-500">표시할 회원이 없습니다.</p>
-                )}
+                  );
+                })}
               </div>
-            </RouterLink>
+            </>
           ) : (
-            <p className="text-sm text-slate-500">회원 디렉터리 위젯 데이터를 준비 중입니다.</p>
+            <p className="text-sm text-slate-500">최근 출석 기록이 아직 없습니다.</p>
           )}
         </div>
-      ) : isFinanceWidget ? (
+      ) : isFinanceStatusWidget ? (
         <div className="space-y-3">
           {financeLoading ? (
             <>
@@ -694,6 +790,49 @@ function DashboardWidgetCard({
             </>
           )}
         </div>
+      ) : isFinanceLedgerWidget ? (
+        <div className="space-y-3">
+          {financeLoading ? (
+            <>
+              <div className="h-4 w-24 rounded-full bg-slate-100" />
+              <div className="h-24 w-full rounded-xl bg-slate-50" />
+            </>
+          ) : financeError ? (
+            <p className="text-sm text-slate-500">재정 요약을 가져오지 못했습니다.</p>
+          ) : financeData ? (
+            <>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="rounded-xl bg-teal-50 px-3 py-3">
+                  <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-teal-700">
+                    Pending
+                  </p>
+                  <p className="mt-2 text-sm font-bold text-slate-900">{financeData.totalPendingAmountLabel}</p>
+                  <p className="mt-1 text-xs text-slate-500">{financeData.pendingPaymentCount}건 미납</p>
+                </div>
+                <div className="rounded-xl bg-emerald-50 px-3 py-3">
+                  <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-emerald-700">
+                    Paid
+                  </p>
+                  <p className="mt-2 text-sm font-bold text-slate-900">{financeData.totalPaidAmountLabel}</p>
+                  <p className="mt-1 text-xs text-slate-500">{financeData.paidPaymentCount}건 완료</p>
+                </div>
+              </div>
+              {recentFinancePayments[0] ? (
+                <div className="rounded-xl border border-teal-100 bg-white px-3 py-3">
+                  <p className="text-xs font-semibold text-slate-500">최근 처리</p>
+                  <p className="mt-1 text-sm font-bold text-slate-900">
+                    {recentFinancePayments[0].title}
+                  </p>
+                  <p className="mt-1 text-xs text-slate-500">
+                    {recentFinancePayments[0].payment.paymentStatusLabel} · {recentFinancePayments[0].amountLabel}
+                  </p>
+                </div>
+              ) : null}
+            </>
+          ) : (
+            <p className="text-sm text-slate-500">재정 요약 데이터가 아직 없습니다.</p>
+          )}
+        </div>
       ) : isBoardNoticeWidget ? (
         <div className="space-y-2">
           {boardLoading ? (
@@ -736,7 +875,36 @@ function DashboardWidgetCard({
             </>
           )}
         </div>
-      ) : isScheduleWidget ? (
+      ) : isBoardStripWidget ? (
+        <div className="space-y-3">
+          {boardLoading ? (
+            <>
+              <div className="h-4 w-24 rounded-full bg-slate-100" />
+              <div className="h-16 w-full rounded-xl bg-slate-50" />
+            </>
+          ) : boardError ? (
+            <p className="text-sm text-slate-500">공지 목록을 가져오지 못했습니다.</p>
+          ) : boardStripNotices.length > 0 ? (
+            <>
+              {boardStripNotices.map((notice) => (
+                <RouterLink
+                  key={`board-strip-${notice.id}`}
+                  href={`/clubs/${clubId}/board`}
+                  className="flex items-center justify-between gap-3 rounded-xl border border-sky-100 bg-white px-3 py-3 shadow-sm transition-all hover:border-sky-300"
+                >
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-bold text-slate-900">{notice.title}</p>
+                    <p className="truncate text-xs text-slate-500">{notice.summary}</p>
+                  </div>
+                  <span className="shrink-0 text-[11px] font-bold text-sky-600">{notice.timeAgo}</span>
+                </RouterLink>
+              ))}
+            </>
+          ) : (
+            <p className="text-sm text-slate-500">최근 공지가 아직 없습니다.</p>
+          )}
+        </div>
+      ) : isScheduleOverviewWidget ? (
         <div className="space-y-3">
           {scheduleLoading ? (
             <>
@@ -839,7 +1007,55 @@ function DashboardWidgetCard({
             </>
           )}
         </div>
-      ) : isPollWidget ? (
+      ) : isScheduleInsightWidget ? (
+        <div className="space-y-3">
+          {scheduleLoading ? (
+            <>
+              <div className="h-4 w-24 rounded-full bg-slate-100" />
+              <div className="h-20 w-full rounded-xl bg-slate-50" />
+            </>
+          ) : scheduleError ? (
+            <p className="text-sm text-slate-500">일정 지표를 가져오지 못했습니다.</p>
+          ) : scheduleData ? (
+            <>
+              <div className="grid grid-cols-3 gap-2">
+                <div className="rounded-xl bg-orange-50 px-3 py-3">
+                  <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-orange-700">Upcoming</p>
+                  <p className="mt-2 text-base font-bold text-slate-900">{upcomingScheduleItems.length}</p>
+                </div>
+                <div className="rounded-xl bg-amber-50 px-3 py-3">
+                  <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-amber-700">Votes</p>
+                  <p className="mt-2 text-base font-bold text-slate-900">{pendingVoteCount}</p>
+                </div>
+                <div className="rounded-xl bg-sky-50 px-3 py-3">
+                  <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-sky-700">Notices</p>
+                  <p className="mt-2 text-base font-bold text-slate-900">{upcomingNoticeCount}</p>
+                </div>
+              </div>
+              {nextUpcomingScheduleItem ? (
+                <div className="rounded-xl border border-orange-100 bg-white px-3 py-3">
+                  <p className="text-xs font-semibold text-slate-500">다음 일정</p>
+                  <p className="mt-1 text-sm font-bold text-slate-900">
+                    {nextUpcomingScheduleItem.contentType === "SCHEDULE_EVENT" && nextUpcomingScheduleItem.event
+                      ? nextUpcomingScheduleItem.event.title
+                      : nextUpcomingScheduleItem.contentType === "SCHEDULE_VOTE" && nextUpcomingScheduleItem.vote
+                        ? nextUpcomingScheduleItem.vote.title
+                        : nextUpcomingScheduleItem.contentType === "NOTICE" && nextUpcomingScheduleItem.notice
+                          ? nextUpcomingScheduleItem.notice.title
+                          : "예정된 항목"}
+                  </p>
+                  <p className="mt-1 text-xs text-slate-500">
+                    {getScheduleItemDate(nextUpcomingScheduleItem)}
+                    {upcomingEventCount > 0 ? ` · 이벤트 ${upcomingEventCount}건` : ""}
+                  </p>
+                </div>
+              ) : null}
+            </>
+          ) : (
+            <p className="text-sm text-slate-500">일정 데이터가 아직 없습니다.</p>
+          )}
+        </div>
+      ) : isPollStatusWidget ? (
         <div className="space-y-3">
           {pollLoading ? (
             <>
@@ -879,7 +1095,42 @@ function DashboardWidgetCard({
             </>
           )}
         </div>
-      ) : isTournamentWidget ? (
+      ) : isPollPulseWidget ? (
+        <div className="space-y-3">
+          {pollLoading ? (
+            <>
+              <div className="h-4 w-24 rounded-full bg-slate-100" />
+              <div className="h-20 w-full rounded-xl bg-slate-50" />
+            </>
+          ) : pollError ? (
+            <p className="text-sm text-slate-500">투표 지표를 가져오지 못했습니다.</p>
+          ) : pollData ? (
+            <>
+              <div className="grid grid-cols-3 gap-2">
+                <div className="rounded-xl bg-slate-100 px-3 py-3">
+                  <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-600">Waiting</p>
+                  <p className="mt-2 text-base font-bold text-slate-900">{pollData.waitingCount}</p>
+                </div>
+                <div className="rounded-xl bg-orange-50 px-3 py-3">
+                  <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-orange-700">Ongoing</p>
+                  <p className="mt-2 text-base font-bold text-slate-900">{pollData.ongoingCount}</p>
+                </div>
+                <div className="rounded-xl bg-emerald-50 px-3 py-3">
+                  <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-emerald-700">Closed</p>
+                  <p className="mt-2 text-base font-bold text-slate-900">{pollData.closedCount}</p>
+                </div>
+              </div>
+              {latestOngoingPoll ? (
+                <p className="text-xs text-slate-500">
+                  현재 진행 중: {latestOngoingPoll.title}
+                </p>
+              ) : null}
+            </>
+          ) : (
+            <p className="text-sm text-slate-500">투표 데이터가 아직 없습니다.</p>
+          )}
+        </div>
+      ) : isTournamentLatestWidget ? (
         <div className="space-y-3">
           {tournamentLoading ? (
             <>
@@ -928,7 +1179,44 @@ function DashboardWidgetCard({
             </>
           )}
         </div>
-      ) : isBracketWidget ? (
+      ) : isTournamentMineWidget ? (
+        <div className="space-y-3">
+          {tournamentLoading ? (
+            <>
+              <div className="h-4 w-28 rounded-full bg-slate-100" />
+              <div className="h-24 w-full rounded-xl bg-slate-50" />
+            </>
+          ) : tournamentError ? (
+            <p className="text-sm text-slate-500">내 대회 현황을 가져오지 못했습니다.</p>
+          ) : tournamentData ? (
+            <>
+              <div className="grid grid-cols-3 gap-2">
+                <div className="rounded-xl bg-lime-50 px-3 py-3">
+                  <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-lime-700">My</p>
+                  <p className="mt-2 text-base font-bold text-slate-900">{myTournamentCount}</p>
+                </div>
+                <div className="rounded-xl bg-emerald-50 px-3 py-3">
+                  <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-emerald-700">Active</p>
+                  <p className="mt-2 text-base font-bold text-slate-900">{tournamentData.participatingCount}</p>
+                </div>
+                <div className="rounded-xl bg-amber-50 px-3 py-3">
+                  <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-amber-700">Recruiting</p>
+                  <p className="mt-2 text-base font-bold text-slate-900">{tournamentData.recruitingCount}</p>
+                </div>
+              </div>
+              {closestMyTournament ? (
+                <div className="rounded-xl border border-lime-100 bg-white px-3 py-3">
+                  <p className="text-xs font-semibold text-slate-500">가장 가까운 내 대회</p>
+                  <p className="mt-1 text-sm font-bold text-slate-900">{closestMyTournament.title}</p>
+                  <p className="mt-1 text-xs text-slate-500">{closestMyTournament.tournamentPeriodLabel}</p>
+                </div>
+              ) : null}
+            </>
+          ) : (
+            <p className="text-sm text-slate-500">참여 중인 대회가 아직 없습니다.</p>
+          )}
+        </div>
+      ) : isBracketLatestWidget ? (
         <div className="space-y-3">
           {bracketLoading ? (
             <>
@@ -998,6 +1286,45 @@ function DashboardWidgetCard({
             </>
           )}
         </div>
+      ) : isBracketWorkbenchWidget ? (
+        <div className="space-y-3">
+          {bracketLoading ? (
+            <>
+              <div className="h-4 w-28 rounded-full bg-slate-100" />
+              <div className="h-20 w-full rounded-xl bg-slate-50" />
+            </>
+          ) : bracketError ? (
+            <p className="text-sm text-slate-500">대진표 지표를 가져오지 못했습니다.</p>
+          ) : bracketData ? (
+            <>
+              <div className="grid grid-cols-3 gap-2">
+                <div className="rounded-xl bg-emerald-50 px-3 py-3">
+                  <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-emerald-700">Approved</p>
+                  <p className="mt-2 text-base font-bold text-slate-900">{bracketData.approvedBracketCount}</p>
+                </div>
+                <div className="rounded-xl bg-amber-50 px-3 py-3">
+                  <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-amber-700">Pending</p>
+                  <p className="mt-2 text-base font-bold text-slate-900">{bracketData.pendingBracketCount}</p>
+                </div>
+                <div className="rounded-xl bg-yellow-50 px-3 py-3">
+                  <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-yellow-700">Mine</p>
+                  <p className="mt-2 text-base font-bold text-slate-900">{bracketData.myBrackets.length}</p>
+                </div>
+              </div>
+              {latestMyBracket ? (
+                <div className="rounded-xl border border-yellow-100 bg-white px-3 py-3">
+                  <p className="text-xs font-semibold text-slate-500">최근 작업</p>
+                  <p className="mt-1 text-sm font-bold text-slate-900">{latestMyBracket.title}</p>
+                  <p className="mt-1 text-xs text-slate-500">
+                    {latestMyBracket.participantCount}명 참가
+                  </p>
+                </div>
+              ) : null}
+            </>
+          ) : (
+            <p className="text-sm text-slate-500">대진표 데이터가 아직 없습니다.</p>
+          )}
+        </div>
       ) : (
         <p className="text-sm text-slate-500">{widget.description ?? "No widget description yet."}</p>
       )}
@@ -1008,7 +1335,7 @@ function DashboardWidgetCard({
           </span>
         ) : (
           <>
-            {isAttendanceWidget && todayAttendance?.canCheckIn && !todayAttendance.checkedIn ? (
+            {isAttendanceStatusWidget && todayAttendance?.canCheckIn && !todayAttendance.checkedIn ? (
               <motion.button
                 type="button"
                 onClick={onAttendanceCheckIn}
@@ -1066,9 +1393,6 @@ export function ClubDashboardFallbackClient({
   const [attendanceData, setAttendanceData] = useState<ClubAttendanceResponse | null>(null);
   const [attendanceLoading, setAttendanceLoading] = useState(false);
   const [attendanceError, setAttendanceError] = useState<string | null>(null);
-  const [memberDirectoryData, setMemberDirectoryData] = useState<ClubMemberDirectoryResponse | null>(null);
-  const [memberDirectoryLoading, setMemberDirectoryLoading] = useState(false);
-  const [memberDirectoryError, setMemberDirectoryError] = useState<string | null>(null);
   const [financeData, setFinanceData] = useState<ClubFinanceHomeResponse | null>(null);
   const [financeLoading, setFinanceLoading] = useState(false);
   const [financeError, setFinanceError] = useState<string | null>(null);
@@ -1211,51 +1535,43 @@ export function ClubDashboardFallbackClient({
 
   const hasAttendanceWidget = useMemo(() => {
     return dashboardWidgetSource.some(
-      (widget) =>
-        widget.widgetKey === "ATTENDANCE_STATUS" && widget.enabled && widget.available,
-    );
-  }, [dashboardWidgetSource]);
-
-  const hasMemberDirectoryWidget = useMemo(() => {
-    return dashboardWidgetSource.some(
-      (widget) =>
-        widget.widgetKey === "MEMBER_DIRECTORY_HIGHLIGHT" && widget.enabled && widget.available,
+      (widget) => isAttendanceWidgetKey(widget.widgetKey) && widget.enabled && widget.available,
     );
   }, [dashboardWidgetSource]);
 
   const hasBoardNoticeWidget = useMemo(() => {
     return dashboardWidgetSource.some(
-      (widget) => widget.widgetKey === "BOARD_NOTICE" && widget.enabled && widget.available,
+      (widget) => isBoardWidgetKey(widget.widgetKey) && widget.enabled && widget.available,
     );
   }, [dashboardWidgetSource]);
 
   const hasScheduleWidget = useMemo(() => {
     return dashboardWidgetSource.some(
-      (widget) => widget.widgetKey === "SCHEDULE_OVERVIEW" && widget.enabled && widget.available,
+      (widget) => isScheduleWidgetKey(widget.widgetKey) && widget.enabled && widget.available,
     );
   }, [dashboardWidgetSource]);
 
   const hasPollWidget = useMemo(() => {
     return dashboardWidgetSource.some(
-      (widget) => widget.widgetKey === "POLL_STATUS" && widget.enabled && widget.available,
+      (widget) => isPollWidgetKey(widget.widgetKey) && widget.enabled && widget.available,
     );
   }, [dashboardWidgetSource]);
 
   const hasTournamentWidget = useMemo(() => {
     return dashboardWidgetSource.some(
-      (widget) => widget.widgetKey === "TOURNAMENT_RECORD_LATEST" && widget.enabled && widget.available,
+      (widget) => isTournamentWidgetKey(widget.widgetKey) && widget.enabled && widget.available,
     );
   }, [dashboardWidgetSource]);
 
   const hasBracketWidget = useMemo(() => {
     return dashboardWidgetSource.some(
-      (widget) => widget.widgetKey === "BRACKET_LATEST" && widget.enabled && widget.available,
+      (widget) => isBracketWidgetKey(widget.widgetKey) && widget.enabled && widget.available,
     );
   }, [dashboardWidgetSource]);
 
   const hasFinanceWidget = useMemo(() => {
     return dashboardWidgetSource.some(
-      (widget) => widget.widgetKey === "FINANCE_STATUS" && widget.enabled && widget.available,
+      (widget) => isFinanceWidgetKey(widget.widgetKey) && widget.enabled && widget.available,
     );
   }, [dashboardWidgetSource]);
 
@@ -1296,25 +1612,6 @@ export function ClubDashboardFallbackClient({
     setBoardData(result.data);
     setBoardLoading(false);
   }, [clubId, hasBoardNoticeWidget]);
-
-  const loadMemberDirectoryData = useCallback(async () => {
-    if (!hasMemberDirectoryWidget) {
-      return;
-    }
-
-    setMemberDirectoryLoading(true);
-    setMemberDirectoryError(null);
-    const result = await getClubMemberDirectory(clubId);
-    if (!result.ok || !result.data) {
-      setMemberDirectoryData(null);
-      setMemberDirectoryError(result.message ?? "회원 디렉터리 정보를 불러오지 못했습니다.");
-      setMemberDirectoryLoading(false);
-      return;
-    }
-
-    setMemberDirectoryData(result.data);
-    setMemberDirectoryLoading(false);
-  }, [clubId, hasMemberDirectoryWidget]);
 
   const loadFinanceData = useCallback(async () => {
     if (!hasFinanceWidget) {
@@ -1535,18 +1832,6 @@ export function ClubDashboardFallbackClient({
       window.clearTimeout(timerId);
     };
   }, [hasBoardNoticeWidget, loadBoardData]);
-
-  useEffect(() => {
-    if (!hasMemberDirectoryWidget) {
-      return;
-    }
-    const timerId = window.setTimeout(() => {
-      void loadMemberDirectoryData();
-    }, 0);
-    return () => {
-      window.clearTimeout(timerId);
-    };
-  }, [hasMemberDirectoryWidget, loadMemberDirectoryData]);
 
   useEffect(() => {
     if (!hasFinanceWidget) {
@@ -1862,7 +2147,7 @@ export function ClubDashboardFallbackClient({
                 </section>
               </div>
             ) : (
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:grid-flow-dense md:auto-rows-[minmax(180px,auto)]">
                 {visibleWidgets.map((widget) => (
                   <DashboardWidgetCard
                     key={widget.widgetKey}
@@ -1874,30 +2159,27 @@ export function ClubDashboardFallbackClient({
                     isDropTarget={false}
                     isDisabled={isSaving}
                     reduceMotion={reduceMotion}
-                    attendanceData={widget.widgetKey === "ATTENDANCE_STATUS" ? attendanceData : null}
-                    attendanceLoading={widget.widgetKey === "ATTENDANCE_STATUS" && attendanceLoading}
-                    attendanceError={widget.widgetKey === "ATTENDANCE_STATUS" ? attendanceError : null}
-                    memberDirectoryData={widget.widgetKey === "MEMBER_DIRECTORY_HIGHLIGHT" ? memberDirectoryData : null}
-                    memberDirectoryLoading={widget.widgetKey === "MEMBER_DIRECTORY_HIGHLIGHT" && memberDirectoryLoading}
-                    memberDirectoryError={widget.widgetKey === "MEMBER_DIRECTORY_HIGHLIGHT" ? memberDirectoryError : null}
-                    financeData={widget.widgetKey === "FINANCE_STATUS" ? financeData : null}
-                    financeLoading={widget.widgetKey === "FINANCE_STATUS" && financeLoading}
-                    financeError={widget.widgetKey === "FINANCE_STATUS" ? financeError : null}
-                    boardData={widget.widgetKey === "BOARD_NOTICE" ? boardData : null}
-                    boardLoading={widget.widgetKey === "BOARD_NOTICE" && boardLoading}
-                    boardError={widget.widgetKey === "BOARD_NOTICE" ? boardError : null}
-                    scheduleData={widget.widgetKey === "SCHEDULE_OVERVIEW" ? scheduleData : null}
-                    scheduleLoading={widget.widgetKey === "SCHEDULE_OVERVIEW" && scheduleLoading}
-                    scheduleError={widget.widgetKey === "SCHEDULE_OVERVIEW" ? scheduleError : null}
-                    pollData={widget.widgetKey === "POLL_STATUS" ? pollData : null}
-                    pollLoading={widget.widgetKey === "POLL_STATUS" && pollLoading}
-                    pollError={widget.widgetKey === "POLL_STATUS" ? pollError : null}
-                    tournamentData={widget.widgetKey === "TOURNAMENT_RECORD_LATEST" ? tournamentData : null}
-                    tournamentLoading={widget.widgetKey === "TOURNAMENT_RECORD_LATEST" && tournamentLoading}
-                    tournamentError={widget.widgetKey === "TOURNAMENT_RECORD_LATEST" ? tournamentError : null}
-                    bracketData={widget.widgetKey === "BRACKET_LATEST" ? bracketData : null}
-                    bracketLoading={widget.widgetKey === "BRACKET_LATEST" && bracketLoading}
-                    bracketError={widget.widgetKey === "BRACKET_LATEST" ? bracketError : null}
+                    attendanceData={isAttendanceWidgetKey(widget.widgetKey) ? attendanceData : null}
+                    attendanceLoading={isAttendanceWidgetKey(widget.widgetKey) && attendanceLoading}
+                    attendanceError={isAttendanceWidgetKey(widget.widgetKey) ? attendanceError : null}
+                    financeData={isFinanceWidgetKey(widget.widgetKey) ? financeData : null}
+                    financeLoading={isFinanceWidgetKey(widget.widgetKey) && financeLoading}
+                    financeError={isFinanceWidgetKey(widget.widgetKey) ? financeError : null}
+                    boardData={isBoardWidgetKey(widget.widgetKey) ? boardData : null}
+                    boardLoading={isBoardWidgetKey(widget.widgetKey) && boardLoading}
+                    boardError={isBoardWidgetKey(widget.widgetKey) ? boardError : null}
+                    scheduleData={isScheduleWidgetKey(widget.widgetKey) ? scheduleData : null}
+                    scheduleLoading={isScheduleWidgetKey(widget.widgetKey) && scheduleLoading}
+                    scheduleError={isScheduleWidgetKey(widget.widgetKey) ? scheduleError : null}
+                    pollData={isPollWidgetKey(widget.widgetKey) ? pollData : null}
+                    pollLoading={isPollWidgetKey(widget.widgetKey) && pollLoading}
+                    pollError={isPollWidgetKey(widget.widgetKey) ? pollError : null}
+                    tournamentData={isTournamentWidgetKey(widget.widgetKey) ? tournamentData : null}
+                    tournamentLoading={isTournamentWidgetKey(widget.widgetKey) && tournamentLoading}
+                    tournamentError={isTournamentWidgetKey(widget.widgetKey) ? tournamentError : null}
+                    bracketData={isBracketWidgetKey(widget.widgetKey) ? bracketData : null}
+                    bracketLoading={isBracketWidgetKey(widget.widgetKey) && bracketLoading}
+                    bracketError={isBracketWidgetKey(widget.widgetKey) ? bracketError : null}
                     attendancePulseToken={widget.widgetKey === "ATTENDANCE_STATUS" ? attendancePulseToken : 0}
                     isCheckingInAttendance={widget.widgetKey === "ATTENDANCE_STATUS" && isCheckingInAttendance}
                     onRemove={() => {}}
