@@ -1,4 +1,4 @@
-import { ClubDashboardFallbackClient } from "./ClubDashboardFallbackClient";
+import { ClubDashboardFallbackClient } from "./dashboard/ClubDashboardFallbackClient";
 
 type ClubPageProps = {
   params: Promise<{

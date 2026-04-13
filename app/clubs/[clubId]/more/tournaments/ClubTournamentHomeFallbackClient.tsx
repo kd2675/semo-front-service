@@ -9,7 +9,7 @@ import {
   tournamentQueryKeys,
 } from "@/app/lib/react-query/tournaments/queries";
 import { ClubBoardFeedLoadingShell } from "../../ClubRouteLoadingShells";
-import { ClubTournamentHomeClient } from "./ClubTournamentHomeClient";
+import { ClubTournamentHomeClient } from "./clients/ClubTournamentHomeClient";
 
 type ClubTournamentHomeFallbackClientProps = {
   clubId: string;

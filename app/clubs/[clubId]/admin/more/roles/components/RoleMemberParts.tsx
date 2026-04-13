@@ -1,7 +1,7 @@
 "use client";
 
 import type { ClubAdminMember } from "@/app/lib/clubs";
-import { getRoleMemberSubtitle, getRoleToneClass, makeInitials, DEFAULT_ROLE_COLOR } from "./roleUtils";
+import { getRoleMemberSubtitle, getRoleToneClass, makeInitials, DEFAULT_ROLE_COLOR } from "../utils/roleUtils";
 
 type RoleMemberIdentityProps = {
   member: ClubAdminMember;

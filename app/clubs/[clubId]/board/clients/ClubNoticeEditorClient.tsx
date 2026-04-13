@@ -16,8 +16,8 @@ import {
   saveNoticeMutationOptions,
 } from "@/app/lib/react-query/board/mutations";
 import { noticeDetailQueryOptions } from "@/app/lib/react-query/board/queries";
-import { ClubEditorLoadingShell } from "../ClubRouteLoadingShells";
-import { ScheduleActionConfirmModal } from "../schedule/ScheduleActionConfirmModal";
+import { ClubEditorLoadingShell } from "../../ClubRouteLoadingShells";
+import { ScheduleActionConfirmModal } from "../../schedule/modals/ScheduleActionConfirmModal";
 
 type ClubNoticeEditorClientProps = {
   clubId: string;

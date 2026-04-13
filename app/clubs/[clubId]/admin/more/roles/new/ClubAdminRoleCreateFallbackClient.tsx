@@ -9,7 +9,7 @@ import { myClubQueryOptions } from "@/app/lib/react-query/club/queries";
 import { createRoleMutationOptions } from "@/app/lib/react-query/roles/mutations";
 import { adminRoleManagementQueryOptions } from "@/app/lib/react-query/roles/queries";
 import { AdminFeatureSettingsLoadingShell } from "../../../AdminRouteLoadingShells";
-import { RoleEditorForm } from "../RoleEditorForm";
+import { RoleEditorForm } from "../components/RoleEditorForm";
 
 type ClubAdminRoleCreateFallbackClientProps = {
   clubId: string;

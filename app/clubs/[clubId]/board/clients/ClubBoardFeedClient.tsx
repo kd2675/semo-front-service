@@ -45,17 +45,17 @@ import {
 import { deleteTournamentMutationOptions } from "@/app/lib/react-query/tournaments/mutations";
 import { getVoteLifecycleLabel } from "@/app/lib/voteStatus";
 import { ClubNoticeEditorClient } from "./ClubNoticeEditorClient";
-import { NoticeManageCard } from "./NoticeManageCard";
-import { BoardScheduleManageCard } from "./BoardScheduleManageCard";
-import { ClubBoardFeedLoadingShell } from "../ClubRouteLoadingShells";
-import { ScheduleActionConfirmModal } from "../schedule/ScheduleActionConfirmModal";
+import { NoticeManageCard } from "../components/NoticeManageCard";
+import { BoardScheduleManageCard } from "../components/BoardScheduleManageCard";
+import { ClubBoardFeedLoadingShell } from "../../ClubRouteLoadingShells";
+import { ScheduleActionConfirmModal } from "../../schedule/modals/ScheduleActionConfirmModal";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import Image from "next/image";
-import { ClubScheduleEditorClient } from "../schedule/ClubScheduleEditorClient";
-import { ClubScheduleVoteEditorClient } from "../schedule/ClubScheduleVoteEditorClient";
-import { PinnedBoardCarousel } from "./PinnedBoardCarousel";
-import { BoardTournamentManageCard } from "./BoardTournamentManageCard";
-import { ClubTournamentEditorClient } from "../more/tournaments/ClubTournamentEditorClient";
+import { ClubScheduleEditorClient } from "../../schedule/clients/ClubScheduleEditorClient";
+import { ClubScheduleVoteEditorClient } from "../../schedule/clients/ClubScheduleVoteEditorClient";
+import { PinnedBoardCarousel } from "../components/PinnedBoardCarousel";
+import { BoardTournamentManageCard } from "../components/BoardTournamentManageCard";
+import { ClubTournamentEditorClient } from "../../more/tournaments/clients/ClubTournamentEditorClient";
 
 type CursorState = {
   boardItemId: number | null;

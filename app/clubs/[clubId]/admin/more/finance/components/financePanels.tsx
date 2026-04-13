@@ -8,7 +8,7 @@ import type {
   ClubFinanceRequest,
 } from "@/app/lib/clubs";
 import { staggeredFadeUpMotion } from "@/app/lib/motion";
-import { getObligationFrameClassName } from "./financeUtils";
+import { getObligationFrameClassName } from "../utils/financeUtils";
 import {
   AdminFinanceRequestCard,
   AdminPlaceholderPanel,

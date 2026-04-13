@@ -14,7 +14,7 @@ import {
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import { useAppToast } from "@/app/hooks/useAppToast";
-import { ScheduleActionConfirmModal } from "@/app/clubs/[clubId]/schedule/ScheduleActionConfirmModal";
+import { ScheduleActionConfirmModal } from "@/app/clubs/[clubId]/schedule/modals/ScheduleActionConfirmModal";
 import {
   type ClubAdminFinanceHomeResponse,
   type ClubAdminFinanceObligation,
@@ -53,7 +53,7 @@ import {
   ObligationDetailModal,
   PermissionChip,
   SettlementsTabPanel,
-} from "./financeUi";
+} from "./components";
 
 const publicSans = Public_Sans({
   subsets: ["latin"],

@@ -8,7 +8,7 @@ import type { CSSProperties } from "react";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import { TodoApplicationManagerModal } from "@/app/components/TodoApplicationManagerModal";
 import { useAppToast } from "@/app/hooks/useAppToast";
-import { ScheduleActionConfirmModal } from "@/app/clubs/[clubId]/schedule/ScheduleActionConfirmModal";
+import { ScheduleActionConfirmModal } from "@/app/clubs/[clubId]/schedule/modals/ScheduleActionConfirmModal";
 import {
   getClubAdminTodoApplications,
   type ClubAdminTodoResponse,
@@ -40,14 +40,14 @@ import {
   resolveErrorMessage,
   type TodoEditorModalState,
   type TodoType,
-} from "./todoOptions";
+} from "./utils/todoOptions";
 import {
   TodoEditorModal,
   TodoFilterModal,
   TodoFilterSummarySection,
   TodoListSection,
   TodoSnapshotSection,
-} from "./todoUi";
+} from "./components/todoUi";
 
 const publicSans = Public_Sans({
   subsets: ["latin"],

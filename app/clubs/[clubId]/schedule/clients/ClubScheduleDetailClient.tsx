@@ -17,7 +17,7 @@ import {
   scheduleEventDetailQueryOptions,
   scheduleQueryKeys,
 } from "@/app/lib/react-query/schedule/queries";
-import { ClubDetailLoadingShell } from "../ClubRouteLoadingShells";
+import { ClubDetailLoadingShell } from "../../ClubRouteLoadingShells";
 
 type ClubScheduleDetailClientProps = {
   clubId: string;

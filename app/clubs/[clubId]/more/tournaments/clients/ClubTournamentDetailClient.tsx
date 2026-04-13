@@ -26,7 +26,7 @@ import {
   tournamentDetailQueryOptions,
   tournamentQueryKeys,
 } from "@/app/lib/react-query/tournaments/queries";
-import { ClubDetailLoadingShell } from "../../ClubRouteLoadingShells";
+import { ClubDetailLoadingShell } from "../../../ClubRouteLoadingShells";
 
 type ClubTournamentDetailClientProps = {
   clubId: string;

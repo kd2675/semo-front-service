@@ -10,7 +10,7 @@ import { useEffect, useEffectEvent, useId, useState } from "react";
 import { invalidateClubQueries } from "@/app/lib/react-query/common";
 import { saveScheduleVoteMutationOptions } from "@/app/lib/react-query/schedule/mutations";
 import { scheduleVoteDetailQueryOptions } from "@/app/lib/react-query/schedule/queries";
-import { ClubEditorLoadingShell } from "../ClubRouteLoadingShells";
+import { ClubEditorLoadingShell } from "../../ClubRouteLoadingShells";
 
 type ClubScheduleVoteEditorClientProps = {
   clubId: string;

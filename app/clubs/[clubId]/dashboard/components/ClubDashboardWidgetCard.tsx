@@ -1,11 +1,11 @@
 "use client";
 
 import { motion } from "motion/react";
-import { isAttendanceWidgetKey } from "./dashboardWidgetUtils";
-import type { ClubDashboardWidgetCardProps } from "./dashboardWidgetTypes";
+import { isAttendanceWidgetKey } from "../utils/dashboardWidgetUtils";
+import type { ClubDashboardWidgetCardProps } from "../types/dashboardWidgetTypes";
 import { ClubDashboardWidgetContent } from "./ClubDashboardWidgetContent";
 
-export type { ClubDashboardWidgetCardProps } from "./dashboardWidgetTypes";
+export type { ClubDashboardWidgetCardProps } from "../types/dashboardWidgetTypes";
 
 export function ClubDashboardWidgetCard(props: ClubDashboardWidgetCardProps) {
   const { widget, editMode, isAdmin, isDragging, isDropTarget, isDisabled, reduceMotion, attendancePulseToken, onDragOver, onDrop, onDragStart, onDragEnd, onTouchDragStart, onRemove } =

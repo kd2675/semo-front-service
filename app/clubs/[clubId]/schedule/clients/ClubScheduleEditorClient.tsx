@@ -14,8 +14,8 @@ import {
   saveScheduleEventMutationOptions,
 } from "@/app/lib/react-query/schedule/mutations";
 import { scheduleEventDetailQueryOptions } from "@/app/lib/react-query/schedule/queries";
-import { ClubEditorLoadingShell } from "../ClubRouteLoadingShells";
-import { ScheduleActionConfirmModal } from "./ScheduleActionConfirmModal";
+import { ClubEditorLoadingShell } from "../../ClubRouteLoadingShells";
+import { ScheduleActionConfirmModal } from "../modals/ScheduleActionConfirmModal";
 
 type ClubScheduleEditorClientProps = {
   clubId: string;

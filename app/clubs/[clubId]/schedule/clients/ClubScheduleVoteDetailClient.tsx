@@ -6,7 +6,7 @@ import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import { motion, useReducedMotion } from "motion/react";
 import { useState } from "react";
 import { ClubModeSwitchFab } from "@/app/components/ClubModeSwitchFab";
-import { ScheduleActionConfirmModal } from "./ScheduleActionConfirmModal";
+import { ScheduleActionConfirmModal } from "../modals/ScheduleActionConfirmModal";
 import { type ClubScheduleVoteDetailResponse } from "@/app/lib/clubs";
 import { getShareTargetBadges } from "@/app/lib/contentBadge";
 import { staggeredFadeUpMotion } from "@/app/lib/motion";
@@ -21,7 +21,7 @@ import {
   scheduleVoteDetailQueryOptions,
 } from "@/app/lib/react-query/schedule/queries";
 import { getVoteLifecycleBadgeClassName, getVoteLifecycleLabel } from "@/app/lib/voteStatus";
-import { ClubDetailLoadingShell } from "../ClubRouteLoadingShells";
+import { ClubDetailLoadingShell } from "../../ClubRouteLoadingShells";
 
 type ClubScheduleVoteDetailClientProps = {
   clubId: string;

@@ -21,7 +21,7 @@ import {
   TODO_TYPE_OPTIONS,
   type TodoEditorModalState,
   type TodoType,
-} from "./todoOptions";
+} from "../utils/todoOptions";
 
 export function TodoSnapshotSection({
   todoData,

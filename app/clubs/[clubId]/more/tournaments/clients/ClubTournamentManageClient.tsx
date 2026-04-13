@@ -4,8 +4,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { RouterLink } from "@/app/components/RouterLink";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import { RouteModal } from "@/app/components/RouteModal";
-import { ClubTournamentEditorClient } from "@/app/clubs/[clubId]/more/tournaments/ClubTournamentEditorClient";
-import { ScheduleActionConfirmModal } from "@/app/clubs/[clubId]/schedule/ScheduleActionConfirmModal";
+import { ClubTournamentEditorClient } from "@/app/clubs/[clubId]/more/tournaments/clients/ClubTournamentEditorClient";
+import { ScheduleActionConfirmModal } from "@/app/clubs/[clubId]/schedule/modals/ScheduleActionConfirmModal";
 import {
   type TournamentApplicationSummary,
   type TournamentDetailResponse,
@@ -30,7 +30,7 @@ import {
   tournamentDetailQueryOptions,
   tournamentQueryKeys,
 } from "@/app/lib/react-query/tournaments/queries";
-import { ClubDetailLoadingShell } from "../../ClubRouteLoadingShells";
+import { ClubDetailLoadingShell } from "../../../ClubRouteLoadingShells";
 
 type ClubTournamentManageClientProps = {
   clubId: string;

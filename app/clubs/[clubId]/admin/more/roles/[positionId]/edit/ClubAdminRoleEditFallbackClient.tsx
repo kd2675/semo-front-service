@@ -15,7 +15,7 @@ import {
 } from "@/app/lib/react-query/roles/mutations";
 import { adminRoleDetailQueryOptions } from "@/app/lib/react-query/roles/queries";
 import { AdminFeatureSettingsLoadingShell } from "../../../../AdminRouteLoadingShells";
-import { RoleEditorForm } from "../../RoleEditorForm";
+import { RoleEditorForm } from "../../components/RoleEditorForm";
 
 type ClubAdminRoleEditFallbackClientProps = {
   clubId: string;

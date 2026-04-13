@@ -7,8 +7,8 @@ import {
   getTournamentFormatLabel,
   getTournamentStatusLabel,
 } from "@/app/lib/tournament";
-import { getScheduleItemDate } from "./dashboardWidgetUtils";
-import type { ClubDashboardWidgetCardProps } from "./dashboardWidgetTypes";
+import { getScheduleItemDate } from "../utils/dashboardWidgetUtils";
+import type { ClubDashboardWidgetCardProps } from "../types/dashboardWidgetTypes";
 
 type FeatureContentProps = Pick<
   ClubDashboardWidgetCardProps,

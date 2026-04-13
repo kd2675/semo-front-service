@@ -7,7 +7,7 @@ import { ClubModeSwitchFab } from "@/app/components/ClubModeSwitchFab";
 import { ClubBracketDetailModal } from "@/app/components/ClubDetailModals";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import { RouteModal } from "@/app/components/RouteModal";
-import { ScheduleActionConfirmModal } from "@/app/clubs/[clubId]/schedule/ScheduleActionConfirmModal";
+import { ScheduleActionConfirmModal } from "@/app/clubs/[clubId]/schedule/modals/ScheduleActionConfirmModal";
 import {
   type BracketDetailResponse,
   type BracketImportTournament,

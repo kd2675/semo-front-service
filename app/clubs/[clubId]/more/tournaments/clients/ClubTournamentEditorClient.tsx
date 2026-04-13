@@ -13,7 +13,7 @@ import {
 import { invalidateClubQueries } from "@/app/lib/react-query/common";
 import { saveTournamentMutationOptions } from "@/app/lib/react-query/tournaments/mutations";
 import { tournamentDetailQueryOptions } from "@/app/lib/react-query/tournaments/queries";
-import { ClubEditorLoadingShell } from "../../ClubRouteLoadingShells";
+import { ClubEditorLoadingShell } from "../../../ClubRouteLoadingShells";
 
 type ClubTournamentEditorClientProps = {
   clubId: string;

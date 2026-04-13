@@ -3,9 +3,9 @@
 import { RouteModal } from "@/app/components/RouteModal";
 import { ClubNoticeDetailClient } from "@/app/clubs/[clubId]/board/[noticeId]/ClubNoticeDetailClient";
 import { ClubBracketDetailClient } from "@/app/clubs/[clubId]/more/brackets/ClubBracketDetailClient";
-import { ClubScheduleDetailClient } from "@/app/clubs/[clubId]/schedule/ClubScheduleDetailClient";
-import { ClubScheduleVoteDetailClient } from "@/app/clubs/[clubId]/schedule/ClubScheduleVoteDetailClient";
-import { ClubTournamentDetailClient } from "@/app/clubs/[clubId]/more/tournaments/ClubTournamentDetailClient";
+import { ClubScheduleDetailClient } from "@/app/clubs/[clubId]/schedule/clients/ClubScheduleDetailClient";
+import { ClubScheduleVoteDetailClient } from "@/app/clubs/[clubId]/schedule/clients/ClubScheduleVoteDetailClient";
+import { ClubTournamentDetailClient } from "@/app/clubs/[clubId]/more/tournaments/clients/ClubTournamentDetailClient";
 
 type DetailMode = "user" | "admin";
 

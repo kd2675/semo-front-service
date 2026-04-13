@@ -5,7 +5,7 @@ import { RouteModal } from "@/app/components/RouteModal";
 import { ClubModeSwitchFab } from "@/app/components/ClubModeSwitchFab";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import { ClubNoticeDetailModal } from "@/app/components/ClubDetailModals";
-import { ScheduleActionConfirmModal } from "@/app/clubs/[clubId]/schedule/ScheduleActionConfirmModal";
+import { ScheduleActionConfirmModal } from "@/app/clubs/[clubId]/schedule/modals/ScheduleActionConfirmModal";
 import { type ClubNoticeHomeResponse, type ClubNoticeListItem } from "@/app/lib/clubs";
 import { FAB_RIGHT_OFFSET_CLASS_NAME, getActionFabBottomClass } from "@/app/lib/fab";
 import { staggeredFadeUpMotion } from "@/app/lib/motion";
@@ -13,8 +13,8 @@ import { deleteNoticeMutationOptions } from "@/app/lib/react-query/board/mutatio
 import { invalidateClubQueries } from "@/app/lib/react-query/common";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useState, type CSSProperties } from "react";
-import { ClubNoticeEditorClient } from "../../board/ClubNoticeEditorClient";
-import { NoticeManageCard } from "../../board/NoticeManageCard";
+import { ClubNoticeEditorClient } from "../../board/clients/ClubNoticeEditorClient";
+import { NoticeManageCard } from "../../board/components/NoticeManageCard";
 
 type ClubNoticeHomeClientProps = {
   clubId: string;

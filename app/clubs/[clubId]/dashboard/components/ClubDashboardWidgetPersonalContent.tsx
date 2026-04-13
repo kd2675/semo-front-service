@@ -4,8 +4,8 @@ import { AnimatePresence, motion } from "motion/react";
 import { useMemo } from "react";
 import { RouterLink } from "@/app/components/RouterLink";
 import { type ClubPollSummary } from "@/app/lib/clubs";
-import { getFinanceStatusClassName } from "./dashboardWidgetUtils";
-import type { ClubDashboardWidgetCardProps } from "./dashboardWidgetTypes";
+import { getFinanceStatusClassName } from "../utils/dashboardWidgetUtils";
+import type { ClubDashboardWidgetCardProps } from "../types/dashboardWidgetTypes";
 
 type PersonalContentProps = Pick<
   ClubDashboardWidgetCardProps,

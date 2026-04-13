@@ -15,7 +15,7 @@ import { Inter, Manrope } from "next/font/google";
 import { startTransition, useDeferredValue, useEffect, useMemo, useState } from "react";
 import type { CSSProperties } from "react";
 import { RoleMemberIdentity, RoleOtherPositions } from "./RoleMemberParts";
-import { DEFAULT_ROLE_COLOR } from "./roleUtils";
+import { DEFAULT_ROLE_COLOR } from "../utils/roleUtils";
 
 const manrope = Manrope({
   subsets: ["latin"],

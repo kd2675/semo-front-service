@@ -1,6 +1,6 @@
 "use client";
 
-import { ClubBoardFeedClient } from "./ClubBoardFeedClient";
+import { ClubBoardFeedClient } from "./clients/ClubBoardFeedClient";
 
 type ClubBoardFallbackClientProps = {
   clubId: string;

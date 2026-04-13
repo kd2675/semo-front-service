@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { RouteModalPresence } from "@/app/components/RouteModalPresence";
 import { RouteModal } from "@/app/components/RouteModal";
-import { ClubScheduleVoteEditorClient } from "@/app/clubs/[clubId]/schedule/ClubScheduleVoteEditorClient";
+import { ClubScheduleVoteEditorClient } from "@/app/clubs/[clubId]/schedule/clients/ClubScheduleVoteEditorClient";
 
 type ClubAdminPollEditRouteModalProps = {
   clubId: string;

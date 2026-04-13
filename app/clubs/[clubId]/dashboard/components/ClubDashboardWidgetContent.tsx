@@ -2,8 +2,8 @@
 
 import { motion } from "motion/react";
 import { RouterLink } from "@/app/components/RouterLink";
-import { isAttendanceWidgetKey, WIDGET_ACCENT_CLASS } from "./dashboardWidgetUtils";
-import type { ClubDashboardWidgetCardProps } from "./dashboardWidgetTypes";
+import { isAttendanceWidgetKey, WIDGET_ACCENT_CLASS } from "../utils/dashboardWidgetUtils";
+import type { ClubDashboardWidgetCardProps } from "../types/dashboardWidgetTypes";
 import { ClubDashboardWidgetFeatureContent } from "./ClubDashboardWidgetFeatureContent";
 import { ClubDashboardWidgetPersonalContent } from "./ClubDashboardWidgetPersonalContent";
 

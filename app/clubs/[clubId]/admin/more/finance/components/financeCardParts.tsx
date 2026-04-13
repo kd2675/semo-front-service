@@ -10,7 +10,7 @@ import {
   getFinanceRequestStatusClassName,
   getObligationFrameClassName,
   getPaymentStatusClassName,
-} from "./financeUtils";
+} from "../utils/financeUtils";
 
 export function MetricCard({
   label,

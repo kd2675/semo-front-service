@@ -3,7 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { startTransition, useState } from "react";
 import { clubScheduleQueryOptions } from "@/app/lib/react-query/schedule/queries";
-import { ScheduleClient } from "./ScheduleClient";
+import { ScheduleClient } from "./clients/ScheduleClient";
 import { ClubScheduleLoadingShell } from "../ClubRouteLoadingShells";
 
 type ClubScheduleFallbackClientProps = {

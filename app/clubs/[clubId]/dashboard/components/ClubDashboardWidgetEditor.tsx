@@ -24,7 +24,7 @@ import { type ClubDashboardWidgetSummary } from "@/app/lib/clubs";
 import {
   getWidgetFeatureLabel,
   WIDGET_ACCENT_CLASS,
-} from "./dashboardWidgetUtils";
+} from "../utils/dashboardWidgetUtils";
 
 type ClubDashboardWidgetEditorProps = {
   clubId: string;

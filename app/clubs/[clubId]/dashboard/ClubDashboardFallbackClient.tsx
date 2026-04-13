@@ -44,9 +44,9 @@ import { invalidateClubQueries } from "@/app/lib/react-query/common";
 import {
   ClubDashboardLoadingShell,
   ClubDashboardWidgetGridShell,
-} from "./ClubRouteLoadingShells";
-import { ClubDashboardWidgetEditor } from "./ClubDashboardWidgetEditor";
-import { ClubDashboardWidgetCard } from "./ClubDashboardWidgetCard";
+} from "../ClubRouteLoadingShells";
+import { ClubDashboardWidgetEditor } from "./components/ClubDashboardWidgetEditor";
+import { ClubDashboardWidgetCard } from "./components/ClubDashboardWidgetCard";
 import {
   cloneWidgets,
   extractEnabledWidgetKeys,
@@ -60,7 +60,7 @@ import {
   isTournamentWidgetKey,
   normalizeSortOrder,
   reorderEnabledWidgets,
-} from "./dashboardWidgetUtils";
+} from "./utils/dashboardWidgetUtils";
 
 type ClubDashboardFallbackClientProps = {
   clubId: string;

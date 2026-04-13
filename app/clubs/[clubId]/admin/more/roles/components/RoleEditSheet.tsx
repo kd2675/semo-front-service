@@ -1,7 +1,7 @@
 "use client";
 
 import { useAppToast } from "@/app/hooks/useAppToast";
-import { ScheduleActionConfirmModal } from "@/app/clubs/[clubId]/schedule/ScheduleActionConfirmModal";
+import { ScheduleActionConfirmModal } from "@/app/clubs/[clubId]/schedule/modals/ScheduleActionConfirmModal";
 import { bottomSheetMotion, overlayFadeMotion } from "@/app/lib/motion";
 import {
   deleteClubAdminRole,
@@ -27,7 +27,7 @@ import {
   ROLE_COLOR_OPTIONS,
   ROLE_ICON_OPTIONS,
   type RoleFormValue,
-} from "./roleUtils";
+} from "../utils/roleUtils";
 
 const manrope = Manrope({
   subsets: ["latin"],

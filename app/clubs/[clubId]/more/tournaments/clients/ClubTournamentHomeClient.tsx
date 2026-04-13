@@ -3,9 +3,9 @@
 import { RouteModal } from "@/app/components/RouteModal";
 import { ClubModeSwitchFab } from "@/app/components/ClubModeSwitchFab";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
-import { ClubTournamentDetailClient } from "@/app/clubs/[clubId]/more/tournaments/ClubTournamentDetailClient";
-import { ClubTournamentEditorClient } from "@/app/clubs/[clubId]/more/tournaments/ClubTournamentEditorClient";
-import { ClubTournamentManageClient } from "@/app/clubs/[clubId]/more/tournaments/ClubTournamentManageClient";
+import { ClubTournamentDetailClient } from "@/app/clubs/[clubId]/more/tournaments/clients/ClubTournamentDetailClient";
+import { ClubTournamentEditorClient } from "@/app/clubs/[clubId]/more/tournaments/clients/ClubTournamentEditorClient";
+import { ClubTournamentManageClient } from "@/app/clubs/[clubId]/more/tournaments/clients/ClubTournamentManageClient";
 import {
   type ClubAdminTournamentHomeResponse,
   type ClubTournamentHomeResponse,

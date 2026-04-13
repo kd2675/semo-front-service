@@ -13,8 +13,8 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useMemo, useState } from "react";
 import type { CSSProperties } from "react";
 import { adminRoleManagementQueryOptions } from "@/app/lib/react-query/roles/queries";
-import { RoleEditSheet } from "./RoleEditSheet";
-import { DEFAULT_ROLE_COLOR, makeInitials } from "./roleUtils";
+import { RoleEditSheet } from "./components/RoleEditSheet";
+import { DEFAULT_ROLE_COLOR, makeInitials } from "./utils/roleUtils";
 
 const manrope = Manrope({
   subsets: ["latin"],
