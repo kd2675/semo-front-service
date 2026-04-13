@@ -11,7 +11,6 @@ import {
   updateClubAdminRole,
   type ClubAdminMember,
   type ClubAdminMembersResponse,
-  type ClubPermissionGroup,
   type ClubPositionDetailResponse,
   type ClubPositionSummary,
   type UpdateClubPositionRequest,
@@ -20,6 +19,15 @@ import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { Inter, Manrope } from "next/font/google";
 import { startTransition, useDeferredValue, useEffect, useMemo, useState } from "react";
 import type { CSSProperties } from "react";
+import { RoleMemberIdentity, RoleOtherPositions } from "./RoleMemberParts";
+import { RolePermissionToggleCard } from "./RolePermissionToggleCard";
+import {
+  buildRoleFormValue,
+  DEFAULT_ROLE_COLOR,
+  ROLE_COLOR_OPTIONS,
+  ROLE_ICON_OPTIONS,
+  type RoleFormValue,
+} from "./roleUtils";
 
 const manrope = Manrope({
   subsets: ["latin"],
@@ -31,33 +39,9 @@ const inter = Inter({
   weight: ["400", "500", "600", "700"],
 });
 
-const ICON_OPTIONS = [
-  "shield",
-  "workspace_premium",
-  "verified",
-  "stars",
-  "military_tech",
-  "campaign",
-  "calendar_month",
-  "poll",
-  "forum",
-  "manage_accounts",
-];
-
-const COLOR_OPTIONS = ["#904e00", "#0053dd", "#49636f", "#a83836", "#0f172a", "#15803d", "#7c3aed"];
 const EMPTY_MEMBERS: ClubAdminMember[] = [];
 
 type RoleSheetTab = "overview" | "permissions" | "members";
-
-type RoleFormValue = {
-  displayName: string;
-  positionCode: string;
-  description: string;
-  iconName: string;
-  colorHex: string;
-  active: boolean;
-  permissionKeys: string[];
-};
 
 type RoleEditSheetProps = {
   clubId: string;
@@ -66,105 +50,6 @@ type RoleEditSheetProps = {
   onClose: () => void;
   onRolesChanged: () => Promise<boolean> | boolean;
 };
-
-function buildInitialValue(initialPosition: ClubPositionSummary): RoleFormValue {
-  return {
-    displayName: initialPosition.displayName,
-    positionCode: initialPosition.positionCode,
-    description: initialPosition.description ?? "",
-    iconName: initialPosition.iconName ?? "shield",
-    colorHex: initialPosition.colorHex ?? "#904e00",
-    active: initialPosition.active,
-    permissionKeys: initialPosition.permissionKeys,
-  };
-}
-
-function makeInitials(value: string) {
-  const trimmed = value.trim();
-  return trimmed.length > 0 ? trimmed.slice(0, 2).toUpperCase() : "MB";
-}
-
-function getRoleSubtitle(member: ClubAdminMember) {
-  return member.tagline?.trim() || member.roleCode;
-}
-
-function roleTone(member: ClubAdminMember) {
-  switch (member.roleCode) {
-    case "OWNER":
-      return "bg-amber-100 text-amber-800";
-    case "ADMIN":
-      return "bg-sky-100 text-sky-800";
-    default:
-      return "bg-slate-100 text-slate-600";
-  }
-}
-
-function PermissionToggleCard({
-  group,
-  selectedKeys,
-  onToggle,
-}: {
-  group: ClubPermissionGroup;
-  selectedKeys: string[];
-  onToggle: (permissionKey: string) => void;
-}) {
-  const activeCount = group.permissions.filter((permission) => selectedKeys.includes(permission.permissionKey)).length;
-
-  return (
-    <article className="overflow-hidden rounded-[24px] border-l-4 border-[var(--secondary)] bg-white p-5 shadow-sm">
-      <div className="mb-5 flex items-start justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <div className="flex size-11 items-center justify-center rounded-[14px] bg-[var(--secondary)]/10 text-[var(--secondary)]">
-            <span className="material-symbols-outlined">{group.iconName}</span>
-          </div>
-          <div>
-            <h3 className={`${manrope.className} text-lg font-bold text-slate-900`}>{group.displayName}</h3>
-            <p className="mt-1 text-xs leading-5 text-slate-500">
-              {group.description ?? `${group.permissions.length}개 세부 권한을 제어합니다.`}
-            </p>
-          </div>
-        </div>
-        <span className="rounded-full bg-[var(--secondary)]/10 px-3 py-1 text-[10px] font-extrabold uppercase tracking-[0.18em] text-[var(--secondary)]">
-          {activeCount} Active
-        </span>
-      </div>
-
-      <div className="space-y-3">
-        {group.permissions.map((permission) => {
-          const selected = selectedKeys.includes(permission.permissionKey);
-          return (
-            <div
-              key={permission.permissionKey}
-              className="flex items-center justify-between gap-4 rounded-[18px] bg-[#f7fafc] p-4 ring-1 ring-[#edf2f5]"
-            >
-              <div className="flex-1">
-                <p className="text-sm font-semibold text-slate-900">{permission.displayName}</p>
-                <p className="mt-1 text-xs text-slate-500">
-                  {permission.description ?? "이 권한에 대한 설명이 없습니다."}
-                </p>
-              </div>
-              <button
-                type="button"
-                role="switch"
-                aria-checked={selected}
-                onClick={() => onToggle(permission.permissionKey)}
-                className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition ${
-                  selected ? "bg-[var(--secondary)]" : "bg-[#dbe4e8]"
-                }`}
-              >
-                <span
-                  className={`absolute left-[2px] size-5 rounded-full border border-slate-200 bg-white transition-transform ${
-                    selected ? "translate-x-5" : "translate-x-0"
-                  }`}
-                />
-              </button>
-            </div>
-          );
-        })}
-      </div>
-    </article>
-  );
-}
 
 function MemberAssignmentCard({
   member,
@@ -179,34 +64,10 @@ function MemberAssignmentCard({
   busy: boolean;
   onToggle: (member: ClubAdminMember, shouldAssign: boolean) => void;
 }) {
-  const relatedPositions = member.positions.filter(
-    (position) => position.clubPositionId !== role.clubPositionId,
-  );
-
   return (
     <article className="rounded-[24px] border border-slate-200 bg-white p-4 shadow-sm">
       <div className="flex items-start justify-between gap-3">
-        <div className="flex min-w-0 items-center gap-3">
-          {member.avatarImageUrl ? (
-            <div
-              className="size-11 shrink-0 rounded-2xl bg-cover bg-center shadow-sm"
-              style={{ backgroundImage: `url('${member.avatarImageUrl}')` }}
-            />
-          ) : (
-            <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-[#efe6d8] text-sm font-black text-[#8b4b00] shadow-sm">
-              {makeInitials(member.displayName)}
-            </div>
-          )}
-          <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-2">
-              <p className="truncate text-sm font-semibold text-slate-900">{member.displayName}</p>
-              <span className={`rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.18em] ${roleTone(member)}`}>
-                {member.roleCode}
-              </span>
-            </div>
-            <p className="mt-1 text-xs text-slate-500">{getRoleSubtitle(member)}</p>
-          </div>
-        </div>
+        <RoleMemberIdentity member={member} />
 
         <button
           type="button"
@@ -238,24 +99,7 @@ function MemberAssignmentCard({
         ) : null}
       </div>
 
-      {relatedPositions.length > 0 ? (
-        <div className="mt-4 border-t border-slate-200 pt-4">
-          <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400">Other Positions</p>
-          <div className="mt-2 flex flex-wrap gap-2">
-            {relatedPositions.map((position) => (
-              <span
-                key={`${member.clubMemberId}-${position.clubPositionId}`}
-                className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-[11px] font-semibold text-slate-600"
-              >
-                <span className="material-symbols-outlined text-[15px]" style={{ color: position.colorHex ?? "#904e00" }}>
-                  {position.iconName ?? "badge"}
-                </span>
-                {position.displayName}
-              </span>
-            ))}
-          </div>
-        </div>
-      ) : null}
+      <RoleOtherPositions member={member} currentClubPositionId={role.clubPositionId} />
     </article>
   );
 }
@@ -271,7 +115,7 @@ export function RoleEditSheet({
   const reduceMotion = Boolean(prefersReducedMotion);
   const [detailPayload, setDetailPayload] = useState<ClubPositionDetailResponse | null>(null);
   const [memberPayload, setMemberPayload] = useState<ClubAdminMembersResponse | null>(null);
-  const [form, setForm] = useState<RoleFormValue>(buildInitialValue(role));
+  const [form, setForm] = useState<RoleFormValue>(buildRoleFormValue(role));
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<RoleSheetTab>(initialTab);
@@ -281,7 +125,7 @@ export function RoleEditSheet({
   const [memberQuery, setMemberQuery] = useState("");
   const deferredMemberQuery = useDeferredValue(memberQuery.trim().toLowerCase());
   const { showToast, clearToast } = useAppToast(2400);
-  const colorHex = form.colorHex || "#904e00";
+  const colorHex = form.colorHex || DEFAULT_ROLE_COLOR;
 
   useEffect(() => {
     const previousOverflow = document.body.style.overflow;
@@ -332,7 +176,7 @@ export function RoleEditSheet({
 
       setDetailPayload(detailResult.data);
       setMemberPayload(memberResult.data);
-      setForm(buildInitialValue(detailResult.data.position));
+      setForm(buildRoleFormValue(detailResult.data.position));
       setLoading(false);
     })();
 
@@ -421,7 +265,7 @@ export function RoleEditSheet({
     }
 
     setDetailPayload(result.data);
-    setForm(buildInitialValue(result.data.position));
+    setForm(buildRoleFormValue(result.data.position));
     await onRolesChanged();
     showToast("직책 설정을 저장했습니다.");
   };
@@ -636,7 +480,7 @@ export function RoleEditSheet({
                       <article className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
                         <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-500">Icon</p>
                         <div className="mt-4 flex flex-wrap gap-3">
-                          {ICON_OPTIONS.map((iconName) => {
+                          {ROLE_ICON_OPTIONS.map((iconName) => {
                             const selected = form.iconName === iconName;
                             return (
                               <button
@@ -659,7 +503,7 @@ export function RoleEditSheet({
                       <article className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
                         <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-500">Color</p>
                         <div className="mt-4 flex flex-wrap gap-4">
-                          {COLOR_OPTIONS.map((optionColor) => {
+                          {ROLE_COLOR_OPTIONS.map((optionColor) => {
                             const selected = form.colorHex === optionColor;
                             return (
                               <button
@@ -703,7 +547,7 @@ export function RoleEditSheet({
                     </div>
                     <div className="grid gap-6 lg:grid-cols-2">
                       {permissionGroups.map((group) => (
-                        <PermissionToggleCard
+                        <RolePermissionToggleCard
                           key={group.featureKey}
                           group={group}
                           selectedKeys={form.permissionKeys}

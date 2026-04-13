@@ -14,6 +14,7 @@ import { useMemo, useState } from "react";
 import type { CSSProperties } from "react";
 import { adminRoleManagementQueryOptions } from "@/app/lib/react-query/roles/queries";
 import { RoleEditSheet } from "./RoleEditSheet";
+import { DEFAULT_ROLE_COLOR, makeInitials } from "./roleUtils";
 
 const manrope = Manrope({
   subsets: ["latin"],
@@ -29,14 +30,6 @@ type ClubAdminRolesClientProps = {
   clubId: string;
   initialData: ClubAdminRoleManagementResponse;
 };
-
-function makeInitials(value: string) {
-  const cleaned = value.replace(/\s+/g, " ").trim();
-  if (!cleaned) {
-    return "AD";
-  }
-  return cleaned.slice(0, 2).toUpperCase();
-}
 
 function RoleStatusPill({ active, colorHex }: { active: boolean; colorHex: string | null }) {
   const style = active && colorHex
@@ -143,7 +136,7 @@ function AdminRoleCard({
   index: number;
   onOpenSheet: (role: ClubPositionSummary, tab: RoleSheetTab) => void;
 }) {
-  const colorHex = role.colorHex ?? "var(--secondary)";
+  const colorHex = role.colorHex ?? DEFAULT_ROLE_COLOR;
   const level = buildRoleLevel(role, index);
   const badges = buildRoleBadges(permissionLabels, role);
 
@@ -398,7 +391,7 @@ export function ClubAdminRolesClient({ clubId, initialData }: ClubAdminRolesClie
       className={`${inter.className} min-h-screen bg-[#f7fafc] text-slate-900`}
       style={
         {
-          "--secondary": "#904e00",
+          "--secondary": DEFAULT_ROLE_COLOR,
           "--secondary-soft": "#ffdcc2",
         } as CSSProperties
       }
@@ -439,7 +432,7 @@ export function ClubAdminRolesClient({ clubId, initialData }: ClubAdminRolesClie
             </nav>
 
             <div className="flex size-10 items-center justify-center rounded-full bg-[var(--secondary-soft)] text-sm font-bold text-[var(--secondary)]">
-              {makeInitials(initialData.clubName)}
+              {makeInitials(initialData.clubName, "AD")}
             </div>
           </div>
         </header>

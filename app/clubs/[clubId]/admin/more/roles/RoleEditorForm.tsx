@@ -14,6 +14,15 @@ import { Inter, Manrope } from "next/font/google";
 import { useRouter } from "next/navigation";
 import type { CSSProperties } from "react";
 import { useMemo, useState } from "react";
+import { RolePermissionToggleCard } from "./RolePermissionToggleCard";
+import {
+  buildRoleFormValue,
+  createAutoPositionCode,
+  DEFAULT_ROLE_COLOR,
+  ROLE_COLOR_OPTIONS,
+  ROLE_ICON_OPTIONS,
+  type RoleFormValue,
+} from "./roleUtils";
 
 const manrope = Manrope({
   subsets: ["latin"],
@@ -25,30 +34,6 @@ const inter = Inter({
   weight: ["400", "500", "600", "700"],
 });
 
-const ICON_OPTIONS = [
-  "shield",
-  "workspace_premium",
-  "verified",
-  "stars",
-  "military_tech",
-  "campaign",
-  "calendar_month",
-  "poll",
-  "forum",
-  "manage_accounts",
-];
-const COLOR_OPTIONS = ["#904e00", "#0053dd", "#49636f", "#a83836", "#0f172a", "#15803d", "#7c3aed"];
-
-type RoleFormValue = {
-  displayName: string;
-  positionCode: string;
-  description: string;
-  iconName: string;
-  colorHex: string;
-  active: boolean;
-  permissionKeys: string[];
-};
-
 type RoleEditorFormProps = {
   clubId: string;
   clubName: string;
@@ -59,113 +44,6 @@ type RoleEditorFormProps = {
   onSubmit: (value: RoleFormValue) => Promise<{ success: boolean; nextHref?: string }>;
   onDelete?: () => Promise<boolean>;
 };
-
-function buildInitialValue(initialPosition?: ClubPositionSummary | null): RoleFormValue {
-  return {
-    displayName: initialPosition?.displayName ?? "",
-    positionCode: initialPosition?.positionCode ?? "",
-    description: initialPosition?.description ?? "",
-    iconName: initialPosition?.iconName ?? "shield",
-    colorHex: initialPosition?.colorHex ?? "#904e00",
-    active: initialPosition?.active ?? true,
-    permissionKeys: initialPosition?.permissionKeys ?? [],
-  };
-}
-
-function hashText(value: string) {
-  let hash = 0;
-  for (let index = 0; index < value.length; index += 1) {
-    hash = (hash * 31 + value.charCodeAt(index)) >>> 0;
-  }
-  return hash.toString(36).toUpperCase().padStart(4, "0").slice(0, 4);
-}
-
-function createAutoPositionCode(displayName: string, clubId: string) {
-  const normalized = displayName
-    .normalize("NFKD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toUpperCase()
-    .replace(/[^A-Z0-9]+/g, "_")
-    .replace(/^_+|_+$/g, "");
-  const base = normalized.length > 0 ? normalized : "CUSTOM_ROLE";
-  const suffix = hashText(`${clubId}:${displayName.trim() || "role"}`);
-  return `ROLE_${base}_${suffix}`.slice(0, 50);
-}
-
-function PermissionToggleCard({
-  group,
-  selectedKeys,
-  onToggle,
-}: {
-  group: ClubPermissionGroup;
-  selectedKeys: string[];
-  onToggle: (permissionKey: string) => void;
-}) {
-  const activeCount = group.permissions.filter((permission) => selectedKeys.includes(permission.permissionKey)).length;
-
-  return (
-    <article className="overflow-hidden rounded-[24px] border-l-4 border-[var(--secondary)] bg-white p-6 shadow-sm">
-      <div className="mb-6 flex items-start justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <div className="flex size-11 items-center justify-center rounded-[14px] bg-[var(--secondary-soft)] text-[var(--secondary)]">
-            <span className="material-symbols-outlined">{group.iconName}</span>
-          </div>
-          <div>
-            <h3 className={`${manrope.className} text-xl font-bold text-slate-900`}>{group.displayName}</h3>
-            <p className="mt-1 text-xs leading-5 text-slate-500">
-              {group.description ?? `${group.permissions.length}개 세부 권한을 제어합니다.`}
-            </p>
-          </div>
-        </div>
-        <span className="rounded-full bg-[var(--secondary)]/10 px-3 py-1 text-[10px] font-extrabold uppercase tracking-[0.18em] text-[var(--secondary)]">
-          {activeCount} Active
-        </span>
-      </div>
-
-      <div className="space-y-4">
-        {group.permissions.map((permission) => {
-          const selected = selectedKeys.includes(permission.permissionKey);
-          return (
-            <div
-              key={permission.permissionKey}
-              className="flex items-center justify-between gap-4 rounded-[18px] bg-[#f7fafc] p-4 ring-1 ring-[#edf2f5]"
-            >
-              <div className="flex-1">
-                <p className="text-sm font-semibold text-slate-900">{permission.displayName}</p>
-                <p className="mt-1 text-xs text-slate-500">
-                  {permission.description ?? "이 권한에 대한 설명이 없습니다."}
-                </p>
-              </div>
-              <button
-                type="button"
-                role="switch"
-                aria-checked={selected}
-                onClick={() => onToggle(permission.permissionKey)}
-                className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition ${
-                  selected ? "bg-[var(--secondary)]" : "bg-[#dbe4e8]"
-                }`}
-              >
-                <span
-                  className={`absolute left-[2px] size-5 rounded-full border border-slate-200 bg-white transition-transform ${
-                    selected ? "translate-x-5" : "translate-x-0"
-                  }`}
-                />
-              </button>
-            </div>
-          );
-        })}
-      </div>
-
-      <div className="mt-6 flex items-center justify-between border-t border-[#eff4f7] pt-4">
-        <div className="flex items-center gap-2 text-xs font-semibold text-slate-500">
-          <span className="material-symbols-outlined text-base text-[var(--secondary)]">verified_user</span>
-          {activeCount} permissions enabled
-        </div>
-        <div className="text-[11px] font-semibold text-slate-400">{group.permissions.length} total</div>
-      </div>
-    </article>
-  );
-}
 
 export function RoleEditorForm({
   clubId,
@@ -179,7 +57,7 @@ export function RoleEditorForm({
   const router = useRouter();
   const prefersReducedMotion = useReducedMotion();
   const reduceMotion = Boolean(prefersReducedMotion);
-  const [form, setForm] = useState(() => buildInitialValue(initialPosition));
+  const [form, setForm] = useState(() => buildRoleFormValue(initialPosition));
   const [submitting, setSubmitting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const { showToast, clearToast } = useAppToast();
@@ -249,7 +127,7 @@ export function RoleEditorForm({
         className={`${inter.className} min-h-screen bg-[#f7fafc] text-slate-900`}
         style={
           {
-            "--secondary": form.colorHex || "#904e00",
+            "--secondary": form.colorHex || DEFAULT_ROLE_COLOR,
             "--secondary-soft": "#ffdcc2",
           } as CSSProperties
         }
@@ -319,7 +197,7 @@ export function RoleEditorForm({
               </div>
               <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
                 {permissionGroups.map((group) => (
-                  <PermissionToggleCard
+                  <RolePermissionToggleCard
                     key={group.featureKey}
                     group={group}
                     selectedKeys={form.permissionKeys}
@@ -340,7 +218,7 @@ export function RoleEditorForm({
                     Representative Icon
                   </label>
                   <div className="flex flex-wrap gap-4">
-                    {ICON_OPTIONS.map((iconName) => {
+                    {ROLE_ICON_OPTIONS.map((iconName) => {
                       const selected = form.iconName === iconName;
                       return (
                         <button
@@ -364,7 +242,7 @@ export function RoleEditorForm({
                     Role Theme Color
                   </label>
                   <div className="flex flex-wrap gap-4">
-                    {COLOR_OPTIONS.map((colorHex) => {
+                    {ROLE_COLOR_OPTIONS.map((colorHex) => {
                       const selected = form.colorHex === colorHex;
                       return (
                         <button
@@ -385,7 +263,7 @@ export function RoleEditorForm({
               <div className="flex items-center gap-4">
                 <div
                   className="flex size-14 items-center justify-center rounded-[18px] text-white shadow-sm"
-                  style={{ backgroundColor: form.colorHex || "#904e00" }}
+                  style={{ backgroundColor: form.colorHex || DEFAULT_ROLE_COLOR }}
                 >
                   <span className="material-symbols-outlined text-[28px]">{form.iconName}</span>
                 </div>
@@ -442,9 +320,9 @@ export function RoleEditorForm({
       className={`${inter.className} min-h-screen bg-[#f7fafc] text-slate-900`}
       style={
         {
-          "--secondary": form.colorHex || "#904e00",
-          "--secondary-soft": "#ffdcc2",
-        } as CSSProperties
+            "--secondary": form.colorHex || DEFAULT_ROLE_COLOR,
+            "--secondary-soft": "#ffdcc2",
+          } as CSSProperties
       }
     >
       <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(255,220,194,0.6),_transparent_34%),linear-gradient(180deg,_#f7fafc_0%,_#f1f5f7_100%)] pb-24">
@@ -581,7 +459,7 @@ export function RoleEditorForm({
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
               {permissionGroups.map((group) => (
               <div key={group.featureKey}>
-                <PermissionToggleCard
+                <RolePermissionToggleCard
                   group={group}
                   selectedKeys={form.permissionKeys}
                   onToggle={togglePermission}

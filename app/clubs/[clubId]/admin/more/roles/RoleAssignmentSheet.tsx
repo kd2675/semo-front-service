@@ -14,6 +14,8 @@ import { motion, useReducedMotion } from "motion/react";
 import { Inter, Manrope } from "next/font/google";
 import { startTransition, useDeferredValue, useEffect, useMemo, useState } from "react";
 import type { CSSProperties } from "react";
+import { RoleMemberIdentity, RoleOtherPositions } from "./RoleMemberParts";
+import { DEFAULT_ROLE_COLOR } from "./roleUtils";
 
 const manrope = Manrope({
   subsets: ["latin"],
@@ -34,26 +36,6 @@ type RoleAssignmentSheetProps = {
   onClose: () => void;
 };
 
-function makeInitials(value: string) {
-  const trimmed = value.trim();
-  return trimmed.length > 0 ? trimmed.slice(0, 2).toUpperCase() : "MB";
-}
-
-function getRoleSubtitle(member: ClubAdminMember) {
-  return member.tagline?.trim() || member.roleCode;
-}
-
-function roleTone(member: ClubAdminMember) {
-  switch (member.roleCode) {
-    case "OWNER":
-      return "bg-amber-100 text-amber-800";
-    case "ADMIN":
-      return "bg-sky-100 text-sky-800";
-    default:
-      return "bg-slate-100 text-slate-600";
-  }
-}
-
 function MemberCard({
   member,
   role,
@@ -67,9 +49,6 @@ function MemberCard({
   busy: boolean;
   onToggle: (member: ClubAdminMember, shouldAssign: boolean) => void;
 }) {
-  const relatedPositions = member.positions.filter(
-    (position) => position.clubPositionId !== role.clubPositionId,
-  );
   const buttonLabel = assigned ? "해제" : "부여";
 
   return (
@@ -81,32 +60,7 @@ function MemberCard({
       }`}
     >
       <div className="flex items-start justify-between gap-3">
-        <div className="flex min-w-0 items-center gap-3">
-          {member.avatarImageUrl ? (
-            <div
-              className="size-12 shrink-0 rounded-2xl bg-cover bg-center shadow-sm"
-              style={{ backgroundImage: `url('${member.avatarImageUrl}')` }}
-            />
-          ) : (
-            <div className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-[#efe6d8] text-sm font-black text-[#8b4b00] shadow-sm">
-              {makeInitials(member.displayName)}
-            </div>
-          )}
-          <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-2">
-              <p className="truncate text-sm font-semibold text-slate-900">{member.displayName}</p>
-              <span className={`rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.18em] ${roleTone(member)}`}>
-                {member.roleCode}
-              </span>
-              {member.self ? (
-                <span className="rounded-full bg-slate-900 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-white">
-                  ME
-                </span>
-              ) : null}
-            </div>
-            <p className="mt-1 text-xs text-slate-500">{getRoleSubtitle(member)}</p>
-          </div>
-        </div>
+        <RoleMemberIdentity member={member} showSelf avatarSizeClass="size-12" />
 
         <button
           type="button"
@@ -144,24 +98,11 @@ function MemberCard({
         ) : null}
       </div>
 
-      {relatedPositions.length > 0 ? (
-        <div className="mt-4 border-t border-slate-200 pt-4">
-          <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-slate-400">Other Positions</p>
-          <div className="mt-2 flex flex-wrap gap-2">
-            {relatedPositions.map((position) => (
-              <span
-                key={`${member.clubMemberId}-${position.clubPositionId}`}
-                className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-[11px] font-semibold text-slate-600"
-              >
-                <span className="material-symbols-outlined text-[15px]" style={{ color: position.colorHex ?? "#904e00" }}>
-                  {position.iconName ?? "badge"}
-                </span>
-                {position.displayName}
-              </span>
-            ))}
-          </div>
-        </div>
-      ) : null}
+      <RoleOtherPositions
+        member={member}
+        currentClubPositionId={role.clubPositionId}
+        titleTrackingClass="tracking-[0.22em]"
+      />
     </article>
   );
 }
@@ -181,7 +122,7 @@ export function RoleAssignmentSheet({
   const [loadError, setLoadError] = useState<string | null>(null);
   const deferredQuery = useDeferredValue(query.trim().toLowerCase());
   const { showToast } = useAppToast(2400);
-  const colorHex = role.colorHex ?? "#904e00";
+  const colorHex = role.colorHex ?? DEFAULT_ROLE_COLOR;
 
   useEffect(() => {
     const previousOverflow = document.body.style.overflow;
