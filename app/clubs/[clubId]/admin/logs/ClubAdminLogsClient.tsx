@@ -49,7 +49,7 @@ export function ClubAdminLogsClient({ clubId, clubName, initialData }: ClubAdmin
   const [sentinelNode, setSentinelNode] = useState<HTMLDivElement | null>(null);
   const logsQuery = useInfiniteQuery(adminActivitiesInfiniteQueryOptions(clubId, initialData));
   const items = useMemo(
-    () => logsQuery.data?.pages.flatMap((page) => page.activities) ?? initialData.activities,
+    () => logsQuery.data?.pages?.flatMap((page) => page.activities) ?? initialData.activities,
     [initialData.activities, logsQuery.data],
   );
   const hasNext = logsQuery.hasNextPage;

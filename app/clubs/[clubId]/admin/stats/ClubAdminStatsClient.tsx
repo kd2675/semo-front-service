@@ -11,7 +11,7 @@ const plusJakartaSans = Plus_Jakarta_Sans({
   weight: ["400", "500", "600", "700"],
 });
 
-type StatsMetric = {
+export type ClubAdminStatsMetric = {
   id: string;
   label: string;
   value: string;
@@ -20,40 +20,99 @@ type StatsMetric = {
   icon: string;
 };
 
-type ActivitySeries = {
+export type ClubAdminStatsSnapshotItem = {
   id: string;
   label: string;
-  percentage: number;
+  value: string;
+  detail: string;
+  accent?: "primary" | "green" | "red" | "default";
+};
+
+export type ClubAdminStatsActivity = {
+  id: number;
+  subject: string;
+  detail: string;
+  status: "SUCCESS" | "FAIL" | string;
+  createdAtLabel: string;
 };
 
 type ClubAdminStatsClientProps = {
-  clubId: string;
   clubName: string;
-  metrics: StatsMetric[];
-  attendanceSeries: ActivitySeries[];
+  partialData: boolean;
+  metrics: ClubAdminStatsMetric[];
+  memberSnapshotItems: ClubAdminStatsSnapshotItem[];
+  memberActivityItems: ClubAdminStatsSnapshotItem[];
+  recentActivities: ClubAdminStatsActivity[];
 };
 
-const DETAIL_TONE_CLASS = {
-  primary: "text-green-600",
+const TONE_CLASS = {
+  primary: "text-[var(--primary)]",
   green: "text-green-600",
   red: "text-red-500",
   default: "text-slate-500",
 } as const;
 
-const GROWTH_MONTH_LABELS = ["1월", "2월", "3월", "4월", "5월", "6월"];
-const MONTHLY_BARS = [
-  { id: "m1", label: "1월", heightClassName: "h-1/2", fillClassName: "h-[40%]" },
-  { id: "m2", label: "2월", heightClassName: "h-2/3", fillClassName: "h-[60%]" },
-  { id: "m3", label: "3월", heightClassName: "h-[45%]", fillClassName: "h-[45%]" },
-  { id: "m4", label: "4월", heightClassName: "h-3/4", fillClassName: "h-[80%]" },
-  { id: "m5", label: "5월", heightClassName: "h-full", fillClassName: "h-[95%]", max: true },
-  { id: "m6", label: "6월", heightClassName: "h-4/5", fillClassName: "h-[75%]" },
-];
+const PANEL_TONE_CLASS = {
+  primary: "border-[var(--primary)]/20 bg-[var(--primary)]/10",
+  green: "border-green-200 bg-green-50",
+  red: "border-red-200 bg-red-50",
+  default: "border-slate-200 bg-slate-50",
+} as const;
+
+const ACTIVITY_STATUS_CLASS = {
+  SUCCESS: "bg-green-100 text-green-700",
+  FAIL: "bg-red-100 text-red-600",
+} as const;
+
+function SnapshotGrid({
+  title,
+  caption,
+  items,
+  reduceMotion,
+  baseDelay,
+}: {
+  title: string;
+  caption: string;
+  items: ClubAdminStatsSnapshotItem[];
+  reduceMotion: boolean;
+  baseDelay: number;
+}) {
+  return (
+    <motion.section
+      className="mx-4 mb-6 rounded-xl border border-orange-100 bg-white p-5 shadow-sm"
+      {...staggeredFadeUpMotion(baseDelay, reduceMotion)}
+    >
+      <div className="mb-4">
+        <h3 className="font-bold text-slate-900">{title}</h3>
+        <p className="mt-1 text-sm text-slate-500">{caption}</p>
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        {items.map((item, index) => {
+          const accent = item.accent ?? "default";
+          return (
+            <motion.article
+              key={item.id}
+              className={`rounded-xl border p-4 ${PANEL_TONE_CLASS[accent]}`}
+              {...staggeredFadeUpMotion(baseDelay + index + 1, reduceMotion)}
+            >
+              <p className="text-xs font-semibold text-slate-500">{item.label}</p>
+              <p className="mt-2 text-xl font-bold text-slate-900">{item.value}</p>
+              <p className={`mt-1 text-xs font-medium ${TONE_CLASS[accent]}`}>{item.detail}</p>
+            </motion.article>
+          );
+        })}
+      </div>
+    </motion.section>
+  );
+}
 
 export function ClubAdminStatsClient({
   clubName,
+  partialData,
   metrics,
-  attendanceSeries,
+  memberSnapshotItems,
+  memberActivityItems,
+  recentActivities,
 }: ClubAdminStatsClientProps) {
   const prefersReducedMotion = useReducedMotion();
   const reduceMotion = Boolean(prefersReducedMotion);
@@ -64,7 +123,6 @@ export function ClubAdminStatsClient({
       style={
         {
           "--primary": "#f97316",
-          "--secondary": "#135bec",
         } as CSSProperties
       }
     >
@@ -79,173 +137,100 @@ export function ClubAdminStatsClient({
         />
 
         <main className="semo-nav-bottom-space mx-auto max-w-md">
-          <motion.section className="grid grid-cols-2 gap-3 p-4" {...staggeredFadeUpMotion(0, reduceMotion)}>
-            {metrics.map((metric, index) => (
-              <motion.article
-                key={metric.id}
-                className="rounded-xl border border-[var(--primary)]/20 bg-[var(--primary)]/10 p-4"
-                {...staggeredFadeUpMotion(index + 1, reduceMotion)}
-              >
-                <div className="mb-2 flex items-center justify-between">
-                  <span className="material-symbols-outlined text-xl text-[var(--primary)]">
-                    {metric.icon}
-                  </span>
-                  <span className={`text-xs font-bold ${DETAIL_TONE_CLASS[metric.accent ?? "default"]}`}>
-                    {metric.detail}
-                  </span>
-                </div>
-                <p className="text-xs font-medium text-slate-600">{metric.label}</p>
-                <p className="mt-1 text-2xl font-bold">{metric.value}</p>
-              </motion.article>
-            ))}
-          </motion.section>
+          {partialData ? (
+            <motion.section
+              className="mx-4 mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800"
+              {...staggeredFadeUpMotion(0, reduceMotion)}
+            >
+              일부 공통 지표를 불러오지 못해 현재 조회 가능한 정보만 표시합니다.
+            </motion.section>
+          ) : null}
 
           <motion.section
-            className="mx-4 mb-6 rounded-xl border border-orange-50 bg-white p-5 shadow-sm"
-            {...staggeredFadeUpMotion(5, reduceMotion)}
+            className="grid grid-cols-2 gap-3 p-4"
+            {...staggeredFadeUpMotion(partialData ? 1 : 0, reduceMotion)}
           >
-            <div className="mb-4 flex items-center justify-between">
-              <div>
-                <h3 className="font-bold text-slate-800">회원 증가 추이</h3>
-                <p className="text-xs text-slate-500">최근 6개월 데이터</p>
-              </div>
-              <div className="text-right">
-                <p className="text-lg font-bold text-[var(--primary)]">1,200명</p>
-                <p className="text-[10px] font-bold text-green-500">전월 대비 +15%</p>
-              </div>
-            </div>
-            <div className="relative h-40 w-full">
-              <svg className="h-full w-full overflow-visible" viewBox="0 0 400 150" aria-hidden="true">
-                <defs>
-                  <linearGradient id="admin-stats-growth" x1="0%" x2="0%" y1="0%" y2="100%">
-                    <stop offset="0%" style={{ stopColor: "rgba(249,115,22,0.3)", stopOpacity: 1 }} />
-                    <stop offset="100%" style={{ stopColor: "rgba(249,115,22,0)", stopOpacity: 0 }} />
-                  </linearGradient>
-                </defs>
-                <path
-                  d="M0,130 C40,110 80,120 120,80 C160,40 200,60 240,40 C280,20 320,50 360,10 L400,10 L400,150 L0,150 Z"
-                  fill="url(#admin-stats-growth)"
-                />
-                <path
-                  d="M0,130 C40,110 80,120 120,80 C160,40 200,60 240,40 C280,20 320,50 360,10"
-                  fill="none"
-                  stroke="#f97316"
-                  strokeLinecap="round"
-                  strokeWidth="3"
-                />
-                <circle cx="120" cy="80" r="4" fill="#f97316" />
-                <circle cx="240" cy="40" r="4" fill="#f97316" />
-                <circle cx="360" cy="10" r="4" fill="#f97316" />
-              </svg>
-            </div>
-            <div className="mt-2 flex justify-between px-2 text-[10px] font-bold text-slate-400">
-              {GROWTH_MONTH_LABELS.map((label) => (
-                <span key={label}>{label}</span>
-              ))}
-            </div>
-          </motion.section>
-
-          <motion.section
-            className="mx-4 mb-6 rounded-xl border border-orange-50 bg-white p-5 shadow-sm"
-            {...staggeredFadeUpMotion(6, reduceMotion)}
-          >
-            <h3 className="mb-4 font-bold text-slate-800">월간 출석 현황</h3>
-            <div className="flex h-40 items-end justify-between gap-2 px-2">
-              {MONTHLY_BARS.map((bar, index) => (
-                <motion.div
-                  key={bar.id}
-                  className={`relative flex-1 rounded-t-lg bg-[var(--primary)]/10 ${bar.heightClassName}`}
-                  {...staggeredFadeUpMotion(index + 7, reduceMotion)}
+            {metrics.map((metric, index) => {
+              const accent = metric.accent ?? "default";
+              return (
+                <motion.article
+                  key={metric.id}
+                  className={`rounded-xl border p-4 ${PANEL_TONE_CLASS[accent]}`}
+                  {...staggeredFadeUpMotion(index + 1, reduceMotion)}
                 >
-                  <div
-                    className={`absolute inset-x-0 bottom-0 mt-auto rounded-t-lg ${
-                      bar.max ? "bg-[var(--primary)]" : "bg-[var(--primary)]/40"
-                    } ${bar.fillClassName}`}
-                  />
-                  {bar.max ? (
-                    <div className="absolute -top-6 left-1/2 -translate-x-1/2 text-[10px] font-bold text-[var(--primary)]">
-                      최고
-                    </div>
-                  ) : null}
-                </motion.div>
-              ))}
-            </div>
-            <div className="mt-3 flex justify-between px-2 text-[10px] font-bold text-slate-400">
-              {MONTHLY_BARS.map((bar) => (
-                <span key={bar.id}>{bar.label}</span>
-              ))}
-            </div>
+                  <div className="mb-2 flex items-center justify-between gap-3">
+                    <span className={`material-symbols-outlined text-xl ${TONE_CLASS[accent]}`}>
+                      {metric.icon}
+                    </span>
+                    <span className={`text-[11px] font-bold ${TONE_CLASS[accent]}`}>
+                      {metric.detail}
+                    </span>
+                  </div>
+                  <p className="text-xs font-medium text-slate-600">{metric.label}</p>
+                  <p className="mt-1 text-2xl font-bold text-slate-900">{metric.value}</p>
+                </motion.article>
+              );
+            })}
           </motion.section>
 
-          <motion.section
-            className="mx-4 mb-6 rounded-xl border border-orange-50 bg-white p-5 shadow-sm"
-            {...staggeredFadeUpMotion(13, reduceMotion)}
-          >
-            <div className="mb-6 flex items-center justify-between">
-              <h3 className="font-bold text-slate-800">매출·지출 추이</h3>
-              <div className="flex gap-4">
-                <div className="flex items-center gap-1.5">
-                  <div className="h-2.5 w-2.5 rounded-full bg-[var(--primary)]" />
-                  <span className="text-[10px] font-medium text-slate-500">매출</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <div className="h-2.5 w-2.5 rounded-full bg-slate-300" />
-                  <span className="text-[10px] font-medium text-slate-500">지출</span>
-                </div>
-              </div>
-            </div>
-            <div className="space-y-6">
-              <div>
-                <div className="mb-1.5 flex justify-between text-xs">
-                  <span className="font-medium">이번 달 매출 목표 (85%)</span>
-                  <span className="font-bold">₩10,200,000 / 12,000,000</span>
-                </div>
-                <div className="h-2.5 w-full overflow-hidden rounded-full bg-slate-100">
-                  <div className="h-full w-[85%] rounded-full bg-[var(--primary)]" />
-                </div>
-              </div>
-              <div>
-                <div className="mb-1.5 flex justify-between text-xs">
-                  <span className="font-medium">지출 예산 집행 (62%)</span>
-                  <span className="font-bold">₩4,800,000 / 7,500,000</span>
-                </div>
-                <div className="h-2.5 w-full overflow-hidden rounded-full bg-slate-100">
-                  <div className="h-full w-[62%] rounded-full bg-slate-400" />
-                </div>
-              </div>
-            </div>
-          </motion.section>
+          <SnapshotGrid
+            title="회원 분포"
+            caption="기능 활성화 여부와 무관한 관리자 공통 멤버 지표입니다."
+            items={memberSnapshotItems}
+            reduceMotion={reduceMotion}
+            baseDelay={8}
+          />
+
+          <SnapshotGrid
+            title="운영 관찰 포인트"
+            caption="멤버 관리 기준으로 지금 확인할 만한 상태만 묶었습니다."
+            items={memberActivityItems}
+            reduceMotion={reduceMotion}
+            baseDelay={14}
+          />
 
           <motion.section
-            className="mx-4 mb-6 rounded-xl border border-orange-50 bg-white p-5 shadow-sm"
-            {...staggeredFadeUpMotion(14, reduceMotion)}
+            className="mx-4 mb-6 rounded-xl border border-orange-100 bg-white p-5 shadow-sm"
+            {...staggeredFadeUpMotion(20, reduceMotion)}
           >
-            <div className="mb-4 flex items-center justify-between">
-              <h3 className="font-bold text-slate-800">주간 참여 추이</h3>
-              <span className="rounded-full bg-[var(--primary)]/10 px-3 py-1 text-[10px] font-bold text-[var(--primary)]">
-                최근 5주
-              </span>
+            <div className="mb-4">
+              <h3 className="font-bold text-slate-900">최근 운영 로그</h3>
+              <p className="mt-1 text-sm text-slate-500">기능별 운영 화면이 아니라 관리자 공통 기록입니다.</p>
             </div>
-            <div className="flex h-32 items-end justify-between gap-3">
-              {attendanceSeries.map((item, index) => (
-                <motion.div
-                  key={item.id}
-                  className="flex flex-1 flex-col items-center gap-2"
-                  {...staggeredFadeUpMotion(index + 15, reduceMotion)}
-                >
-                  <div className="flex h-full w-full items-end rounded-xl bg-slate-100 p-2">
-                    <div
-                      className="w-full rounded-lg bg-gradient-to-t from-[var(--primary)] to-orange-300"
-                      style={{ height: `${item.percentage}%` }}
-                    />
-                  </div>
-                  <div className="text-center">
-                    <p className="text-[11px] font-bold text-slate-900">{item.label}</p>
-                    <p className="text-[10px] text-slate-500">{item.percentage}%</p>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
+
+            {recentActivities.length === 0 ? (
+              <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-6 text-sm text-slate-500">
+                아직 기록된 운영 로그가 없습니다.
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {recentActivities.map((activity, index) => {
+                  const statusClass =
+                    ACTIVITY_STATUS_CLASS[
+                      activity.status as keyof typeof ACTIVITY_STATUS_CLASS
+                    ] ?? "bg-slate-100 text-slate-600";
+
+                  return (
+                    <motion.article
+                      key={activity.id}
+                      className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3"
+                      {...staggeredFadeUpMotion(21 + index, reduceMotion)}
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-bold text-slate-900">{activity.subject}</p>
+                          <p className="mt-1 text-sm text-slate-600">{activity.detail}</p>
+                        </div>
+                        <span className={`shrink-0 rounded-full px-2 py-1 text-[10px] font-bold ${statusClass}`}>
+                          {activity.status === "FAIL" ? "실패" : "성공"}
+                        </span>
+                      </div>
+                      <p className="mt-2 text-[11px] font-medium text-slate-400">{activity.createdAtLabel}</p>
+                    </motion.article>
+                  );
+                })}
+              </div>
+            )}
           </motion.section>
         </main>
       </div>

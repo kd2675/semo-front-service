@@ -3,55 +3,239 @@
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
+import { adminActivitiesPreviewQueryOptions } from "@/app/lib/react-query/activities/queries";
 import { myClubQueryOptions } from "@/app/lib/react-query/club/queries";
+import { adminMembersQueryOptions } from "@/app/lib/react-query/members/queries";
+import type {
+  ClubAdminActivityItem,
+  ClubAdminMembersResponse,
+} from "@/app/lib/clubs";
 import { AdminStatsLoadingShell } from "../AdminRouteLoadingShells";
-import { ClubAdminStatsClient } from "./ClubAdminStatsClient";
+import {
+  type ClubAdminStatsActivity,
+  type ClubAdminStatsMetric,
+  type ClubAdminStatsSnapshotItem,
+  ClubAdminStatsClient,
+} from "./ClubAdminStatsClient";
 
 type ClubAdminStatsFallbackClientProps = {
   clubId: string;
 };
 
+function isAdminRole(roleCode: string) {
+  return roleCode === "OWNER" || roleCode === "ADMIN";
+}
+
+function toActivityItems(activities: ClubAdminActivityItem[]): ClubAdminStatsActivity[] {
+  return activities.map((activity) => ({
+    id: activity.activityId,
+    subject: activity.subject,
+    detail: activity.detail,
+    status: activity.status,
+    createdAtLabel: activity.createdAtLabel ?? "방금 전",
+  }));
+}
+
+function buildMetrics(
+  members: ClubAdminMembersResponse | null,
+  activities: ClubAdminActivityItem[],
+): ClubAdminStatsMetric[] {
+  const memberItems = members?.members ?? [];
+  const totalMemberCount = memberItems.length;
+  const activeMemberCount = memberItems.filter((member) => member.membershipStatus === "ACTIVE").length;
+  const dormantMemberCount = memberItems.filter((member) => member.membershipStatus === "DORMANT").length;
+  const adminCount = memberItems.filter((member) => isAdminRole(member.roleCode)).length;
+  const recentlyActiveCount = memberItems.filter((member) => member.lastActivityAtLabel != null).length;
+  const failedActivityCount = activities.filter((activity) => activity.status === "FAIL").length;
+
+  return [
+    {
+      id: "members-total",
+      label: "전체 멤버",
+      value: `${totalMemberCount}명`,
+      detail: `활동 회원 ${activeMemberCount}명`,
+      accent: "primary",
+      icon: "groups",
+    },
+    {
+      id: "members-dormant",
+      label: "휴면 회원",
+      value: `${dormantMemberCount}명`,
+      detail: dormantMemberCount > 0 ? "재활성화 케어 필요" : "현재 휴면 회원 없음",
+      accent: dormantMemberCount > 0 ? "red" : "default",
+      icon: "bedtime",
+    },
+    {
+      id: "admins",
+      label: "운영진",
+      value: `${adminCount}명`,
+      detail: "오너 + 어드민 기준",
+      accent: "green",
+      icon: "admin_panel_settings",
+    },
+    {
+      id: "recently-active",
+      label: "최근 활동 멤버",
+      value: `${recentlyActiveCount}명`,
+      detail: "멤버 관리 마지막 활동 기준",
+      accent: recentlyActiveCount > 0 ? "green" : "default",
+      icon: "timeline",
+    },
+    {
+      id: "activity-log-count",
+      label: "최근 운영 로그",
+      value: `${activities.length}건`,
+      detail: failedActivityCount > 0 ? `실패 ${failedActivityCount}건 포함` : "최근 기록 기준",
+      accent: failedActivityCount > 0 ? "red" : "default",
+      icon: "history",
+    },
+  ];
+}
+
+function buildMemberSnapshotItems(members: ClubAdminMembersResponse | null): ClubAdminStatsSnapshotItem[] {
+  const memberItems = members?.members ?? [];
+  const activeMemberCount = memberItems.filter((member) => member.membershipStatus === "ACTIVE").length;
+  const dormantMemberCount = memberItems.filter((member) => member.membershipStatus === "DORMANT").length;
+  const ownerCount = memberItems.filter((member) => member.roleCode === "OWNER").length;
+  const adminCount = memberItems.filter((member) => member.roleCode === "ADMIN").length;
+  const pendingCount = memberItems.filter((member) => member.membershipStatus === "PENDING").length;
+
+  return [
+    {
+      id: "member-active",
+      label: "활동 회원",
+      value: `${activeMemberCount}명`,
+      detail: "현재 운영 대상",
+      accent: "primary",
+    },
+    {
+      id: "member-dormant",
+      label: "휴면 회원",
+      value: `${dormantMemberCount}명`,
+      detail: dormantMemberCount > 0 ? "복귀 케어 필요" : "정상 상태",
+      accent: dormantMemberCount > 0 ? "red" : "default",
+    },
+    {
+      id: "member-owners",
+      label: "오너",
+      value: `${ownerCount}명`,
+      detail: "최상위 운영 권한",
+      accent: "green",
+    },
+    {
+      id: "member-admins",
+      label: "어드민",
+      value: `${adminCount}명`,
+      detail: "실무 운영 담당",
+      accent: "green",
+    },
+    {
+      id: "member-pending",
+      label: "가입 미완료",
+      value: `${pendingCount}명`,
+      detail: "관리 범위 밖 상태 포함",
+      accent: pendingCount > 0 ? "red" : "default",
+    },
+  ];
+}
+
+function buildMemberActivityItems(members: ClubAdminMembersResponse | null): ClubAdminStatsSnapshotItem[] {
+  const memberItems = members?.members ?? [];
+  const recentJoinCount = memberItems.filter((member) => member.joinedAtLabel != null).length;
+  const noRecentActivityCount = memberItems.filter((member) => member.lastActivityAtLabel == null).length;
+  const selfManagedCount = memberItems.filter((member) => member.self).length;
+  const manageableCount = memberItems.filter((member) => member.canManage).length;
+
+  return [
+    {
+      id: "member-joined",
+      label: "가입 이력 보유",
+      value: `${recentJoinCount}명`,
+      detail: "멤버 관리 기준",
+      accent: "default",
+    },
+    {
+      id: "member-no-activity",
+      label: "최근 활동 미표시",
+      value: `${noRecentActivityCount}명`,
+      detail: "활동 로그 점검 필요",
+      accent: noRecentActivityCount > 0 ? "red" : "default",
+    },
+    {
+      id: "member-manageable",
+      label: "관리 가능 멤버",
+      value: `${manageableCount}명`,
+      detail: "권한 변경 가능 범위",
+      accent: "primary",
+    },
+    {
+      id: "member-self",
+      label: "내 계정 포함",
+      value: `${selfManagedCount}명`,
+      detail: "본인 계정 식별",
+      accent: "default",
+    },
+  ];
+}
+
 export function ClubAdminStatsFallbackClient({ clubId }: ClubAdminStatsFallbackClientProps) {
   const router = useRouter();
-  const { data: club, isPending, isError } = useQuery(myClubQueryOptions(clubId));
+  const clubQuery = useQuery(myClubQueryOptions(clubId));
+  const club = clubQuery.data ?? null;
+  const isAdmin = club?.admin === true;
+
+  const membersQuery = useQuery({
+    ...adminMembersQueryOptions(clubId),
+    enabled: isAdmin,
+  });
+  const activitiesQuery = useQuery({
+    ...adminActivitiesPreviewQueryOptions(clubId, 5),
+    enabled: isAdmin,
+  });
 
   useEffect(() => {
-    if (!isPending && (isError || !club || !club.admin)) {
-        router.replace(`/clubs/${clubId}`);
+    if (!clubQuery.isPending && (clubQuery.isError || !club || !club.admin)) {
+      router.replace(`/clubs/${clubId}`);
     }
-  }, [club, clubId, isError, isPending, router]);
+  }, [club, clubId, clubQuery.isError, clubQuery.isPending, router]);
+
+  const members = membersQuery.data ?? null;
+  const activities = useMemo(
+    () => activitiesQuery.data?.activities ?? [],
+    [activitiesQuery.data],
+  );
+
+  const isInitialLoading =
+    clubQuery.isPending || (isAdmin && (membersQuery.isPending || activitiesQuery.isPending));
+
+  const partialData = membersQuery.isError || activitiesQuery.isError;
 
   const metrics = useMemo(
-    () => [
-      { id: "engagement", label: "참여도", value: "84%", detail: "게시글/일정 기준", accent: "primary" as const, icon: "favorite" },
-      { id: "attendance", label: "출석률", value: "78%", detail: "주간 평균 출석", accent: "green" as const, icon: "event_available" },
-      { id: "growth", label: "성장률", value: "+12%", detail: "전월 대비", accent: "primary" as const, icon: "trending_up" },
-      { id: "finance", label: "재정 수납", value: "91%", detail: "현재 납부 완료율", icon: "payments" },
-    ],
-    [],
+    () => buildMetrics(members, activities),
+    [activities, members],
   );
-
-  const attendanceSeries = useMemo(
-    () => [
-      { id: "w1", label: "1주", percentage: 52 },
-      { id: "w2", label: "2주", percentage: 67 },
-      { id: "w3", label: "3주", percentage: 59 },
-      { id: "w4", label: "4주", percentage: 82 },
-      { id: "w5", label: "이번 주", percentage: 91 },
-    ],
-    [],
+  const memberSnapshotItems = useMemo(
+    () => buildMemberSnapshotItems(members),
+    [members],
   );
+  const memberActivityItems = useMemo(
+    () => buildMemberActivityItems(members),
+    [members],
+  );
+  const recentActivities = useMemo(() => toActivityItems(activities), [activities]);
 
-  if (!club) {
+  if (isInitialLoading || !club) {
     return <AdminStatsLoadingShell />;
   }
 
   return (
     <ClubAdminStatsClient
-      clubId={clubId}
       clubName={club.name}
+      partialData={partialData}
       metrics={metrics}
-      attendanceSeries={attendanceSeries}
+      memberSnapshotItems={memberSnapshotItems}
+      memberActivityItems={memberActivityItems}
+      recentActivities={recentActivities}
     />
   );
 }

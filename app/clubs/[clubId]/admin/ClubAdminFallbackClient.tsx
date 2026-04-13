@@ -6,10 +6,7 @@ import { useRouter } from "next/navigation";
 import { ClubAdminHomeClient } from "./ClubAdminHomeClient";
 import { AdminHomeLoadingShell } from "./AdminRouteLoadingShells";
 import { adminActivitiesPreviewQueryOptions } from "@/app/lib/react-query/activities/queries";
-import {
-  adminJoinRequestInboxQueryOptions,
-  adminMembersQueryOptions,
-} from "@/app/lib/react-query/members/queries";
+import { adminMembersQueryOptions } from "@/app/lib/react-query/members/queries";
 import { myClubQueryOptions } from "@/app/lib/react-query/club/queries";
 
 type ClubAdminFallbackClientProps = {
@@ -18,31 +15,25 @@ type ClubAdminFallbackClientProps = {
 
 export function ClubAdminFallbackClient({ clubId }: ClubAdminFallbackClientProps) {
   const router = useRouter();
-  const [clubQuery, membersQuery, joinRequestsQuery, activitiesQuery] = useQueries({
+  const [clubQuery, membersQuery, activitiesQuery] = useQueries({
     queries: [
       myClubQueryOptions(clubId),
       adminMembersQueryOptions(clubId),
-      adminJoinRequestInboxQueryOptions(clubId),
       adminActivitiesPreviewQueryOptions(clubId, 5),
     ],
   });
   const club = clubQuery.data ?? null;
   const membersPayload = membersQuery.data ?? null;
-  const joinRequestsPayload = joinRequestsQuery.data ?? null;
-  const activities = activitiesQuery.data?.activities ?? [];
+  const activities = useMemo(
+    () => activitiesQuery.data?.activities ?? [],
+    [activitiesQuery.data],
+  );
 
   useEffect(() => {
     if (
       !clubQuery.isPending &&
       !membersQuery.isPending &&
-      !joinRequestsQuery.isPending &&
-      (clubQuery.isError ||
-        membersQuery.isError ||
-        joinRequestsQuery.isError ||
-        !club ||
-        !membersPayload ||
-        !joinRequestsPayload ||
-        !club.admin)
+      (clubQuery.isError || membersQuery.isError || !club || !membersPayload || !club.admin)
     ) {
         router.replace(`/clubs/${clubId}`);
     }
@@ -51,9 +42,6 @@ export function ClubAdminFallbackClient({ clubId }: ClubAdminFallbackClientProps
     clubId,
     clubQuery.isError,
     clubQuery.isPending,
-    joinRequestsPayload,
-    joinRequestsQuery.isError,
-    joinRequestsQuery.isPending,
     membersPayload,
     membersQuery.isError,
     membersQuery.isPending,
@@ -63,8 +51,8 @@ export function ClubAdminFallbackClient({ clubId }: ClubAdminFallbackClientProps
   const metrics = useMemo(
     () => {
       const members = membersPayload?.members ?? [];
-      const pendingCount = joinRequestsPayload?.pendingRequestCount ?? 0;
       const activeCount = members.filter((member) => member.membershipStatus === "ACTIVE").length;
+      const failureCount = activities.filter((activity) => activity.status === "FAIL").length;
 
       return [
       {
@@ -77,17 +65,17 @@ export function ClubAdminFallbackClient({ clubId }: ClubAdminFallbackClientProps
         detailTone: "slate" as const,
       },
       {
-        id: "approvals",
-        label: "승인 대기",
-        value: pendingCount.toLocaleString("ko-KR"),
-        accent: pendingCount > 0 ? ("orange" as const) : ("default" as const),
-        detail: pendingCount > 0 ? "확인 필요" : "대기 신청 없음",
-        detailIcon: pendingCount > 0 ? "priority_high" : "check_circle",
-        detailTone: pendingCount > 0 ? ("orange" as const) : ("slate" as const),
+        id: "activity",
+        label: "최근 활동",
+        value: activities.length.toLocaleString("ko-KR"),
+        accent: failureCount > 0 ? ("orange" as const) : ("default" as const),
+        detail: failureCount > 0 ? `실패 ${failureCount}건 확인 필요` : "최근 운영 로그 기준",
+        detailIcon: failureCount > 0 ? "warning" : "history",
+        detailTone: failureCount > 0 ? ("orange" as const) : ("slate" as const),
       },
     ];
     },
-    [joinRequestsPayload, membersPayload],
+    [activities, membersPayload],
   );
 
   const actions = useMemo(
@@ -107,13 +95,6 @@ export function ClubAdminFallbackClient({ clubId }: ClubAdminFallbackClientProps
         href: `/clubs/${clubId}/admin/menu`,
       },
       {
-        id: "join-requests",
-        title: "신규가입",
-        description: "가입 신청 대기열을 확인하고 승인, 반려를 처리합니다.",
-        icon: "group_add",
-        href: `/clubs/${clubId}/admin/more/join-requests`,
-      },
-      {
         id: "members",
         title: "멤버 관리",
         description: "가입 완료 멤버의 권한과 활동 상태를 관리합니다.",
@@ -127,11 +108,18 @@ export function ClubAdminFallbackClient({ clubId }: ClubAdminFallbackClientProps
         icon: "analytics",
         href: `/clubs/${clubId}/admin/stats`,
       },
+      {
+        id: "logs",
+        title: "활동 로그",
+        description: "운영 기록과 실패 이력을 확인합니다.",
+        icon: "history",
+        href: `/clubs/${clubId}/admin/logs`,
+      },
     ],
     [clubId],
   );
 
-  if (!club || !membersPayload || !joinRequestsPayload) {
+  if (!club || !membersPayload) {
     return <AdminHomeLoadingShell />;
   }
 

@@ -67,6 +67,23 @@ function resolveOAuthErrorMessage(
   return "소셜 로그인 중 문제가 발생했습니다. 다시 시도해 주세요.";
 }
 
+function resolveLoginProcessingErrorMessage(loginError?: string | null): string | null {
+  if (!loginError) {
+    return null;
+  }
+
+  switch (loginError) {
+    case "unsupported_role":
+      return "SEMO는 USER 계정만 로그인할 수 있습니다.";
+    case "profile_initialize_failed":
+      return "프로필 생성에 실패했습니다. 다시 로그인해 주세요.";
+    case "processing_failed":
+      return "로그인 정보를 처리하는 중 문제가 발생했습니다. 다시 시도해 주세요.";
+    default:
+      return "로그인 중 문제가 발생했습니다. 다시 시도해 주세요.";
+  }
+}
+
 function LoginPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -79,24 +96,27 @@ function LoginPageContent() {
   const oauthError = searchParams.get("error");
   const oauthErrorCode = searchParams.get("errorCode");
   const oauthProvider = searchParams.get("provider");
+  const loginError = searchParams.get("loginError");
   const isProcessing = Boolean(token);
+
+  const redirectToLoginWithError = useEffectEvent(async (reason: string) => {
+    clearAccessToken();
+    await logout().catch(() => undefined);
+    router.replace(`/login?loginError=${encodeURIComponent(reason)}`);
+  });
 
   const completeLogin = useEffectEvent(async (nextToken: string) => {
     setAccessToken(nextToken);
     const user = getUserFromToken(nextToken);
 
     if (!isUserRole(user?.role)) {
-      await logout();
-      clearAccessToken();
-      setError("SEMO는 USER 계정만 로그인할 수 있습니다.");
+      await redirectToLoginWithError("unsupported_role");
       return;
     }
 
     const initializeResult = await initializeProfile(nextToken);
     if (initializeResult.error) {
-      await logout();
-      clearAccessToken();
-      setError(`프로필 생성에 실패했습니다. (${initializeResult.error})`);
+      await redirectToLoginWithError("profile_initialize_failed");
       return;
     }
 
@@ -138,9 +158,15 @@ function LoginPageContent() {
             oauthProvider,
             oauthError,
           );
+          const loginProcessingErrorMessage = resolveLoginProcessingErrorMessage(loginError);
           if (oauthErrorMessage) {
             clearAccessToken();
             setError(oauthErrorMessage);
+            return;
+          }
+          if (loginProcessingErrorMessage) {
+            clearAccessToken();
+            setError(loginProcessingErrorMessage);
             return;
           }
         }
@@ -150,6 +176,10 @@ function LoginPageContent() {
         }
       } catch {
         if (!cancelled) {
+          if (token) {
+            await redirectToLoginWithError("processing_failed");
+            return;
+          }
           clearAccessToken();
           setError("로그인 정보를 처리하는 중 문제가 발생했습니다. 다시 시도해 주세요.");
         }
@@ -159,7 +189,7 @@ function LoginPageContent() {
     return () => {
       cancelled = true;
     };
-  }, [oauthError, oauthErrorCode, oauthProvider, token]);
+  }, [loginError, oauthError, oauthErrorCode, oauthProvider, token]);
 
   const handleNaverLogin = () => {
     window.location.href = `${GATEWAY_BASE_URL}/oauth2/authorize/naver-semo`;

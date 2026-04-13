@@ -1,7 +1,6 @@
 "use client";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { RouterLink } from "@/app/components/RouterLink";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import { useAppToast } from "@/app/hooks/useAppToast";
 import { useAppAlert } from "@/app/hooks/useAppAlert";
@@ -377,35 +376,6 @@ export function ClubAdminMembersClient({
 
         <main className="semo-nav-bottom-space mx-auto w-full max-w-5xl space-y-6 px-4 py-4">
           <motion.section {...staggeredFadeUpMotion(0, reduceMotion)}>
-            <div className="rounded-[28px] border border-[#ec5b13]/10 bg-[linear-gradient(160deg,rgba(255,255,255,0.96)_0%,rgba(255,246,240,0.96)_54%,rgba(255,235,223,0.92)_100%)] p-5 shadow-[0_20px_48px_rgba(15,23,42,0.08)]">
-              <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-[var(--primary)]">
-                Join Request
-              </p>
-              <h2 className="mt-3 text-2xl font-black tracking-[-0.04em] text-slate-900">
-                신규가입 심사는 이제 멤버관리와 분리해서 운영합니다.
-              </h2>
-              <p className="mt-3 text-sm leading-6 text-slate-600">
-                승인과 반려는 더보기의 신규가입 화면에서 처리하고, 이 화면은 가입 완료 이후 멤버의 역할과
-                상태를 관리하는 용도로만 유지합니다.
-              </p>
-              <div className="mt-4 flex flex-wrap gap-2">
-                <RouterLink
-                  href={`/clubs/${clubId}/admin/more/join-requests`}
-                  className="rounded-2xl bg-[var(--secondary)] px-4 py-2.5 text-sm font-bold text-white transition-opacity hover:opacity-90"
-                >
-                  신규가입 운영 열기
-                </RouterLink>
-                <RouterLink
-                  href={`/clubs/${clubId}/admin/more/roles`}
-                  className="rounded-2xl bg-white px-4 py-2.5 text-sm font-bold text-slate-700 transition hover:bg-slate-100"
-                >
-                  직책 관리 열기
-                </RouterLink>
-              </div>
-            </div>
-          </motion.section>
-
-          <motion.section {...staggeredFadeUpMotion(1, reduceMotion)}>
             <div className="mb-3 flex items-center justify-between px-1">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
@@ -425,7 +395,7 @@ export function ClubAdminMembersClient({
                   <motion.article
                     key={member.clubMemberId}
                     className="rounded-xl border border-slate-100 bg-white p-4 shadow-sm"
-                    {...staggeredFadeUpMotion(index + 2, reduceMotion)}
+                    {...staggeredFadeUpMotion(index + 1, reduceMotion)}
                   >
                     <div className="flex items-center gap-4">
                       <MemberAvatar member={member} />

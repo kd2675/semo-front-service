@@ -11,6 +11,8 @@ import { getApiDataOrFallback, requireApiData } from "@/app/lib/queryUtils";
 export const activityQueryKeys = {
   adminActivities: (clubId: string, size: number) =>
     ["semo", "clubs", clubId, "admin-activities", { size }] as const,
+  adminActivitiesInfinite: (clubId: string, size: number) =>
+    ["semo", "clubs", clubId, "admin-activities-infinite", { size }] as const,
   timeline: (clubId: string) => ["semo", "clubs", clubId, "timeline"] as const,
   timelineInfinite: (clubId: string, size: number) =>
     ["semo", "clubs", clubId, "timeline", { size }] as const,
@@ -48,7 +50,7 @@ export function adminActivitiesInfiniteQueryOptions(
   initialData: ClubAdminActivityFeedResponse,
 ) {
   return infiniteQueryOptions({
-    queryKey: activityQueryKeys.adminActivities(clubId, 20),
+    queryKey: activityQueryKeys.adminActivitiesInfinite(clubId, 20),
     queryFn: async ({ pageParam }) =>
       requireApiData(
         await getClubAdminActivities(clubId, {
