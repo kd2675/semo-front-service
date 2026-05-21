@@ -1,5 +1,5 @@
 import { queryOptions } from "@tanstack/react-query";
-import { getClubAdminRoleDetail, getClubAdminRoleManagement } from "@/app/lib/clubs";
+import { getClubAdminRoleDetail, getClubAdminRoleHistory, getClubAdminRoleManagement } from "@/app/lib/clubs";
 import { requireApiData } from "@/app/lib/queryUtils";
 
 export const roleQueryKeys = {
@@ -7,6 +7,8 @@ export const roleQueryKeys = {
     ["semo", "clubs", clubId, "admin-role-management"] as const,
   adminRoleDetail: (clubId: string, positionId: string | number) =>
     ["semo", "clubs", clubId, "admin-role-detail", positionId] as const,
+  adminRoleHistory: (clubId: string) =>
+    ["semo", "clubs", clubId, "admin-role-history"] as const,
 };
 
 export function adminRoleManagementQueryOptions(clubId: string) {
@@ -27,6 +29,17 @@ export function adminRoleDetailQueryOptions(clubId: string, positionId: string |
       requireApiData(
         await getClubAdminRoleDetail(clubId, positionId),
         "직책 상세를 불러오지 못했습니다.",
+      ),
+  });
+}
+
+export function adminRoleHistoryQueryOptions(clubId: string) {
+  return queryOptions({
+    queryKey: roleQueryKeys.adminRoleHistory(clubId),
+    queryFn: async () =>
+      requireApiData(
+        await getClubAdminRoleHistory(clubId),
+        "직책 보유 이력을 불러오지 못했습니다.",
       ),
   });
 }

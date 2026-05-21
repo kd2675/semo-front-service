@@ -47,11 +47,13 @@ export function ClubAdminLogsClient({ clubId, clubName, initialData }: ClubAdmin
   const prefersReducedMotion = useReducedMotion();
   const reduceMotion = Boolean(prefersReducedMotion);
   const [sentinelNode, setSentinelNode] = useState<HTMLDivElement | null>(null);
-  const logsQuery = useInfiniteQuery(adminActivitiesInfiniteQueryOptions(clubId, initialData));
+  const [selectedPositionId, setSelectedPositionId] = useState<number | null>(null);
+  const logsQuery = useInfiniteQuery(adminActivitiesInfiniteQueryOptions(clubId, initialData, selectedPositionId));
   const items = useMemo(
-    () => logsQuery.data?.pages?.flatMap((page) => page.activities) ?? initialData.activities,
-    [initialData.activities, logsQuery.data],
+    () => logsQuery.data?.pages?.flatMap((page) => page.activities) ?? (selectedPositionId == null ? initialData.activities : []),
+    [initialData.activities, logsQuery.data, selectedPositionId],
   );
+  const positionFilters = logsQuery.data?.pages?.[0]?.positionFilters ?? initialData.positionFilters;
   const hasNext = logsQuery.hasNextPage;
   const isLoadingMore = logsQuery.isFetchingNextPage;
   const loadError = logsQuery.isFetchNextPageError
@@ -112,6 +114,35 @@ export function ClubAdminLogsClient({ clubId, clubName, initialData }: ClubAdmin
                 관리자 홈
               </RouterLink>
             </div>
+            {positionFilters.length > 0 ? (
+              <div className="mt-5 flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => setSelectedPositionId(null)}
+                  className={`rounded-full px-3 py-1.5 text-xs font-bold transition ${
+                    selectedPositionId == null
+                      ? "bg-[#ec5b13] text-white shadow-sm"
+                      : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                  }`}
+                >
+                  전체 직책
+                </button>
+                {positionFilters.map((position) => (
+                  <button
+                    key={position.clubPositionId}
+                    type="button"
+                    onClick={() => setSelectedPositionId(position.clubPositionId)}
+                    className={`rounded-full px-3 py-1.5 text-xs font-bold transition ${
+                      selectedPositionId === position.clubPositionId
+                        ? "bg-[#ec5b13] text-white shadow-sm"
+                        : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                    }`}
+                  >
+                    {position.displayName}
+                  </button>
+                ))}
+              </div>
+            ) : null}
           </motion.section>
 
           <section className="space-y-3">
@@ -136,6 +167,14 @@ export function ClubAdminLogsClient({ clubId, clubName, initialData }: ClubAdmin
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2">
                         <span className="text-base font-bold text-slate-900">{activity.actorDisplayName}</span>
+                        {activity.actorPositions.map((position) => (
+                          <span
+                            key={`${activity.activityId}-${position.clubPositionId}`}
+                            className="rounded-full bg-orange-50 px-2.5 py-1 text-[11px] font-semibold text-orange-700"
+                          >
+                            {position.displayName}
+                          </span>
+                        ))}
                         <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-600">
                           {activity.subject}
                         </span>

@@ -2,6 +2,7 @@ import { mutationOptions } from "@tanstack/react-query";
 import {
   createClubAdminRole,
   deleteClubAdminRole,
+  deleteClubAdminRoleHistory,
   updateClubAdminMemberPositions,
   updateClubAdminRole,
 } from "@/app/lib/clubs";
@@ -23,6 +24,12 @@ export function updateRoleMutationOptions(clubId: string, positionId: string) {
 export function deleteRoleMutationOptions(clubId: string, positionId: string) {
   return mutationOptions({
     mutationFn: () => deleteClubAdminRole(clubId, positionId),
+  });
+}
+
+export function deleteRoleHistoryMutationOptions(clubId: string) {
+  return mutationOptions({
+    mutationFn: (positionHistoryId: number) => deleteClubAdminRoleHistory(clubId, positionHistoryId),
   });
 }
 

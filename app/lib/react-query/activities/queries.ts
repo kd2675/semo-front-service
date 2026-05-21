@@ -9,22 +9,22 @@ import {
 import { getApiDataOrFallback, requireApiData } from "@/app/lib/queryUtils";
 
 export const activityQueryKeys = {
-  adminActivities: (clubId: string, size: number) =>
-    ["semo", "clubs", clubId, "admin-activities", { size }] as const,
-  adminActivitiesInfinite: (clubId: string, size: number) =>
-    ["semo", "clubs", clubId, "admin-activities-infinite", { size }] as const,
+  adminActivities: (clubId: string, size: number, positionId: number | null = null) =>
+    ["semo", "clubs", clubId, "admin-activities", { size, positionId }] as const,
+  adminActivitiesInfinite: (clubId: string, size: number, positionId: number | null = null) =>
+    ["semo", "clubs", clubId, "admin-activities-infinite", { size, positionId }] as const,
   timeline: (clubId: string) => ["semo", "clubs", clubId, "timeline"] as const,
   timelineInfinite: (clubId: string, size: number) =>
     ["semo", "clubs", clubId, "timeline", { size }] as const,
   adminTimeline: (clubId: string) => ["semo", "clubs", clubId, "admin-timeline"] as const,
 };
 
-export function adminActivitiesQueryOptions(clubId: string, size: number) {
+export function adminActivitiesQueryOptions(clubId: string, size: number, positionId: number | null = null) {
   return queryOptions({
-    queryKey: activityQueryKeys.adminActivities(clubId, size),
+    queryKey: activityQueryKeys.adminActivities(clubId, size, positionId),
     queryFn: async () =>
       requireApiData(
-        await getClubAdminActivities(clubId, { size }),
+        await getClubAdminActivities(clubId, { size, positionId }),
         "활동 로그를 불러오지 못했습니다.",
       ),
   });
@@ -37,6 +37,8 @@ export function adminActivitiesPreviewQueryOptions(clubId: string, size: number)
       getApiDataOrFallback(await getClubAdminActivities(clubId, { size }), {
         clubId: Number(clubId),
         clubName: "",
+        selectedPositionId: null,
+        positionFilters: [],
         activities: [],
         nextCursorCreatedAt: null,
         nextCursorActivityId: null,
@@ -48,15 +50,17 @@ export function adminActivitiesPreviewQueryOptions(clubId: string, size: number)
 export function adminActivitiesInfiniteQueryOptions(
   clubId: string,
   initialData: ClubAdminActivityFeedResponse,
+  positionId: number | null = null,
 ) {
-  return infiniteQueryOptions({
-    queryKey: activityQueryKeys.adminActivitiesInfinite(clubId, 20),
+  const options = infiniteQueryOptions({
+    queryKey: activityQueryKeys.adminActivitiesInfinite(clubId, 20, positionId),
     queryFn: async ({ pageParam }) =>
       requireApiData(
         await getClubAdminActivities(clubId, {
           size: 20,
           cursorCreatedAt: pageParam.createdAt,
           cursorActivityId: pageParam.activityId,
+          positionId,
         }),
         "활동 로그를 불러오지 못했습니다.",
       ),
@@ -71,11 +75,16 @@ export function adminActivitiesInfiniteQueryOptions(
             activityId: lastPage.nextCursorActivityId,
           }
         : undefined,
-    initialData: {
-      pages: [initialData],
-      pageParams: [{ createdAt: null, activityId: null }],
-    },
   });
+  return positionId == null
+    ? {
+        ...options,
+        initialData: {
+          pages: [initialData],
+          pageParams: [{ createdAt: null, activityId: null }],
+        },
+      }
+    : options;
 }
 
 export function timelineQueryOptions(clubId: string) {

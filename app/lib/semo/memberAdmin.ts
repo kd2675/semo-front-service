@@ -85,6 +85,7 @@ export type ClubAdminActivityItem = {
   activityId: number;
   actorDisplayName: string;
   actorAvatarLabel: string;
+  actorPositions: ClubAdminActivityPosition[];
   subject: string;
   detail: string;
   status: "SUCCESS" | "FAIL" | string;
@@ -93,9 +94,17 @@ export type ClubAdminActivityItem = {
   createdAtLabel: string | null;
 };
 
+export type ClubAdminActivityPosition = {
+  clubPositionId: number;
+  positionCode: string;
+  displayName: string;
+};
+
 export type ClubAdminActivityFeedResponse = {
   clubId: number;
   clubName: string;
+  selectedPositionId: number | null;
+  positionFilters: ClubAdminActivityPosition[];
   activities: ClubAdminActivityItem[];
   nextCursorCreatedAt: string | null;
   nextCursorActivityId: number | null;
@@ -208,6 +217,30 @@ export type ClubPositionDetailResponse = {
   permissionGroups: ClubPermissionGroup[];
 };
 
+export type ClubPositionHistoryItem = {
+  positionHistoryId: number;
+  clubMemberId: number;
+  clubProfileId: number | null;
+  memberDisplayName: string;
+  clubPositionId: number;
+  positionCode: string;
+  positionDisplayName: string;
+  startedAt: string | null;
+  startedAtLabel: string | null;
+  endedAt: string | null;
+  endedAtLabel: string | null;
+  active: boolean;
+  deleted: boolean;
+  deleteReason: string | null;
+};
+
+export type ClubPositionHistoryResponse = {
+  clubId: number;
+  clubName: string;
+  admin: boolean;
+  histories: ClubPositionHistoryItem[];
+};
+
 export type CreateClubPositionRequest = {
   displayName: string;
   positionCode: string;
@@ -245,7 +278,7 @@ export function getClubAdminJoinRequestInbox(clubId: ClubId) {
 
 export function getClubAdminActivities(
   clubId: ClubId,
-  options: { size?: number; cursorCreatedAt?: string | null; cursorActivityId?: number | null } = {},
+  options: { size?: number; cursorCreatedAt?: string | null; cursorActivityId?: number | null; positionId?: number | null } = {},
 ) {
   const params = new URLSearchParams();
   if (options.size != null) {
@@ -256,6 +289,9 @@ export function getClubAdminActivities(
   }
   if (options.cursorActivityId != null) {
     params.set("cursorActivityId", String(options.cursorActivityId));
+  }
+  if (options.positionId != null) {
+    params.set("positionId", String(options.positionId));
   }
   const queryString = params.toString();
   return getJson<ClubAdminActivityFeedResponse>(`/api/semo/v1/clubs/${clubId}/admin/activity${queryString ? `?${queryString}` : ""}`);
@@ -341,6 +377,10 @@ export function getClubAdminRoleDetail(clubId: ClubId, clubPositionId: string | 
   return getJson<ClubPositionDetailResponse>(`/api/semo/v1/clubs/${clubId}/admin/more/roles/${clubPositionId}`);
 }
 
+export function getClubAdminRoleHistory(clubId: ClubId) {
+  return getJson<ClubPositionHistoryResponse>(`/api/semo/v1/clubs/${clubId}/admin/more/roles/history`);
+}
+
 export function createClubAdminRole(clubId: ClubId, request: CreateClubPositionRequest) {
   return postJson<ClubPositionDetailResponse>(`/api/semo/v1/clubs/${clubId}/admin/more/roles`, request);
 }
@@ -351,4 +391,8 @@ export function updateClubAdminRole(clubId: ClubId, clubPositionId: string | num
 
 export function deleteClubAdminRole(clubId: ClubId, clubPositionId: string | number) {
   return deleteJson<boolean>(`/api/semo/v1/clubs/${clubId}/admin/more/roles/${clubPositionId}`);
+}
+
+export function deleteClubAdminRoleHistory(clubId: ClubId, positionHistoryId: string | number) {
+  return deleteJson<boolean>(`/api/semo/v1/clubs/${clubId}/admin/more/roles/history/${positionHistoryId}`);
 }
