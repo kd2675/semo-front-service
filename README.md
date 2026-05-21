@@ -230,6 +230,14 @@ npm run start
 
 - `AGENTS.md`
 - `AGENTS_SEMO_MORE_FEATURE_CHECKLIST.md`
+- `AGENTS_SEMO_PRODUCT_DIRECTION.md`
+- `modal-analysis.md`
+
+## Verification Snapshot
+
+- 2026-05-21 확인
+  - `npm run lint` 성공
+  - `npm run build` 성공
 
 ## Source Notes
 
