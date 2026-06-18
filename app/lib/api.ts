@@ -8,6 +8,8 @@ import {
 } from "@/app/lib/auth";
 
 export const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080";
+export const SEMO_CLIENT_ID =
+  process.env.NEXT_PUBLIC_CLIENT_ID ?? "semo-front-service";
 
 export type ApiResult<T> = {
   ok: boolean;

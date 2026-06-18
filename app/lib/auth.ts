@@ -1,4 +1,4 @@
-import { postJson } from "@/app/lib/api";
+import { postJson, SEMO_CLIENT_ID } from "@/app/lib/api";
 import {
   clearAuth,
   clearAuthExpired,
@@ -12,6 +12,15 @@ import type { AuthExpireReason, LoginResponse, AuthUser } from "@/app/types/auth
 const TOKEN_EXPIRY_LEEWAY_SECONDS = 300;
 let accessTokenMemory: string | null = null;
 let refreshInFlight: Promise<string | null> | null = null;
+
+function withClientId(
+  headers: Record<string, string> = {},
+): Record<string, string> {
+  return {
+    "X-Client-Id": SEMO_CLIENT_ID,
+    ...headers,
+  };
+}
 
 export function getAccessToken(): string | null {
   return accessTokenMemory;
@@ -128,12 +137,18 @@ export function notifyAuthExpired(reason: AuthExpireReason = "expired"): void {
 
 export async function logout(): Promise<void> {
   const token = getAccessToken();
-  const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
+  const headers = withClientId(
+    token ? { Authorization: `Bearer ${token}` } : undefined,
+  );
   await postJson<void>("/auth/logout", {}, headers);
 }
 
 async function requestRefreshAccessToken(): Promise<string | null> {
-  const result = await postJson<LoginResponse>("/auth/refresh", {});
+  const result = await postJson<LoginResponse>(
+    "/auth/refresh",
+    {},
+    withClientId(),
+  );
   if (!result.ok || !result.data?.accessToken) {
     return null;
   }
