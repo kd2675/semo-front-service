@@ -53,7 +53,7 @@ NEXT_PUBLIC_IMAGE_BASE_URL=http://localhost:8081
 
 ### Auth/session
 - `AuthGate`
-  - `/login` 외 경로는 세션이 없으면 로그인으로 리다이렉트
+  - `/login`, `/auth/callback` 외 경로는 세션이 없으면 원래 경로를 보관하고 로그인으로 리다이렉트
 - `AuthWatcher`
   - refresh 실패나 세션 만료 이벤트를 감지해 `/login?expired=1`로 이동
 - `useAuthSession`
@@ -92,7 +92,9 @@ NEXT_PUBLIC_IMAGE_BASE_URL=http://localhost:8081
 - `/`
   - 내 클럽 목록, 클럽 탐색, 가입 신청/취소, 검색
 - `/login`
-  - OAuth 진입, 토큰 복구, 프로필 초기화
+  - OAuth 진입, 기존 세션 복구
+- `/auth/callback`
+  - HttpOnly refresh cookie 교환, 역할/프로필 검증, 원래 경로 복귀
 - `/clubs/create`
   - 클럽 생성
 
@@ -189,7 +191,9 @@ NEXT_PUBLIC_IMAGE_BASE_URL=http://localhost:8081
 - `app/page.tsx`
   - 홈, 내 클럽/탐색, 가입 신청 모달
 - `app/login/page.tsx`
-  - OAuth callback 처리, 세션 복구, 프로필 초기화
+  - OAuth 진입, 세션 복구
+- `app/auth/callback/page.tsx`
+  - OAuth 성공 처리, 역할/프로필 검증
 - `app/lib/api.ts`
   - 공통 fetch 래퍼
 - `app/lib/auth.ts`

@@ -3,12 +3,13 @@
 import { startTransition, useEffect, useEffectEvent } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import useAuthSession from "@/app/hooks/useAuthSession";
+import { currentBrowserPath, rememberOAuthNextPath } from "@/app/lib/authRouting";
 
 type AuthGateProps = {
   children: React.ReactNode;
 };
 
-const PUBLIC_PATHS = new Set(["/login"]);
+const PUBLIC_PATHS = new Set(["/login", "/auth/callback"]);
 
 function GateScreen({
   label,
@@ -50,6 +51,7 @@ export default function AuthGate({ children }: AuthGateProps) {
       return;
     }
     if (isHydrated && authStatus === "out") {
+      rememberOAuthNextPath(currentBrowserPath());
       redirectToLogin();
     }
   }, [authStatus, isHydrated, isPublicPath]);

@@ -6,7 +6,8 @@
     "dev": "next dev -p 3003",
     "build": "next build",
     "start": "next start -p 3003",
-    "lint": "eslint"
+    "lint": "eslint",
+    "verify:auth": "node --no-warnings --experimental-strip-types scripts/verify-auth-flow.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

@@ -11,7 +11,7 @@ import {
   useState,
 } from "react";
 import { useRouter } from "next/navigation";
-import { clearAccessToken, logout, normalizeRole } from "@/app/lib/auth";
+import { logout, normalizeRole } from "@/app/lib/auth";
 import {
   getAffiliationTypeLabel,
   getPrimaryClubActivityLabel,
@@ -66,9 +66,8 @@ export default function Home() {
       }
       await logout();
     } catch {
-      // Ignore logout API failure and clear the local session regardless.
+      // The auth helper clears the local session even if the server request fails.
     } finally {
-      clearAccessToken();
       router.replace("/login");
     }
   };

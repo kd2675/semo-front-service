@@ -1,18 +1,15 @@
 "use client";
 
-import { Suspense, useEffect, useEffectEvent, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { motion, useReducedMotion } from "motion/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
-  bootstrapAccessToken,
-  clearAccessToken,
-  getUserFromToken,
   isUserRole,
   logout,
-  setAccessToken,
 } from "@/app/lib/auth";
+import useAuthSession from "@/app/hooks/useAuthSession";
+import { consumeOAuthNextPath } from "@/app/lib/authRouting";
 import { staggeredFadeUpMotion } from "@/app/lib/motion";
-import { initializeProfile } from "@/app/lib/profile";
 
 const GATEWAY_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080";
 
@@ -77,6 +74,8 @@ function resolveLoginProcessingErrorMessage(loginError?: string | null): string 
       return "SEMO는 USER 계정만 로그인할 수 있습니다.";
     case "profile_initialize_failed":
       return "프로필 생성에 실패했습니다. 다시 로그인해 주세요.";
+    case "session_restore_failed":
+      return "소셜 로그인 세션을 확인할 수 없습니다. 다시 시도해 주세요.";
     case "processing_failed":
       return "로그인 정보를 처리하는 중 문제가 발생했습니다. 다시 시도해 주세요.";
     default:
@@ -88,115 +87,47 @@ function LoginPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [error, setError] = useState<string | null>(null);
+  const { authStatus, isHydrated, user } = useAuthSession();
   const prefersReducedMotion = useReducedMotion();
   const reduceMotion = Boolean(prefersReducedMotion);
 
   const expired = searchParams.get("expired") === "1";
-  const token = searchParams.get("token");
   const oauthError = searchParams.get("error");
   const oauthErrorCode = searchParams.get("errorCode");
   const oauthProvider = searchParams.get("provider");
   const loginError = searchParams.get("loginError");
-  const isProcessing = Boolean(token);
-
-  const redirectToLoginWithError = useEffectEvent(async (reason: string) => {
-    clearAccessToken();
-    await logout().catch(() => undefined);
-    router.replace(`/login?loginError=${encodeURIComponent(reason)}`);
-  });
-
-  const completeLogin = useEffectEvent(async (nextToken: string) => {
-    setAccessToken(nextToken);
-    const user = getUserFromToken(nextToken);
-
-    if (!isUserRole(user?.role)) {
-      await redirectToLoginWithError("unsupported_role");
-      return;
-    }
-
-    const initializeResult = await initializeProfile(nextToken);
-    if (initializeResult.error) {
-      await redirectToLoginWithError("profile_initialize_failed");
-      return;
-    }
-
-    router.replace("/");
-  });
-
-  const restoreSession = useEffectEvent(async () => {
-    const restoredToken = await bootstrapAccessToken();
-    if (!restoredToken) {
-      return;
-    }
-
-    const restoredUser = getUserFromToken(restoredToken);
-    if (!isUserRole(restoredUser?.role)) {
-      await logout();
-      clearAccessToken();
-      setError("SEMO는 USER 계정만 로그인할 수 있습니다.");
-      return;
-    }
-
-    router.replace("/");
-  });
+  const queryError = resolveOAuthErrorMessage(
+    oauthErrorCode,
+    oauthProvider,
+    oauthError,
+  ) ?? resolveLoginProcessingErrorMessage(loginError);
+  const isProcessing = !queryError && (!isHydrated || authStatus === "unknown" || authStatus === "in");
 
   useEffect(() => {
-    let cancelled = false;
+    if (queryError) {
+      return;
+    }
 
-    void (async () => {
-      try {
-        if (token) {
-          if (!cancelled) {
-            await completeLogin(token);
-          }
-          return;
-        }
+    if (!isHydrated || authStatus === "unknown" || authStatus === "out") {
+      return;
+    }
 
-        if (!cancelled) {
-          const oauthErrorMessage = resolveOAuthErrorMessage(
-            oauthErrorCode,
-            oauthProvider,
-            oauthError,
-          );
-          const loginProcessingErrorMessage = resolveLoginProcessingErrorMessage(loginError);
-          if (oauthErrorMessage) {
-            clearAccessToken();
-            setError(oauthErrorMessage);
-            return;
-          }
-          if (loginProcessingErrorMessage) {
-            clearAccessToken();
-            setError(loginProcessingErrorMessage);
-            return;
-          }
-        }
+    if (!isUserRole(user?.role)) {
+      void logout().finally(() => {
+        setError("SEMO는 USER 계정만 로그인할 수 있습니다.");
+      });
+      return;
+    }
 
-        if (!cancelled) {
-          await restoreSession();
-        }
-      } catch {
-        if (!cancelled) {
-          if (token) {
-            await redirectToLoginWithError("processing_failed");
-            return;
-          }
-          clearAccessToken();
-          setError("로그인 정보를 처리하는 중 문제가 발생했습니다. 다시 시도해 주세요.");
-        }
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [loginError, oauthError, oauthErrorCode, oauthProvider, token]);
+    router.replace(consumeOAuthNextPath());
+  }, [authStatus, isHydrated, queryError, router, user?.role]);
 
   const handleNaverLogin = () => {
-    window.location.href = `${GATEWAY_BASE_URL}/oauth2/authorize/naver-semo`;
+    window.location.replace(`${GATEWAY_BASE_URL}/oauth2/authorize/naver-semo`);
   };
 
   const handleKakaoLogin = () => {
-    window.location.href = `${GATEWAY_BASE_URL}/oauth2/authorize/kakao-semo`;
+    window.location.replace(`${GATEWAY_BASE_URL}/oauth2/authorize/kakao-semo`);
   };
 
   if (isProcessing) {
@@ -276,12 +207,12 @@ function LoginPageContent() {
             세션이 만료되었습니다. 다시 로그인해 주세요.
           </motion.p>
         ) : null}
-        {error ? (
+        {error ?? queryError ? (
           <motion.p
             className="mt-5 w-full rounded-[var(--radius-lg)] border border-red-200 bg-red-50 px-4 py-3 text-center text-sm text-red-700"
             {...staggeredFadeUpMotion(2, reduceMotion)}
           >
-            {error}
+            {error ?? queryError}
           </motion.p>
         ) : null}
 
