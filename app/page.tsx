@@ -11,7 +11,8 @@ import {
   useState,
 } from "react";
 import { useRouter } from "next/navigation";
-import { logout, normalizeRole } from "@/app/lib/auth";
+import { logout } from "@/app/lib/auth";
+import { normalizeRole } from "@/app/lib/authPolicy";
 import {
   getAffiliationTypeLabel,
   getPrimaryClubActivityLabel,
@@ -72,7 +73,12 @@ export default function Home() {
     }
   };
 
-  const roleLabel = normalizeRole(user?.role) === "USER" ? "사용자" : "게스트";
+  const normalizedRole = normalizeRole(user?.role);
+  const roleLabel = normalizedRole === "ADMIN"
+    ? "플랫폼 관리자"
+    : normalizedRole === "USER"
+      ? "사용자"
+      : "게스트";
   const profileLabel = createProfileLabel(user);
   const userName = user?.username ?? "익명 사용자";
   const myClubs = myClubsQuery.data ?? [];

@@ -1,4 +1,5 @@
-import { postJson, SEMO_CLIENT_ID } from "@/app/lib/api";
+import { postAuthJson, SEMO_CLIENT_ID } from "@/app/lib/api";
+import { isSemoAccountRole } from "@/app/lib/authPolicy";
 import {
   clearAuth,
   clearAuthExpired,
@@ -43,7 +44,7 @@ export function setAccessToken(token: string): void {
   bootstrapRefreshDone = false;
   authGeneration += 1;
   const user = getUserFromToken(token);
-  if (!user || !isUserRole(user.role) || (user.exp && isTokenExpired(user.exp))) {
+  if (!user || !isSemoAccountRole(user.role) || (user.exp && isTokenExpired(user.exp))) {
     clearAccessToken();
     return;
   }
@@ -110,19 +111,6 @@ export function getUserFromToken(token?: string | null): AuthUser | null {
   }
 }
 
-export function normalizeRole(role?: string | null): string | null {
-  if (!role) {
-    return null;
-  }
-
-  const normalized = role.trim().toUpperCase();
-  return normalized.startsWith("ROLE_") ? normalized.slice(5) : normalized;
-}
-
-export function isUserRole(role?: string | null): boolean {
-  return normalizeRole(role) === "USER";
-}
-
 export function isTokenExpired(
   exp?: number,
   leewaySeconds = TOKEN_EXPIRY_LEEWAY_SECONDS,
@@ -155,7 +143,7 @@ export function notifyAuthExpired(reason: AuthExpireReason = "expired"): void {
 }
 
 export async function login(username: string, password: string): Promise<AuthActionResult> {
-  const result = await postJson<LoginResponse>(
+  const result = await postAuthJson<LoginResponse>(
     "/auth/login",
     { username, password },
     withClientId(),
@@ -173,7 +161,7 @@ export async function login(username: string, password: string): Promise<AuthAct
 }
 
 export async function signup(username: string, password: string, email: string): Promise<AuthActionResult> {
-  const result = await postJson<unknown>(
+  const result = await postAuthJson<unknown>(
     "/api/users",
     { username, password, email, role: "USER" },
     withClientId(),
@@ -185,7 +173,7 @@ export async function logout(): Promise<void> {
   explicitlySignedOut = true;
   authGeneration += 1;
   try {
-    await postJson<void>("/auth/logout", {}, withClientId());
+    await postAuthJson<void>("/auth/logout", {}, withClientId());
   } finally {
     accessTokenMemory = null;
     bootstrapRefreshDone = true;
@@ -196,7 +184,7 @@ export async function logout(): Promise<void> {
 
 async function requestRefreshAccessToken(): Promise<string | null> {
   const requestGeneration = authGeneration;
-  const result = await postJson<LoginResponse>(
+  const result = await postAuthJson<LoginResponse>(
     "/auth/refresh",
     {},
     withClientId(),

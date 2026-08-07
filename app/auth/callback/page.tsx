@@ -3,7 +3,8 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 
-import { ensureAccessToken, getUserFromToken, isUserRole, logout } from "@/app/lib/auth";
+import { ensureAccessToken, getUserFromToken, logout } from "@/app/lib/auth";
+import { isSemoAccountRole } from "@/app/lib/authPolicy";
 import { consumeOAuthNextPath } from "@/app/lib/authRouting";
 import { initializeProfile } from "@/app/lib/profile";
 
@@ -35,7 +36,7 @@ export default function AuthCallbackPage() {
       }
 
       const user = getUserFromToken(token);
-      if (!isUserRole(user?.role)) {
+      if (!isSemoAccountRole(user?.role)) {
         await logout();
         consumeOAuthNextPath();
         router.replace("/login?loginError=unsupported_role");

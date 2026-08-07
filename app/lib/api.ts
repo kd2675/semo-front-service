@@ -3,11 +3,28 @@ import type { ResponseEnvelope } from "@/app/types/response";
 import {
   clearAccessToken,
   getAccessToken,
+  getUserFromToken,
   notifyAuthExpired,
   refreshAccessToken,
 } from "@/app/lib/auth";
 
-export const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080";
+const API_MODE = process.env.NEXT_PUBLIC_API_MODE ?? "direct";
+const DEFAULT_GATEWAY_API_BASE = "http://localhost:8080";
+const DEFAULT_DIRECT_SEMO_API_BASE = "http://localhost:20280";
+const DEFAULT_DIRECT_AUTH_API_BASE = "http://localhost:9000";
+const isGatewayMode = API_MODE === "gateway";
+
+export const SEMO_API_BASE =
+  process.env.NEXT_PUBLIC_SEMO_API_URL
+  ?? process.env.NEXT_PUBLIC_API_URL
+  ?? (isGatewayMode ? DEFAULT_GATEWAY_API_BASE : DEFAULT_DIRECT_SEMO_API_BASE);
+
+export const AUTH_API_BASE =
+  process.env.NEXT_PUBLIC_AUTH_API_URL
+  ?? process.env.NEXT_PUBLIC_API_URL
+  ?? (isGatewayMode ? DEFAULT_GATEWAY_API_BASE : DEFAULT_DIRECT_AUTH_API_BASE);
+
+export const API_BASE = SEMO_API_BASE;
 export const SEMO_CLIENT_ID =
   process.env.NEXT_PUBLIC_CLIENT_ID ?? "semo-front-service";
 
@@ -24,10 +41,10 @@ type RequestOptions = {
   body?: unknown;
   headers?: Record<string, string>;
   credentials?: RequestCredentials;
+  baseUrl?: string;
 };
 
 const apiClient = axios.create({
-  baseURL: API_BASE,
   transformResponse: [(value) => value],
   validateStatus: () => true,
 });
@@ -75,11 +92,24 @@ async function requestJson<T>(
 
   if (token) {
     headers.Authorization = `Bearer ${token}`;
+    if (!isGatewayMode) {
+      const user = getUserFromToken(token);
+      if (user?.username) {
+        headers["X-User-Name"] = encodeURIComponent(user.username);
+      }
+      if (user?.userKey) {
+        headers["X-User-Key"] = user.userKey;
+      }
+      if (user?.role) {
+        headers["X-User-Role"] = user.role;
+      }
+    }
   }
 
   try {
     const response = await apiClient.request<string>({
       url: path,
+      baseURL: options.baseUrl ?? SEMO_API_BASE,
       method,
       headers,
       withCredentials: shouldSendCredentials(options.credentials),
@@ -157,6 +187,14 @@ export function getJson<T>(
   headers?: Record<string, string>,
 ): Promise<ApiResult<T>> {
   return requestJson(path, { method: "GET", headers });
+}
+
+export function postAuthJson<T>(
+  path: string,
+  body: unknown,
+  headers?: Record<string, string>,
+): Promise<ApiResult<T>> {
+  return requestJson(path, { method: "POST", body, headers, baseUrl: AUTH_API_BASE });
 }
 
 export function postJson<T>(

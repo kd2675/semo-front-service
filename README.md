@@ -5,7 +5,8 @@
 ## Code Truth Summary
 
 - 인증
-  - 아이디 로그인/USER 회원가입 + Gateway OAuth 로그인
+  - `USER`, `ADMIN` 아이디 로그인 + `USER` 회원가입 + Gateway OAuth 로그인
+  - 전역 `ADMIN`도 로그인할 수 있지만 클럽 운영 권한은 클럽 멤버십의 `OWNER`/`ADMIN` 역할을 따름
   - provider id: `naver-semo`, `kakao-semo`
   - access token 메모리 보관 + refresh 세션 복구
 - 사용자 화면
@@ -39,14 +40,26 @@
 ## Runtime and Environment
 
 - 개발 포트: `3003`
-- API base: `NEXT_PUBLIC_API_URL` 기본값 `http://localhost:8080`
+- 기본 모드: `direct`
+- Semo API base: `NEXT_PUBLIC_SEMO_API_URL` 기본값 `http://localhost:20280`
+- Auth/OAuth base: `NEXT_PUBLIC_AUTH_API_URL` 기본값 `http://localhost:9000`
+- Cloud Gateway 모드: `NEXT_PUBLIC_API_MODE=gateway`, `NEXT_PUBLIC_API_URL=http://localhost:8080`
 - 이미지 base: `NEXT_PUBLIC_IMAGE_BASE_URL` 기본값 `http://localhost:8081`
 
 예시:
 
 ```bash
-NEXT_PUBLIC_API_URL=http://localhost:8080
+NEXT_PUBLIC_API_MODE=direct
+NEXT_PUBLIC_SEMO_API_URL=http://localhost:20280
+NEXT_PUBLIC_AUTH_API_URL=http://localhost:9000
 NEXT_PUBLIC_IMAGE_BASE_URL=http://localhost:8081
+```
+
+Cloud Gateway/Eureka 경유로 실행할 때는 다음처럼 전환합니다.
+
+```bash
+NEXT_PUBLIC_API_MODE=gateway
+NEXT_PUBLIC_API_URL=http://localhost:8080
 ```
 
 ## Core Architecture
@@ -62,6 +75,9 @@ NEXT_PUBLIC_IMAGE_BASE_URL=http://localhost:8081
 
 ### API/data flow
 - `app/lib/api.ts`
+  - direct/gateway 모드별 Semo API와 Auth API 주소 분리
+  - direct 모드에서는 access token의 `X-User-Name`, `X-User-Key`, `X-User-Role`을 Semo API 요청에 전달
+  - gateway 모드에서는 Gateway가 해당 헤더를 제거한 뒤 검증된 JWT 값으로 다시 주입
   - 공통 JSON 요청 래퍼
   - `401` 발생 시 `/auth/refresh` 재시도
   - `web-common-core`의 `{ success, code, message }` 래퍼와 일반 JSON 둘 다 처리

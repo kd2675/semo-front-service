@@ -5,8 +5,12 @@ import { motion, useReducedMotion } from "motion/react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 import useAuthSession from "@/app/hooks/useAuthSession";
-import { isUserRole, login, logout, signup } from "@/app/lib/auth";
-import { API_BASE } from "@/app/lib/api";
+import { login, logout, signup } from "@/app/lib/auth";
+import {
+  isSemoAccountRole,
+  SEMO_UNSUPPORTED_ROLE_MESSAGE,
+} from "@/app/lib/authPolicy";
+import { AUTH_API_BASE } from "@/app/lib/api";
 import { rememberOAuthNextPath, sanitizeAuthNextPath } from "@/app/lib/authRouting";
 import { staggeredFadeUpMotion } from "@/app/lib/motion";
 import { initializeProfile } from "@/app/lib/profile";
@@ -35,8 +39,8 @@ function LoginPageContent() {
     if (isSubmitting || !isHydrated || authStatus === "unknown" || authStatus === "out") {
       return;
     }
-    if (!isUserRole(user?.role)) {
-      void logout().finally(() => setMessage("SEMO는 USER 계정만 로그인할 수 있습니다."));
+    if (!isSemoAccountRole(user?.role)) {
+      void logout().finally(() => setMessage(SEMO_UNSUPPORTED_ROLE_MESSAGE));
       return;
     }
     router.replace(nextPath);
@@ -68,9 +72,9 @@ function LoginPageContent() {
         setMessage(loginResult.message ?? "로그인에 실패했습니다.");
         return;
       }
-      if (!isUserRole(loginResult.user?.role)) {
+      if (!isSemoAccountRole(loginResult.user?.role)) {
         await logout();
-        setMessage("SEMO는 USER 계정만 로그인할 수 있습니다.");
+        setMessage(SEMO_UNSUPPORTED_ROLE_MESSAGE);
         return;
       }
 
@@ -90,7 +94,7 @@ function LoginPageContent() {
 
   const startOAuthLogin = (provider: "naver-semo" | "kakao-semo") => {
     rememberOAuthNextPath(nextPath);
-    window.location.replace(`${API_BASE}/oauth2/authorize/${provider}`);
+    window.location.replace(`${AUTH_API_BASE}/oauth2/authorize/${provider}`);
   };
 
   if (!isHydrated || authStatus === "unknown" || (authStatus === "in" && !isSubmitting)) {
@@ -261,7 +265,7 @@ function resolveQueryMessage(searchParams: URLSearchParams): string | null {
   }
   switch (searchParams.get("loginError")) {
     case "unsupported_role":
-      return "SEMO는 USER 계정만 로그인할 수 있습니다.";
+      return SEMO_UNSUPPORTED_ROLE_MESSAGE;
     case "profile_initialize_failed":
       return "프로필을 준비하지 못했습니다. 다시 로그인해 주세요.";
     case "session_restore_failed":
