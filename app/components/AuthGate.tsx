@@ -3,7 +3,7 @@
 import { startTransition, useEffect, useEffectEvent } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import useAuthSession from "@/app/hooks/useAuthSession";
-import { currentBrowserPath, rememberOAuthNextPath } from "@/app/lib/authRouting";
+import { buildLoginPath, currentBrowserPath } from "@/app/lib/authRouting";
 
 type AuthGateProps = {
   children: React.ReactNode;
@@ -42,7 +42,7 @@ export default function AuthGate({ children }: AuthGateProps) {
 
   const redirectToLogin = useEffectEvent(() => {
     startTransition(() => {
-      router.replace("/login");
+      router.replace(buildLoginPath(currentBrowserPath()));
     });
   });
 
@@ -51,7 +51,6 @@ export default function AuthGate({ children }: AuthGateProps) {
       return;
     }
     if (isHydrated && authStatus === "out") {
-      rememberOAuthNextPath(currentBrowserPath());
       redirectToLogin();
     }
   }, [authStatus, isHydrated, isPublicPath]);

@@ -5,7 +5,7 @@
 ## Code Truth Summary
 
 - 인증
-  - Gateway OAuth 로그인
+  - 아이디 로그인/USER 회원가입 + Gateway OAuth 로그인
   - provider id: `naver-semo`, `kakao-semo`
   - access token 메모리 보관 + refresh 세션 복구
 - 사용자 화면
@@ -92,7 +92,7 @@ NEXT_PUBLIC_IMAGE_BASE_URL=http://localhost:8081
 - `/`
   - 내 클럽 목록, 클럽 탐색, 가입 신청/취소, 검색
 - `/login`
-  - OAuth 진입, 기존 세션 복구
+  - 아이디 로그인/회원가입, OAuth 진입, 기존 세션 복구
 - `/auth/callback`
   - HttpOnly refresh cookie 교환, 역할/프로필 검증, 원래 경로 복귀
 - `/clubs/create`

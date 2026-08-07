@@ -17,6 +17,13 @@ let bootstrapRefreshInFlight: Promise<string | null> | null = null;
 let authGeneration = 0;
 let explicitlySignedOut = false;
 
+export type AuthActionResult = {
+  ok: boolean;
+  message?: string;
+  token?: string;
+  user?: AuthUser | null;
+};
+
 function withClientId(
   headers: Record<string, string> = {},
 ): Record<string, string> {
@@ -36,7 +43,7 @@ export function setAccessToken(token: string): void {
   bootstrapRefreshDone = false;
   authGeneration += 1;
   const user = getUserFromToken(token);
-  if (!user || (user.exp && isTokenExpired(user.exp))) {
+  if (!user || !isUserRole(user.role) || (user.exp && isTokenExpired(user.exp))) {
     clearAccessToken();
     return;
   }
@@ -145,6 +152,33 @@ export function scheduleTokenExpiry(
 
 export function notifyAuthExpired(reason: AuthExpireReason = "expired"): void {
   store.dispatch(setAuthExpired(reason));
+}
+
+export async function login(username: string, password: string): Promise<AuthActionResult> {
+  const result = await postJson<LoginResponse>(
+    "/auth/login",
+    { username, password },
+    withClientId(),
+  );
+  if (!result.ok || !result.data?.accessToken) {
+    return { ok: false, message: result.message ?? "로그인에 실패했습니다." };
+  }
+  setAccessToken(result.data.accessToken);
+  return {
+    ok: true,
+    message: result.message,
+    token: result.data.accessToken,
+    user: getUserFromToken(result.data.accessToken),
+  };
+}
+
+export async function signup(username: string, password: string, email: string): Promise<AuthActionResult> {
+  const result = await postJson<unknown>(
+    "/api/users",
+    { username, password, email, role: "USER" },
+    withClientId(),
+  );
+  return { ok: result.ok, message: result.message };
 }
 
 export async function logout(): Promise<void> {

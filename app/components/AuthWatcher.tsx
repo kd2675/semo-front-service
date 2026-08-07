@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useAppDispatch, useAppSelector } from "@/app/redux/hooks";
 import { clearAuthExpired } from "@/app/redux/slices/authSlice";
-import { currentBrowserPath, rememberOAuthNextPath } from "@/app/lib/authRouting";
+import { buildLoginPath, currentBrowserPath } from "@/app/lib/authRouting";
 
 export default function AuthWatcher() {
   const dispatch = useAppDispatch();
@@ -19,8 +19,7 @@ export default function AuthWatcher() {
 
     dispatch(clearAuthExpired());
     if (pathname !== "/login" && pathname !== "/auth/callback") {
-      rememberOAuthNextPath(currentBrowserPath());
-      router.push("/login?expired=1");
+      router.push(buildLoginPath(currentBrowserPath(), true));
     }
   }, [dispatch, expiredReason, pathname, router]);
 
