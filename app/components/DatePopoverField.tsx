@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
 const WEEK_LABELS = ["일", "월", "화", "수", "목", "금", "토"];
@@ -68,8 +68,21 @@ function startOfMonth(date: Date) {
   return new Date(date.getFullYear(), date.getMonth(), 1);
 }
 
+function startOfDay(date: Date) {
+  const next = new Date(date);
+  next.setHours(0, 0, 0, 0);
+  return next;
+}
+
 function addMonths(date: Date, count: number) {
   return new Date(date.getFullYear(), date.getMonth() + count, 1);
+}
+
+function addDays(date: Date, count: number) {
+  const next = new Date(date);
+  next.setDate(next.getDate() + count);
+  next.setHours(0, 0, 0, 0);
+  return next;
 }
 
 function sameDay(left: Date | null, right: Date | null) {
@@ -137,8 +150,10 @@ export function DatePopoverField({
   buttonClassName,
   iconName = "calendar_month",
 }: DatePopoverFieldProps) {
+  const popoverId = useId();
   const anchorRef = useRef<HTMLButtonElement | null>(null);
   const popoverRef = useRef<HTMLDivElement | null>(null);
+  const dayButtonRefs = useRef(new Map<string, HTMLButtonElement>());
   const [open, setOpen] = useState(false);
   const [position, setPosition] = useState({ left: 12, top: 12 });
 
@@ -149,6 +164,17 @@ export function DatePopoverField({
   const min = useMemo(() => parseDate(minDate), [minDate]);
   const max = useMemo(() => parseDate(maxDate), [maxDate]);
   const [cursor, setCursor] = useState(() => startOfMonth(selectedDate ?? new Date()));
+  const [focusedDate, setFocusedDate] = useState(() => selectedDate ?? startOfDay(new Date()));
+
+  const constrainDate = (date: Date) => {
+    if (min && isBeforeDay(date, min)) {
+      return min;
+    }
+    if (max && isAfterDay(date, max)) {
+      return max;
+    }
+    return date;
+  };
 
   const handleToggleOpen = () => {
     if (open) {
@@ -159,7 +185,9 @@ export function DatePopoverField({
     if (anchorRef.current) {
       setPosition(resolvePopoverPosition(anchorRef.current));
     }
-    setCursor(startOfMonth(selectedDate ?? new Date()));
+    const nextFocusedDate = constrainDate(selectedDate ?? startOfDay(new Date()));
+    setCursor(startOfMonth(nextFocusedDate));
+    setFocusedDate(nextFocusedDate);
     setOpen(true);
   };
 
@@ -176,6 +204,17 @@ export function DatePopoverField({
       ),
     );
   }, [open]);
+
+  useLayoutEffect(() => {
+    if (!open) {
+      return;
+    }
+
+    const focusFrame = window.requestAnimationFrame(() => {
+      dayButtonRefs.current.get(formatDateValue(focusedDate))?.focus({ preventScroll: true });
+    });
+    return () => window.cancelAnimationFrame(focusFrame);
+  }, [cursor, focusedDate, open]);
 
   useEffect(() => {
     if (!open) {
@@ -206,7 +245,9 @@ export function DatePopoverField({
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
+        event.preventDefault();
         setOpen(false);
+        anchorRef.current?.focus({ preventScroll: true });
       }
     };
 
@@ -238,6 +279,47 @@ export function DatePopoverField({
   }, [cursor, max]);
 
   const calendarDays = useMemo(() => buildCalendarDays(cursor), [cursor]);
+  const calendarRows = useMemo(
+    () => Array.from({ length: 6 }, (_, index) => calendarDays.slice(index * 7, index * 7 + 7)),
+    [calendarDays],
+  );
+
+  const moveFocusedDate = (nextDate: Date) => {
+    const constrained = constrainDate(nextDate);
+    setFocusedDate(constrained);
+    if (constrained.getMonth() !== cursor.getMonth() || constrained.getFullYear() !== cursor.getFullYear()) {
+      setCursor(startOfMonth(constrained));
+    }
+  };
+
+  const handleDayKeyDown = (event: React.KeyboardEvent<HTMLButtonElement>) => {
+    let nextDate: Date | null = null;
+    switch (event.key) {
+      case "ArrowLeft":
+        nextDate = addDays(focusedDate, -1);
+        break;
+      case "ArrowRight":
+        nextDate = addDays(focusedDate, 1);
+        break;
+      case "ArrowUp":
+        nextDate = addDays(focusedDate, -7);
+        break;
+      case "ArrowDown":
+        nextDate = addDays(focusedDate, 7);
+        break;
+      case "Home":
+        nextDate = addDays(focusedDate, -focusedDate.getDay());
+        break;
+      case "End":
+        nextDate = addDays(focusedDate, 6 - focusedDate.getDay());
+        break;
+      default:
+        return;
+    }
+
+    event.preventDefault();
+    moveFocusedDate(nextDate);
+  };
 
   return (
     <>
@@ -246,20 +328,25 @@ export function DatePopoverField({
         type="button"
         disabled={disabled}
         onClick={handleToggleOpen}
-        className={`flex w-full items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3 text-left text-sm outline-none transition hover:border-[var(--primary)] disabled:cursor-not-allowed disabled:opacity-60 ${buttonClassName ?? ""}`}
+        aria-expanded={open}
+        aria-haspopup="dialog"
+        aria-controls={open ? popoverId : undefined}
+        className={`semo-control flex w-full items-center justify-between border border-slate-200 bg-white px-4 py-3 text-left text-sm outline-none transition hover:border-[var(--primary)] disabled:opacity-60 ${buttonClassName ?? ""}`}
       >
         <span className={value ? "font-semibold text-slate-900" : "text-slate-400"}>
           {value ? formatDateLabel(value) : placeholder}
         </span>
-        <span className="material-symbols-outlined text-[20px] text-slate-400">{iconName}</span>
+        <span className="material-symbols-outlined text-[20px] text-slate-400" aria-hidden="true">{iconName}</span>
       </button>
 
       {open && typeof document !== "undefined"
         ? createPortal(
             <div
+              id={popoverId}
               ref={popoverRef}
               className="calendar-popover"
               role="dialog"
+              aria-label="날짜 선택"
               aria-modal="false"
               style={{ left: position.left, top: position.top }}
             >
@@ -272,7 +359,7 @@ export function DatePopoverField({
                     disabled={!canMovePrev}
                     onClick={() => {
                       if (canMovePrev) {
-                        setCursor((current) => addMonths(current, -1));
+                        moveFocusedDate(addMonths(cursor, -1));
                       }
                     }}
                   >
@@ -288,7 +375,7 @@ export function DatePopoverField({
                     disabled={!canMoveNext}
                     onClick={() => {
                       if (canMoveNext) {
-                        setCursor((current) => addMonths(current, 1));
+                        moveFocusedDate(addMonths(cursor, 1));
                       }
                     }}
                   >
@@ -296,37 +383,57 @@ export function DatePopoverField({
                   </button>
                 </div>
 
-                <div className="cp-week-row">
+                <div className="cp-week-row" role="row">
                   {WEEK_LABELS.map((label) => (
-                    <div key={label} className="cp-week">
+                    <div key={label} className="cp-week" role="columnheader" aria-label={`${label}요일`}>
                       {label}
                     </div>
                   ))}
                 </div>
 
-                <div className="cp-day-grid">
-                  {calendarDays.map((day) => {
-                    const outside = day.getMonth() !== cursor.getMonth();
-                    const disabledDay = Boolean(
-                      (min && isBeforeDay(day, min)) || (max && isAfterDay(day, max)),
-                    );
-                    const selected = sameDay(day, selectedDate);
+                <div className="cp-day-grid" role="grid" aria-label={`${cursor.getFullYear()}년 ${cursor.getMonth() + 1}월`}>
+                  {calendarRows.map((week, weekIndex) => (
+                    <div className="cp-day-row" role="row" key={`${formatDateValue(week[0])}-${weekIndex}`}>
+                      {week.map((day) => {
+                        const dateValue = formatDateValue(day);
+                        const outside = day.getMonth() !== cursor.getMonth();
+                        const disabledDay = Boolean(
+                          (min && isBeforeDay(day, min)) || (max && isAfterDay(day, max)),
+                        );
+                        const selected = sameDay(day, selectedDate);
+                        const focused = sameDay(day, focusedDate);
 
-                    return (
-                      <button
-                        key={formatDateValue(day)}
-                        type="button"
-                        disabled={disabledDay}
-                        className={`cp-day ${outside ? "is-outside" : ""} ${selected ? "is-selected" : ""}`}
-                        onClick={() => {
-                          onChange(formatDateValue(day));
-                          setOpen(false);
-                        }}
-                      >
-                        {day.getDate()}
-                      </button>
-                    );
-                  })}
+                        return (
+                          <button
+                            key={dateValue}
+                            ref={(node) => {
+                              if (node) {
+                                dayButtonRefs.current.set(dateValue, node);
+                              } else {
+                                dayButtonRefs.current.delete(dateValue);
+                              }
+                            }}
+                            type="button"
+                            role="gridcell"
+                            disabled={disabledDay}
+                            tabIndex={focused ? 0 : -1}
+                            aria-label={formatDateLabel(dateValue)}
+                            aria-selected={selected}
+                            className={`cp-day ${outside ? "is-outside" : ""} ${selected ? "is-selected" : ""}`}
+                            onFocus={() => setFocusedDate(day)}
+                            onKeyDown={handleDayKeyDown}
+                            onClick={() => {
+                              onChange(dateValue);
+                              setOpen(false);
+                              anchorRef.current?.focus({ preventScroll: true });
+                            }}
+                          >
+                            {day.getDate()}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  ))}
                 </div>
 
                 <div className="cp-foot">

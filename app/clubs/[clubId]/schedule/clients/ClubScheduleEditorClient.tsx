@@ -337,7 +337,7 @@ export function ClubScheduleEditorClient({
                 <button
                   type="button"
                   onClick={onRequestClose}
-                  className="flex size-10 shrink-0 items-center justify-center text-slate-900"
+                  className="semo-icon-control shrink-0 text-slate-900"
                   aria-label={isEdit ? "일정 수정 닫기" : "일정 작성 닫기"}
                 >
                   <span className="material-symbols-outlined">close</span>
@@ -346,7 +346,7 @@ export function ClubScheduleEditorClient({
                 <RouterLink
                   href={backHref}
                   replace={isModal}
-                  className="flex size-10 shrink-0 items-center justify-center text-slate-900"
+                  className="flex size-11 shrink-0 items-center justify-center text-slate-900"
                   aria-label="일정으로 돌아가기"
                 >
                   <span className="material-symbols-outlined">arrow_back</span>

@@ -226,6 +226,8 @@ npm run dev
 
 ```bash
 npm run lint
+npm run verify:auth
+npm run verify:ui
 npm run build
 npm run start
 ```
@@ -239,8 +241,10 @@ npm run start
 
 ## Verification Snapshot
 
-- 2026-05-21 확인
+- 2026-08-07 확인
   - `npm run lint` 성공
+  - `npm run verify:auth` 성공
+  - `npm run verify:ui` 성공 (57개 라우트 UI 계약 검사)
   - `npm run build` 성공
 
 ## Source Notes

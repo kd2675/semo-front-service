@@ -1,6 +1,7 @@
 "use client";
 
 import { useAppToast } from "@/app/hooks/useAppToast";
+import { useDialogFocusManagement } from "@/app/hooks/useDialogFocusManagement";
 import { ScheduleActionConfirmModal } from "@/app/clubs/[clubId]/schedule/modals/ScheduleActionConfirmModal";
 import { bottomSheetMotion, overlayFadeMotion } from "@/app/lib/motion";
 import {
@@ -16,9 +17,7 @@ import {
   type UpdateClubPositionRequest,
 } from "@/app/lib/clubs";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { Inter, Manrope } from "next/font/google";
 import { startTransition, useDeferredValue, useEffect, useMemo, useState } from "react";
-import type { CSSProperties } from "react";
 import { RoleMemberIdentity, RoleOtherPositions } from "./RoleMemberParts";
 import { RolePermissionToggleCard } from "./RolePermissionToggleCard";
 import {
@@ -28,16 +27,6 @@ import {
   ROLE_ICON_OPTIONS,
   type RoleFormValue,
 } from "../utils/roleUtils";
-
-const manrope = Manrope({
-  subsets: ["latin"],
-  weight: ["400", "500", "700", "800"],
-});
-
-const inter = Inter({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-});
 
 const EMPTY_MEMBERS: ClubAdminMember[] = [];
 
@@ -76,7 +65,7 @@ function MemberAssignmentCard({
           className={`inline-flex shrink-0 items-center gap-1.5 rounded-2xl px-4 py-2.5 text-xs font-bold transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40 ${
             assigned
               ? "bg-rose-50 text-rose-600 hover:bg-rose-100"
-              : "bg-[var(--secondary)] text-white shadow-[0_12px_28px_rgba(144,78,0,0.18)] hover:bg-[#7d4300]"
+              : "bg-[var(--primary)] text-white shadow-sm hover:bg-orange-700"
           }`}
         >
           <span className="material-symbols-outlined text-[18px]">
@@ -126,28 +115,7 @@ export function RoleEditSheet({
   const deferredMemberQuery = useDeferredValue(memberQuery.trim().toLowerCase());
   const { showToast, clearToast } = useAppToast(2400);
   const colorHex = form.colorHex || DEFAULT_ROLE_COLOR;
-
-  useEffect(() => {
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-
-    return () => {
-      document.body.style.overflow = previousOverflow;
-    };
-  }, []);
-
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        onClose();
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [onClose]);
+  const dialogRef = useDialogFocusManagement({ onDismiss: onClose });
 
   useEffect(() => {
     let cancelled = false;
@@ -316,30 +284,30 @@ export function RoleEditSheet({
   };
 
   const tabItems: Array<{ key: RoleSheetTab; label: string; icon: string }> = [
-    { key: "overview", label: "Overview", icon: "tune" },
-    { key: "permissions", label: "Permissions", icon: "rule_folder" },
-    { key: "members", label: "Members", icon: "groups" },
+    { key: "overview", label: "기본 정보", icon: "tune" },
+    { key: "permissions", label: "권한", icon: "rule_folder" },
+    { key: "members", label: "멤버", icon: "groups" },
   ];
 
   return (
     <>
 
-      <motion.button
-        type="button"
-        aria-label="직책 수정 시트 닫기"
+      <motion.div
+        aria-hidden="true"
         className="fixed inset-0 z-[70] bg-slate-950/52 backdrop-blur-sm"
         onClick={onClose}
         {...overlayFadeMotion(reduceMotion)}
       />
 
       <motion.section
+        ref={dialogRef}
         role="dialog"
         aria-modal="true"
-        className={`${inter.className} fixed inset-x-0 bottom-0 z-[71] mx-auto flex max-h-[92dvh] w-full max-w-7xl flex-col overflow-hidden rounded-t-[2rem] border border-white/70 bg-[linear-gradient(180deg,rgba(255,249,241,0.98)_0%,rgba(250,251,253,0.98)_100%)] shadow-[0_-24px_90px_rgba(15,23,42,0.28)]`}
-        style={{ "--secondary": colorHex } as CSSProperties}
+        tabIndex={-1}
+        aria-label={`${role.displayName} 직책 편집`}
+        className="semo-admin-theme fixed inset-x-0 bottom-0 z-[71] mx-auto flex max-h-[92dvh] w-full max-w-7xl flex-col overflow-hidden rounded-t-[var(--radius-modal)] border border-white/70 bg-[var(--color-bg)] shadow-[var(--shadow-modal)]"
         {...bottomSheetMotion(reduceMotion)}
       >
-        <div className="absolute inset-x-0 top-0 h-24 bg-[radial-gradient(circle_at_top,_rgba(255,220,194,0.95),_transparent_64%)]" />
         <div className="relative flex min-h-0 flex-1 flex-col">
           <div className="flex justify-center pb-3 pt-3">
             <div className="h-1.5 w-16 rounded-full bg-slate-300/90" />
@@ -356,9 +324,9 @@ export function RoleEditSheet({
                 </div>
                 <div>
                   <p className="text-[11px] font-black uppercase tracking-[0.28em] text-[#8b4b00]">
-                    Role Control Room
+                    직책 편집
                   </p>
-                  <h2 className={`${manrope.className} mt-1 text-2xl font-black tracking-tight text-slate-900 sm:text-3xl`}>
+                  <h2 className="mt-1 text-2xl font-black tracking-tight text-slate-900 sm:text-3xl">
                     {form.displayName || role.displayName}
                   </h2>
                 </div>
@@ -369,9 +337,11 @@ export function RoleEditSheet({
               <button
                 type="button"
                 onClick={onClose}
+                data-dialog-initial-focus
+                aria-label="직책 편집 닫기"
                 className="inline-flex size-11 items-center justify-center rounded-2xl bg-slate-900 text-white transition hover:bg-slate-800"
               >
-                <span className="material-symbols-outlined text-[20px]">close</span>
+                <span className="material-symbols-outlined text-[20px]" aria-hidden="true">close</span>
               </button>
             </div>
           </div>
@@ -387,7 +357,7 @@ export function RoleEditSheet({
                     onClick={() => setActiveTab(tabItem.key)}
                     className={`inline-flex items-center gap-2 rounded-full px-4 py-2.5 text-sm font-semibold transition ${
                       active
-                        ? "bg-[var(--secondary)] text-white shadow-sm"
+                        ? "bg-[var(--primary)] text-white shadow-sm"
                         : "bg-white text-slate-600 hover:bg-[#fff5eb]"
                     }`}
                   >
@@ -411,7 +381,7 @@ export function RoleEditSheet({
               </div>
             ) : loadError ? (
               <div className="rounded-[2rem] border border-rose-200 bg-rose-50 px-6 py-8 text-center">
-                <p className={`${manrope.className} text-xl font-bold text-rose-700`}>직책 데이터를 불러오지 못했습니다.</p>
+                <p className="text-xl font-bold text-rose-700">직책 데이터를 불러오지 못했습니다.</p>
                 <p className="mt-2 text-sm leading-6 text-rose-600">{loadError}</p>
               </div>
             ) : (
@@ -422,7 +392,7 @@ export function RoleEditSheet({
                       <article className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
                         <div className="grid gap-5 md:grid-cols-2">
                           <label className="block">
-                            <span className="mb-2 block text-xs font-bold uppercase tracking-[0.18em] text-slate-500">Role Name</span>
+                            <span className="mb-2 block text-xs font-bold text-slate-500">직책 이름</span>
                             <input
                               value={form.displayName}
                               onChange={(event) => setForm((current) => ({ ...current, displayName: event.target.value }))}
@@ -431,7 +401,7 @@ export function RoleEditSheet({
                             />
                           </label>
                           <label className="block">
-                            <span className="mb-2 block text-xs font-bold uppercase tracking-[0.18em] text-slate-500">Role Code</span>
+                            <span className="mb-2 block text-xs font-bold text-slate-500">직책 코드</span>
                             <input
                               value={form.positionCode}
                               readOnly
@@ -441,7 +411,7 @@ export function RoleEditSheet({
                         </div>
 
                         <label className="mt-5 block">
-                          <span className="mb-2 block text-xs font-bold uppercase tracking-[0.18em] text-slate-500">Description</span>
+                          <span className="mb-2 block text-xs font-bold text-slate-500">설명</span>
                           <textarea
                             value={form.description}
                             onChange={(event) => setForm((current) => ({ ...current, description: event.target.value }))}
@@ -454,7 +424,7 @@ export function RoleEditSheet({
                       <article className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
                         <div className="flex items-center justify-between gap-4">
                           <div>
-                            <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-500">Role State</p>
+                            <p className="text-xs font-bold text-slate-500">직책 상태</p>
                             <p className="mt-2 text-sm text-slate-500">비활성화하면 기존 직책은 유지되지만 운영용 선택지에서 내려갑니다.</p>
                           </div>
                           <button
@@ -462,12 +432,12 @@ export function RoleEditSheet({
                             role="switch"
                             aria-checked={form.active}
                             onClick={() => setForm((current) => ({ ...current, active: !current.active }))}
-                            className={`relative inline-flex h-7 w-14 items-center rounded-full transition ${
-                              form.active ? "bg-[var(--secondary)]" : "bg-slate-300"
+                            className={`relative inline-flex h-11 w-16 items-center rounded-full transition ${
+                              form.active ? "bg-[var(--primary)]" : "bg-slate-300"
                             }`}
                           >
                             <span
-                              className={`absolute left-[3px] size-6 rounded-full bg-white transition-transform ${
+                              className={`absolute left-1 size-8 rounded-full bg-white transition-transform ${
                                 form.active ? "translate-x-7" : "translate-x-0"
                               }`}
                             />
@@ -478,7 +448,7 @@ export function RoleEditSheet({
 
                     <section className="space-y-6">
                       <article className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
-                        <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-500">Icon</p>
+                        <p className="text-xs font-bold text-slate-500">아이콘</p>
                         <div className="mt-4 flex flex-wrap gap-3">
                           {ROLE_ICON_OPTIONS.map((iconName) => {
                             const selected = form.iconName === iconName;
@@ -489,7 +459,7 @@ export function RoleEditSheet({
                                 onClick={() => setForm((current) => ({ ...current, iconName }))}
                                 className={`flex size-12 items-center justify-center rounded-xl transition ${
                                   selected
-                                    ? "bg-[var(--secondary)] text-white shadow-md ring-2 ring-[var(--secondary)]/30 ring-offset-2"
+                                    ? "bg-[var(--primary)] text-white shadow-md ring-2 ring-orange-200 ring-offset-2"
                                     : "bg-[#eff4f7] text-slate-500 hover:bg-[#e4ecef]"
                                 }`}
                               >
@@ -501,7 +471,7 @@ export function RoleEditSheet({
                       </article>
 
                       <article className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
-                        <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-500">Color</p>
+                        <p className="text-xs font-bold text-slate-500">식별 색상</p>
                         <div className="mt-4 flex flex-wrap gap-4">
                           {ROLE_COLOR_OPTIONS.map((optionColor) => {
                             const selected = form.colorHex === optionColor;
@@ -510,15 +480,17 @@ export function RoleEditSheet({
                                 key={optionColor}
                                 type="button"
                                 onClick={() => setForm((current) => ({ ...current, colorHex: optionColor }))}
-                                className={`size-8 rounded-full ${selected ? "ring-2 ring-slate-900/15 ring-offset-2" : ""}`}
+                                className={`size-11 rounded-full ${selected ? "ring-2 ring-slate-900/15 ring-offset-2" : ""}`}
                                 style={{ backgroundColor: optionColor }}
+                                aria-label={`직책 색상 ${optionColor}`}
+                                aria-pressed={selected}
                               />
                             );
                           })}
                         </div>
                       </article>
 
-                      <article className="rounded-[28px] border border-slate-200 bg-[var(--secondary)]/10 p-6 shadow-sm">
+                      <article className="rounded-[var(--radius-card)] border border-orange-100 bg-orange-50 p-6 shadow-sm">
                         <div className="flex items-center gap-4">
                           <div
                             className="flex size-14 items-center justify-center rounded-[18px] text-white shadow-sm"
@@ -527,8 +499,8 @@ export function RoleEditSheet({
                             <span className="material-symbols-outlined text-[28px]">{form.iconName}</span>
                           </div>
                           <div>
-                            <p className={`${manrope.className} text-2xl font-extrabold tracking-tight text-slate-900`}>
-                              {form.displayName || "Role"}
+                            <p className="text-2xl font-extrabold tracking-tight text-slate-900">
+                              {form.displayName || "직책"}
                             </p>
                             <p className="mt-1 text-xs font-bold uppercase tracking-[0.18em] text-slate-500">
                               {form.positionCode}
@@ -542,7 +514,7 @@ export function RoleEditSheet({
 
                 {activeTab === "permissions" ? (
                   <div className="space-y-5">
-                    <div className="rounded-[28px] bg-[var(--secondary)]/10 p-5 text-sm text-slate-600">
+                    <div className="rounded-[var(--radius-card)] bg-orange-50 p-5 text-sm text-slate-600">
                       활성 기능에 연결된 권한만 토글 대상에 포함됩니다. 변경 내용은 저장 버튼을 눌렀을 때 반영됩니다.
                     </div>
                     <div className="grid gap-6 lg:grid-cols-2">
@@ -564,9 +536,9 @@ export function RoleEditSheet({
                       <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
                         <div className="flex flex-wrap gap-2">
                         {[
-                          { label: "Assigned", value: totalAssignedMembers, icon: "groups" },
-                          { label: "Visible", value: filteredMembers.length, icon: "manage_search" },
-                          { label: "Permission Keys", value: form.permissionKeys.length, icon: "verified_user" },
+                          { label: "현재 배정", value: totalAssignedMembers, icon: "groups" },
+                          { label: "검색 결과", value: filteredMembers.length, icon: "manage_search" },
+                          { label: "권한", value: form.permissionKeys.length, icon: "verified_user" },
                         ].map((item) => (
                           <div
                             key={item.label}
@@ -577,7 +549,7 @@ export function RoleEditSheet({
                             </span>
                             <div>
                               <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">{item.label}</p>
-                              <p className={`${manrope.className} text-lg font-black tracking-tight text-slate-900`}>
+                              <p className="text-lg font-black tracking-tight text-slate-900">
                               {item.value}
                               </p>
                             </div>
@@ -586,11 +558,12 @@ export function RoleEditSheet({
                         </div>
 
                         <div className="group relative w-full xl:max-w-sm">
-                          <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 transition group-focus-within:text-[var(--secondary)]">
+                          <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 transition group-focus-within:text-[var(--primary)]" aria-hidden="true">
                             search
                           </span>
                           <input
                             type="text"
+                            aria-label="직책 멤버 검색"
                             value={memberQuery}
                             onChange={(event) => {
                               const nextValue = event.target.value;
@@ -607,15 +580,15 @@ export function RoleEditSheet({
                       <section>
                         <div className="mb-4 flex items-center justify-between">
                           <div>
-                            <h3 className={`${manrope.className} text-xl font-black tracking-tight text-slate-900`}>
-                              Assigned Members
+                            <h3 className="text-xl font-black tracking-tight text-slate-900">
+                              배정된 멤버
                             </h3>
                           </div>
                           <span
                             className="rounded-full px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.22em]"
                             style={{ backgroundColor: `${colorHex}16`, color: colorHex }}
                           >
-                            {assignedMembers.length} Visible
+                            {assignedMembers.length}명 표시
                           </span>
                         </div>
                         <div className="space-y-4">
@@ -641,12 +614,12 @@ export function RoleEditSheet({
                       <section>
                         <div className="mb-4 flex items-center justify-between">
                           <div>
-                            <h3 className={`${manrope.className} text-xl font-black tracking-tight text-slate-900`}>
-                              Ready To Assign
+                            <h3 className="text-xl font-black tracking-tight text-slate-900">
+                              배정 가능한 멤버
                             </h3>
                           </div>
                           <span className="rounded-full bg-slate-900 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.22em] text-white">
-                            {availableMembers.length} Candidates
+                            {availableMembers.length}명
                           </span>
                         </div>
                         <div className="space-y-4">
@@ -685,16 +658,16 @@ export function RoleEditSheet({
                   className="inline-flex items-center gap-2 rounded-2xl border border-rose-200 bg-white px-4 py-2.5 text-sm font-semibold text-rose-600 transition hover:bg-rose-50 disabled:opacity-60"
                 >
                   <span className="material-symbols-outlined text-[18px]">delete</span>
-                  Delete
+                  삭제
                 </button>
                 <button
                   type="button"
                   onClick={() => void handleSave()}
                   disabled={loading || submitting}
-                  className="inline-flex items-center gap-2 rounded-2xl bg-[var(--secondary)] px-5 py-2.5 text-sm font-bold text-white transition hover:bg-[#7d4300] disabled:opacity-60"
+                  className="semo-control inline-flex items-center gap-2 bg-[var(--primary)] px-5 text-sm font-bold text-white transition hover:bg-orange-700 disabled:opacity-60"
                 >
                   <span className="material-symbols-outlined text-[18px]">done</span>
-                  {submitting ? "Saving..." : "Save Changes"}
+                  {submitting ? "저장 중..." : "변경사항 저장"}
                 </button>
               </div>
             </div>

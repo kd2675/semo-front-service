@@ -208,13 +208,13 @@ export function ClubAdminFeedbackClient({
         } as CSSProperties
       }
     >
-      <div className="mx-auto min-h-screen max-w-md bg-[#f8f6f6]">
+      <div className="semo-page-admin min-h-screen bg-[var(--background-light)]">
         <ClubPageHeader
           title="피드백 관리"
           subtitle={feedbackHome.clubName}
           icon="forum"
           theme="admin"
-          containerClassName="max-w-md"
+          containerClassName="semo-page-admin"
         />
 
         <main className="semo-nav-bottom-space space-y-4 px-4 pt-4">
@@ -222,7 +222,7 @@ export function ClubAdminFeedbackClient({
             className="rounded-[28px] border border-[#f2d8c5] bg-[linear-gradient(150deg,#fff1e6_0%,#fff9f4_58%,#f8fbff_100%)] p-5 shadow-[0_20px_46px_rgba(236,91,19,0.1)]"
             {...staggeredFadeUpMotion(0, reduceMotion)}
           >
-            <p className="text-[11px] font-bold uppercase tracking-[0.26em] text-[#ec5b13]">
+            <p className="text-xs font-bold tracking-wide text-[var(--primary)]">
               Feedback Operations
             </p>
             <h2 className="mt-3 text-[28px] font-black tracking-[-0.04em] text-slate-950">
@@ -232,7 +232,7 @@ export function ClubAdminFeedbackClient({
             </h2>
             <div className="mt-5 grid grid-cols-2 gap-3">
               <div className="rounded-[22px] border border-white/80 bg-white/85 px-4 py-3 shadow-sm">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-400">
+                <p className="text-xs font-semibold text-slate-400">
                   총 건수
                 </p>
                 <p className="mt-2 text-2xl font-black tracking-tight text-slate-950">
@@ -240,7 +240,7 @@ export function ClubAdminFeedbackClient({
                 </p>
               </div>
               <div className="rounded-[22px] border border-white/80 bg-white/85 px-4 py-3 shadow-sm">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-400">
+                <p className="text-xs font-semibold text-slate-400">
                   답변 완료
                 </p>
                 <p className="mt-2 text-2xl font-black tracking-tight text-slate-950">
@@ -319,13 +319,13 @@ export function ClubAdminFeedbackClient({
                     {...staggeredFadeUpMotion(index + 2, reduceMotion)}
                   >
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${getStatusTone(item.statusCode)}`}>
+                      <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${getStatusTone(item.statusCode)}`}>
                         {item.statusLabel}
                       </span>
-                      <span className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${getVisibilityTone(item.visibilityScope)}`}>
+                      <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${getVisibilityTone(item.visibilityScope)}`}>
                         {item.visibilityLabel}
                       </span>
-                      <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-bold text-slate-600">
+                      <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-600">
                         {item.feedbackTypeLabel}
                       </span>
                     </div>
@@ -367,14 +367,14 @@ export function ClubAdminFeedbackClient({
               <div className="mt-4 space-y-4">
                 <div className="rounded-[24px] bg-slate-50 px-4 py-4">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${getStatusTone(selectedDetail.statusCode)}`}>
+                    <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${getStatusTone(selectedDetail.statusCode)}`}>
                       {selectedDetail.statusLabel}
                     </span>
-                    <span className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${getVisibilityTone(selectedDetail.visibilityScope)}`}>
+                    <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${getVisibilityTone(selectedDetail.visibilityScope)}`}>
                       {selectedDetail.visibilityLabel}
                     </span>
                     {selectedDetail.anonymous ? (
-                      <span className="rounded-full bg-slate-900 px-2.5 py-1 text-[11px] font-bold text-white">
+                      <span className="rounded-full bg-slate-900 px-2.5 py-1 text-xs font-bold text-white">
                         익명 제출
                       </span>
                     ) : null}

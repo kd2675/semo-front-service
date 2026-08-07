@@ -227,7 +227,7 @@ export function ClubTournamentManageClient({
             <button
               type="button"
               onClick={onRequestClose}
-              className="rounded-full p-2 transition-colors hover:bg-slate-100"
+              className="semo-icon-control transition-colors hover:bg-slate-100"
               aria-label="대회 관리 닫기"
             >
               <span className="material-symbols-outlined text-[24px]">close</span>
@@ -292,7 +292,7 @@ export function ClubTournamentManageClient({
             animate={reduceMotion ? undefined : { opacity: 1, y: 0 }}
             transition={{ delay: reduceMotion ? 0 : 0.04 }}
           >
-            <p className="text-[11px] font-black uppercase tracking-[0.24em] text-slate-500">Approval Status</p>
+            <p className="text-xs font-black tracking-wide text-slate-500">승인 상태</p>
             <h3 className="mt-2 text-xl font-black tracking-tight text-slate-900">승인 상태</h3>
             <p className="mt-3 text-base font-bold text-slate-900">{getTournamentApprovalLabel(payload.approvalStatus)}</p>
             {payload.reviewedAtLabel ? (
@@ -318,7 +318,7 @@ export function ClubTournamentManageClient({
               animate={reduceMotion ? undefined : { opacity: 1, y: 0 }}
               transition={{ delay: reduceMotion ? 0 : 0.08 }}
             >
-              <p className="text-[11px] font-black uppercase tracking-[0.24em] text-amber-700">Tournament Review</p>
+              <p className="text-xs font-black tracking-wide text-amber-700">대회 검토</p>
               <h3 className="mt-2 text-xl font-black tracking-tight text-slate-900">승인 검토</h3>
               <div className="mt-4 grid grid-cols-2 gap-3">
                 {[
@@ -341,6 +341,7 @@ export function ClubTournamentManageClient({
               </div>
               {tournamentReviewStatus === "REJECTED" ? (
                 <textarea
+                  aria-label="대회 거절 사유"
                   value={tournamentRejectionReason}
                   onChange={(event) => setTournamentRejectionReason(event.target.value)}
                   className="mt-4 block min-h-28 w-full rounded-[18px] border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900"
@@ -368,7 +369,7 @@ export function ClubTournamentManageClient({
               animate={reduceMotion ? undefined : { opacity: 1, y: 0 }}
               transition={{ delay: reduceMotion ? 0 : 0.12 }}
             >
-              <p className="text-[11px] font-black uppercase tracking-[0.24em] text-slate-400">Applications</p>
+              <p className="text-xs font-black tracking-wide text-slate-400">참가 신청</p>
               <h3 className="mt-2 text-xl font-black tracking-tight text-slate-900">참가 신청 관리</h3>
               <div className="mt-4 space-y-3">
                 {payload.applications.length === 0 ? (
@@ -428,7 +429,7 @@ export function ClubTournamentManageClient({
             animate={reduceMotion ? undefined : { opacity: 1, y: 0 }}
             transition={{ delay: reduceMotion ? 0 : 0.16 }}
           >
-            <p className="text-[11px] font-black uppercase tracking-[0.24em] text-slate-400">Manage Actions</p>
+            <p className="text-xs font-black tracking-wide text-slate-400">관리 작업</p>
             <h3 className="mt-2 text-xl font-black tracking-tight text-slate-900">운영 액션</h3>
             <div className="mt-4 flex flex-wrap gap-3">
               {mode !== "admin" && payload.canEdit ? (

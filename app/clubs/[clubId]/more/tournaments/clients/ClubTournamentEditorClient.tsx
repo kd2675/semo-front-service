@@ -233,7 +233,7 @@ export function ClubTournamentEditorClient({
             <button
               type="button"
               onClick={onRequestClose}
-              className="rounded-full p-2 transition-colors hover:bg-slate-100"
+              className="semo-icon-control transition-colors hover:bg-slate-100"
               aria-label="대회 폼 닫기"
             >
               <span className="material-symbols-outlined text-[24px]">close</span>
@@ -248,7 +248,7 @@ export function ClubTournamentEditorClient({
             ) : null}
 
             <section className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm">
-              <p className="text-[11px] font-black uppercase tracking-[0.26em] text-sky-600">Meta</p>
+              <p className="text-xs font-black tracking-wide text-sky-600">기본 정보</p>
               <div className="mt-4 space-y-4">
                 <label className="block">
                   <span className="mb-2 block text-sm font-semibold text-slate-700">대회 이름</span>
@@ -284,7 +284,7 @@ export function ClubTournamentEditorClient({
             </section>
 
             <section className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm">
-              <p className="text-[11px] font-black uppercase tracking-[0.26em] text-slate-500">Schedule</p>
+              <p className="text-xs font-black tracking-wide text-slate-500">일정</p>
               <div className="mt-4 grid grid-cols-2 gap-4">
                 <label className="block">
                   <span className="mb-2 block text-sm font-semibold text-slate-700">신청 시작일</span>
@@ -366,7 +366,7 @@ export function ClubTournamentEditorClient({
             </section>
 
             <section className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm">
-              <p className="text-[11px] font-black uppercase tracking-[0.26em] text-amber-600">Format</p>
+              <p className="text-xs font-black tracking-wide text-amber-600">진행 방식</p>
               <div className="mt-4 grid grid-cols-2 gap-3">
                 {[
                   { value: "SINGLE", label: "개인전" },
@@ -413,7 +413,7 @@ export function ClubTournamentEditorClient({
             </section>
 
             <section className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm">
-              <p className="text-[11px] font-black uppercase tracking-[0.26em] text-emerald-600">Fee & Share</p>
+              <p className="text-xs font-black tracking-wide text-emerald-600">참가비와 공유</p>
               <div className="mt-4 space-y-4">
                 <label className="flex items-center justify-between rounded-[18px] border border-slate-200 bg-slate-50 px-4 py-3">
                   <span className="text-sm font-semibold text-slate-700">참가비 사용</span>
@@ -423,6 +423,7 @@ export function ClubTournamentEditorClient({
                   <div className="grid grid-cols-[1fr_92px] gap-3">
                     <input
                       type="number"
+                      aria-label="참가비 금액"
                       min={0}
                       value={feeAmount}
                       onChange={(event) => setFeeAmount(event.target.value)}
@@ -430,6 +431,7 @@ export function ClubTournamentEditorClient({
                       placeholder="예: 10000"
                     />
                     <input
+                      aria-label="참가비 통화 코드"
                       value={feeCurrencyCode}
                       onChange={(event) => setFeeCurrencyCode(event.target.value.toUpperCase())}
                       className={inputClassName}

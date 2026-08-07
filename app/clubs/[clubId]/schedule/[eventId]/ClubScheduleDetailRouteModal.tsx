@@ -1,8 +1,4 @@
-"use client";
-
-import { useRouter } from "next/navigation";
-import { RouteModalPresence } from "@/app/components/RouteModalPresence";
-import { ClubScheduleEventDetailModal } from "@/app/components/ClubDetailModals";
+import { ClubScheduleDetailClient } from "../clients/ClubScheduleDetailClient";
 
 type ClubScheduleDetailRouteModalProps = {
   clubId: string;
@@ -13,23 +9,5 @@ export function ClubScheduleDetailRouteModal({
   clubId,
   eventId,
 }: ClubScheduleDetailRouteModalProps) {
-  const router = useRouter();
-
-  const handleDismiss = () => {
-    router.push(`/clubs/${clubId}/schedule`);
-  };
-
-  return (
-    <div className="min-h-screen bg-[var(--background-light)]">
-      <RouteModalPresence onExitComplete={handleDismiss}>
-        {(requestClose) => (
-          <ClubScheduleEventDetailModal
-            clubId={clubId}
-            eventId={eventId}
-            onRequestClose={requestClose}
-          />
-        )}
-      </RouteModalPresence>
-    </div>
-  );
+  return <ClubScheduleDetailClient clubId={clubId} eventId={eventId} presentation="page" />;
 }

@@ -258,7 +258,7 @@ function renderCalendarBadges(badges: Array<{ label: string; className: string }
   return badges.map((badge) => (
     <span
       key={badge.label}
-      className={`rounded px-2 py-0.5 text-[11px] font-bold uppercase ${badge.className}`}
+      className={`rounded px-2 py-0.5 text-xs font-bold ${badge.className}`}
     >
       {badge.label}
     </span>
@@ -324,11 +324,11 @@ function EventCard({
         </div>
         <div className="flex flex-1 flex-col justify-center">
           <div className="mb-2 flex flex-wrap items-center gap-2">
-            <span className="rounded bg-amber-50 px-2 py-0.5 text-[11px] font-bold uppercase text-amber-600">
+            <span className="rounded bg-amber-50 px-2 py-0.5 text-xs font-bold text-amber-600">
               일정
             </span>
             {event.pinned ? (
-              <span className="rounded bg-red-50 px-2 py-0.5 text-[11px] font-bold uppercase text-red-600">
+              <span className="rounded bg-red-50 px-2 py-0.5 text-xs font-bold text-red-600">
                 고정
               </span>
             ) : null}
@@ -339,7 +339,7 @@ function EventCard({
         </div>
         <div className="shrink-0 text-right">
           <p className="text-sm font-bold text-slate-900">{event.timeLabel ?? "종일"}</p>
-          <p className="text-[10px] font-medium uppercase tracking-wider text-slate-400">
+          <p className="text-xs font-medium text-slate-400">
             {getEventStatusLabel(event)}
           </p>
         </div>
@@ -373,11 +373,11 @@ function NoticeCard({
         </div>
         <div className="flex flex-1 flex-col justify-center">
           <div className="mb-2 flex flex-wrap items-center gap-2">
-            <span className="rounded bg-blue-50 px-2 py-0.5 text-[11px] font-bold uppercase text-blue-600">
+            <span className="rounded bg-blue-50 px-2 py-0.5 text-xs font-bold text-blue-600">
               공지
             </span>
             {notice.pinned ? (
-              <span className="rounded bg-red-50 px-2 py-0.5 text-[11px] font-bold uppercase text-red-600">
+              <span className="rounded bg-red-50 px-2 py-0.5 text-xs font-bold text-red-600">
                 고정
               </span>
             ) : null}
@@ -388,7 +388,7 @@ function NoticeCard({
         </div>
         <div className="shrink-0 text-right">
           <p className="text-sm font-bold text-slate-900">{getNoticeTimeLabel(notice)}</p>
-          <p className="text-[10px] font-medium uppercase tracking-wider text-slate-400">
+          <p className="text-xs font-medium text-slate-400">
             {getNoticeStatusLabel(notice)}
           </p>
         </div>
@@ -422,11 +422,11 @@ function VoteCard({
         </div>
         <div className="flex flex-1 flex-col justify-center">
           <div className="mb-2 flex flex-wrap items-center gap-2">
-            <span className="rounded bg-violet-50 px-2 py-0.5 text-[11px] font-bold uppercase text-violet-600">
+            <span className="rounded bg-violet-50 px-2 py-0.5 text-xs font-bold text-violet-600">
               투표
             </span>
             {vote.pinned ? (
-              <span className="rounded bg-red-50 px-2 py-0.5 text-[11px] font-bold uppercase text-red-600">
+              <span className="rounded bg-red-50 px-2 py-0.5 text-xs font-bold text-red-600">
                 고정
               </span>
             ) : null}
@@ -441,7 +441,7 @@ function VoteCard({
         </div>
         <div className="shrink-0 text-right">
           <p className="text-sm font-bold text-slate-900">{vote.totalResponses}명</p>
-          <p className="text-[10px] font-medium uppercase tracking-wider text-slate-400">
+          <p className="text-xs font-medium text-slate-400">
             {getVoteLifecycleLabel(vote.voteStatus)}
           </p>
         </div>
@@ -475,14 +475,14 @@ function TournamentCard({
         </div>
         <div className="flex flex-1 flex-col justify-center">
           <div className="mb-2 flex flex-wrap items-center gap-2">
-            <span className="rounded bg-emerald-50 px-2 py-0.5 text-[11px] font-bold uppercase text-emerald-700">
+            <span className="rounded bg-emerald-50 px-2 py-0.5 text-xs font-bold text-emerald-700">
               대회
             </span>
-            <span className={`rounded px-2 py-0.5 text-[11px] font-bold uppercase ${getTournamentStatusBadgeClassName(tournament.tournamentStatus)}`}>
+            <span className={`rounded px-2 py-0.5 text-xs font-bold ${getTournamentStatusBadgeClassName(tournament.tournamentStatus)}`}>
               {getTournamentStatusLabel(tournament.tournamentStatus)}
             </span>
             {tournament.pinned ? (
-              <span className="rounded bg-red-50 px-2 py-0.5 text-[11px] font-bold uppercase text-red-600">
+              <span className="rounded bg-red-50 px-2 py-0.5 text-xs font-bold text-red-600">
                 고정
               </span>
             ) : null}
@@ -499,7 +499,7 @@ function TournamentCard({
         </div>
         <div className="shrink-0 text-right">
           <p className="text-sm font-bold text-slate-900">{tournament.tournamentPeriodLabel}</p>
-          <p className="text-[10px] font-medium uppercase tracking-wider text-slate-400">
+          <p className="text-xs font-medium text-slate-400">
             {getTournamentFeeLabel(tournament)}
           </p>
         </div>
@@ -667,7 +667,7 @@ export function ScheduleClient({
                     key={`${month.id}-${day}`}
                     type="button"
                     onClick={() => handleSelectDay(day)}
-                    className="flex h-10 w-full items-center justify-center text-sm font-medium"
+                    className="flex h-11 w-full items-center justify-center text-sm font-medium"
                   >
                     {isActive ? (
                       <div className="relative flex size-8 items-center justify-center rounded-full bg-[var(--primary)] font-bold text-white shadow-lg shadow-[var(--primary)]/30">
@@ -696,7 +696,7 @@ export function ScheduleClient({
             </div>
 
             <div className="mt-3 flex justify-end">
-              <div className="flex items-center gap-2 rounded-full bg-slate-50 px-3 py-1.5 text-[10px] font-medium text-slate-500">
+              <div className="flex items-center gap-2 rounded-full bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-500">
                 <span>적음</span>
                 <span className="size-1.5 rounded-full bg-white ring-1 ring-slate-300" />
                 <span className="size-1.5 rounded-full bg-yellow-400" />

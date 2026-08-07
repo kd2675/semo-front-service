@@ -1,8 +1,8 @@
 "use client";
 
 import { useQueries } from "@tanstack/react-query";
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { ClubRouteErrorState } from "@/app/components/ClubRouteState";
+import { getQueryErrorMessage } from "@/app/lib/queryUtils";
 import { myClubQueryOptions } from "@/app/lib/react-query/club/queries";
 import { memberDirectoryQueryOptions } from "@/app/lib/react-query/members/queries";
 import { ClubTimelineLoadingShell } from "../../ClubRouteLoadingShells";
@@ -15,31 +15,24 @@ type ClubMemberDirectoryFallbackClientProps = {
 export function ClubMemberDirectoryFallbackClient({
   clubId,
 }: ClubMemberDirectoryFallbackClientProps) {
-  const router = useRouter();
   const [clubQuery, directoryQuery] = useQueries({
     queries: [myClubQueryOptions(clubId), memberDirectoryQueryOptions(clubId)],
   });
   const club = clubQuery.data ?? null;
   const directory = directoryQuery.data ?? null;
 
-  useEffect(() => {
-    if (
-      !clubQuery.isPending &&
-      !directoryQuery.isPending &&
-      (clubQuery.isError || directoryQuery.isError || !club || !directory)
-    ) {
-        router.replace(`/clubs/${clubId}`);
-    }
-  }, [
-    club,
-    clubId,
-    clubQuery.isError,
-    clubQuery.isPending,
-    directory,
-    directoryQuery.isError,
-    directoryQuery.isPending,
-    router,
-  ]);
+  const error = clubQuery.error ?? directoryQuery.error;
+
+  if ((clubQuery.isError || directoryQuery.isError) && (!club || !directory)) {
+    return (
+      <ClubRouteErrorState
+        title="회원 디렉터리"
+        message={getQueryErrorMessage(error, "회원 정보를 불러오지 못했습니다.")}
+        backHref={`/clubs/${clubId}`}
+        onRetry={() => void Promise.all([clubQuery.refetch(), directoryQuery.refetch()])}
+      />
+    );
+  }
 
   if (!club || !directory) {
     return <ClubTimelineLoadingShell />;

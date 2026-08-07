@@ -1,7 +1,6 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import type { CSSProperties } from "react";
 import { ClubBottomNav } from "@/app/components/ClubBottomNav";
 
 type ClubChromeProps = {
@@ -15,15 +14,7 @@ export function ClubChrome({ clubId, children }: ClubChromeProps) {
     pathname === `/clubs/${clubId}/admin` || pathname.startsWith(`/clubs/${clubId}/admin/`);
 
   return (
-    <div
-      className="min-h-screen"
-      style={
-        {
-          "--primary": "#135bec",
-          "--background-light": "#f6f6f8",
-        } as CSSProperties
-      }
-    >
+    <div className="semo-user-theme min-h-screen">
       {children}
       {!isAdminRoute ? <ClubBottomNav clubId={clubId} /> : null}
     </div>

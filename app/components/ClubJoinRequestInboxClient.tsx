@@ -284,7 +284,7 @@ export function ClubJoinRequestInboxClient({
                   </p>
                 </div>
                 <div className="rounded-[24px] bg-slate-900 px-4 py-3 text-white shadow-[0_18px_40px_rgba(15,23,42,0.18)]">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/60">Pending</p>
+                  <p className="text-xs font-semibold text-white/60">대기 중</p>
                   <p className="mt-1 text-2xl font-black tracking-tight">{requests.length}</p>
                 </div>
               </div>

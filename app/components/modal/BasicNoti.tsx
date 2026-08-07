@@ -81,7 +81,7 @@ export function BasicNoti({
           <div className="flex items-start justify-between gap-3">
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-[10px] font-black tracking-[0.22em] text-slate-400">NOTI</span>
+                <span className="text-xs font-black tracking-wide text-slate-400">알림</span>
                 <span className="h-1 w-1 rounded-full bg-slate-300" />
                 <span className="text-[11px] font-semibold text-slate-400">SEMO</span>
               </div>
@@ -93,7 +93,7 @@ export function BasicNoti({
             <button
               type="button"
               onClick={onClose}
-              className="inline-flex size-9 items-center justify-center rounded-full border border-black/5 bg-white/75 text-slate-400 transition-colors hover:text-slate-700"
+              className="semo-icon-control border border-black/5 bg-white/75 text-slate-400 transition-colors hover:text-slate-700"
               aria-label="알림 닫기"
             >
               <span className="material-symbols-outlined text-[20px]">close</span>

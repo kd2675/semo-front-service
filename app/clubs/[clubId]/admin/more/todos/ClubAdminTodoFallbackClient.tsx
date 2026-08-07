@@ -1,9 +1,8 @@
 "use client";
 
 import { useQueries } from "@tanstack/react-query";
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
+import { ClubRouteErrorState } from "@/app/components/ClubRouteState";
 import { myClubQueryOptions } from "@/app/lib/react-query/club/queries";
 import { adminTodosQueryOptions } from "@/app/lib/react-query/todos/queries";
 import { getQueryErrorMessage } from "@/app/lib/queryUtils";
@@ -14,7 +13,6 @@ type ClubAdminTodoFallbackClientProps = {
 };
 
 export function ClubAdminTodoFallbackClient({ clubId }: ClubAdminTodoFallbackClientProps) {
-  const router = useRouter();
   const [clubQuery, todoQuery] = useQueries({
     queries: [myClubQueryOptions(clubId), adminTodosQueryOptions(clubId)],
   });
@@ -27,51 +25,28 @@ export function ClubAdminTodoFallbackClient({ clubId }: ClubAdminTodoFallbackCli
         ? getQueryErrorMessage(todoQuery.error, "할 일 운영 정보를 다시 불러오지 못했습니다.")
         : null;
 
-  useEffect(() => {
-    if (!clubQuery.isPending && clubQuery.isError && !club) {
-      router.replace(`/clubs/${clubId}`);
-      return;
-    }
-    if (!todoQuery.isPending && todoQuery.isError && club) {
-      router.replace(`/clubs/${clubId}/more/todos`);
-    }
-  }, [
-    club,
-    clubId,
-    clubQuery.isError,
-    clubQuery.isPending,
-    router,
-    todoQuery.isError,
-    todoQuery.isPending,
-  ]);
+  if (club && !club.admin) {
+    return (
+      <ClubRouteErrorState
+        title="할 일 관리"
+        heading="관리자 권한이 필요합니다"
+        message="할 일 관리는 클럽 관리자만 사용할 수 있습니다."
+        backHref={`/clubs/${clubId}`}
+        theme="admin"
+        icon="lock"
+      />
+    );
+  }
 
   if (errorMessage) {
     return (
-      <div className="min-h-screen bg-[#f8f6f6] text-slate-900">
-        <ClubPageHeader
-          title="할 일 관리"
-          subtitle={club?.name}
-          icon="assignment"
-          theme="admin"
-          containerClassName="max-w-md"
-        />
-        <main className="semo-nav-bottom-space mx-auto flex w-full max-w-md flex-col gap-4 px-4 pt-4">
-          <div className="rounded-2xl border border-rose-200 bg-white p-5 shadow-sm">
-            <p className="text-sm font-semibold text-slate-900">운영 할 일을 불러오지 못했습니다.</p>
-            <p className="mt-2 text-sm leading-6 text-slate-600">{errorMessage}</p>
-            <button
-              type="button"
-              onClick={() => {
-                void clubQuery.refetch();
-                void todoQuery.refetch();
-              }}
-              className="mt-4 rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white"
-            >
-              다시 시도
-            </button>
-          </div>
-        </main>
-      </div>
+      <ClubRouteErrorState
+        title="할 일 관리"
+        message={errorMessage}
+        backHref={`/clubs/${clubId}/admin`}
+        theme="admin"
+        onRetry={() => void Promise.all([clubQuery.refetch(), todoQuery.refetch()])}
+      />
     );
   }
 
@@ -82,9 +57,9 @@ export function ClubAdminTodoFallbackClient({ clubId }: ClubAdminTodoFallbackCli
           title="할 일 관리"
           icon="assignment"
           theme="admin"
-          containerClassName="max-w-md"
+          containerClassName="semo-page-admin"
         />
-        <main className="semo-nav-bottom-space mx-auto flex w-full max-w-md flex-col gap-4 px-4 pt-4">
+        <main className="semo-page-admin semo-nav-bottom-space flex flex-col gap-4 px-4 pt-4">
           <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
             <div className="h-3 w-16 rounded-full bg-slate-100" />
             <div className="mt-3 h-6 w-44 rounded-full bg-slate-200" />

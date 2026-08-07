@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { RouterLink } from "@/app/components/RouterLink";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import { type BracketDetailResponse } from "@/app/lib/clubs";
-import { useState, type CSSProperties } from "react";
+import { useState } from "react";
 import { getQueryErrorMessage } from "@/app/lib/queryUtils";
 import { invalidateClubQueries } from "@/app/lib/react-query/common";
 import {
@@ -26,16 +26,6 @@ type ClubBracketDetailClientProps = {
   onRequestClose?: () => void;
   onReload?: () => void;
 };
-
-const USER_THEME = {
-  "--primary": "#135bec",
-  "--background-light": "#f6f6f8",
-} as CSSProperties;
-
-const ADMIN_THEME = {
-  "--primary": "#ec5b13",
-  "--background-light": "#f8f6f6",
-} as CSSProperties;
 
 function approvalBadgeClass(status: string) {
   switch (status) {
@@ -161,10 +151,7 @@ export function ClubBracketDetailClient({
   }
 
   return (
-    <div
-      className={isModal ? "flex min-h-0 flex-1 flex-col font-display text-slate-900" : "min-h-full font-display text-slate-900"}
-      style={isAdminMode ? ADMIN_THEME : USER_THEME}
-    >
+    <div className={`${isAdminMode ? "semo-admin-theme" : "semo-user-theme"} ${isModal ? "flex min-h-0 flex-1 flex-col font-display text-slate-900" : "min-h-full font-display text-slate-900"}`}>
       <div
         className={isModal ? "flex min-h-0 flex-1 flex-col" : "mx-auto flex min-h-full max-w-md flex-col"}
         style={{ backgroundColor: "var(--background-light)" }}
@@ -178,7 +165,7 @@ export function ClubBracketDetailClient({
             <button
               type="button"
               onClick={onRequestClose}
-              className="rounded-full p-2 transition-colors hover:bg-slate-100"
+              className="semo-icon-control transition-colors hover:bg-slate-100"
               aria-label="대진표 상세 닫기"
             >
               <span className="material-symbols-outlined text-[24px]">close</span>
@@ -274,7 +261,7 @@ export function ClubBracketDetailClient({
           <section className="mt-6 grid gap-4 xl:grid-cols-[320px_1fr]">
             <article className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm">
               <div className="mb-4">
-                <p className="text-[11px] font-black uppercase tracking-[0.24em] text-slate-400">Participants</p>
+                <p className="text-xs font-black tracking-wide text-slate-400">참가자</p>
                 <h3 className="mt-2 text-xl font-black tracking-tight text-slate-900">참가자</h3>
               </div>
               <div className="space-y-3">
@@ -303,7 +290,7 @@ export function ClubBracketDetailClient({
 
             <article className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm">
               <div className="mb-4">
-                <p className="text-[11px] font-black uppercase tracking-[0.24em] text-slate-400">Preview</p>
+                <p className="text-xs font-black tracking-wide text-slate-400">대진 미리보기</p>
                 <h3 className="mt-2 text-xl font-black tracking-tight text-slate-900">라운드 미리보기</h3>
               </div>
               <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">

@@ -1,9 +1,9 @@
 "use client";
 
 import { useQueries } from "@tanstack/react-query";
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
+import { ClubRouteErrorState } from "@/app/components/ClubRouteState";
+import { getQueryErrorMessage } from "@/app/lib/queryUtils";
 import { myClubQueryOptions } from "@/app/lib/react-query/club/queries";
 import { todoQueryOptions } from "@/app/lib/react-query/todos/queries";
 import { ClubTodoClient } from "./ClubTodoClient";
@@ -13,31 +13,24 @@ type ClubTodoFallbackClientProps = {
 };
 
 export function ClubTodoFallbackClient({ clubId }: ClubTodoFallbackClientProps) {
-  const router = useRouter();
   const [clubQuery, todoQuery] = useQueries({
     queries: [myClubQueryOptions(clubId), todoQueryOptions(clubId)],
   });
   const club = clubQuery.data ?? null;
   const todoData = todoQuery.data ?? null;
 
-  useEffect(() => {
-    if (
-      !clubQuery.isPending &&
-      !todoQuery.isPending &&
-      (clubQuery.isError || todoQuery.isError || !club || !todoData)
-    ) {
-      router.replace(`/clubs/${clubId}`);
-    }
-  }, [
-    club,
-    clubId,
-    clubQuery.isError,
-    clubQuery.isPending,
-    router,
-    todoData,
-    todoQuery.isError,
-    todoQuery.isPending,
-  ]);
+  const error = clubQuery.error ?? todoQuery.error;
+
+  if ((clubQuery.isError || todoQuery.isError) && (!club || !todoData)) {
+    return (
+      <ClubRouteErrorState
+        title="할 일"
+        message={getQueryErrorMessage(error, "할 일 정보를 불러오지 못했습니다.")}
+        backHref={`/clubs/${clubId}`}
+        onRetry={() => void Promise.all([clubQuery.refetch(), todoQuery.refetch()])}
+      />
+    );
+  }
 
   if (!club || !todoData) {
     return (

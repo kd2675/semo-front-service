@@ -1,8 +1,8 @@
 "use client";
 
 import { useQueries } from "@tanstack/react-query";
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { ClubRouteErrorState } from "@/app/components/ClubRouteState";
+import { getQueryErrorMessage } from "@/app/lib/queryUtils";
 import { adminTimelineQueryOptions } from "@/app/lib/react-query/activities/queries";
 import { myClubQueryOptions } from "@/app/lib/react-query/club/queries";
 import { AdminTimelineLoadingShell } from "../../AdminRouteLoadingShells";
@@ -15,24 +15,36 @@ type ClubAdminTimelineFallbackClientProps = {
 export function ClubAdminTimelineFallbackClient({
   clubId,
 }: ClubAdminTimelineFallbackClientProps) {
-  const router = useRouter();
   const [clubQuery, timelineQuery] = useQueries({
     queries: [myClubQueryOptions(clubId), adminTimelineQueryOptions(clubId)],
   });
   const club = clubQuery.data ?? null;
   const timeline = timelineQuery.data ?? null;
 
-  useEffect(() => {
-    if (!clubQuery.isPending && (clubQuery.isError || !club || !club.admin)) {
-        router.replace(`/clubs/${clubId}`);
-    }
-  }, [club, clubId, clubQuery.isError, clubQuery.isPending, router]);
+  if (club && !club.admin) {
+    return (
+      <ClubRouteErrorState
+        title="활동 타임라인 관리"
+        heading="관리자 권한이 필요합니다"
+        message="활동 타임라인 관리는 클럽 관리자만 사용할 수 있습니다."
+        backHref={`/clubs/${clubId}`}
+        theme="admin"
+        icon="lock"
+      />
+    );
+  }
 
-  useEffect(() => {
-    if (!timelineQuery.isPending && timelineQuery.isError) {
-        router.replace(`/clubs/${clubId}/admin`);
-    }
-  }, [clubId, router, timelineQuery.isError, timelineQuery.isPending]);
+  if ((clubQuery.isError || timelineQuery.isError) && (!club || !timeline)) {
+    return (
+      <ClubRouteErrorState
+        title="활동 타임라인 관리"
+        message={getQueryErrorMessage(clubQuery.error ?? timelineQuery.error, "활동 기록을 불러오지 못했습니다.")}
+        backHref={`/clubs/${clubId}/admin`}
+        theme="admin"
+        onRetry={() => void Promise.all([clubQuery.refetch(), timelineQuery.refetch()])}
+      />
+    );
+  }
 
   if (!club || !timeline) {
     return <AdminTimelineLoadingShell />;

@@ -142,7 +142,7 @@ export function ClubProfileFallbackClient({ clubId }: ClubProfileFallbackClientP
 
           <motion.section className="px-4 py-6" {...staggeredFadeUpMotion(0, reduceMotion)}>
             <div className="rounded-2xl border border-slate-100 bg-slate-50 p-5">
-              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">App Profile</p>
+              <p className="text-xs font-semibold tracking-wide text-slate-400">앱 프로필</p>
               <h2 className="mt-3 text-2xl font-extrabold tracking-tight">
                 {appProfile?.displayName ?? "SEMO User"}
               </h2>
@@ -154,7 +154,7 @@ export function ClubProfileFallbackClient({ clubId }: ClubProfileFallbackClientP
 
           <motion.section className="px-4 pb-6" {...staggeredFadeUpMotion(1, reduceMotion)}>
             <div className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
-              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">Club Profile</p>
+              <p className="text-xs font-semibold tracking-wide text-slate-400">클럽 프로필</p>
               <div className="mt-4 flex items-start gap-4">
                 {clubProfile?.avatarImageUrl ? (
                   <div className="relative h-16 w-16 overflow-hidden rounded-full bg-slate-100 ring-2 ring-[var(--primary)]/10">
@@ -178,7 +178,7 @@ export function ClubProfileFallbackClient({ clubId }: ClubProfileFallbackClientP
                       type="button"
                       onClick={handleSelectAvatar}
                       disabled={savingAvatar}
-                      className="rounded-full bg-[var(--primary)] px-3 py-1.5 text-xs font-semibold text-white transition disabled:cursor-not-allowed disabled:opacity-60"
+                className="min-h-11 rounded-full bg-[var(--primary)] px-4 py-2 text-xs font-semibold text-white transition disabled:opacity-60"
                     >
                       {clubProfile?.avatarFileName ? "사진 변경" : "사진 업로드"}
                     </button>
@@ -186,7 +186,7 @@ export function ClubProfileFallbackClient({ clubId }: ClubProfileFallbackClientP
                       type="button"
                       onClick={handleDeleteAvatar}
                       disabled={!clubProfile?.avatarFileName || savingAvatar}
-                      className="rounded-full border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600 transition disabled:cursor-not-allowed disabled:opacity-50"
+                className="min-h-11 rounded-full border border-slate-200 px-4 py-2 text-xs font-semibold text-slate-600 transition disabled:opacity-50"
                     >
                       사진 삭제
                     </button>
@@ -198,7 +198,7 @@ export function ClubProfileFallbackClient({ clubId }: ClubProfileFallbackClientP
               </div>
               <div className="mt-4">
                 <label className="block">
-                  <span className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Club Nickname</span>
+                  <span className="text-xs font-semibold text-slate-400">클럽 닉네임</span>
                   <div className="mt-2 flex items-center gap-2">
                     <input
                       value={displayName}
@@ -263,6 +263,7 @@ export function ClubProfileFallbackClient({ clubId }: ClubProfileFallbackClientP
         <input
           ref={fileInputRef}
           type="file"
+          aria-label="프로필 사진 선택"
           accept="image/*"
           className="hidden"
           onChange={handleAvatarFileChange}

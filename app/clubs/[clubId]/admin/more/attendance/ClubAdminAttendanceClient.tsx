@@ -1,16 +1,9 @@
 "use client";
 
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
-import { Public_Sans } from "next/font/google";
 import { motion, useReducedMotion } from "motion/react";
-import type { CSSProperties } from "react";
 import { type ClubAdminAttendanceResponse } from "@/app/lib/clubs";
 import { staggeredFadeUpMotion } from "@/app/lib/motion";
-
-const publicSans = Public_Sans({
-  subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700"],
-});
 
 type ClubAdminAttendanceClientProps = {
   initialData: ClubAdminAttendanceResponse;
@@ -39,25 +32,17 @@ export function ClubAdminAttendanceClient({
   const todayAttendance = attendance.todayAttendance;
 
   return (
-    <div
-      className={`${publicSans.className} min-h-screen bg-[#f8f6f6] text-slate-900`}
-      style={
-        {
-          "--primary": "#ec5b13",
-          "--background-light": "#f8f6f6",
-        } as CSSProperties
-      }
-    >
+    <div className="min-h-screen bg-[var(--background-light)] text-slate-900">
       <div className="min-h-screen bg-[#f8f6f6]">
         <ClubPageHeader
           title="출석 관리"
           subtitle={attendance.clubName}
           icon="fact_check"
           theme="admin"
-          containerClassName="max-w-md"
+          containerClassName="semo-page-admin"
         />
 
-        <main className="semo-nav-bottom-space mx-auto w-full max-w-md space-y-4 px-4 pt-4">
+        <main className="semo-page-admin semo-nav-bottom-space space-y-4 px-4 pt-4">
           <motion.section
             className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
             {...staggeredFadeUpMotion(0, reduceMotion)}

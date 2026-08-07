@@ -72,7 +72,7 @@ export function BasicConfirm({
               type="button"
               onClick={onCancel}
               aria-label="확인창 닫기"
-              className="inline-flex size-9 items-center justify-center rounded-full border border-black/5 bg-white/80 text-slate-400 transition-colors hover:text-slate-700"
+              className="semo-icon-control border border-black/5 bg-white/80 text-slate-400 transition-colors hover:text-slate-700"
             >
               <span className="material-symbols-outlined text-[20px]">close</span>
             </button>

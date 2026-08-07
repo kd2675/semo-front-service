@@ -32,10 +32,10 @@ export function ClubPageHeader({
     theme === "admin" ? "bg-[#f8f6f6]/85" : "bg-[var(--background-light)]/85"
   } ${className ?? ""}`;
   const resolvedContainerClassName =
-    containerClassName ?? (theme === "admin" ? "max-w-5xl" : "max-w-md");
+    containerClassName ?? (theme === "admin" ? "semo-page-admin" : "semo-page-user");
   const iconElement = (
-    <div className="shrink-0 rounded-xl bg-[var(--primary)]/10 p-2 text-[var(--primary)]">
-      <span className="material-symbols-outlined">{icon}</span>
+    <div className="semo-icon-control shrink-0 rounded-xl bg-[var(--primary)]/10 text-[var(--primary)]">
+      <span className="material-symbols-outlined" aria-hidden="true">{icon}</span>
     </div>
   );
 

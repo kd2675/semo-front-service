@@ -285,7 +285,7 @@ export function ObligationDetailPanel({
       <section className="space-y-3">
         <div className="flex items-center justify-between gap-3">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Payments</p>
+            <p className="text-xs font-semibold tracking-wide text-slate-400">납부 내역</p>
             <h4 className="mt-1 text-lg font-bold text-slate-900">멤버별 납부 내역</h4>
           </div>
           <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-500">{obligation.totalPaymentCount}건</span>

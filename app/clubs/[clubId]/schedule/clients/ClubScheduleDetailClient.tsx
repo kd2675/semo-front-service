@@ -166,7 +166,7 @@ export function ClubScheduleDetailClient({
               <button
                 type="button"
                 onClick={onRequestClose}
-                className="rounded-full p-2 transition-colors hover:bg-slate-100"
+                className="semo-icon-control transition-colors hover:bg-slate-100"
                 aria-label="일정 상세 닫기"
               >
                 <span className="material-symbols-outlined text-[24px]">close</span>

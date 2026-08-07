@@ -25,7 +25,7 @@ export function ItemReadStatusModal({
       <div className="bg-white px-5 py-5">
         <div className="flex items-start justify-between gap-3">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--primary)]">Read Status</p>
+            <p className="text-xs font-semibold tracking-wide text-[var(--primary)]">읽음 현황</p>
             <h3 className="mt-2 text-lg font-bold tracking-tight text-slate-900">{title}</h3>
             <p className="mt-2 text-sm leading-6 text-slate-500">
               읽은 사람 기준으로 집계합니다. 같은 사람이 여러 번 열어도 1명으로 유지됩니다.
@@ -34,7 +34,7 @@ export function ItemReadStatusModal({
           <button
             type="button"
             onClick={onClose}
-            className="rounded-full p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+            className="semo-icon-control rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
             aria-label="읽음 현황 닫기"
           >
             <span className="material-symbols-outlined text-[20px]">close</span>

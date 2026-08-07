@@ -1,9 +1,9 @@
 "use client";
 
 import { useQueries } from "@tanstack/react-query";
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
 import { ClubJoinRequestInboxClient } from "@/app/components/ClubJoinRequestInboxClient";
+import { ClubRouteErrorState } from "@/app/components/ClubRouteState";
+import { getQueryErrorMessage } from "@/app/lib/queryUtils";
 import { myClubQueryOptions } from "@/app/lib/react-query/club/queries";
 import { joinRequestInboxQueryOptions } from "@/app/lib/react-query/members/queries";
 import { ClubTimelineLoadingShell } from "../../ClubRouteLoadingShells";
@@ -15,31 +15,24 @@ type ClubJoinRequestFallbackClientProps = {
 export function ClubJoinRequestFallbackClient({
   clubId,
 }: ClubJoinRequestFallbackClientProps) {
-  const router = useRouter();
   const [clubQuery, joinRequestQuery] = useQueries({
     queries: [myClubQueryOptions(clubId), joinRequestInboxQueryOptions(clubId)],
   });
   const club = clubQuery.data ?? null;
   const joinRequestInbox = joinRequestQuery.data ?? null;
 
-  useEffect(() => {
-    if (
-      !clubQuery.isPending &&
-      !joinRequestQuery.isPending &&
-      (clubQuery.isError || joinRequestQuery.isError || !club || !joinRequestInbox)
-    ) {
-      router.replace(`/clubs/${clubId}`);
-    }
-  }, [
-    club,
-    clubId,
-    clubQuery.isError,
-    clubQuery.isPending,
-    joinRequestInbox,
-    joinRequestQuery.isError,
-    joinRequestQuery.isPending,
-    router,
-  ]);
+  const error = clubQuery.error ?? joinRequestQuery.error;
+
+  if ((clubQuery.isError || joinRequestQuery.isError) && (!club || !joinRequestInbox)) {
+    return (
+      <ClubRouteErrorState
+        title="가입 신청"
+        message={getQueryErrorMessage(error, "가입 신청 정보를 불러오지 못했습니다.")}
+        backHref={`/clubs/${clubId}`}
+        onRetry={() => void Promise.all([clubQuery.refetch(), joinRequestQuery.refetch()])}
+      />
+    );
+  }
 
   if (!club || !joinRequestInbox) {
     return <ClubTimelineLoadingShell />;

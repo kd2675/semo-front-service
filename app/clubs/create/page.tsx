@@ -13,13 +13,13 @@ import { staggeredFadeUpMotion } from "@/app/lib/motion";
 import type { RegionScope } from "@/app/lib/regions";
 
 const VISIBILITY_OPTIONS = [
-  { key: "PUBLIC", label: "Public", description: "누구나 찾고 가입 요청 가능" },
-  { key: "PRIVATE", label: "Private", description: "초대나 승인된 멤버만 접근" },
+  { key: "PUBLIC", label: "공개", description: "누구나 찾고 가입 요청 가능" },
+  { key: "PRIVATE", label: "비공개", description: "초대나 승인된 멤버만 접근" },
 ] as const;
 
 const MEMBERSHIP_OPTIONS = [
-  { key: "APPROVAL", label: "Approval", description: "관리자 승인 후 가입" },
-  { key: "OPEN", label: "Open", description: "즉시 가입 허용" },
+  { key: "APPROVAL", label: "승인 가입", description: "관리자 승인 후 가입" },
+  { key: "OPEN", label: "바로 가입", description: "승인 없이 즉시 가입" },
 ] as const;
 
 export default function CreateClubPage() {
@@ -157,13 +157,13 @@ export default function CreateClubPage() {
         >
           <RouterLink
             href="/"
-            className="flex size-10 items-center justify-center rounded-full text-slate-900 transition-colors hover:bg-slate-100"
+            className="flex size-11 items-center justify-center rounded-full text-slate-900 transition-colors hover:bg-slate-100"
             aria-label="홈으로 돌아가기"
           >
             <span className="material-symbols-outlined">arrow_back</span>
           </RouterLink>
           <h2 className="flex-1 pr-10 text-center text-lg font-bold leading-tight tracking-tight">
-            Create Club
+            클럽 만들기
           </h2>
         </motion.header>
 
@@ -171,33 +171,33 @@ export default function CreateClubPage() {
           <main className="semo-nav-bottom-space flex-1">
             <motion.section className="flex p-6" {...staggeredFadeUpMotion(1, reduceMotion)}>
               <div className="flex w-full flex-col items-center gap-4">
-                <label className="group relative cursor-pointer">
+                <label className="group relative cursor-pointer" aria-label="클럽 사진 선택">
                   <input type="file" accept="image/*" className="sr-only" onChange={handlePhotoChange} />
                   <div
                     className="relative flex aspect-square min-h-32 w-32 items-center justify-center overflow-hidden rounded-full border-4 border-white bg-slate-100 bg-cover bg-center shadow-sm"
                     style={photoPreviewUrl ? { backgroundImage: `url("${photoPreviewUrl}")` } : undefined}
                   >
                     {photoPreviewUrl ? null : (
-                      <span className="material-symbols-outlined text-4xl text-slate-300">groups</span>
+                      <span className="material-symbols-outlined text-4xl text-slate-300" aria-hidden="true">groups</span>
                     )}
                     <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 transition-opacity group-hover:opacity-100">
-                      <span className="material-symbols-outlined text-3xl text-white">photo_camera</span>
+                      <span className="material-symbols-outlined text-3xl text-white" aria-hidden="true">photo_camera</span>
                     </div>
                   </div>
                   <div className="absolute bottom-0 right-0 rounded-full bg-[var(--primary)] p-2 text-white shadow-lg">
-                    <span className="material-symbols-outlined text-sm">edit</span>
+                    <span className="material-symbols-outlined text-sm" aria-hidden="true">edit</span>
                   </div>
                 </label>
 
                 <div className="flex flex-col items-center justify-center">
                   <p className="text-center text-xl font-bold leading-tight tracking-tight text-slate-900">
-                    Upload Club Photo
+                    클럽 대표 사진
                   </p>
-                  <p className="mt-1 text-center text-sm text-slate-500">Make your club stand out</p>
+                  <p className="mt-1 text-center text-sm text-slate-500">클럽을 알아보기 쉬운 사진을 등록하세요.</p>
                   {isUploadingPhoto ? (
-                    <p className="mt-2 text-xs font-semibold text-[var(--primary)]">Uploading photo...</p>
+                    <p className="mt-2 text-xs font-semibold text-[var(--primary)]">사진을 업로드하고 있습니다.</p>
                   ) : uploadedPhotoFileName ? (
-                    <p className="mt-2 text-xs font-semibold text-emerald-600">Photo uploaded</p>
+                    <p className="mt-2 text-xs font-semibold text-emerald-600">사진을 업로드했습니다.</p>
                   ) : null}
                 </div>
               </div>
@@ -205,10 +205,11 @@ export default function CreateClubPage() {
 
             <motion.section className="space-y-4 px-4 py-2" {...staggeredFadeUpMotion(2, reduceMotion)}>
               <div className="flex flex-col gap-2">
-                <label className="px-1 text-sm font-bold leading-normal text-slate-900">Club Name</label>
+                <label className="px-1 text-sm font-bold leading-normal text-slate-900">클럽 이름</label>
                 <input
+                  aria-label="클럽 이름"
                   className="form-input h-14 w-full rounded-xl border-slate-200 bg-white p-4 text-base text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-[var(--primary)]/50"
-                  placeholder="e.g. Downtown Runners Elite"
+                  placeholder="예: 성수 러닝 클럽"
                   type="text"
                   value={name}
                   onChange={(event) => setName(event.target.value)}
@@ -216,10 +217,11 @@ export default function CreateClubPage() {
               </div>
 
               <div className="flex flex-col gap-2">
-                <label className="px-1 text-sm font-bold leading-normal text-slate-900">Club Description</label>
+                <label className="px-1 text-sm font-bold leading-normal text-slate-900">클럽 소개</label>
                 <textarea
+                  aria-label="클럽 소개"
                   className="form-input min-h-32 w-full resize-none rounded-xl border-slate-200 bg-white p-4 text-base text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-[var(--primary)]/50"
-                  placeholder="What's the vibe of your club? Who is it for?"
+                  placeholder="어떤 활동을 누구와 함께하는 클럽인지 알려주세요."
                   value={description}
                   onChange={(event) => setDescription(event.target.value)}
                 />
@@ -248,11 +250,11 @@ export default function CreateClubPage() {
 
             <motion.section className="space-y-5 px-4 pb-6" {...staggeredFadeUpMotion(4, reduceMotion)}>
               <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4">
-                <h3 className="text-sm font-bold text-slate-900">Club Settings</h3>
+                <h3 className="text-sm font-bold text-slate-900">공개 및 가입 설정</h3>
                 <div className="mt-4 space-y-4">
                   <div>
                     <p className="mb-2 text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">
-                      Visibility
+                      공개 범위
                     </p>
                     <div className="grid grid-cols-2 gap-2">
                       {VISIBILITY_OPTIONS.map((option) => {
@@ -278,7 +280,7 @@ export default function CreateClubPage() {
 
                   <div>
                     <p className="mb-2 text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">
-                      Membership
+                      가입 방식
                     </p>
                     <div className="grid grid-cols-2 gap-2">
                       {MEMBERSHIP_OPTIONS.map((option) => {
@@ -330,7 +332,7 @@ export default function CreateClubPage() {
               className="w-full rounded-xl bg-[var(--primary)] py-4 font-bold text-white shadow-lg shadow-[var(--primary)]/25 transition-transform hover:bg-[var(--primary)]/90 active:scale-[0.98] disabled:opacity-60"
               whileTap={reduceMotion ? undefined : { scale: 0.985 }}
             >
-              {isUploadingPhoto ? "Uploading Photo..." : isSubmitting ? "Creating..." : "Create Club"}
+              {isUploadingPhoto ? "사진 업로드 중" : isSubmitting ? "클럽 만드는 중" : "클럽 만들기"}
             </motion.button>
           </div>
         </form>

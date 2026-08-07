@@ -1,7 +1,6 @@
 "use client";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Public_Sans } from "next/font/google";
 import {
   startTransition,
   useDeferredValue,
@@ -54,11 +53,6 @@ import {
   PermissionChip,
   SettlementsTabPanel,
 } from "./components";
-
-const publicSans = Public_Sans({
-  subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700"],
-});
 
 type ClubAdminFinanceClientProps = {
   clubId: string;
@@ -591,24 +585,24 @@ export function ClubAdminFinanceClient({
     detailObligationId != null && loadingDetailSet.has(detailObligationId);
 
   return (
-    <div className={`${publicSans.className} min-h-screen bg-[#f8f6f6] text-slate-900`}>
+    <div className="min-h-screen bg-[var(--background-light)] text-slate-900">
       <div className="min-h-screen bg-[#f8f6f6]">
         <ClubPageHeader
           title="재정 관리"
           subtitle={finance.clubName}
           icon="payments"
           theme="admin"
-          containerClassName="max-w-6xl"
+          containerClassName="semo-page-admin-wide"
         />
 
-        <main className="semo-nav-bottom-space mx-auto w-full max-w-6xl space-y-5 px-4 pt-4">
+        <main className="semo-page-admin-wide semo-nav-bottom-space space-y-5 px-4 pt-4">
           <motion.section
             className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm"
             {...staggeredFadeUpMotion(0, reduceMotion)}
           >
             <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
               <div className="max-w-3xl">
-                <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Finance Operations</p>
+                <p className="text-xs font-semibold tracking-wide text-slate-400">재무 운영</p>
                 <h2 className="mt-2 text-2xl font-bold">모임 돈을 운영하고 마감하는 흐름으로 재정 화면을 정리했습니다.</h2>
                 <p className="mt-2 text-sm leading-6 text-slate-500">
                   청구 발행과 수납 상태는 기존 obligation/payment 데이터로 유지하고, 회원 요청과 운영 지출은

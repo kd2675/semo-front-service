@@ -71,8 +71,8 @@ function NoticeDetailBody({ payload, error, reduceMotion }: NoticeDetailBodyProp
             <h1 className="text-2xl font-extrabold tracking-tight text-slate-900">{payload.title}</h1>
             <div className="mt-4 space-y-1 text-sm text-slate-500">
               <p>{payload.authorDisplayName}</p>
-              <p>Published {payload.publishedAtLabel}</p>
-              <p>Updated {payload.updatedAtLabel}</p>
+              <p>게시 {payload.publishedAtLabel}</p>
+              <p>수정 {payload.updatedAtLabel}</p>
             </div>
           </motion.section>
 
@@ -158,7 +158,7 @@ export function ClubNoticeDetailClient({
             <button
               type="button"
               onClick={onRequestClose}
-              className="flex size-10 items-center justify-start text-slate-900"
+            className="semo-icon-control justify-start text-slate-900"
               aria-label="공지 상세 닫기"
             >
               <span className="material-symbols-outlined">close</span>
@@ -184,7 +184,7 @@ export function ClubNoticeDetailClient({
           leftSlot={
             <RouterLink
               href={basePath ?? `/clubs/${clubId}/more/notices`}
-              className="flex size-10 items-center justify-start text-slate-900"
+              className="flex size-11 items-center justify-start text-slate-900"
               aria-label="공지 목록으로 돌아가기"
             >
               <span className="material-symbols-outlined">arrow_back</span>

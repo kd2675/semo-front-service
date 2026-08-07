@@ -16,7 +16,7 @@ import { deleteScheduleVoteMutationOptions } from "@/app/lib/react-query/schedul
 import { getVoteLifecycleBadgeClassName, getVoteLifecycleLabel } from "@/app/lib/voteStatus";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import Image from "next/image";
-import { startTransition, useDeferredValue, useMemo, useState, type CSSProperties } from "react";
+import { startTransition, useDeferredValue, useMemo, useState } from "react";
 
 type ClubPollHomeClientProps = {
   clubId: string;
@@ -246,8 +246,6 @@ export function ClubPollHomeClient({
   const [deleting, setDeleting] = useState(false);
   const deleteVoteMutation = useMutation(deleteScheduleVoteMutationOptions(clubId));
 
-  const accent = mode === "admin" ? "#ec5b13" : "#135bec";
-  const background = mode === "admin" ? "#f8f6f6" : "#f6f6f8";
   const basePath = mode === "admin" ? `/clubs/${clubId}/admin/more/polls` : `/clubs/${clubId}/more/polls`;
   const totalResponses = useMemo(
     () => payload.polls.reduce((sum, poll) => sum + poll.totalResponses, 0),
@@ -304,10 +302,7 @@ export function ClubPollHomeClient({
   } satisfies Record<PollTabKey, number>;
 
   return (
-    <div
-      className="min-h-full bg-[var(--background-light)] font-display text-gray-900"
-      style={{ "--primary": accent, "--background-light": background } as CSSProperties}
-    >
+    <div className={`${mode === "admin" ? "semo-admin-theme" : "semo-user-theme"} min-h-full bg-[var(--background-light)] font-display text-gray-900`}>
       <div className="relative mx-auto flex min-h-full max-w-md flex-col bg-[var(--background-light)]">
         <ClubPageHeader
           title="투표 관리"
@@ -413,6 +408,7 @@ export function ClubPollHomeClient({
                 <span className="material-symbols-outlined text-[20px]">search</span>
               </span>
               <input
+                aria-label="투표 검색"
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
                 className="w-full rounded-xl border border-gray-200 bg-white py-3 pl-10 pr-4 text-sm focus:border-[var(--primary)] focus:ring-[var(--primary)]"

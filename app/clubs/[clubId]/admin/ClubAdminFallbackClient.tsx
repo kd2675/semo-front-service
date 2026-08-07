@@ -1,8 +1,9 @@
 "use client";
 
 import { useQueries } from "@tanstack/react-query";
-import { useEffect, useMemo } from "react";
-import { useRouter } from "next/navigation";
+import { useMemo } from "react";
+import { ClubRouteErrorState } from "@/app/components/ClubRouteState";
+import { getQueryErrorMessage } from "@/app/lib/queryUtils";
 import { ClubAdminHomeClient } from "./ClubAdminHomeClient";
 import { AdminHomeLoadingShell } from "./AdminRouteLoadingShells";
 import { adminActivitiesPreviewQueryOptions } from "@/app/lib/react-query/activities/queries";
@@ -14,7 +15,6 @@ type ClubAdminFallbackClientProps = {
 };
 
 export function ClubAdminFallbackClient({ clubId }: ClubAdminFallbackClientProps) {
-  const router = useRouter();
   const [clubQuery, membersQuery, activitiesQuery] = useQueries({
     queries: [
       myClubQueryOptions(clubId),
@@ -28,25 +28,6 @@ export function ClubAdminFallbackClient({ clubId }: ClubAdminFallbackClientProps
     () => activitiesQuery.data?.activities ?? [],
     [activitiesQuery.data],
   );
-
-  useEffect(() => {
-    if (
-      !clubQuery.isPending &&
-      !membersQuery.isPending &&
-      (clubQuery.isError || membersQuery.isError || !club || !membersPayload || !club.admin)
-    ) {
-        router.replace(`/clubs/${clubId}`);
-    }
-  }, [
-    club,
-    clubId,
-    clubQuery.isError,
-    clubQuery.isPending,
-    membersPayload,
-    membersQuery.isError,
-    membersQuery.isPending,
-    router,
-  ]);
 
   const metrics = useMemo(
     () => {
@@ -118,6 +99,31 @@ export function ClubAdminFallbackClient({ clubId }: ClubAdminFallbackClientProps
     ],
     [clubId],
   );
+
+  if (club && !club.admin) {
+    return (
+      <ClubRouteErrorState
+        title="관리자"
+        heading="관리자 권한이 필요합니다"
+        message="이 화면은 클럽 관리자만 사용할 수 있습니다."
+        backHref={`/clubs/${clubId}`}
+        theme="admin"
+        icon="lock"
+      />
+    );
+  }
+
+  if ((clubQuery.isError || membersQuery.isError) && (!club || !membersPayload)) {
+    return (
+      <ClubRouteErrorState
+        title="관리자"
+        message={getQueryErrorMessage(clubQuery.error ?? membersQuery.error, "관리자 홈을 불러오지 못했습니다.")}
+        backHref={`/clubs/${clubId}`}
+        theme="admin"
+        onRetry={() => void Promise.all([clubQuery.refetch(), membersQuery.refetch(), activitiesQuery.refetch()])}
+      />
+    );
+  }
 
   if (!club || !membersPayload) {
     return <AdminHomeLoadingShell />;

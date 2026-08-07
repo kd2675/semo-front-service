@@ -1,12 +1,12 @@
 "use client";
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { ClubRouteErrorState } from "@/app/components/ClubRouteState";
 import {
   scheduleHomeQueryOptions,
   scheduleQueryKeys,
 } from "@/app/lib/react-query/schedule/queries";
+import { getQueryErrorMessage } from "@/app/lib/queryUtils";
 import { ClubScheduleHomeLoadingShell } from "../../ClubRouteLoadingShells";
 import { ClubScheduleHomeClient } from "./ClubScheduleHomeClient";
 
@@ -19,17 +19,10 @@ export function ClubScheduleHomeFallbackClient({
   clubId,
   mode = "user",
 }: ClubScheduleHomeFallbackClientProps) {
-  const router = useRouter();
   const queryClient = useQueryClient();
-  const { data: payload, isPending, isFetching, isError } = useQuery(
+  const { data: payload, isPending, isError, error } = useQuery(
     scheduleHomeQueryOptions(clubId),
   );
-
-  useEffect(() => {
-    if (!isPending && isError) {
-        router.replace(mode === "admin" ? `/clubs/${clubId}/admin` : `/clubs/${clubId}`);
-    }
-  }, [clubId, isError, isPending, mode, router]);
 
   const handleReload = () => {
     void queryClient.invalidateQueries({
@@ -37,7 +30,19 @@ export function ClubScheduleHomeFallbackClient({
     });
   };
 
-  if (isPending || isFetching || !payload) {
+  if (isError && !payload) {
+    return (
+      <ClubRouteErrorState
+        title={mode === "admin" ? "일정 관리" : "일정"}
+        message={getQueryErrorMessage(error, "일정 목록을 불러오지 못했습니다.")}
+        backHref={mode === "admin" ? `/clubs/${clubId}/admin` : `/clubs/${clubId}`}
+        theme={mode}
+        onRetry={handleReload}
+      />
+    );
+  }
+
+  if (isPending || !payload) {
     return <ClubScheduleHomeLoadingShell mode={mode} />;
   }
 

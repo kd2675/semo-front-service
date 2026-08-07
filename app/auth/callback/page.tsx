@@ -72,7 +72,7 @@ export default function AuthCallbackPage() {
       <div className="semo-orb semo-orb-left" />
       <div className="semo-orb semo-orb-right" />
       <section className="semo-panel relative w-full max-w-md px-6 py-8 text-center">
-        <p className="text-xs font-semibold uppercase tracking-[0.32em] text-[var(--primary)]">SIGNING IN</p>
+        <p className="text-xs font-semibold tracking-[0.18em] text-[var(--primary)]">로그인 중</p>
         <h1 className="mt-4 text-2xl font-extrabold tracking-tight">로그인을 마무리하고 있습니다</h1>
         <p className="mt-3 text-sm leading-6 text-[var(--muted)]">인증 정보를 확인한 뒤 이전 화면으로 이동합니다.</p>
         <div className="mt-6 semo-loading-bar" />

@@ -35,7 +35,7 @@ export function TodoSnapshotSection({
       className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
       {...staggeredFadeUpMotion(0, reduceMotion)}
     >
-      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Ops Snapshot</p>
+      <p className="text-xs font-semibold tracking-wide text-slate-400">운영 요약</p>
       <h2 className="mt-3 text-xl font-bold">
         누가 어떤 업무를 맡았는지, 아직 안 끝난 건 무엇인지 운영 관점에서 바로 확인합니다.
       </h2>
@@ -233,7 +233,7 @@ export function TodoEditorModal({
             type="button"
             aria-label="할 일 편집기 닫기"
             onClick={onClose}
-            className="rounded-full p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+            className="semo-icon-control rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
           >
             <span className="material-symbols-outlined">close</span>
           </button>
@@ -295,7 +295,7 @@ export function TodoEditorModal({
                       <div className="mt-2 rounded-2xl border border-slate-200 bg-white p-3">
                         <div className="mb-3 flex items-center justify-between rounded-2xl bg-slate-50 px-3 py-2.5">
                           <div>
-                            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">Deadline</p>
+                            <p className="text-xs font-bold text-slate-400">마감</p>
                             <p className="mt-1 text-sm font-semibold text-slate-700">
                               {dueAtDate ? `${dueAtDate}${dueAtTime ? ` ${dueAtTime}` : ""}` : "마감일 미정"}
                             </p>
@@ -396,7 +396,7 @@ export function TodoEditorModal({
                       }`}
                     >
                       <div className="mb-3 rounded-2xl bg-slate-50 px-3 py-2.5">
-                        <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">Assignee</p>
+                        <p className="text-xs font-bold text-slate-400">담당자</p>
                         <p className="mt-1 text-sm font-semibold text-slate-700">{assignedMemberLabel}</p>
                       </div>
                       {assignmentMode === "OPEN_SUPPORT" ? (
@@ -498,14 +498,14 @@ export function TodoFilterModal({
       <section className="flex min-h-0 flex-1 flex-col">
         <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Operations Filter</p>
+            <p className="text-xs font-semibold tracking-wide text-slate-400">운영 필터</p>
             <h3 className="mt-1 text-xl font-bold text-slate-900">운영 필터 선택</h3>
           </div>
           <button
             type="button"
             aria-label="운영 필터 닫기"
             onClick={onClose}
-            className="rounded-full p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+            className="semo-icon-control rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
           >
             <span className="material-symbols-outlined">close</span>
           </button>

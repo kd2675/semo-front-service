@@ -1,10 +1,8 @@
 "use client";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Public_Sans } from "next/font/google";
 import { AnimatePresence, useReducedMotion } from "motion/react";
 import { useState } from "react";
-import type { CSSProperties } from "react";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import { TodoApplicationManagerModal } from "@/app/components/TodoApplicationManagerModal";
 import { useAppToast } from "@/app/hooks/useAppToast";
@@ -48,11 +46,6 @@ import {
   TodoListSection,
   TodoSnapshotSection,
 } from "./components/todoUi";
-
-const publicSans = Public_Sans({
-  subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700"],
-});
 
 type ClubAdminTodoClientProps = {
   clubId: string;
@@ -442,25 +435,17 @@ export function ClubAdminTodoClient({ clubId, initialData }: ClubAdminTodoClient
   };
 
   return (
-    <div
-      className={`${publicSans.className} min-h-screen bg-[#f8f6f6] text-slate-900`}
-      style={
-        {
-          "--primary": "#ec5b13",
-          "--background-light": "#f8f6f6",
-        } as CSSProperties
-      }
-    >
+    <div className="min-h-screen bg-[var(--background-light)] text-slate-900">
       <div className="min-h-screen bg-[#f8f6f6]">
         <ClubPageHeader
           title="할 일 관리"
           subtitle={todoData.clubName}
           icon="assignment"
           theme="admin"
-          containerClassName="max-w-md"
+          containerClassName="semo-page-admin"
         />
 
-        <main className="semo-nav-bottom-space mx-auto w-full max-w-md space-y-4 px-4 pt-4">
+        <main className="semo-page-admin semo-nav-bottom-space space-y-4 px-4 pt-4">
           <TodoSnapshotSection todoData={todoData} reduceMotion={reduceMotion} />
           <TodoFilterSummarySection
             itemCount={todoData.items.length}

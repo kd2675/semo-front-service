@@ -1,16 +1,9 @@
 "use client";
 
-import { Public_Sans } from "next/font/google";
 import { RouterLink } from "@/app/components/RouterLink";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import { motion, useReducedMotion } from "motion/react";
-import type { CSSProperties } from "react";
 import { staggeredFadeUpMotion } from "@/app/lib/motion";
-
-const publicSans = Public_Sans({
-  subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700"],
-});
 
 type AdminSummaryMetric = {
   id: string;
@@ -95,25 +88,17 @@ export function ClubAdminHomeClient({
   const reduceMotion = Boolean(prefersReducedMotion);
 
   return (
-    <div
-      className={`${publicSans.className} min-h-screen bg-[#f8f6f6] text-slate-900`}
-      style={
-        {
-          "--primary": "#ec5b13",
-          "--background-light": "#f8f6f6",
-        } as CSSProperties
-      }
-    >
+    <div className="min-h-screen bg-[var(--background-light)] text-slate-900">
       <div className="min-h-screen bg-[#f8f6f6]">
         <ClubPageHeader
           title="관리자"
           subtitle={clubName}
           icon="admin_panel_settings"
           theme="admin"
-          containerClassName="max-w-5xl"
+          containerClassName="semo-page-admin"
         />
 
-        <main className="semo-nav-bottom-space mx-auto w-full max-w-5xl space-y-6 px-4 pt-4">
+        <main className="semo-page-admin semo-nav-bottom-space space-y-6 px-4 pt-4">
           <section className={`grid grid-cols-2 gap-4 ${metrics.length > 2 ? "md:grid-cols-4" : "md:grid-cols-2"}`}>
             {metrics.map((metric, index) => (
               <motion.article

@@ -3,18 +3,55 @@
 @import "swiper/css/pagination";
 
 :root {
-  --background-light: #f6f6f8;
-  --foreground: #0f172a;
-  --muted: #5b6474;
-  --line: rgba(15, 23, 42, 0.08);
-  --primary: #135bec;
+  --color-user-primary: #135bec;
+  --color-admin-primary: #ec5b13;
+  --color-background: #f6f7fa;
+  --color-surface: #ffffff;
+  --color-surface-muted: #f1f4f8;
+  --color-foreground: #0f172a;
+  --color-muted: #5b6474;
+  --color-line: #dce2ea;
+  --color-success: #15803d;
+  --color-warning: #b45309;
+  --color-danger: #be123c;
+  --color-info: #0369a1;
+
+  --background-light: var(--color-background);
+  --foreground: var(--color-foreground);
+  --muted: var(--color-muted);
+  --line: var(--color-line);
+  --primary: var(--color-user-primary);
   --naver: #03c75a;
   --kakao: #fee500;
   --kakao-text: #191919;
-  --radius-lg: 0.5rem;
-  --radius-xl: 0.75rem;
-  --shadow: 0 28px 60px rgba(19, 91, 236, 0.12);
-  --shadow-soft: 0 14px 30px rgba(15, 23, 42, 0.08);
+
+  --radius-control: 0.75rem;
+  --radius-card: 1rem;
+  --radius-modal: 1.5rem;
+  --radius-round: 9999px;
+  --radius-lg: var(--radius-control);
+  --radius-xl: var(--radius-card);
+
+  --control-compact: 2rem;
+  --control-default: 2.75rem;
+  --control-prominent: 3rem;
+
+  --page-user: 30rem;
+  --page-admin: 60rem;
+  --page-dashboard: 60rem;
+  --page-data: 72rem;
+  --page-admin-wide: 72rem;
+
+  --shadow-card: 0 1px 2px rgba(15, 23, 42, 0.06), 0 4px 12px rgba(15, 23, 42, 0.05);
+  --shadow-floating: 0 12px 32px rgba(15, 23, 42, 0.12);
+  --shadow-modal: 0 24px 72px rgba(15, 23, 42, 0.22);
+  --shadow: var(--shadow-floating);
+  --shadow-soft: var(--shadow-card);
+
+  --duration-fast: 120ms;
+  --duration-normal: 180ms;
+  --duration-slow: 260ms;
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
   --font-display:
     var(--font-semo-display), "Pretendard", "Noto Sans KR", "Apple SD Gothic Neo", sans-serif;
 }
@@ -26,14 +63,6 @@
 
 * {
   box-sizing: border-box;
-  -ms-overflow-style: none;
-  scrollbar-width: none;
-}
-
-*::-webkit-scrollbar {
-  display: none;
-  width: 0;
-  height: 0;
 }
 
 html,
@@ -69,6 +98,15 @@ a {
   color: inherit;
 }
 
+:where(a, button, input, textarea, select, [role="button"]):focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--primary) 38%, transparent);
+  outline-offset: 2px;
+}
+
+:where(button, input, textarea, select):disabled {
+  cursor: not-allowed;
+}
+
 .material-symbols-outlined {
   font-family: "Material Symbols Outlined";
   font-weight: 400;
@@ -80,6 +118,8 @@ a {
   display: inline-block;
   white-space: nowrap;
   direction: ltr;
+  vertical-align: middle;
+  user-select: none;
   -webkit-font-smoothing: antialiased;
   font-variation-settings:
     "FILL" 0,
@@ -90,10 +130,71 @@ a {
 
 .semo-panel {
   border: 1px solid var(--line);
-  border-radius: 1.5rem;
+  border-radius: var(--radius-modal);
   background: rgba(255, 255, 255, 0.74);
-  box-shadow: var(--shadow);
+  box-shadow: var(--shadow-floating);
   backdrop-filter: blur(20px);
+}
+
+.semo-user-theme {
+  --primary: var(--color-user-primary);
+  --background-light: #f6f6f8;
+}
+
+.semo-admin-theme {
+  --primary: var(--color-admin-primary);
+  --background-light: #f8f6f6;
+}
+
+.semo-page-user,
+.semo-page-admin,
+.semo-page-dashboard,
+.semo-page-data,
+.semo-page-admin-wide {
+  width: 100%;
+  margin-inline: auto;
+}
+
+.semo-page-user {
+  max-width: var(--page-user);
+}
+
+.semo-page-admin {
+  max-width: var(--page-admin);
+}
+
+.semo-page-dashboard {
+  max-width: var(--page-dashboard);
+}
+
+.semo-page-data {
+  max-width: var(--page-data);
+}
+
+.semo-page-admin-wide {
+  max-width: var(--page-admin-wide);
+}
+
+.semo-card {
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-card);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-card);
+}
+
+.semo-control {
+  min-height: var(--control-default);
+  border-radius: var(--radius-control);
+  transition-duration: var(--duration-normal);
+  transition-timing-function: var(--ease-standard);
+}
+
+.semo-icon-control {
+  display: inline-flex;
+  width: var(--control-default);
+  height: var(--control-default);
+  align-items: center;
+  justify-content: center;
 }
 
 .semo-orb {
@@ -229,6 +330,10 @@ a {
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
   gap: 4px;
+}
+
+.cp-day-row {
+  display: contents;
 }
 
 .cp-day {

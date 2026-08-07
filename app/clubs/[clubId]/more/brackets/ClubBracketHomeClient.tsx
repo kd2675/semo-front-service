@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useState, type CSSProperties } from "react";
+import { useState } from "react";
 import { AnimatePresence } from "motion/react";
 import { ClubModeSwitchFab } from "@/app/components/ClubModeSwitchFab";
 import { ClubBracketDetailModal } from "@/app/components/ClubDetailModals";
@@ -46,16 +46,6 @@ type FormState = {
   sourceTournamentRecordId: string;
   participants: EditableParticipant[];
 };
-
-const USER_THEME = {
-  "--primary": "#135bec",
-  "--background-light": "#f6f6f8",
-} as CSSProperties;
-
-const ADMIN_THEME = {
-  "--primary": "#ec5b13",
-  "--background-light": "#f8f6f6",
-} as CSSProperties;
 
 function createEmptyParticipants(count = 4): EditableParticipant[] {
   return Array.from({ length: count }, () => ({
@@ -377,20 +367,17 @@ export function ClubBracketHomeClient({
       : "초안 저장";
 
   return (
-    <div
-      className="min-h-screen text-slate-900 antialiased"
-      style={isAdminMode ? ADMIN_THEME : USER_THEME}
-    >
+    <div className="min-h-screen text-slate-900 antialiased">
       <div className="min-h-screen" style={{ backgroundColor: "var(--background-light)" }}>
         <ClubPageHeader
           title={isAdminMode ? "대진표 승인" : "대진표"}
           subtitle={payload.clubName}
           icon="account_tree"
           theme={isAdminMode ? "admin" : "user"}
-          containerClassName="max-w-5xl"
+          containerClassName="semo-page-data"
         />
 
-        <main className="semo-nav-bottom-space mx-auto flex w-full max-w-5xl flex-col gap-4 px-4 pt-4 pb-8">
+        <main className="semo-page-data semo-nav-bottom-space flex flex-col gap-4 px-4 pt-4 pb-8">
           <section className="grid gap-4 md:grid-cols-[1.4fr_1fr]">
             <article className="rounded-3xl border border-white/70 bg-white p-6 shadow-sm">
               <div>
@@ -786,6 +773,7 @@ export function ClubBracketHomeClient({
                             </div>
                           </div>
                           <input
+                            aria-label={`${index + 1}번 참가자 이름`}
                             value={participant.displayName}
                             onChange={(event) => {
                               const nextValue = event.target.value;

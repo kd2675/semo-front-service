@@ -19,13 +19,13 @@ export function ClubAdminTimelineClient({
 
   return (
     <div className="min-h-screen bg-[#f8f6f6] text-slate-900">
-      <div className="mx-auto min-h-screen max-w-md bg-[#f8f6f6] pb-28">
+      <div className="semo-page-admin min-h-screen bg-[var(--background-light)] pb-28">
         <ClubPageHeader
           title="타임라인 설정"
           subtitle={initialData.clubName}
           icon="timeline"
           theme="admin"
-          containerClassName="max-w-md"
+          containerClassName="semo-page-admin"
           className="bg-[#f8f6f6]/90"
         />
 

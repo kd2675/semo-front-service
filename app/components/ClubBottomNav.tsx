@@ -11,6 +11,7 @@ import {
 import { overlayFadeMotion, popInMotion } from "@/app/lib/motion";
 import { clubFeaturesQueryOptions, clubQueryKeys } from "@/app/lib/react-query/club/queries";
 import { useBottomNavScrollDocking } from "@/app/hooks/useBottomNavScrollDocking";
+import { useDialogFocusManagement } from "@/app/hooks/useDialogFocusManagement";
 
 type ClubBottomNavProps = {
   clubId: string;
@@ -92,6 +93,10 @@ export function ClubBottomNav({ clubId, isAdmin = false }: ClubBottomNavProps) {
     const targetPath = stripQuery(feature.userPath);
     return pathname === targetPath || pathname.startsWith(`${targetPath}/`);
   });
+  const moreMenuRef = useDialogFocusManagement<HTMLDivElement>({
+    active: isMoreOpen,
+    onDismiss: () => setOpenMenuPathname(null),
+  });
 
   useEffect(() => {
     const onFeatureUpdate = () => {
@@ -105,27 +110,6 @@ export function ClubBottomNav({ clubId, isAdmin = false }: ClubBottomNavProps) {
       window.removeEventListener("semo:club-features-updated", onFeatureUpdate);
     };
   }, [clubId, queryClient]);
-
-  useEffect(() => {
-    if (!isMoreOpen) {
-      return;
-    }
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        setOpenMenuPathname(null);
-      }
-    };
-
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    window.addEventListener("keydown", handleKeyDown);
-
-    return () => {
-      document.body.style.overflow = previousOverflow;
-      window.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [isMoreOpen]);
 
   const unifiedMotion = reduceMotion
     ? {
@@ -166,12 +150,13 @@ export function ClubBottomNav({ clubId, isAdmin = false }: ClubBottomNavProps) {
             onClick={() =>
               setOpenMenuPathname((current) => (current === pathname ? null : pathname))
             }
-            className={`flex h-10 w-10 touch-manipulation items-center justify-center transition ${textClassName}`}
+            className={`semo-icon-control touch-manipulation transition ${textClassName}`}
             aria-expanded={isMoreOpen}
+            aria-haspopup="dialog"
             aria-label={item.label}
           >
-            <div className="relative flex h-10 w-10 items-center justify-center">
-              <span className={`material-symbols-outlined text-[24px] ${iconClassName}`}>
+            <div className="relative flex h-11 w-11 items-center justify-center">
+              <span className={`material-symbols-outlined text-[24px] ${iconClassName}`} aria-hidden="true">
                 {item.icon}
               </span>
               {isActive ? (
@@ -190,11 +175,11 @@ export function ClubBottomNav({ clubId, isAdmin = false }: ClubBottomNavProps) {
           <button
             key={item.key}
             type="button"
-            className={`flex h-10 w-10 touch-manipulation items-center justify-center transition ${textClassName}`}
+            className={`semo-icon-control touch-manipulation transition ${textClassName}`}
             aria-disabled="true"
             aria-label={item.label}
           >
-            <span className={`material-symbols-outlined text-[24px] ${iconClassName}`}>
+            <span className={`material-symbols-outlined text-[24px] ${iconClassName}`} aria-hidden="true">
               {item.icon}
             </span>
           </button>
@@ -205,15 +190,16 @@ export function ClubBottomNav({ clubId, isAdmin = false }: ClubBottomNavProps) {
         <RouterLink
           key={item.key}
           href={href}
-          className={`flex h-10 w-10 touch-manipulation items-center justify-center transition ${textClassName}`}
+          className={`semo-icon-control touch-manipulation transition ${textClassName}`}
           aria-label={item.label}
         >
           <motion.div
             whileTap={reduceMotion ? undefined : { scale: 0.92 }}
-            className="relative flex h-10 w-10 items-center justify-center"
+            className="relative flex h-11 w-11 items-center justify-center"
           >
             <span
               className={`material-symbols-outlined text-[24px] ${iconClassName}`}
+              aria-hidden="true"
               style={isActive ? { fontVariationSettings: "'FILL' 1" } : undefined}
             >
               {item.icon}
@@ -250,9 +236,8 @@ export function ClubBottomNav({ clubId, isAdmin = false }: ClubBottomNavProps) {
       <AnimatePresence initial={false}>
         {isMoreOpen ? (
           <>
-            <motion.button
-              type="button"
-              aria-label="더보기 닫기"
+            <motion.div
+              aria-hidden="true"
               className="fixed inset-0 z-40 bg-black/20 backdrop-blur-[2px]"
               onClick={() => setOpenMenuPathname(null)}
               {...overlayFadeMotion(reduceMotion)}
@@ -262,7 +247,14 @@ export function ClubBottomNav({ clubId, isAdmin = false }: ClubBottomNavProps) {
               {...popInMotion(reduceMotion)}
             >
               <div className="pointer-events-auto mx-auto w-full max-w-sm">
-                <div className="relative rounded-[32px] bg-white p-6 shadow-[0_20px_50px_rgba(0,0,0,0.15)]">
+                <div
+                  ref={moreMenuRef}
+                  role="dialog"
+                  aria-modal="true"
+                  aria-label="클럽 기능 더보기"
+                  tabIndex={-1}
+                  className="relative rounded-[var(--radius-modal)] bg-white p-6 shadow-[var(--shadow-modal)]"
+                >
                   <div className="grid grid-cols-3 gap-6">
                     {menuItems.map((item, index) => (
                       <motion.div
@@ -283,7 +275,7 @@ export function ClubBottomNav({ clubId, isAdmin = false }: ClubBottomNavProps) {
                               FEATURE_ACCENT_CLASS[item.featureKey] ?? "bg-slate-100 text-slate-600"
                             }`}
                           >
-                            <span className="material-symbols-outlined text-[28px]">
+                            <span className="material-symbols-outlined text-[28px]" aria-hidden="true">
                               {item.iconName}
                             </span>
                           </div>

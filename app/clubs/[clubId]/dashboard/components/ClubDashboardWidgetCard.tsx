@@ -75,7 +75,7 @@ export function ClubDashboardWidgetCard(props: ClubDashboardWidgetCardProps) {
                 onTouchDragStart(widget.widgetKey);
               }
             }}
-            className="flex size-8 touch-none items-center justify-center rounded-full bg-slate-100 text-slate-500 transition-colors hover:bg-slate-200 active:cursor-grabbing"
+            className="flex size-11 touch-none items-center justify-center rounded-full bg-slate-100 text-slate-500 transition-colors hover:bg-slate-200 active:cursor-grabbing"
             aria-label="위젯 순서 이동"
           >
             <span className="material-symbols-outlined text-lg">drag_indicator</span>
@@ -87,7 +87,7 @@ export function ClubDashboardWidgetCard(props: ClubDashboardWidgetCardProps) {
           type="button"
           disabled={isDisabled}
           onClick={() => onRemove(widget.widgetKey)}
-          className="absolute right-3 top-3 flex size-8 items-center justify-center rounded-full bg-slate-100 text-slate-400 transition-colors hover:text-rose-500"
+          className="absolute right-3 top-3 flex size-11 items-center justify-center rounded-full bg-slate-100 text-slate-400 transition-colors hover:text-rose-500"
           aria-label="위젯 제거"
         >
           <span className="material-symbols-outlined text-lg">close</span>

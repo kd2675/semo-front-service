@@ -1,15 +1,8 @@
 "use client";
 
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
-import { Plus_Jakarta_Sans } from "next/font/google";
 import { motion, useReducedMotion } from "motion/react";
-import type { CSSProperties } from "react";
 import { staggeredFadeUpMotion } from "@/app/lib/motion";
-
-const plusJakartaSans = Plus_Jakarta_Sans({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-});
 
 export type ClubAdminStatsMetric = {
   id: string;
@@ -118,25 +111,18 @@ export function ClubAdminStatsClient({
   const reduceMotion = Boolean(prefersReducedMotion);
 
   return (
-    <div
-      className={`${plusJakartaSans.className} min-h-screen bg-[#fdf8f6] text-slate-900`}
-      style={
-        {
-          "--primary": "#f97316",
-        } as CSSProperties
-      }
-    >
-      <div className="min-h-screen bg-[#fdf8f6]">
+    <div className="min-h-screen bg-[var(--background-light)] text-slate-900">
+      <div className="min-h-screen bg-[var(--background-light)]">
         <ClubPageHeader
           title="통계 대시보드"
           subtitle={clubName}
           icon="monitoring"
           theme="admin"
-          containerClassName="max-w-md"
+          containerClassName="semo-page-admin"
           className="border-orange-100"
         />
 
-        <main className="semo-nav-bottom-space mx-auto max-w-md">
+        <main className="semo-page-admin semo-nav-bottom-space">
           {partialData ? (
             <motion.section
               className="mx-4 mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800"

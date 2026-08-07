@@ -14,7 +14,7 @@ import { staggeredFadeUpMotion } from "@/app/lib/motion";
 import { invalidateClubQueries } from "@/app/lib/react-query/common";
 import { deleteScheduleEventMutationOptions } from "@/app/lib/react-query/schedule/mutations";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { startTransition, useDeferredValue, useMemo, useState, type CSSProperties } from "react";
+import { startTransition, useDeferredValue, useMemo, useState } from "react";
 
 type ClubScheduleHomeClientProps = {
   clubId: string;
@@ -87,8 +87,6 @@ export function ClubScheduleHomeClient({
   const [deleting, setDeleting] = useState(false);
   const deleteEventMutation = useMutation(deleteScheduleEventMutationOptions(clubId));
 
-  const accent = mode === "admin" ? "#f97316" : "#135bec";
-  const background = "#f6f6f8";
   const nearestUpcomingEvent = useMemo(() => {
     return [...payload.events]
       .filter((event) => new Date(`${event.startDate}T00:00:00`).getTime() >= new Date(new Date().toDateString()).getTime())
@@ -138,10 +136,7 @@ export function ClubScheduleHomeClient({
   };
 
   return (
-    <div
-      className="min-h-full bg-[var(--background-light)] font-display text-slate-900"
-      style={{ "--primary": accent, "--background-light": background } as CSSProperties}
-    >
+    <div className={`${mode === "admin" ? "semo-admin-theme" : "semo-user-theme"} min-h-full bg-[var(--background-light)] font-display text-slate-900`}>
       <div className="relative mx-auto flex min-h-full max-w-md flex-col bg-[var(--background-light)]">
         <ClubPageHeader
           title="일정 관리"

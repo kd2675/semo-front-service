@@ -72,7 +72,7 @@ export default function Home() {
     }
   };
 
-  const roleLabel = normalizeRole(user?.role) ?? "GUEST";
+  const roleLabel = normalizeRole(user?.role) === "USER" ? "사용자" : "게스트";
   const profileLabel = createProfileLabel(user);
   const userName = user?.username ?? "익명 사용자";
   const myClubs = myClubsQuery.data ?? [];
@@ -224,7 +224,7 @@ export default function Home() {
             <div className="flex items-center justify-end gap-2">
               <button
                 type="button"
-                className="flex size-10 items-center justify-center rounded-full bg-slate-100 text-slate-700"
+              className="semo-icon-control bg-slate-100 text-slate-700"
                 aria-label="알림"
               >
                 <span className="material-symbols-outlined">notifications</span>
@@ -232,7 +232,7 @@ export default function Home() {
               <motion.button
                 type="button"
                 onClick={handleSignOut}
-                className="flex h-10 items-center justify-center rounded-full border border-slate-200 bg-white px-3 text-xs font-bold text-slate-700 shadow-sm transition-colors hover:bg-slate-50"
+                className="flex h-11 items-center justify-center rounded-full border border-slate-200 bg-white px-3 text-xs font-bold text-slate-700 shadow-sm transition-colors hover:bg-slate-50"
                 aria-label="로그아웃"
                 whileTap={reduceMotion ? undefined : { scale: 0.96 }}
                 animate={
@@ -249,15 +249,14 @@ export default function Home() {
           <motion.section className="px-4 pb-2" {...staggeredFadeUpMotion(2, reduceMotion)}>
             <div className="flex items-center justify-between rounded-xl bg-gradient-to-br from-[var(--primary)] to-blue-600 p-4 shadow-lg shadow-[var(--primary)]/20">
               <div className="flex-1">
-                <h3 className="text-lg font-bold text-white">Create Club</h3>
-                <p className="mt-0.5 text-xs text-blue-100">Start your own community today</p>
-                <p className="mt-1 text-[10px] font-medium text-blue-100/70">클럽 만들기</p>
+                <h3 className="text-lg font-bold text-white">새 클럽 만들기</h3>
+                <p className="mt-1 text-xs leading-5 text-blue-100">운영에 필요한 기능을 한곳에서 시작하세요.</p>
               </div>
               <RouterLink
                 href="/clubs/create"
                 className="rounded-lg bg-white px-4 py-2 text-sm font-bold text-[var(--primary)] shadow-sm transition-transform active:scale-95"
               >
-                Get Started
+                시작하기
               </RouterLink>
             </div>
           </motion.section>
@@ -267,8 +266,8 @@ export default function Home() {
             {...staggeredFadeUpMotion(3, reduceMotion)}
           >
             <div className="flex flex-col">
-              <h2 className="text-lg font-bold leading-none text-slate-900">My Clubs</h2>
-              <span className="mt-1 text-[10px] font-medium text-slate-400">내 클럽</span>
+              <h2 className="text-lg font-bold leading-none text-slate-900">내 클럽</h2>
+              <span className="mt-1 text-xs font-medium text-slate-500">가입한 모임</span>
             </div>
             <span className="text-sm font-semibold text-[var(--primary)]">
               {myClubs.length.toLocaleString("ko-KR")}개
@@ -309,7 +308,7 @@ export default function Home() {
                             <p className="text-base font-bold text-slate-900">{club.name}</p>
                             {club.admin ? (
                               <span className="rounded-full bg-[var(--primary)]/10 px-2 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--primary)]">
-                                Admin
+                                관리자
                               </span>
                             ) : null}
                           </div>

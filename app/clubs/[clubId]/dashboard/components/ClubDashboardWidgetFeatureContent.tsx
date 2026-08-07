@@ -143,7 +143,7 @@ export function ClubDashboardWidgetFeatureContent({
                 />
               </div>
             ) : null}
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-blue-600">Latest Notice</p>
+            <p className="text-xs font-semibold text-blue-600">최근 공지</p>
             <p className="line-clamp-2 text-base font-bold text-slate-900">{latestNotice.title}</p>
             <p className="line-clamp-2 text-sm text-slate-500">{latestNotice.summary}</p>
             <div className="flex items-center justify-between rounded-lg bg-slate-50 px-3 py-2">
@@ -209,7 +209,7 @@ export function ClubDashboardWidgetFeatureContent({
           <p className="text-sm text-slate-500">오늘 일정을 가져오지 못했습니다.</p>
         ) : todayScheduleItems.length > 0 ? (
           <>
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-amber-600">Today Schedule</p>
+            <p className="text-xs font-semibold text-amber-600">오늘 일정</p>
             <div className="space-y-2">
               {todayScheduleItems.map((item) => {
                 if (item.contentType === "SCHEDULE_EVENT" && item.event) {
@@ -228,7 +228,7 @@ export function ClubDashboardWidgetFeatureContent({
                       </div>
                       <div className="shrink-0 text-right">
                         <p className="text-xs font-bold text-slate-900">{item.event.timeLabel ?? "종일"}</p>
-                        <p className="text-[10px] font-medium uppercase tracking-wider text-slate-400">EVENT</p>
+                        <p className="text-xs font-medium text-slate-400">일정</p>
                       </div>
                     </RouterLink>
                   );
@@ -253,7 +253,7 @@ export function ClubDashboardWidgetFeatureContent({
                       </div>
                       <div className="shrink-0 text-right">
                         <p className="text-xs font-bold text-slate-900">{item.vote.totalResponses}명</p>
-                        <p className="text-[10px] font-medium uppercase tracking-wider text-slate-400">VOTE</p>
+                        <p className="text-xs font-medium text-slate-400">투표</p>
                       </div>
                     </RouterLink>
                   );
@@ -277,7 +277,7 @@ export function ClubDashboardWidgetFeatureContent({
                       </div>
                       <div className="shrink-0 text-right">
                         <p className="text-xs font-bold text-slate-900">{item.notice.scheduleAtLabel ?? "공지"}</p>
-                        <p className="text-[10px] font-medium uppercase tracking-wider text-slate-400">NOTICE</p>
+                        <p className="text-xs font-medium text-slate-400">공지</p>
                       </div>
                     </RouterLink>
                   );
@@ -311,15 +311,15 @@ export function ClubDashboardWidgetFeatureContent({
           <>
             <div className="grid grid-cols-3 gap-2">
               <div className="rounded-xl bg-orange-50 px-3 py-3">
-                <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-orange-700">Upcoming</p>
+                <p className="text-xs font-bold text-orange-700">예정</p>
                 <p className="mt-2 text-base font-bold text-slate-900">{upcomingScheduleItems.length}</p>
               </div>
               <div className="rounded-xl bg-amber-50 px-3 py-3">
-                <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-amber-700">Votes</p>
+                <p className="text-xs font-bold text-amber-700">투표</p>
                 <p className="mt-2 text-base font-bold text-slate-900">{pendingVoteCount}</p>
               </div>
               <div className="rounded-xl bg-sky-50 px-3 py-3">
-                <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-sky-700">Notices</p>
+                <p className="text-xs font-bold text-sky-700">공지</p>
                 <p className="mt-2 text-base font-bold text-slate-900">{upcomingNoticeCount}</p>
               </div>
             </div>
@@ -412,15 +412,15 @@ export function ClubDashboardWidgetFeatureContent({
           <>
             <div className="grid grid-cols-3 gap-2">
               <div className="rounded-xl bg-lime-50 px-3 py-3">
-                <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-lime-700">My</p>
+                <p className="text-xs font-bold text-lime-700">내 대회</p>
                 <p className="mt-2 text-base font-bold text-slate-900">{myTournamentCount}</p>
               </div>
               <div className="rounded-xl bg-emerald-50 px-3 py-3">
-                <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-emerald-700">Active</p>
+                <p className="text-xs font-bold text-emerald-700">진행 중</p>
                 <p className="mt-2 text-base font-bold text-slate-900">{tournamentData.participatingCount}</p>
               </div>
               <div className="rounded-xl bg-amber-50 px-3 py-3">
-                <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-amber-700">Recruiting</p>
+                <p className="text-xs font-bold text-amber-700">모집 중</p>
                 <p className="mt-2 text-base font-bold text-slate-900">{tournamentData.recruitingCount}</p>
               </div>
             </div>
@@ -520,15 +520,15 @@ export function ClubDashboardWidgetFeatureContent({
           <>
             <div className="grid grid-cols-3 gap-2">
               <div className="rounded-xl bg-emerald-50 px-3 py-3">
-                <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-emerald-700">Approved</p>
+                <p className="text-xs font-bold text-emerald-700">승인</p>
                 <p className="mt-2 text-base font-bold text-slate-900">{bracketData.approvedBracketCount}</p>
               </div>
               <div className="rounded-xl bg-amber-50 px-3 py-3">
-                <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-amber-700">Pending</p>
+                <p className="text-xs font-bold text-amber-700">대기 중</p>
                 <p className="mt-2 text-base font-bold text-slate-900">{bracketData.pendingBracketCount}</p>
               </div>
               <div className="rounded-xl bg-yellow-50 px-3 py-3">
-                <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-yellow-700">Mine</p>
+                <p className="text-xs font-bold text-yellow-700">내 신청</p>
                 <p className="mt-2 text-base font-bold text-slate-900">{bracketData.myBrackets.length}</p>
               </div>
             </div>

@@ -594,6 +594,7 @@ export function ClubDashboardFallbackClient({
           title={club?.name ?? "모임 홈"}
           subtitle={club?.admin ? "운영자 모드" : "사용자 모드"}
           icon="home"
+          containerClassName="semo-page-dashboard"
           rightSlot={
             club?.admin ? (
               <button
@@ -614,7 +615,7 @@ export function ClubDashboardFallbackClient({
           }
         />
 
-        <main className="semo-nav-bottom-space flex-1 space-y-6 p-4 md:p-6">
+        <main className="semo-page-dashboard semo-nav-bottom-space flex-1 space-y-6 p-4 md:p-6">
           <motion.section {...staggeredFadeUpMotion(0, reduceMotion)}>
             <div className="relative h-48 w-full overflow-hidden rounded-xl bg-slate-200 shadow-sm">
               {club?.imageUrl ? (
@@ -633,7 +634,7 @@ export function ClubDashboardFallbackClient({
                 {club?.admin ? (
                   <div className="pb-1">
                     <span className="inline-flex items-center rounded-full bg-[var(--primary)] px-2.5 py-0.5 text-xs font-semibold text-white">
-                      Admin View
+                      관리자
                     </span>
                   </div>
                 ) : null}
@@ -671,7 +672,7 @@ export function ClubDashboardFallbackClient({
                         ? "bg-[var(--primary)]/10 text-[var(--primary)]"
                         : "bg-slate-100 text-slate-500"
                     }`}>
-                      {editMode ? "Widget Edit Mode" : "Home Widgets"}
+                      {editMode ? "위젯 편집 중" : "홈 위젯"}
                     </span>
                   ) : null}
                 </div>
@@ -758,7 +759,7 @@ export function ClubDashboardFallbackClient({
 
         {club?.admin && editMode && isEditorDirty ? (
           <div className="pointer-events-none fixed bottom-[76px] left-0 right-0 z-30 p-4">
-            <div className="pointer-events-auto mx-auto max-w-5xl">
+            <div className="semo-page-dashboard pointer-events-auto">
               <div className="grid grid-cols-[auto_1fr] gap-2">
                 <button
                   type="button"

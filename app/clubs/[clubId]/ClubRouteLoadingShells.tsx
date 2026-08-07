@@ -166,6 +166,47 @@ export function ClubBoardFeedLoadingShell() {
   );
 }
 
+export function ClubDataLoadingShell({
+  mode = "user",
+}: {
+  mode?: "user" | "admin";
+}) {
+  return (
+    <div className={`${mode === "admin" ? "semo-admin-theme" : "semo-user-theme"} min-h-screen bg-[var(--background-light)] text-slate-900`}>
+      <header className="sticky top-0 z-20 border-b border-slate-200 bg-[var(--background-light)]/85 backdrop-blur-md">
+        <div className="semo-page-data flex items-center gap-3 p-4">
+          <div className="size-11 rounded-xl bg-[var(--primary)]/10" />
+          <div className="space-y-2">
+            <ShellLine className="h-5 w-32" />
+            <ShellLine className="h-3 w-24" />
+          </div>
+        </div>
+      </header>
+      <main className="semo-page-data semo-nav-bottom-space space-y-5 px-4 pt-5">
+        <section className="h-40 animate-pulse rounded-[var(--radius-card)] bg-[var(--primary)]/10" />
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {Array.from({ length: 6 }, (_, index) => (
+            <article key={`data-loading-${index}`} className="semo-card p-5">
+              <div className="flex items-start gap-4">
+                <div className="size-12 rounded-xl bg-slate-100" />
+                <div className="min-w-0 flex-1 space-y-3">
+                  <ShellLine className="h-4 w-2/3" />
+                  <ShellLine className="h-3 w-full" />
+                  <ShellLine className="h-3 w-4/5" />
+                </div>
+              </div>
+              <div className="mt-5 grid grid-cols-2 gap-3">
+                <ShellBlock className="h-16 w-full" />
+                <ShellBlock className="h-16 w-full" />
+              </div>
+            </article>
+          ))}
+        </div>
+      </main>
+    </div>
+  );
+}
+
 export function ClubProfileLoadingShell() {
   return (
     <MobilePageShell titleWidthClassName="w-28">

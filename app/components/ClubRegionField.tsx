@@ -147,6 +147,7 @@ export function ClubRegionField({
                   시군구
                 </p>
                 <input
+                  aria-label="시군구 검색"
                   value={depth2Query}
                   disabled={disabled}
                   onChange={(event) => {
@@ -154,7 +155,7 @@ export function ClubRegionField({
                     startTransition(() => setDepth2Query(nextValue));
                   }}
                   placeholder="시군구 검색"
-                  className="h-10 w-36 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none transition focus:border-[var(--primary)] disabled:cursor-not-allowed disabled:opacity-60"
+                  className="h-11 w-36 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none transition focus:border-[var(--primary)] disabled:cursor-not-allowed disabled:opacity-60"
                 />
               </div>
               <div className="mt-3 flex max-h-56 flex-wrap gap-2 overflow-y-auto pr-1">
@@ -197,7 +198,7 @@ export function ClubRegionField({
       )}
 
       <div className="rounded-2xl border border-slate-100 bg-slate-50 px-4 py-4">
-        <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">Current</p>
+        <p className="text-xs font-semibold text-slate-500">현재 지역</p>
         <p className="mt-2 text-base font-bold text-slate-900">
           {regionLabel ?? "활동 권역을 선택해 주세요."}
         </p>

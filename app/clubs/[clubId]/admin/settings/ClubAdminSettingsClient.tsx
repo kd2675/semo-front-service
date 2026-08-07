@@ -1,10 +1,8 @@
 "use client";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Public_Sans } from "next/font/google";
 import { useRouter } from "next/navigation";
 import { startTransition, useEffect, useState } from "react";
-import type { CSSProperties } from "react";
 import { ClubClassificationField } from "@/app/components/ClubClassificationField";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import { ClubRegionField } from "@/app/components/ClubRegionField";
@@ -13,11 +11,6 @@ import { getActivityCategoryLabel, getAffiliationTypeLabel, getPrimaryClubActivi
 import { type MyClubSummary } from "@/app/lib/clubs";
 import { invalidateClubQueries } from "@/app/lib/react-query/common";
 import { updateClubSettingsMutationOptions } from "@/app/lib/react-query/club/mutations";
-
-const publicSans = Public_Sans({
-  subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700"],
-});
 
 type ClubAdminSettingsClientProps = {
   clubId: string;
@@ -100,26 +93,18 @@ export function ClubAdminSettingsClient({ clubId, initialClub }: ClubAdminSettin
   };
 
   return (
-    <div
-      className={`${publicSans.className} min-h-screen bg-[#f8f6f6] text-slate-900`}
-      style={
-        {
-          "--primary": "#ec5b13",
-          "--background-light": "#f8f6f6",
-        } as CSSProperties
-      }
-    >
+    <div className="min-h-screen bg-[var(--background-light)] text-slate-900">
       <ClubPageHeader
         title="기본 정보"
         subtitle={club.name}
         icon="tune"
         theme="admin"
-        containerClassName="max-w-3xl"
+        containerClassName="semo-page-admin"
         leftSlot={(
           <button
             type="button"
             onClick={() => router.push(`/clubs/${clubId}/admin`)}
-            className="flex size-10 items-center justify-center rounded-full bg-white text-slate-600 shadow-sm"
+            className="flex size-11 items-center justify-center rounded-full bg-white text-slate-600 shadow-sm"
             aria-label="관리자 홈으로 돌아가기"
           >
             <span className="material-symbols-outlined">arrow_back</span>
@@ -127,11 +112,11 @@ export function ClubAdminSettingsClient({ clubId, initialClub }: ClubAdminSettin
         )}
       />
 
-      <main className="semo-nav-bottom-space mx-auto w-full max-w-3xl space-y-6 px-4 py-6">
+      <main className="semo-page-admin semo-nav-bottom-space space-y-6 px-4 py-6">
         <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Club Classification</p>
+              <p className="text-xs font-semibold tracking-wide text-slate-400">클럽 분류</p>
               <h2 className="mt-2 text-xl font-bold tracking-tight text-slate-900">모임 분류</h2>
               <p className="mt-2 max-w-xl text-sm leading-6 text-slate-500">
                 활동 분야, 주요 태그, 소속 유형을 함께 관리합니다.
@@ -186,14 +171,14 @@ export function ClubAdminSettingsClient({ clubId, initialClub }: ClubAdminSettin
         <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Club Region</p>
+              <p className="text-xs font-semibold tracking-wide text-slate-400">클럽 지역</p>
               <h2 className="mt-2 text-xl font-bold tracking-tight text-slate-900">대표 활동 권역</h2>
               <p className="mt-2 max-w-xl text-sm leading-6 text-slate-500">
                 모임의 대표 활동 지역을 저장합니다. 공지나 일정의 개별 장소와는 별도로 관리됩니다.
               </p>
             </div>
             <div className="rounded-2xl bg-slate-50 px-4 py-3 text-right">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-400">Current</p>
+              <p className="text-xs font-semibold text-slate-400">현재 설정</p>
               <p className="mt-1 text-sm font-bold text-slate-900">{club.regionLabel ?? "전국"}</p>
             </div>
           </div>

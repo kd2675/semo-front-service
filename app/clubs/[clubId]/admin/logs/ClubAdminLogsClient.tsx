@@ -83,13 +83,13 @@ export function ClubAdminLogsClient({ clubId, clubName, initialData }: ClubAdmin
 
   return (
     <div className="min-h-screen bg-[#f8f6f6] text-slate-900">
-      <div className="mx-auto min-h-screen max-w-4xl bg-[#f8f6f6] pb-28">
+      <div className="semo-page-admin min-h-screen bg-[var(--background-light)] pb-28">
         <ClubPageHeader
           title="전체 활동 로그"
           subtitle={clubName}
           icon="history"
           theme="admin"
-          containerClassName="max-w-4xl"
+          containerClassName="semo-page-admin"
           className="bg-[#f8f6f6]/90"
         />
 
@@ -100,7 +100,7 @@ export function ClubAdminLogsClient({ clubId, clubName, initialData }: ClubAdmin
           >
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Activity Feed</p>
+                <p className="text-xs font-semibold tracking-wide text-slate-400">활동 기록</p>
                 <h2 className="mt-2 text-2xl font-bold">최근 관리자 활동 전체 보기</h2>
                 <p className="mt-2 text-sm text-slate-500">
                   화면 하단까지 내려가면 최신 활동 20개씩 자동으로 이어서 불러옵니다.

@@ -1,14 +1,14 @@
 "use client";
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { ClubRouteErrorState } from "@/app/components/ClubRouteState";
 import {
   adminBracketHomeQueryOptions,
   bracketHomeQueryOptions,
   bracketQueryKeys,
 } from "@/app/lib/react-query/brackets/queries";
-import { ClubBoardFeedLoadingShell } from "../../ClubRouteLoadingShells";
+import { getQueryErrorMessage } from "@/app/lib/queryUtils";
+import { ClubDataLoadingShell } from "../../ClubRouteLoadingShells";
 import { ClubBracketHomeClient } from "./ClubBracketHomeClient";
 
 type ClubBracketHomeFallbackClientProps = {
@@ -20,7 +20,6 @@ export function ClubBracketHomeFallbackClient({
   clubId,
   mode = "user",
 }: ClubBracketHomeFallbackClientProps) {
-  const router = useRouter();
   const queryClient = useQueryClient();
   const isAdminMode = mode === "admin";
   const queryKey =
@@ -37,21 +36,27 @@ export function ClubBracketHomeFallbackClient({
   });
   const payload = isAdminMode ? adminQuery.data : userQuery.data;
   const isPending = isAdminMode ? adminQuery.isPending : userQuery.isPending;
-  const isFetching = isAdminMode ? adminQuery.isFetching : userQuery.isFetching;
   const isError = isAdminMode ? adminQuery.isError : userQuery.isError;
-
-  useEffect(() => {
-    if (!isPending && isError) {
-      router.replace(isAdminMode ? `/clubs/${clubId}/admin` : `/clubs/${clubId}`);
-    }
-  }, [clubId, isAdminMode, isError, isPending, router]);
+  const error = isAdminMode ? adminQuery.error : userQuery.error;
 
   const handleReload = () => {
     void queryClient.invalidateQueries({ queryKey });
   };
 
-  if (isPending || isFetching || !payload) {
-    return <ClubBoardFeedLoadingShell />;
+  if (isError && !payload) {
+    return (
+      <ClubRouteErrorState
+        title={isAdminMode ? "대진표 관리" : "대진표"}
+        message={getQueryErrorMessage(error, "대진표 목록을 불러오지 못했습니다.")}
+        backHref={isAdminMode ? `/clubs/${clubId}/admin` : `/clubs/${clubId}`}
+        theme={mode}
+        onRetry={handleReload}
+      />
+    );
+  }
+
+  if (isPending || !payload) {
+    return <ClubDataLoadingShell mode={mode} />;
   }
 
   return (

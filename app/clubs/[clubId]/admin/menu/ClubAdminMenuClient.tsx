@@ -24,19 +24,12 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import { useAppToast } from "@/app/hooks/useAppToast";
-import { Public_Sans } from "next/font/google";
 import { motion, useReducedMotion } from "motion/react";
 import { startTransition, useEffect, useMemo, useState } from "react";
-import type { CSSProperties } from "react";
 import { type ClubFeatureSummary } from "@/app/lib/clubs";
 import { staggeredFadeUpMotion } from "@/app/lib/motion";
 import { updateClubFeaturesMutationOptions } from "@/app/lib/react-query/club/mutations";
 import { invalidateClubQueries } from "@/app/lib/react-query/common";
-
-const publicSans = Public_Sans({
-  subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700"],
-});
 
 function extractEnabledFeatureKeys(features: ClubFeatureSummary[]) {
   return features
@@ -102,7 +95,7 @@ function EnabledFeatureCard({
         type="button"
         {...attributes}
         {...listeners}
-        className="flex size-8 touch-none shrink-0 cursor-grab items-center justify-center rounded-md text-slate-400 transition hover:bg-slate-100 hover:text-slate-600 active:cursor-grabbing"
+        className="flex size-11 touch-none shrink-0 cursor-grab items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-600 active:cursor-grabbing"
         aria-label={`${getFeatureDisplayName(feature)} 순서 변경 핸들`}
         title="드래그해서 순서를 바꿀 수 있습니다."
       >
@@ -297,22 +290,14 @@ export function ClubAdminMenuClient({
   };
 
   return (
-    <div
-      className={`${publicSans.className} min-h-screen bg-[#f8f6f6] text-slate-900`}
-      style={
-        {
-          "--primary": "#ec5b13",
-          "--background-light": "#f8f6f6",
-        } as CSSProperties
-      }
-    >
+    <div className="min-h-screen bg-[var(--background-light)] text-slate-900">
       <div className="relative min-h-screen bg-[#f8f6f6]">
         <ClubPageHeader
           title="기능 설정"
           subtitle={`모임 기능 • ${clubName}`}
           icon="tune"
           theme="admin"
-          containerClassName="max-w-5xl"
+          containerClassName="semo-page-admin"
           rightSlot={
             <div className="rounded-full bg-white px-3 py-1.5 text-xs font-bold text-[var(--primary)] shadow-sm">
               {enabledFeatures.length}개 활성화
@@ -320,7 +305,7 @@ export function ClubAdminMenuClient({
           }
         />
 
-        <main className="semo-nav-bottom-space mx-auto w-full max-w-5xl">
+        <main className="semo-page-admin semo-nav-bottom-space">
           <motion.section className="p-4" {...staggeredFadeUpMotion(0, reduceMotion)}>
             <div className="mb-4 flex items-center gap-2">
               <span className="material-symbols-outlined text-[var(--primary)]">dashboard</span>
@@ -453,7 +438,7 @@ export function ClubAdminMenuClient({
 
         {isDirty ? (
           <div className="pointer-events-none fixed bottom-[76px] left-0 right-0 z-30 p-4">
-            <div className="pointer-events-auto mx-auto max-w-5xl">
+            <div className="semo-page-admin pointer-events-auto">
               <div className="grid grid-cols-[auto_1fr] gap-2">
                 <button
                   type="button"

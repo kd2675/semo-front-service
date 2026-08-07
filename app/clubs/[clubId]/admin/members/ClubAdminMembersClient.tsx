@@ -4,10 +4,8 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import { useAppToast } from "@/app/hooks/useAppToast";
 import { useAppAlert } from "@/app/hooks/useAppAlert";
-import { Plus_Jakarta_Sans } from "next/font/google";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { startTransition, useDeferredValue, useEffect, useMemo, useState } from "react";
-import type { CSSProperties } from "react";
 import { type ClubAdminMember } from "@/app/lib/clubs";
 import { overlayFadeMotion, popInMotion, staggeredFadeUpMotion } from "@/app/lib/motion";
 import { invalidateClubQueries } from "@/app/lib/react-query/common";
@@ -15,11 +13,6 @@ import {
   updateMemberRoleMutationOptions,
   updateMemberStatusMutationOptions,
 } from "@/app/lib/react-query/members/mutations";
-
-const plusJakartaSans = Plus_Jakarta_Sans({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-});
 
 const ROLE_OPTIONS = [
   { code: "OWNER", label: "오너" },
@@ -138,7 +131,7 @@ function MemberManageModal({
             <button
               type="button"
               onClick={onDismiss}
-              className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 text-slate-500"
+              className="semo-icon-control bg-slate-100 text-slate-500"
               aria-label="관리 모달 닫기"
             >
               <span className="material-symbols-outlined">close</span>
@@ -316,26 +309,18 @@ export function ClubAdminMembersClient({
   };
 
   return (
-    <div
-      className={`${plusJakartaSans.className} min-h-screen bg-[#f6f6f8] text-slate-900`}
-      style={
-        {
-          "--primary": "#f97316",
-          "--secondary": "#135bec",
-        } as CSSProperties
-      }
-    >
-      <div className="min-h-screen bg-[#f6f6f8]">
+    <div className="min-h-screen bg-[var(--background-light)] text-slate-900">
+      <div className="min-h-screen bg-[var(--background-light)]">
         <ClubPageHeader
           title="회원 관리"
           subtitle={clubName}
           icon="groups"
           theme="admin"
-          containerClassName="max-w-5xl"
+          containerClassName="semo-page-admin"
         />
 
         <section className="border-b border-slate-200 bg-white">
-          <div className="mx-auto w-full max-w-5xl px-4 pb-4">
+          <div className="semo-page-admin px-4 pb-4">
             <label className="relative flex items-center">
               <span className="material-symbols-outlined absolute left-3 text-slate-400">search</span>
               <input
@@ -351,7 +336,7 @@ export function ClubAdminMembersClient({
             </label>
           </div>
 
-          <div className="mx-auto w-full max-w-5xl overflow-x-auto px-4 pb-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div className="semo-page-admin overflow-x-auto px-4 pb-4">
             <div className="flex gap-2">
               {STATUS_FILTERS.map((filter) => {
                 const isActive = statusFilter === filter;
@@ -360,7 +345,7 @@ export function ClubAdminMembersClient({
                     key={filter}
                     type="button"
                     onClick={() => setStatusFilter(filter)}
-                    className={`h-9 shrink-0 rounded-full px-4 text-sm font-semibold transition-colors ${
+                    className={`h-11 shrink-0 rounded-full px-4 text-sm font-semibold transition-colors ${
                       isActive
                         ? "bg-[var(--primary)] text-white"
                         : "bg-slate-100 text-slate-600 hover:bg-slate-200"
@@ -374,7 +359,7 @@ export function ClubAdminMembersClient({
           </div>
         </section>
 
-        <main className="semo-nav-bottom-space mx-auto w-full max-w-5xl space-y-6 px-4 py-4">
+        <main className="semo-page-admin semo-nav-bottom-space space-y-6 px-4 py-4">
           <motion.section {...staggeredFadeUpMotion(0, reduceMotion)}>
             <div className="mb-3 flex items-center justify-between px-1">
               <div>

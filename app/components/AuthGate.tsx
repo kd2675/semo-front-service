@@ -60,11 +60,11 @@ export default function AuthGate({ children }: AuthGateProps) {
   }
 
   if (!isHydrated || authStatus === "unknown") {
-    return <GateScreen label="SESSION" title="세션을 확인하는 중입니다." />;
+    return <GateScreen label="세션 확인" title="세션을 확인하는 중입니다." />;
   }
 
   if (authStatus === "out") {
-    return <GateScreen label="LOGIN" title="로그인 페이지로 이동 중입니다." />;
+    return <GateScreen label="로그인" title="로그인 페이지로 이동 중입니다." />;
   }
 
   return children;

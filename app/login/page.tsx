@@ -221,7 +221,7 @@ function SemoLoginProgress({ reduceMotion }: { reduceMotion: boolean }) {
       <div className="semo-orb semo-orb-left" />
       <div className="semo-orb semo-orb-right" />
       <motion.section className="semo-panel relative w-full max-w-sm p-7 text-center" {...staggeredFadeUpMotion(0, reduceMotion)}>
-        <p className="text-xs font-black tracking-[0.28em] text-[var(--primary)]">SIGNING IN</p>
+        <p className="text-xs font-black tracking-[0.18em] text-[var(--primary)]">로그인 중</p>
         <h1 className="mt-4 text-2xl font-extrabold">로그인을 준비하고 있습니다</h1>
         <p className="mt-2 text-sm font-semibold text-[var(--muted)]">세션과 클럽 프로필을 확인합니다.</p>
         <div className="mt-6 semo-loading-bar" />

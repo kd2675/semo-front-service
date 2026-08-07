@@ -12,7 +12,7 @@ import { staggeredFadeUpMotion } from "@/app/lib/motion";
 import { deleteNoticeMutationOptions } from "@/app/lib/react-query/board/mutations";
 import { invalidateClubQueries } from "@/app/lib/react-query/common";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { useState, type CSSProperties } from "react";
+import { useState } from "react";
 import { ClubNoticeEditorClient } from "../../board/clients/ClubNoticeEditorClient";
 import { NoticeManageCard } from "../../board/components/NoticeManageCard";
 
@@ -67,8 +67,6 @@ export function ClubNoticeHomeClient({
   const [deleting, setDeleting] = useState(false);
   const deleteNoticeMutation = useMutation(deleteNoticeMutationOptions(clubId));
 
-  const accent = mode === "admin" ? "#f97316" : "#135bec";
-  const background = mode === "admin" ? "#f6f6f8" : "#f6f6f8";
   const basePath = mode === "admin" ? `/clubs/${clubId}/admin/more/notices` : `/clubs/${clubId}/more/notices`;
   const latestNotice = payload.notices[0] ?? null;
   const visibleNotices = payload.notices;
@@ -92,10 +90,7 @@ export function ClubNoticeHomeClient({
   };
 
   return (
-    <div
-      className="min-h-full bg-[var(--background-light)] font-display text-slate-900"
-      style={{ "--primary": accent, "--background-light": background } as CSSProperties}
-    >
+    <div className={`${mode === "admin" ? "semo-admin-theme" : "semo-user-theme"} min-h-full bg-[var(--background-light)] font-display text-slate-900`}>
       <div className="relative mx-auto flex min-h-full max-w-md flex-col bg-[var(--background-light)]">
         <ClubPageHeader
           title="공지 관리"

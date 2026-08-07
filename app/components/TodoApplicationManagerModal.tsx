@@ -26,7 +26,7 @@ export function TodoApplicationManagerModal({
       <section className="flex min-h-0 flex-1 flex-col">
         <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Applications</p>
+            <p className="text-xs font-semibold tracking-wide text-slate-400">신청자</p>
             <h3 className="mt-1 text-xl font-bold text-slate-900">
               {data ? `${data.title} 신청 관리` : "업무 신청 관리"}
             </h3>
@@ -35,7 +35,7 @@ export function TodoApplicationManagerModal({
             type="button"
             aria-label="신청 관리 닫기"
             onClick={onDismiss}
-            className="rounded-full p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+            className="semo-icon-control rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
           >
             <span className="material-symbols-outlined">close</span>
           </button>

@@ -1,8 +1,8 @@
 "use client";
 
 import { useQueries } from "@tanstack/react-query";
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { ClubRouteErrorState } from "@/app/components/ClubRouteState";
+import { getQueryErrorMessage } from "@/app/lib/queryUtils";
 import { myClubQueryOptions } from "@/app/lib/react-query/club/queries";
 import {
   adminFinanceExpensesFallbackQueryOptions,
@@ -18,7 +18,6 @@ type ClubAdminFinanceFallbackClientProps = {
 };
 
 export function ClubAdminFinanceFallbackClient({ clubId }: ClubAdminFinanceFallbackClientProps) {
-  const router = useRouter();
   const [clubQuery, financeQuery, obligationFeedQuery, requestFeedQuery, expenseFeedQuery] = useQueries({
     queries: [
       myClubQueryOptions(clubId),
@@ -48,28 +47,48 @@ export function ClubAdminFinanceFallbackClient({ clubId }: ClubAdminFinanceFallb
         }
       : null;
 
-  useEffect(() => {
-    if (
-      !clubQuery.isPending &&
-      !financeQuery.isPending &&
-      !obligationFeedQuery.isPending &&
-      (clubQuery.isError || financeQuery.isError || obligationFeedQuery.isError || !club || !finance || !obligationFeed)
-    ) {
-      router.replace(`/clubs/${clubId}`);
-    }
-  }, [
-    club,
-    clubId,
-    clubQuery.isError,
-    clubQuery.isPending,
-    finance,
-    financeQuery.isError,
-    financeQuery.isPending,
-    obligationFeed,
-    obligationFeedQuery.isError,
-    obligationFeedQuery.isPending,
-    router,
-  ]);
+  if (club && !club.admin) {
+    return (
+      <ClubRouteErrorState
+        title="재정 관리"
+        heading="관리자 권한이 필요합니다"
+        message="재정 관리는 클럽 관리자만 사용할 수 있습니다."
+        backHref={`/clubs/${clubId}`}
+        theme="admin"
+        icon="lock"
+      />
+    );
+  }
+
+  const error = clubQuery.error
+    ?? financeQuery.error
+    ?? obligationFeedQuery.error
+    ?? requestFeedQuery.error
+    ?? expenseFeedQuery.error;
+  if (
+    (clubQuery.isError
+      || financeQuery.isError
+      || obligationFeedQuery.isError
+      || requestFeedQuery.isError
+      || expenseFeedQuery.isError)
+    && (!club || !finance || !obligationFeed || !requestFeed || !expenseFeed)
+  ) {
+    return (
+      <ClubRouteErrorState
+        title="재정 관리"
+        message={getQueryErrorMessage(error, "재정 운영 정보를 불러오지 못했습니다.")}
+        backHref={`/clubs/${clubId}/admin`}
+        theme="admin"
+        onRetry={() => void Promise.all([
+          clubQuery.refetch(),
+          financeQuery.refetch(),
+          obligationFeedQuery.refetch(),
+          requestFeedQuery.refetch(),
+          expenseFeedQuery.refetch(),
+        ])}
+      />
+    );
+  }
 
   if (!club || !finance || !obligationFeed || !requestFeed || !expenseFeed) {
     return <AdminAttendanceLoadingShell />;

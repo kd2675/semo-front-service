@@ -72,7 +72,7 @@ function EnabledDashboardWidgetCard({
         type="button"
         {...attributes}
         {...listeners}
-        className="flex size-9 touch-none shrink-0 cursor-grab items-center justify-center rounded-xl bg-slate-100 text-slate-500 transition hover:bg-slate-200 hover:text-slate-700 active:cursor-grabbing"
+        className="flex size-11 touch-none shrink-0 cursor-grab items-center justify-center rounded-xl bg-slate-100 text-slate-500 transition hover:bg-slate-200 hover:text-slate-700 active:cursor-grabbing"
         aria-label={`${widget.displayName} 순서 변경`}
         title="드래그해서 순서를 바꿀 수 있습니다."
       >
@@ -88,8 +88,8 @@ function EnabledDashboardWidgetCard({
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
           <p className="truncate text-base font-bold text-slate-900">{widget.displayName}</p>
-          <span className="rounded-full bg-[var(--primary)]/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--primary)]">
-            Live
+          <span className="rounded-full bg-[var(--primary)]/10 px-2 py-0.5 text-xs font-bold text-[var(--primary)]">
+            실시간
           </span>
         </div>
         <p className="mt-1 line-clamp-2 text-sm text-slate-500">

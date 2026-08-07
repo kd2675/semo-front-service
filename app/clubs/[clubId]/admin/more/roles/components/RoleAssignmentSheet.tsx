@@ -2,6 +2,7 @@
 
 import { RouterLink } from "@/app/components/RouterLink";
 import { useAppToast } from "@/app/hooks/useAppToast";
+import { useDialogFocusManagement } from "@/app/hooks/useDialogFocusManagement";
 import { bottomSheetMotion, overlayFadeMotion } from "@/app/lib/motion";
 import {
   getClubAdminMembers,
@@ -11,21 +12,9 @@ import {
   type ClubPositionSummary,
 } from "@/app/lib/clubs";
 import { motion, useReducedMotion } from "motion/react";
-import { Inter, Manrope } from "next/font/google";
 import { startTransition, useDeferredValue, useEffect, useMemo, useState } from "react";
-import type { CSSProperties } from "react";
 import { RoleMemberIdentity, RoleOtherPositions } from "./RoleMemberParts";
 import { DEFAULT_ROLE_COLOR } from "../utils/roleUtils";
-
-const manrope = Manrope({
-  subsets: ["latin"],
-  weight: ["400", "500", "700", "800"],
-});
-
-const inter = Inter({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-});
 
 const EMPTY_MEMBERS: ClubAdminMember[] = [];
 
@@ -69,7 +58,7 @@ function MemberCard({
           className={`inline-flex shrink-0 items-center gap-1.5 rounded-2xl px-4 py-2.5 text-xs font-bold transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40 ${
             assigned
               ? "bg-rose-50 text-rose-600 hover:bg-rose-100"
-              : "bg-[var(--secondary)] text-white shadow-[0_12px_30px_rgba(144,78,0,0.22)] hover:bg-[#7d4300]"
+          : "bg-[var(--primary)] text-white shadow-sm hover:bg-orange-700"
           }`}
         >
           <span className="material-symbols-outlined text-[18px]">
@@ -80,18 +69,18 @@ function MemberCard({
       </div>
 
       <div className="mt-4 flex flex-wrap gap-2">
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-[#f5efe7] px-3 py-1.5 text-[11px] font-semibold text-[#7d4300]">
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-orange-50 px-3 py-1.5 text-xs font-semibold text-orange-800">
           <span className="material-symbols-outlined text-[16px]">workspace_premium</span>
           {assigned ? `${role.displayName} 연결됨` : "직책 미연결"}
         </span>
         {member.joinedAtLabel ? (
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1.5 text-[11px] font-semibold text-slate-600">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-600">
             <span className="material-symbols-outlined text-[16px]">calendar_month</span>
             {member.joinedAtLabel}
           </span>
         ) : null}
         {!member.canManage ? (
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-900 px-3 py-1.5 text-[11px] font-semibold text-white">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white">
             <span className="material-symbols-outlined text-[16px]">lock</span>
             변경 불가
           </span>
@@ -123,28 +112,7 @@ export function RoleAssignmentSheet({
   const deferredQuery = useDeferredValue(query.trim().toLowerCase());
   const { showToast } = useAppToast(2400);
   const colorHex = role.colorHex ?? DEFAULT_ROLE_COLOR;
-
-  useEffect(() => {
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-
-    return () => {
-      document.body.style.overflow = previousOverflow;
-    };
-  }, []);
-
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        onClose();
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [onClose]);
+  const dialogRef = useDialogFocusManagement({ onDismiss: onClose });
 
   const handleRetryMembers = async () => {
     setLoadingMembers(true);
@@ -258,23 +226,23 @@ export function RoleAssignmentSheet({
 
   return (
     <>
-      <motion.button
+      <motion.div
         key="role-assignment-sheet-backdrop"
-        type="button"
-        aria-label="직책 배정 시트 닫기"
+        aria-hidden="true"
         className="fixed inset-0 z-[70] bg-slate-950/52 backdrop-blur-sm"
         onClick={onClose}
         {...overlayFadeMotion(reduceMotion)}
       />
       <motion.section
+        ref={dialogRef}
         key={`role-assignment-sheet-${role.clubPositionId}`}
         role="dialog"
         aria-modal="true"
-        className={`${inter.className} fixed inset-x-0 bottom-0 z-[71] mx-auto flex max-h-[92dvh] w-full max-w-6xl flex-col overflow-hidden rounded-t-[2rem] border border-white/70 bg-[linear-gradient(180deg,rgba(255,249,241,0.98)_0%,rgba(250,251,253,0.98)_100%)] shadow-[0_-24px_90px_rgba(15,23,42,0.28)]`}
-        style={{ "--secondary": colorHex } as CSSProperties}
+        tabIndex={-1}
+        aria-label={`${role.displayName} 직책 배정`}
+        className="semo-admin-theme fixed inset-x-0 bottom-0 z-[71] mx-auto flex max-h-[92dvh] w-full max-w-6xl flex-col overflow-hidden rounded-t-[var(--radius-modal)] border border-white/70 bg-[var(--color-bg)] shadow-[var(--shadow-modal)]"
         {...bottomSheetMotion(reduceMotion)}
       >
-        <div className="absolute inset-x-0 top-0 h-24 bg-[radial-gradient(circle_at_top,_rgba(255,220,194,0.95),_transparent_64%)]" />
         <div className="relative flex min-h-0 flex-1 flex-col">
           <div className="flex justify-center pb-3 pt-3">
             <div className="h-1.5 w-16 rounded-full bg-slate-300/90" />
@@ -290,10 +258,10 @@ export function RoleAssignmentSheet({
                   <span className="material-symbols-outlined text-[30px]">{role.iconName ?? "badge"}</span>
                 </div>
                 <div>
-                  <p className="text-[11px] font-black uppercase tracking-[0.28em] text-[#8b4b00]">
-                    Live Assignment Console
+                  <p className="text-xs font-black tracking-wide text-orange-800">
+                    직책 배정
                   </p>
-                  <h2 className={`${manrope.className} mt-1 text-2xl font-black tracking-tight text-slate-900 sm:text-3xl`}>
+                  <h2 className="mt-1 text-2xl font-black tracking-tight text-slate-900 sm:text-3xl">
                     {role.displayName}
                   </h2>
                 </div>
@@ -309,36 +277,38 @@ export function RoleAssignmentSheet({
                 className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-[#fff7ef]"
               >
                 <span className="material-symbols-outlined text-[18px]">edit</span>
-                Edit
+                편집
               </RouterLink>
               <button
                 type="button"
                 onClick={onClose}
+                data-dialog-initial-focus
+                aria-label="직책 배정 닫기"
                 className="inline-flex size-11 items-center justify-center rounded-2xl bg-slate-900 text-white transition hover:bg-slate-800"
               >
-                <span className="material-symbols-outlined text-[20px]">close</span>
+                <span className="material-symbols-outlined text-[20px]" aria-hidden="true">close</span>
               </button>
             </div>
           </div>
 
           <div className="grid gap-4 border-b border-[#eadfd2] px-5 py-4 sm:grid-cols-4 sm:px-7">
             {[
-              { label: "Assigned Now", value: totalAssigned, icon: "groups" },
-              { label: "Permissions", value: role.permissionCount, icon: "rule_folder" },
-              { label: "Filtered Members", value: filteredMembers.length, icon: "manage_search" },
-              { label: "Mode", value: role.active ? "LIVE" : "PAUSED", icon: "toggle_on" },
+              { label: "현재 배정", value: totalAssigned, icon: "groups" },
+              { label: "권한", value: role.permissionCount, icon: "rule_folder" },
+              { label: "검색 결과", value: filteredMembers.length, icon: "manage_search" },
+              { label: "상태", value: role.active ? "운영 중" : "중지", icon: "toggle_on" },
             ].map((item) => (
               <article
                 key={item.label}
                 className="rounded-[1.5rem] border border-white/70 bg-white/80 px-4 py-4 shadow-[0_16px_40px_rgba(15,23,42,0.06)]"
               >
                 <div className="flex items-center justify-between gap-2">
-                  <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-slate-400">{item.label}</p>
+                  <p className="text-xs font-bold text-slate-400">{item.label}</p>
                   <span className="material-symbols-outlined text-[18px]" style={{ color: colorHex }}>
                     {item.icon}
                   </span>
                 </div>
-                <p className={`${manrope.className} mt-3 text-3xl font-black tracking-tight text-slate-900`}>
+                <p className="mt-3 text-3xl font-black tracking-tight text-slate-900">
                   {item.value}
                 </p>
               </article>
@@ -352,7 +322,7 @@ export function RoleAssignmentSheet({
                   permissionLabels.slice(0, 6).map((label) => (
                     <span
                       key={`${role.clubPositionId}-${label}`}
-                      className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-semibold"
+                      className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold"
                       style={{ backgroundColor: `${colorHex}14`, color: colorHex }}
                     >
                       <span className="material-symbols-outlined text-[15px]">verified_user</span>
@@ -360,7 +330,7 @@ export function RoleAssignmentSheet({
                     </span>
                   ))
                 ) : (
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1.5 text-[11px] font-semibold text-slate-500">
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-500">
                     <span className="material-symbols-outlined text-[15px]">info</span>
                     연결된 세부 권한이 없습니다.
                   </span>
@@ -368,11 +338,12 @@ export function RoleAssignmentSheet({
               </div>
 
               <div className="group relative w-full max-w-md">
-                <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 transition group-focus-within:text-[var(--secondary)]">
+                <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 transition group-focus-within:text-[var(--primary)]" aria-hidden="true">
                   search
                 </span>
                 <input
                   type="text"
+                  aria-label="직책 배정 멤버 검색"
                   value={query}
                   onChange={(event) => {
                     const nextValue = event.target.value;
@@ -397,7 +368,7 @@ export function RoleAssignmentSheet({
               </div>
             ) : loadError ? (
               <div className="rounded-[2rem] border border-rose-200 bg-rose-50 px-6 py-8 text-center">
-                <p className={`${manrope.className} text-xl font-bold text-rose-700`}>멤버 목록을 불러오지 못했습니다.</p>
+                <p className="text-xl font-bold text-rose-700">멤버 목록을 불러오지 못했습니다.</p>
                 <p className="mt-2 text-sm leading-6 text-rose-600">{loadError}</p>
                 <button
                   type="button"
@@ -413,16 +384,16 @@ export function RoleAssignmentSheet({
                 <section>
                   <div className="mb-4 flex items-center justify-between">
                     <div>
-                      <h3 className={`${manrope.className} text-xl font-black tracking-tight text-slate-900`}>
-                        Assigned Members
+                      <h3 className="text-xl font-black tracking-tight text-slate-900">
+                        배정된 멤버
                       </h3>
                       <p className="mt-1 text-sm text-slate-500">현재 이 직책을 갖고 있는 멤버입니다.</p>
                     </div>
                     <span
-                      className="rounded-full px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.22em]"
+                      className="rounded-full px-3 py-1.5 text-xs font-bold"
                       style={{ backgroundColor: `${colorHex}16`, color: colorHex }}
                     >
-                      {assignedMembers.length} Visible
+                      {assignedMembers.length}명 표시
                     </span>
                   </div>
                   <div className="space-y-4">
@@ -448,13 +419,13 @@ export function RoleAssignmentSheet({
                 <section>
                   <div className="mb-4 flex items-center justify-between">
                     <div>
-                      <h3 className={`${manrope.className} text-xl font-black tracking-tight text-slate-900`}>
-                        Ready To Assign
+                      <h3 className="text-xl font-black tracking-tight text-slate-900">
+                        배정 가능한 멤버
                       </h3>
                       <p className="mt-1 text-sm text-slate-500">즉시 연결 가능한 멤버입니다.</p>
                     </div>
-                    <span className="rounded-full bg-slate-900 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.22em] text-white">
-                      {availableMembers.length} Candidates
+                    <span className="rounded-full bg-slate-900 px-3 py-1.5 text-xs font-bold text-white">
+                      {availableMembers.length}명
                     </span>
                   </div>
                   <div className="space-y-4">
@@ -499,7 +470,7 @@ export function RoleAssignmentSheet({
                   className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
                 >
                   <span className="material-symbols-outlined text-[18px]">group</span>
-                  Members
+                  멤버 관리
                 </RouterLink>
                 <button
                   type="button"

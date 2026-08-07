@@ -46,7 +46,7 @@ export function DiscoverClubModal({
   const showRequestMessage = club.membershipPolicy === "APPROVAL";
 
   return (
-    <RouteModal onDismiss={onClose} contentClassName="max-w-[30rem] rounded-[2rem] sm:rounded-[2rem]">
+    <RouteModal onDismiss={onClose} ariaLabel={`${club.name} 가입 안내`} contentClassName="max-w-[30rem]">
       <div className="overflow-y-auto bg-white px-5 py-5">
         <div className="flex items-start justify-between gap-4">
           <div>
@@ -65,22 +65,22 @@ export function DiscoverClubModal({
           <button
             type="button"
             onClick={onClose}
-            className="flex size-10 items-center justify-center rounded-full bg-slate-100 text-slate-500"
+            className="semo-icon-control rounded-full bg-slate-100 text-slate-500"
             aria-label="가입 신청 모달 닫기"
           >
-            <span className="material-symbols-outlined">close</span>
+            <span className="material-symbols-outlined" aria-hidden="true">close</span>
           </button>
         </div>
 
         <div className="mt-5 grid grid-cols-2 gap-3">
           <div className="rounded-2xl bg-slate-50 px-4 py-3">
-            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">CATEGORY</p>
+            <p className="text-xs font-bold text-slate-500">활동</p>
             <p className="mt-1 text-sm font-semibold text-slate-700">
               {getPrimaryClubActivityLabel(club.activityTags, club.activityCategory, club.categoryKey)}
             </p>
           </div>
           <div className="rounded-2xl bg-slate-50 px-4 py-3">
-            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">TYPE</p>
+            <p className="text-xs font-bold text-slate-500">소속 유형</p>
             <p className="mt-1 text-sm font-semibold text-slate-700">
               {[
                 getActivityCategoryLabel(club.activityCategory),
@@ -91,21 +91,21 @@ export function DiscoverClubModal({
             </p>
           </div>
           <div className="rounded-2xl bg-slate-50 px-4 py-3">
-            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">JOIN RULE</p>
+            <p className="text-xs font-bold text-slate-500">가입 방식</p>
             <p className="mt-1 text-sm font-semibold text-slate-700">{getMembershipPolicyLabel(club.membershipPolicy)}</p>
           </div>
           <div className="rounded-2xl bg-slate-50 px-4 py-3">
-            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">VISIBILITY</p>
+            <p className="text-xs font-bold text-slate-500">공개 범위</p>
             <p className="mt-1 text-sm font-semibold text-slate-700">
               {club.visibilityStatus === "PUBLIC" ? "공개 클럽" : "비공개 클럽"}
             </p>
           </div>
           <div className="rounded-2xl bg-slate-50 px-4 py-3">
-            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">MEMBERS</p>
+            <p className="text-xs font-bold text-slate-500">회원</p>
             <p className="mt-1 text-sm font-semibold text-slate-700">{club.activeMemberCount.toLocaleString("ko-KR")}명</p>
           </div>
           <div className="rounded-2xl bg-slate-50 px-4 py-3">
-            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">REGION</p>
+            <p className="text-xs font-bold text-slate-500">활동 지역</p>
             <p className="mt-1 text-sm font-semibold text-slate-700">{club.regionLabel ?? "전국"}</p>
           </div>
         </div>
@@ -114,6 +114,7 @@ export function DiscoverClubModal({
           <div className="mt-5">
             <label className="mb-2 block text-sm font-bold text-slate-900">가입 메시지</label>
             <textarea
+              aria-label="가입 메시지"
               value={requestMessage}
               onChange={(event) => onRequestMessageChange(event.target.value)}
               placeholder="모임에 관심 있는 이유나 활동 계획을 남겨 주세요."
@@ -126,7 +127,7 @@ export function DiscoverClubModal({
           <button
             type="button"
             onClick={onClose}
-            className="flex-1 rounded-2xl bg-slate-100 px-4 py-3 text-sm font-bold text-slate-600"
+            className="semo-control flex-1 bg-slate-100 px-4 py-3 text-sm font-bold text-slate-600"
           >
             닫기
           </button>
@@ -134,7 +135,7 @@ export function DiscoverClubModal({
             type="button"
             onClick={() => void onSubmit()}
             disabled={isSubmitting}
-            className="flex-1 rounded-2xl bg-[var(--primary)] px-4 py-3 text-sm font-bold text-white disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500"
+            className="semo-control flex-1 bg-[var(--primary)] px-4 py-3 text-sm font-bold text-white disabled:bg-slate-200 disabled:text-slate-500"
           >
             {isSubmitting ? "처리 중..." : actionLabel}
           </button>

@@ -48,14 +48,14 @@ export function ObligationDetailModal({
       <section className="flex min-h-0 flex-1 flex-col">
         <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
           <div className="min-w-0">
-            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Obligation Detail</p>
+            <p className="text-xs font-semibold tracking-wide text-slate-400">납부 상세</p>
             <h3 className="mt-1 truncate text-xl font-bold text-slate-900">{obligation.title}</h3>
           </div>
           <button
             type="button"
             aria-label="재정 상세 닫기"
             onClick={onClose}
-            className="rounded-full p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+            className="semo-icon-control rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
           >
             <span className="material-symbols-outlined">close</span>
           </button>
@@ -93,14 +93,14 @@ export function FinanceActionSheetModal({
       <section className="px-5 py-5">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Admin Actions</p>
+            <p className="text-xs font-semibold tracking-wide text-slate-400">관리자 작업</p>
             <h3 className="mt-1 text-xl font-bold text-slate-900">재정 입력 메뉴</h3>
           </div>
           <button
             type="button"
             aria-label="재정 입력 메뉴 닫기"
             onClick={onClose}
-            className="rounded-full p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+            className="semo-icon-control rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
           >
             <span className="material-symbols-outlined">close</span>
           </button>
@@ -192,14 +192,14 @@ export function CreateObligationModal({
       <section className="flex min-h-0 flex-1 flex-col">
         <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Create Obligation</p>
+            <p className="text-xs font-semibold tracking-wide text-slate-400">납부 의무 만들기</p>
             <h3 className="mt-1 text-xl font-bold text-slate-900">새 재정 항목 발행</h3>
           </div>
           <button
             type="button"
             aria-label="재정 항목 발행 닫기"
             onClick={onClose}
-            className="rounded-full p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+            className="semo-icon-control rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
           >
             <span className="material-symbols-outlined">close</span>
           </button>
@@ -296,6 +296,7 @@ export function CreateObligationModal({
                     </div>
 
                     <input
+                      aria-label="납부 대상 멤버 검색"
                       value={memberSearchQuery}
                       onChange={(event) => onMemberSearchQueryChange(event.target.value)}
                       placeholder="이름 또는 역할 검색"
@@ -396,14 +397,14 @@ export function ExpenseEntryModal({
       <section className="flex min-h-0 flex-1 flex-col">
         <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Expense Entry</p>
+            <p className="text-xs font-semibold tracking-wide text-slate-400">지출 입력</p>
             <h3 className="mt-1 text-xl font-bold text-slate-900">운영 지출 입력</h3>
           </div>
           <button
             type="button"
             aria-label="지출 입력 닫기"
             onClick={onClose}
-            className="rounded-full p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+            className="semo-icon-control rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
           >
             <span className="material-symbols-outlined">close</span>
           </button>

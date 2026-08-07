@@ -2,10 +2,8 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { Public_Sans } from "next/font/google";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useMemo, useState } from "react";
-import type { CSSProperties } from "react";
 
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import { RouterLink } from "@/app/components/RouterLink";
@@ -27,11 +25,6 @@ import {
 } from "@/app/lib/react-query/roles/queries";
 import { RoleEditSheet } from "./components/RoleEditSheet";
 import { DEFAULT_ROLE_COLOR, makeInitials } from "./utils/roleUtils";
-
-const publicSans = Public_Sans({
-  subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700", "800"],
-});
 
 type ClubAdminRolesClientProps = {
   clubId: string;
@@ -128,7 +121,7 @@ function RoleOverviewCard({
     <motion.section className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm" {...staggeredFadeUpMotion(0, reduceMotion)}>
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
-          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">Role Operations</p>
+          <p className="text-xs font-semibold tracking-wide text-slate-400">직책 운영</p>
           <h2 className="mt-2 text-2xl font-bold tracking-tight text-slate-900">직책, 권한, 보유 이력을 한 흐름으로 관리합니다.</h2>
           <p className="mt-2 text-sm leading-6 text-slate-500">
             {clubName} 운영진의 현재 직책과 과거 보유 기간을 함께 확인합니다.
@@ -403,7 +396,7 @@ function RoleHistoryCard({
         <button
           type="button"
           onClick={() => onDeleteRequest(history)}
-          className="flex size-10 shrink-0 items-center justify-center rounded-2xl bg-rose-50 text-rose-500 transition active:scale-95"
+          className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-rose-50 text-rose-500 transition active:scale-95"
           aria-label={`${history.memberDisplayName} 직책 보유 이력 삭제`}
         >
           <span className="material-symbols-outlined text-[20px]">delete</span>
@@ -573,22 +566,14 @@ export function ClubAdminRolesClient({ clubId, initialData }: ClubAdminRolesClie
   };
 
   return (
-    <div
-      className={`${publicSans.className} min-h-screen bg-[#f8f6f6] text-slate-900`}
-      style={
-        {
-          "--primary": "#ec5b13",
-          "--background-light": "#f8f6f6",
-        } as CSSProperties
-      }
-    >
+    <div className="min-h-screen bg-[var(--background-light)] text-slate-900">
       <div className="min-h-screen bg-[#f8f6f6]">
         <ClubPageHeader
           title="직책 관리"
           subtitle={roleManagement.clubName}
           icon="admin_panel_settings"
           theme="admin"
-          containerClassName="max-w-md"
+          containerClassName="semo-page-admin"
           rightSlot={
             <div className="flex size-9 items-center justify-center rounded-full bg-orange-50 text-xs font-extrabold text-[var(--primary)]">
               {makeInitials(roleManagement.clubName, "AD")}
@@ -596,7 +581,7 @@ export function ClubAdminRolesClient({ clubId, initialData }: ClubAdminRolesClie
           }
         />
 
-        <main className="semo-nav-bottom-space mx-auto w-full max-w-md space-y-4 px-4 pt-4">
+        <main className="semo-page-admin semo-nav-bottom-space space-y-4 px-4 pt-4">
           <RoleOverviewCard
             clubName={roleManagement.clubName}
             stats={stats}

@@ -1,9 +1,9 @@
 "use client";
 
 import { useQueries } from "@tanstack/react-query";
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
+import { ClubRouteErrorState } from "@/app/components/ClubRouteState";
+import { getQueryErrorMessage } from "@/app/lib/queryUtils";
 import { myClubQueryOptions } from "@/app/lib/react-query/club/queries";
 import {
   financeHomeQueryOptions,
@@ -16,7 +16,6 @@ type ClubFinanceFallbackClientProps = {
 };
 
 export function ClubFinanceFallbackClient({ clubId }: ClubFinanceFallbackClientProps) {
-  const router = useRouter();
   const [clubQuery, financeQuery, requestFeedQuery] = useQueries({
     queries: [
       myClubQueryOptions(clubId),
@@ -35,15 +34,25 @@ export function ClubFinanceFallbackClient({ clubId }: ClubFinanceFallbackClientP
         }
       : null;
 
-  useEffect(() => {
-    if (
-      !clubQuery.isPending &&
-      !financeQuery.isPending &&
-      (clubQuery.isError || financeQuery.isError || !club || !finance)
-    ) {
-        router.replace(`/clubs/${clubId}`);
-    }
-  }, [club, clubId, clubQuery.isError, clubQuery.isPending, finance, financeQuery.isError, financeQuery.isPending, router]);
+  const error = clubQuery.error ?? financeQuery.error ?? requestFeedQuery.error;
+
+  if (
+    (clubQuery.isError || financeQuery.isError || requestFeedQuery.isError)
+    && (!club || !finance || !requestFeed)
+  ) {
+    return (
+      <ClubRouteErrorState
+        title="내 재정"
+        message={getQueryErrorMessage(error, "재정 정보를 불러오지 못했습니다.")}
+        backHref={`/clubs/${clubId}`}
+        onRetry={() => void Promise.all([
+          clubQuery.refetch(),
+          financeQuery.refetch(),
+          requestFeedQuery.refetch(),
+        ])}
+      />
+    );
+  }
 
   if (!club || !finance || !requestFeed) {
     return (

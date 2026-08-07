@@ -23,7 +23,7 @@ export function ClubDashboardWidgetContent(props: ClubDashboardWidgetCardProps) 
         </div>
         <div>
           <h3 className="text-base font-bold">{widget.title}</h3>
-          {!widget.available ? <p className="text-xs font-semibold text-amber-600">Required feature is disabled</p> : null}
+          {!widget.available ? <p className="text-xs font-semibold text-amber-600">필요한 기능이 비활성화되어 있습니다</p> : null}
         </div>
       </div>
 

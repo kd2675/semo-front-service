@@ -30,6 +30,7 @@ import { getQueryErrorMessage } from "@/app/lib/queryUtils";
 import { persistFeatureOrderMutationOptions } from "@/app/lib/react-query/club/mutations";
 import { clubFeaturesQueryOptions, clubQueryKeys } from "@/app/lib/react-query/club/queries";
 import { useBottomNavScrollDocking } from "@/app/hooks/useBottomNavScrollDocking";
+import { useDialogFocusManagement } from "@/app/hooks/useDialogFocusManagement";
 
 type AdminBottomNavProps = {
   clubId: string;
@@ -124,18 +125,18 @@ function AdminMoreSortableItem({ feature }: AdminMoreSortableItemProps) {
         type="button"
         {...attributes}
         {...listeners}
-        className="absolute -right-1 -top-1 z-10 flex h-5 w-5 touch-none shrink-0 cursor-grab items-center justify-center rounded-full border border-[#ec5b13]/30 bg-white text-[#ec5b13] shadow-sm transition hover:bg-[#ec5b13]/10 active:cursor-grabbing"
+        className="absolute -right-3 -top-3 z-10 flex size-11 touch-none shrink-0 cursor-grab items-center justify-center rounded-full border border-[#ec5b13]/30 bg-white text-[#ec5b13] shadow-sm transition hover:bg-[#ec5b13]/10 active:cursor-grabbing"
         aria-label={`${getFeatureDisplayName(feature)} 순서 변경 핸들`}
         title="드래그해서 순서를 변경합니다."
       >
-        <span className="font-mono text-[10px] font-bold tracking-[-0.2em]">::</span>
+        <span className="material-symbols-outlined text-[18px]" aria-hidden="true">drag_indicator</span>
       </button>
       <div
         className={`flex h-14 w-14 items-center justify-center rounded-2xl ${
           FEATURE_ACCENT_CLASS[feature.featureKey] ?? "bg-slate-100 text-slate-600"
         }`}
       >
-        <span className="material-symbols-outlined text-[28px]">{feature.iconName}</span>
+        <span className="material-symbols-outlined text-[28px]" aria-hidden="true">{feature.iconName}</span>
       </div>
       <span className="text-center text-[11px] font-semibold leading-4">
         {getFeatureDisplayName(feature)}
@@ -155,7 +156,7 @@ function AdminMoreSortableOverlay({ feature }: { feature: ClubFeatureSummary }) 
           FEATURE_ACCENT_CLASS[feature.featureKey] ?? "bg-slate-100 text-slate-600"
         }`}
       >
-        <span className="material-symbols-outlined text-[28px]">{feature.iconName}</span>
+        <span className="material-symbols-outlined text-[28px]" aria-hidden="true">{feature.iconName}</span>
       </div>
       <span className="text-center text-[11px] font-semibold leading-4">
         {getFeatureDisplayName(feature)}
@@ -197,6 +198,10 @@ export function AdminBottomNav({ clubId }: AdminBottomNavProps) {
   );
   const menuItems = enabledFeatures;
   const isMoreOpen = openMenuPathname === pathname;
+  const moreMenuRef = useDialogFocusManagement<HTMLDivElement>({
+    active: isMoreOpen,
+    onDismiss: () => setOpenMenuPathname(null),
+  });
   const isFeatureRouteActive = menuItems.some((feature) => {
     const targetPath = stripQuery(feature.adminPath);
     return pathname === targetPath || pathname.startsWith(`${targetPath}/`);
@@ -218,27 +223,6 @@ export function AdminBottomNav({ clubId }: AdminBottomNavProps) {
   useEffect(() => {
     setOrderedMenuItems(enabledFeatures);
   }, [enabledFeatures]);
-
-  useEffect(() => {
-    if (!isMoreOpen) {
-      return;
-    }
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        setOpenMenuPathname(null);
-      }
-    };
-
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    window.addEventListener("keydown", handleKeyDown);
-
-    return () => {
-      document.body.style.overflow = previousOverflow;
-      window.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [isMoreOpen]);
 
   const persistFeatureOrder = async (nextOrderedFeatures: ClubFeatureSummary[]) => {
     setReorderFeedback(null);
@@ -371,12 +355,13 @@ export function AdminBottomNav({ clubId }: AdminBottomNavProps) {
             onClick={() =>
               toggleMoreMenu()
             }
-            className={`flex h-10 w-10 touch-manipulation items-center justify-center transition ${textClassName}`}
+            className={`semo-icon-control touch-manipulation transition ${textClassName}`}
             aria-expanded={isMoreOpen}
+            aria-haspopup="dialog"
             aria-label={item.label}
           >
-            <div className="relative flex h-10 w-10 items-center justify-center">
-              <span className={`material-symbols-outlined text-[24px] ${iconClassName}`}>
+            <div className="relative flex h-11 w-11 items-center justify-center">
+              <span className={`material-symbols-outlined text-[24px] ${iconClassName}`} aria-hidden="true">
                 {item.icon}
               </span>
               {isActive ? (
@@ -396,10 +381,11 @@ export function AdminBottomNav({ clubId }: AdminBottomNavProps) {
             key={item.key}
             type="button"
             aria-disabled="true"
-            className={`flex h-10 w-10 touch-manipulation items-center justify-center transition ${textClassName}`}
+            aria-label={item.label}
+            className={`semo-icon-control touch-manipulation transition ${textClassName}`}
           >
-            <div className="relative flex h-10 w-10 items-center justify-center">
-              <span className={`material-symbols-outlined text-[24px] ${iconClassName}`}>
+            <div className="relative flex h-11 w-11 items-center justify-center">
+              <span className={`material-symbols-outlined text-[24px] ${iconClassName}`} aria-hidden="true">
                 {item.icon}
               </span>
             </div>
@@ -411,15 +397,16 @@ export function AdminBottomNav({ clubId }: AdminBottomNavProps) {
         <RouterLink
           key={item.key}
           href={href}
-          className={`flex h-10 w-10 touch-manipulation items-center justify-center transition ${textClassName}`}
+          className={`semo-icon-control touch-manipulation transition ${textClassName}`}
           aria-label={item.label}
         >
           <motion.div
             whileTap={reduceMotion ? undefined : { scale: 0.92 }}
-            className="relative flex h-10 w-10 items-center justify-center"
+            className="relative flex h-11 w-11 items-center justify-center"
           >
             <span
               className={`material-symbols-outlined text-[24px] ${iconClassName}`}
+              aria-hidden="true"
               style={isActive ? { fontVariationSettings: "'FILL' 1" } : undefined}
             >
               {item.icon}
@@ -454,9 +441,8 @@ export function AdminBottomNav({ clubId }: AdminBottomNavProps) {
       <AnimatePresence initial={false}>
         {isMoreOpen ? (
           <>
-            <motion.button
-              type="button"
-              aria-label="더보기 닫기"
+            <motion.div
+              aria-hidden="true"
               className="fixed inset-0 z-40 bg-black/20 backdrop-blur-[2px]"
               onClick={closeMoreMenu}
               {...overlayFadeMotion(reduceMotion)}
@@ -466,7 +452,14 @@ export function AdminBottomNav({ clubId }: AdminBottomNavProps) {
               {...popInMotion(reduceMotion)}
             >
               <div className="pointer-events-auto mx-auto w-full max-w-sm">
-                <div className="relative rounded-[32px] bg-white p-6 shadow-[0_20px_50px_rgba(0,0,0,0.15)]">
+                <div
+                  ref={moreMenuRef}
+                  role="dialog"
+                  aria-modal="true"
+                  aria-label="관리자 기능 더보기"
+                  tabIndex={-1}
+                  className="relative rounded-[var(--radius-modal)] bg-white p-6 shadow-[var(--shadow-modal)]"
+                >
                   <div className="absolute right-0 -top-10 z-10 flex items-center gap-2">
                     {reorderEnabled && reorderDirty ? (
                       <>
@@ -476,15 +469,15 @@ export function AdminBottomNav({ clubId }: AdminBottomNavProps) {
                           disabled={isReorderSaving}
                           aria-label="순서 변경 리셋"
                           title="순서 변경 리셋"
-                          className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-300 bg-white text-slate-600 shadow-sm transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+                          className="semo-icon-control border border-slate-300 bg-white text-slate-600 shadow-sm transition hover:bg-slate-50 disabled:opacity-60"
                         >
-                          <span className="material-symbols-outlined text-[17px]">restart_alt</span>
+                          <span className="material-symbols-outlined text-[17px]" aria-hidden="true">restart_alt</span>
                         </button>
                         <button
                           type="button"
                           onClick={() => void persistFeatureOrder(orderedMenuItems)}
                           disabled={isReorderSaving}
-                          className="inline-flex h-8 items-center justify-center rounded-full border border-[#ec5b13]/30 bg-[#ec5b13] px-3 text-[11px] font-semibold text-white shadow-sm transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-60"
+                          className="inline-flex h-11 items-center justify-center rounded-full border border-[#ec5b13]/30 bg-[#ec5b13] px-4 text-xs font-semibold text-white shadow-sm transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-60"
                         >
                           저장
                         </button>
@@ -496,7 +489,7 @@ export function AdminBottomNav({ clubId }: AdminBottomNavProps) {
                         setReorderEnabled((current) => !current);
                         setReorderFeedback(null);
                       }}
-                      className={`inline-flex h-8 w-8 items-center justify-center rounded-full border transition ${
+                      className={`inline-flex size-11 items-center justify-center rounded-full border transition ${
                         reorderEnabled
                           ? "border-[#ec5b13]/30 bg-[#ec5b13]/10 text-[#ec5b13]"
                           : "border-slate-200 bg-white text-slate-500 hover:bg-slate-50"
@@ -505,7 +498,7 @@ export function AdminBottomNav({ clubId }: AdminBottomNavProps) {
                       aria-label="순서 변경 모드 전환"
                       title="순서 변경"
                     >
-                      <span className="material-symbols-outlined text-[18px]">swap_vert</span>
+                      <span className="material-symbols-outlined text-[18px]" aria-hidden="true">swap_vert</span>
                     </button>
                   </div>
 
@@ -573,7 +566,7 @@ export function AdminBottomNav({ clubId }: AdminBottomNavProps) {
                                 FEATURE_ACCENT_CLASS[item.featureKey] ?? "bg-slate-100 text-slate-600"
                               }`}
                             >
-                              <span className="material-symbols-outlined text-[28px]">
+                              <span className="material-symbols-outlined text-[28px]" aria-hidden="true">
                                 {item.iconName}
                               </span>
                             </div>

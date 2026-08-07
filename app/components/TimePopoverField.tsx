@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
 const HOURS = Array.from({ length: 24 }, (_, index) => index);
@@ -100,10 +100,12 @@ export function TimePopoverField({
   buttonClassName,
   iconName = "schedule",
 }: TimePopoverFieldProps) {
+  const popoverId = useId();
   const anchorRef = useRef<HTMLButtonElement | null>(null);
   const popoverRef = useRef<HTMLDivElement | null>(null);
   const hourButtonRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const minuteButtonRefs = useRef<Array<HTMLButtonElement | null>>([]);
+  const hasFocusedOnOpenRef = useRef(false);
   const [open, setOpen] = useState(false);
   const [position, setPosition] = useState({ left: VIEWPORT_PADDING, top: VIEWPORT_PADDING });
   const [draftTime, setDraftTime] = useState<ParsedTime>(() => getDefaultDraftTime());
@@ -117,6 +119,7 @@ export function TimePopoverField({
   const handleToggleOpen = () => {
     if (open) {
       setOpen(false);
+      hasFocusedOnOpenRef.current = false;
       return;
     }
 
@@ -142,7 +145,17 @@ export function TimePopoverField({
 
     hourButtonRefs.current[draftTime.hour]?.scrollIntoView({ block: "center" });
     minuteButtonRefs.current[draftTime.minute]?.scrollIntoView({ block: "center" });
+    if (!hasFocusedOnOpenRef.current) {
+      hourButtonRefs.current[draftTime.hour]?.focus({ preventScroll: true });
+      hasFocusedOnOpenRef.current = true;
+    }
   }, [draftTime.hour, draftTime.minute, open]);
+
+  useEffect(() => {
+    if (!open) {
+      hasFocusedOnOpenRef.current = false;
+    }
+  }, [open]);
 
   useEffect(() => {
     if (!open) {
@@ -173,7 +186,10 @@ export function TimePopoverField({
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
+        event.preventDefault();
         setOpen(false);
+        hasFocusedOnOpenRef.current = false;
+        anchorRef.current?.focus({ preventScroll: true });
       }
     };
 
@@ -202,6 +218,43 @@ export function TimePopoverField({
     onChange(formatTimeValue(nextTime.hour, nextTime.minute));
   };
 
+  const handleUnitKeyDown = (
+    event: React.KeyboardEvent<HTMLButtonElement>,
+    unit: "hour" | "minute",
+    value: number,
+  ) => {
+    const lastValue = unit === "hour" ? HOURS.length - 1 : MINUTES.length - 1;
+    let nextValue: number | null = null;
+    switch (event.key) {
+      case "ArrowDown":
+      case "ArrowRight":
+        nextValue = Math.min(value + 1, lastValue);
+        break;
+      case "ArrowUp":
+      case "ArrowLeft":
+        nextValue = Math.max(value - 1, 0);
+        break;
+      case "Home":
+        nextValue = 0;
+        break;
+      case "End":
+        nextValue = lastValue;
+        break;
+      default:
+        return;
+    }
+
+    event.preventDefault();
+    const refs = unit === "hour" ? hourButtonRefs : minuteButtonRefs;
+    refs.current[nextValue]?.focus({ preventScroll: true });
+  };
+
+  const closePopover = () => {
+    setOpen(false);
+    hasFocusedOnOpenRef.current = false;
+    anchorRef.current?.focus({ preventScroll: true });
+  };
+
   return (
     <>
       <button
@@ -209,46 +262,51 @@ export function TimePopoverField({
         type="button"
         disabled={disabled}
         onClick={handleToggleOpen}
-        className={`flex w-full items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3 text-left text-sm outline-none transition hover:border-[var(--primary)] disabled:cursor-not-allowed disabled:opacity-60 ${buttonClassName ?? ""}`}
+        aria-expanded={open}
+        aria-haspopup="dialog"
+        aria-controls={open ? popoverId : undefined}
+        className={`semo-control flex w-full items-center justify-between border border-slate-200 bg-white px-4 py-3 text-left text-sm outline-none transition hover:border-[var(--primary)] disabled:opacity-60 ${buttonClassName ?? ""}`}
       >
         <span className={value ? "font-semibold text-slate-900" : "text-slate-400"}>
           {value ? formatTimeLabel(value) : placeholder}
         </span>
-        <span className="material-symbols-outlined text-[20px] text-slate-400">{iconName}</span>
+        <span className="material-symbols-outlined text-[20px] text-slate-400" aria-hidden="true">{iconName}</span>
       </button>
 
       {open && typeof document !== "undefined"
         ? createPortal(
             <div
+              id={popoverId}
               ref={popoverRef}
-              className="fixed z-[1086] w-[304px] overflow-hidden rounded-[22px] border border-slate-200 bg-[linear-gradient(165deg,#ffffff_0%,#f7fafc_100%)] shadow-[0_24px_40px_rgba(15,23,42,0.22)]"
+              className="fixed z-[1086] w-[304px] overflow-hidden rounded-[var(--radius-modal)] border border-slate-200 bg-white shadow-[var(--shadow-modal)]"
               role="dialog"
+              aria-label="시간 선택"
               aria-modal="false"
               style={{ left: position.left, top: position.top }}
             >
-              <div className="border-b border-slate-200 bg-[radial-gradient(circle_at_top_left,rgba(236,115,47,0.16),transparent_42%),linear-gradient(180deg,rgba(15,23,42,0.02),transparent)] px-4 py-4">
+              <div className="border-b border-slate-200 bg-[var(--background-light)] px-4 py-4">
                 <div className="flex items-center justify-between gap-3">
                   <div>
-                    <p className="text-[11px] font-black uppercase tracking-[0.24em] text-slate-400">Time</p>
+                    <p className="text-xs font-bold text-slate-500">선택한 시간</p>
                     <p className="mt-1 text-base font-black text-slate-900">
                       {value ? formatTimeLabel(value) : "시간을 골라주세요"}
                     </p>
                   </div>
                   <button
                     type="button"
-                    onClick={() => setOpen(false)}
-                    className="flex size-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 transition hover:border-slate-300 hover:text-slate-900"
+                    onClick={closePopover}
+                    className="semo-icon-control rounded-full border border-slate-200 bg-white text-slate-500 transition hover:border-slate-300 hover:text-slate-900"
                     aria-label="시간 선택 닫기"
                   >
-                    <span className="material-symbols-outlined text-[18px]">close</span>
+                    <span className="material-symbols-outlined text-[18px]" aria-hidden="true">close</span>
                   </button>
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3 p-3">
-                <div className="rounded-[18px] border border-slate-200 bg-white/80 p-2 shadow-sm">
-                  <p className="px-2 pb-2 text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">Hour</p>
-                  <div className="max-h-56 space-y-1 overflow-y-auto pr-1">
+                <div className="rounded-[var(--radius-card)] border border-slate-200 bg-white p-2 shadow-sm">
+                  <p className="px-2 pb-2 text-xs font-bold text-slate-500">시</p>
+                  <div className="max-h-56 space-y-1 overflow-y-auto pr-1" role="listbox" aria-label="시 선택">
                     {HOURS.map((hour) => {
                       const active = draftTime.hour === hour;
                       return (
@@ -258,17 +316,20 @@ export function TimePopoverField({
                             hourButtonRefs.current[hour] = node;
                           }}
                           type="button"
+                          role="option"
                           onClick={() => handleHourSelect(hour)}
-                          className={`flex w-full items-center justify-between rounded-2xl px-3 py-2 text-sm font-semibold transition ${
+                          onKeyDown={(event) => handleUnitKeyDown(event, "hour", hour)}
+                          tabIndex={active ? 0 : -1}
+                          className={`flex min-h-11 w-full items-center justify-between rounded-xl px-3 py-2 text-sm font-semibold transition ${
                             active
-                              ? "bg-[var(--primary)] text-white shadow-[0_10px_18px_rgba(236,115,47,0.24)]"
+                              ? "bg-[var(--primary)] text-white shadow-sm"
                               : "text-slate-600 hover:bg-slate-50"
                           }`}
-                          aria-pressed={active}
+                          aria-selected={active}
                         >
                           <span>{formatUnit(hour)}</span>
                           <span className={`text-[10px] font-black uppercase tracking-[0.16em] ${active ? "text-white/80" : "text-slate-300"}`}>
-                            hr
+                            시
                           </span>
                         </button>
                       );
@@ -276,9 +337,9 @@ export function TimePopoverField({
                   </div>
                 </div>
 
-                <div className="rounded-[18px] border border-slate-200 bg-white/80 p-2 shadow-sm">
-                  <p className="px-2 pb-2 text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">Minute</p>
-                  <div className="max-h-56 space-y-1 overflow-y-auto pr-1">
+                <div className="rounded-[var(--radius-card)] border border-slate-200 bg-white p-2 shadow-sm">
+                  <p className="px-2 pb-2 text-xs font-bold text-slate-500">분</p>
+                  <div className="max-h-56 space-y-1 overflow-y-auto pr-1" role="listbox" aria-label="분 선택">
                     {MINUTES.map((minute) => {
                       const active = draftTime.minute === minute;
                       return (
@@ -288,17 +349,20 @@ export function TimePopoverField({
                             minuteButtonRefs.current[minute] = node;
                           }}
                           type="button"
+                          role="option"
                           onClick={() => handleMinuteSelect(minute)}
-                          className={`flex w-full items-center justify-between rounded-2xl px-3 py-2 text-sm font-semibold transition ${
+                          onKeyDown={(event) => handleUnitKeyDown(event, "minute", minute)}
+                          tabIndex={active ? 0 : -1}
+                          className={`flex min-h-11 w-full items-center justify-between rounded-xl px-3 py-2 text-sm font-semibold transition ${
                             active
-                              ? "bg-slate-900 text-white shadow-[0_10px_18px_rgba(15,23,42,0.16)]"
+                              ? "bg-[var(--primary)] text-white shadow-sm"
                               : "text-slate-600 hover:bg-slate-50"
                           }`}
-                          aria-pressed={active}
+                          aria-selected={active}
                         >
                           <span>{formatUnit(minute)}</span>
                           <span className={`text-[10px] font-black uppercase tracking-[0.16em] ${active ? "text-white/80" : "text-slate-300"}`}>
-                            min
+                            분
                           </span>
                         </button>
                       );
@@ -313,18 +377,18 @@ export function TimePopoverField({
                   onClick={() => {
                     onChange("");
                     setDraftTime(getDefaultDraftTime());
-                    setOpen(false);
+                    closePopover();
                   }}
-                  className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-slate-500 transition hover:border-slate-300 hover:text-slate-900"
+                  className="semo-control inline-flex items-center gap-2 border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-600 transition hover:border-slate-300 hover:text-slate-900"
                 >
-                  Clear
+                  지우기
                 </button>
                 <button
                   type="button"
-                  onClick={() => setOpen(false)}
-                  className="inline-flex items-center gap-2 rounded-full bg-slate-900 px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-white transition hover:bg-slate-700"
+                  onClick={closePopover}
+                  className="semo-control inline-flex items-center gap-2 bg-[var(--primary)] px-4 py-2 text-sm font-bold text-white transition hover:brightness-95"
                 >
-                  Done
+                  완료
                 </button>
               </div>
             </div>,

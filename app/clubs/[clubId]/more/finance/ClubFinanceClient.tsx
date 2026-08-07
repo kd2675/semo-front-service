@@ -431,7 +431,7 @@ export function ClubFinanceClient({
                     type="button"
                     aria-label="제출 메뉴 닫기"
                     onClick={() => setShowActionSheet(false)}
-                    className="rounded-full p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+            className="semo-icon-control rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
                   >
                     <span className="material-symbols-outlined">close</span>
                   </button>

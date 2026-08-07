@@ -1,7 +1,6 @@
 "use client";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Manrope } from "next/font/google";
 import { motion, useReducedMotion } from "motion/react";
 import { useEffect, useMemo, useState } from "react";
 
@@ -15,11 +14,6 @@ import {
 import { staggeredFadeUpMotion } from "@/app/lib/motion";
 import { invalidateClubQueries } from "@/app/lib/react-query/common";
 import { updateMemberDirectorySettingsMutationOptions } from "@/app/lib/react-query/members/mutations";
-
-const manrope = Manrope({
-  subsets: ["latin"],
-  weight: ["700", "800"],
-});
 
 type ClubAdminMemberDirectoryClientProps = {
   clubId: string;
@@ -71,7 +65,7 @@ const VISIBILITY_ITEMS: VisibilityItem[] = [
 
 function SectionEyebrow({ children }: { children: string }) {
   return (
-    <p className="text-[11px] font-bold uppercase tracking-[0.28em] text-[#9b7b62]">
+    <p className="text-xs font-bold tracking-wide text-orange-800">
       {children}
     </p>
   );
@@ -86,8 +80,8 @@ function DirectoryStatChip({
 }) {
   return (
     <article className="rounded-[22px] border border-white/80 bg-white/80 px-4 py-3 shadow-[0_14px_30px_rgba(15,23,42,0.06)] backdrop-blur">
-      <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">{label}</p>
-      <p className={`${manrope.className} mt-2 text-xl font-extrabold tracking-tight text-slate-950`}>
+      <p className="text-xs font-bold text-slate-400">{label}</p>
+      <p className="mt-2 text-xl font-extrabold tracking-tight text-slate-950">
         {value}
       </p>
     </article>
@@ -110,7 +104,7 @@ function SettingToggleButton({
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className={`relative mt-1 inline-flex h-8 w-14 shrink-0 rounded-full transition-colors duration-200 ${
+      className={`relative mt-1 inline-flex h-11 w-16 shrink-0 rounded-full transition-colors duration-200 ${
         checked ? "bg-[#ec5b13]" : "bg-slate-200"
       } ${
         disabled ? "cursor-not-allowed opacity-60" : ""
@@ -119,7 +113,7 @@ function SettingToggleButton({
       aria-pressed={checked}
     >
       <span
-        className={`absolute left-0 top-1 h-6 w-6 rounded-full bg-white shadow-sm transition-transform duration-200 ${
+        className={`absolute left-0 top-1.5 size-8 rounded-full bg-white shadow-sm transition-transform duration-200 ${
           checked ? "translate-x-7" : "translate-x-1"
         }`}
       />
@@ -163,25 +157,25 @@ function VisibilitySettingCard({
           <div className="flex flex-wrap items-center gap-2">
             <p className="text-sm font-bold text-slate-900">{item.title}</p>
             <span
-              className={`rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.18em] ${
+              className={`rounded-full px-2.5 py-1 text-xs font-bold ${
                 enabled ? "bg-[#ec5b13]/10 text-[#b4541a]" : "bg-slate-100 text-slate-500"
               }`}
             >
-              {enabled ? "ON" : "OFF"}
+              {enabled ? "켜짐" : "꺼짐"}
             </span>
           </div>
           <p className="mt-1 text-sm leading-5 text-slate-500">{item.description}</p>
           <div className="mt-3 flex flex-wrap items-center gap-2">
             <span
-              className={`rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] ${
+              className={`rounded-full px-2.5 py-1 text-xs font-bold ${
                 enabled ? "bg-[#fff1e4] text-[#b4541a]" : "bg-slate-100 text-slate-500"
               }`}
             >
               {item.impact}
             </span>
-            <p className="text-[11px] leading-5 text-slate-400">{item.hint}</p>
+            <p className="text-xs leading-5 text-slate-400">{item.hint}</p>
           </div>
-          <p className="mt-3 text-[11px] font-semibold text-slate-400">
+          <p className="mt-3 text-xs font-semibold text-slate-400">
             현재 상태: {enabled ? "노출" : "숨김"}
           </p>
         </div>
@@ -213,14 +207,14 @@ function VisibilityInsightCard({
       </div>
 
       <div className="relative">
-        <SectionEyebrow>Privacy vs. Engagement</SectionEyebrow>
+        <SectionEyebrow>공개 범위와 참여</SectionEyebrow>
         <div className="mt-2 flex items-start gap-3">
           <div className="flex size-11 shrink-0 items-center justify-center rounded-[18px] bg-white text-[#ec5b13] shadow-sm">
             <span className="material-symbols-outlined">visibility</span>
           </div>
 
           <div>
-            <h3 className={`${manrope.className} text-xl font-extrabold tracking-tight text-slate-950`}>
+            <h3 className="text-xl font-extrabold tracking-tight text-slate-950">
               공개 범위가 넓을수록 멤버 참여와 발견은 쉬워집니다.
             </h3>
             <p className="mt-2 text-sm leading-6 text-slate-600">
@@ -333,11 +327,11 @@ function AdminPreviewCard({
 
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
-              <h3 className={`${manrope.className} truncate text-lg font-extrabold tracking-tight text-slate-950`}>
+              <h3 className="truncate text-lg font-extrabold tracking-tight text-slate-950">
                 {member.displayName}
               </h3>
               <span
-                className={`rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.18em] ${tone.labelClassName}`}
+                className={`rounded-full px-2.5 py-1 text-xs font-bold ${tone.labelClassName}`}
               >
                 {tone.label}
               </span>
@@ -359,7 +353,7 @@ function AdminPreviewCard({
               member.positions.map((position) => (
                 <span
                   key={`${member.clubProfileId}-${position.clubPositionId}`}
-                  className="rounded-full px-3 py-1.5 text-[11px] font-semibold"
+                  className="rounded-full px-3 py-1.5 text-xs font-semibold"
                   style={{
                     backgroundColor: position.colorHex ? `${position.colorHex}1A` : "#f1f5f9",
                     color: position.colorHex ?? "#475569",
@@ -369,7 +363,7 @@ function AdminPreviewCard({
                 </span>
               ))
             ) : (
-              <span className="rounded-full bg-slate-100 px-3 py-1.5 text-[11px] font-semibold text-slate-600">
+              <span className="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-600">
                 {member.roleLabel}
               </span>
             )}
@@ -378,7 +372,7 @@ function AdminPreviewCard({
 
         <div className="mt-4 rounded-[22px] border border-slate-200/80 bg-slate-50/80 px-3.5 py-3">
           <div className="flex items-center justify-between gap-3">
-            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">
+            <p className="text-xs font-bold text-slate-400">
               Recent Activity
             </p>
             <span className="material-symbols-outlined text-[18px] text-slate-300">history</span>
@@ -469,13 +463,13 @@ export function ClubAdminMemberDirectoryClient({
 
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top,#fff8f2_0%,#f8f6f6_46%,#eef2f6_100%)] text-slate-900">
-      <div className="mx-auto min-h-screen max-w-md bg-[linear-gradient(180deg,rgba(255,248,242,0.68)_0%,rgba(248,246,246,0.94)_26%,#f8f6f6_100%)] pb-40">
+      <div className="semo-page-admin min-h-screen bg-[var(--background-light)] pb-40">
         <ClubPageHeader
           title="회원 디렉터리 설정"
           subtitle={initialData.clubName}
           icon="groups"
           theme="admin"
-          containerClassName="max-w-md"
+          containerClassName="semo-page-admin"
           className="bg-[#f8f6f6]/88"
         />
 
@@ -488,8 +482,8 @@ export function ClubAdminMemberDirectoryClient({
             <div className="absolute -bottom-10 left-6 size-24 rounded-full bg-[#135bec]/8 blur-3xl" />
 
             <div className="relative">
-              <SectionEyebrow>Admin Console</SectionEyebrow>
-              <h2 className={`${manrope.className} mt-3 text-[2rem] font-extrabold leading-[1.05] tracking-tight text-slate-950`}>
+              <SectionEyebrow>관리자 설정</SectionEyebrow>
+              <h2 className="mt-3 text-[2rem] font-extrabold leading-[1.05] tracking-tight text-slate-950">
                 공개 범위와 카드 구성을
                 <br />
                 한 번에 조정합니다.
@@ -514,17 +508,17 @@ export function ClubAdminMemberDirectoryClient({
             {...staggeredFadeUpMotion(1, reduceMotion)}
           >
             <div className="border-b border-slate-200/80 px-5 py-4">
-              <SectionEyebrow>Visibility Controls</SectionEyebrow>
+              <SectionEyebrow>공개 설정</SectionEyebrow>
               <div className="mt-2 flex items-start justify-between gap-3">
                 <div>
-                  <h3 className={`${manrope.className} text-xl font-extrabold tracking-tight text-slate-950`}>
+                  <h3 className="text-xl font-extrabold tracking-tight text-slate-950">
                     컨트롤 카드
                   </h3>
                   <p className="mt-1 text-sm leading-6 text-slate-500">
                     직책, 소개, 활동 노출 기준을 회원 카드 단위로 설정합니다.
                   </p>
                 </div>
-                <span className="rounded-full bg-[#fff1e4] px-3 py-1 text-[11px] font-bold text-[#b4541a]">
+                <span className="rounded-full bg-orange-50 px-3 py-1 text-xs font-bold text-orange-800">
                   즉시 미리보기
                 </span>
               </div>
@@ -561,8 +555,8 @@ export function ClubAdminMemberDirectoryClient({
             <div className="border-b border-slate-200/80 px-5 py-4">
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <SectionEyebrow>Live Preview</SectionEyebrow>
-                  <h3 className={`${manrope.className} mt-2 text-xl font-extrabold tracking-tight text-slate-950`}>
+                  <SectionEyebrow>미리보기</SectionEyebrow>
+                  <h3 className="mt-2 text-xl font-extrabold tracking-tight text-slate-950">
                     회원용 카드 미리보기
                   </h3>
                   <p className="mt-2 text-sm leading-6 text-slate-500">
@@ -571,10 +565,10 @@ export function ClubAdminMemberDirectoryClient({
                 </div>
 
                 <div className="rounded-[20px] border border-slate-200 bg-white px-3 py-2 text-right shadow-sm">
-                  <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">
+                  <p className="text-xs font-bold text-slate-400">
                     Preview
                   </p>
-                  <p className={`${manrope.className} mt-1 text-2xl font-extrabold tracking-tight text-slate-950`}>
+                  <p className="mt-1 text-2xl font-extrabold tracking-tight text-slate-950">
                     {previewMembers.length}
                   </p>
                 </div>
@@ -594,7 +588,7 @@ export function ClubAdminMemberDirectoryClient({
         </main>
 
         <div className="pointer-events-none fixed inset-x-0 bottom-[calc(env(safe-area-inset-bottom)+76px)] z-40 px-4">
-          <div className="pointer-events-auto mx-auto max-w-md rounded-[28px] border border-slate-200/80 bg-white/92 p-3 shadow-[0_20px_50px_rgba(15,23,42,0.14)] backdrop-blur">
+          <div className="semo-page-admin pointer-events-auto rounded-[var(--radius-card)] border border-slate-200 bg-white/95 p-3 shadow-[var(--shadow-floating)] backdrop-blur">
             <button
               type="button"
               onClick={() => void handleSave()}

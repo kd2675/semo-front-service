@@ -3,7 +3,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion, useReducedMotion } from "motion/react";
 import { startTransition, useMemo, useState } from "react";
-import type { CSSProperties } from "react";
 import { ClubModeSwitchFab } from "@/app/components/ClubModeSwitchFab";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import { useAppToast } from "@/app/hooks/useAppToast";
@@ -181,15 +180,7 @@ export function ClubFeedbackClient({
   };
 
   return (
-    <div
-      className="min-h-screen bg-[var(--background-light)] text-slate-900"
-      style={
-        {
-          "--primary": "#135bec",
-          "--background-light": "#f5f8ff",
-        } as CSSProperties
-      }
-    >
+    <div className="semo-user-theme min-h-screen bg-[var(--background-light)] text-slate-900">
       <div className="mx-auto min-h-screen max-w-md bg-[var(--background-light)]">
         <ClubPageHeader
           title="피드백"
@@ -203,7 +194,7 @@ export function ClubFeedbackClient({
             className="overflow-hidden rounded-[28px] border border-[#135bec]/10 bg-[linear-gradient(155deg,rgba(255,255,255,0.96)_0%,rgba(243,247,255,0.96)_58%,rgba(228,238,255,0.92)_100%)] p-5 shadow-[0_20px_48px_rgba(19,91,236,0.12)]"
             {...staggeredFadeUpMotion(0, reduceMotion)}
           >
-            <p className="text-[11px] font-bold uppercase tracking-[0.26em] text-[var(--primary)]">
+            <p className="text-xs font-bold tracking-wide text-[var(--primary)]">
               Feedback Box
             </p>
             <h2 className="mt-3 text-[28px] font-black tracking-[-0.04em] text-slate-900">
@@ -217,7 +208,7 @@ export function ClubFeedbackClient({
 
             <div className="mt-5 grid grid-cols-2 gap-3">
               <div className="rounded-[22px] border border-white/90 bg-white/85 px-4 py-3 shadow-sm">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-400">
+                <p className="text-xs font-semibold text-slate-400">
                   전체 노출
                 </p>
                 <p className="mt-2 text-2xl font-black tracking-tight text-slate-950">
@@ -225,7 +216,7 @@ export function ClubFeedbackClient({
                 </p>
               </div>
               <div className="rounded-[22px] border border-white/90 bg-white/85 px-4 py-3 shadow-sm">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-400">
+                <p className="text-xs font-semibold text-slate-400">
                   내 요청
                 </p>
                 <p className="mt-2 text-2xl font-black tracking-tight text-slate-950">
@@ -276,12 +267,14 @@ export function ClubFeedbackClient({
 
             <div className="mt-4 space-y-3">
               <input
+                aria-label="피드백 제목"
                 value={title}
                 onChange={(event) => setTitle(event.target.value)}
                 placeholder="제목을 입력하세요"
                 className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/10"
               />
               <textarea
+                aria-label="피드백 내용"
                 value={content}
                 onChange={(event) => setContent(event.target.value)}
                 placeholder="상황과 개선 의견을 자세히 적어주세요"
@@ -357,13 +350,13 @@ export function ClubFeedbackClient({
                     {...staggeredFadeUpMotion(index + 3, reduceMotion)}
                   >
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${getStatusTone(item.statusCode)}`}>
+                      <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${getStatusTone(item.statusCode)}`}>
                         {item.statusLabel}
                       </span>
-                      <span className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${getVisibilityTone(item.visibilityScope)}`}>
+                      <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${getVisibilityTone(item.visibilityScope)}`}>
                         {item.visibilityLabel}
                       </span>
-                      <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-bold text-slate-600">
+                      <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-600">
                         {item.feedbackTypeLabel}
                       </span>
                     </div>
@@ -404,13 +397,13 @@ export function ClubFeedbackClient({
             ) : (
               <div className="mt-4 space-y-4">
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${getStatusTone(selectedDetail.statusCode)}`}>
+                  <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${getStatusTone(selectedDetail.statusCode)}`}>
                     {selectedDetail.statusLabel}
                   </span>
-                  <span className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${getVisibilityTone(selectedDetail.visibilityScope)}`}>
+                  <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${getVisibilityTone(selectedDetail.visibilityScope)}`}>
                     {selectedDetail.visibilityLabel}
                   </span>
-                  <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-bold text-slate-600">
+                  <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-600">
                     {selectedDetail.feedbackTypeLabel}
                   </span>
                 </div>

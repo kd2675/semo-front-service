@@ -174,7 +174,7 @@ export function ClubScheduleVoteEditorClient({
               <button
                 type="button"
                 onClick={onRequestClose}
-                className="p-1 text-gray-600"
+                className="semo-icon-control text-gray-600"
                 aria-label="투표 작성 닫기"
               >
                 <span className="material-symbols-outlined">arrow_back</span>
@@ -266,6 +266,7 @@ export function ClubScheduleVoteEditorClient({
                 {options.map((option, index) => (
                   <div key={`option-${index + 1}`} className="flex items-center gap-2">
                     <input
+                      aria-label={`투표 항목 ${index + 1}`}
                       value={option}
                       onChange={(event) => updateOption(index, event.target.value)}
                       className="h-11 flex-1 rounded-lg border border-gray-300 px-4 text-sm shadow-sm outline-none transition focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/20"

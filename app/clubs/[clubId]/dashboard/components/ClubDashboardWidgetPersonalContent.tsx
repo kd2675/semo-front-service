@@ -160,7 +160,7 @@ export function ClubDashboardWidgetPersonalContent({
           <>
             <div className="flex items-start justify-between gap-3">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-violet-600">Recent Attendance</p>
+                <p className="text-xs font-semibold text-violet-600">최근 출석</p>
                 <p className="mt-2 text-base font-bold text-slate-900">평균 출석률 {recentAttendanceRate ?? 0}%</p>
               </div>
               <span className="rounded-full bg-violet-50 px-2 py-0.5 text-[11px] font-bold text-violet-700">
@@ -209,7 +209,7 @@ export function ClubDashboardWidgetPersonalContent({
           >
             <div className="flex items-start justify-between gap-3">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-emerald-600">My Finance</p>
+                <p className="text-xs font-semibold text-emerald-600">내 회비</p>
                 <p className="mt-2 line-clamp-2 text-base font-bold text-slate-900">{nextFinanceObligation.title}</p>
               </div>
               <span
@@ -255,12 +255,12 @@ export function ClubDashboardWidgetPersonalContent({
           <>
             <div className="grid grid-cols-2 gap-2">
               <div className="rounded-xl bg-teal-50 px-3 py-3">
-                <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-teal-700">Pending</p>
+                <p className="text-xs font-bold text-teal-700">대기 중</p>
                 <p className="mt-2 text-sm font-bold text-slate-900">{financeData.totalPendingAmountLabel}</p>
                 <p className="mt-1 text-xs text-slate-500">{financeData.pendingPaymentCount}건 미납</p>
               </div>
               <div className="rounded-xl bg-emerald-50 px-3 py-3">
-                <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-emerald-700">Paid</p>
+                <p className="text-xs font-bold text-emerald-700">납부</p>
                 <p className="mt-2 text-sm font-bold text-slate-900">{financeData.totalPaidAmountLabel}</p>
                 <p className="mt-1 text-xs text-slate-500">{financeData.paidPaymentCount}건 완료</p>
               </div>
@@ -297,7 +297,7 @@ export function ClubDashboardWidgetPersonalContent({
             href={`/clubs/${clubId}/more/polls/${latestOngoingPoll.voteId}`}
             className="block rounded-xl border border-amber-100 bg-white p-4 shadow-sm transition-all hover:border-amber-300"
           >
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-amber-600">Ongoing Poll</p>
+            <p className="text-xs font-semibold text-amber-600">진행 중인 투표</p>
             <p className="mt-2 line-clamp-2 text-base font-bold text-slate-900">{latestOngoingPoll.title}</p>
             <p className="mt-1 text-sm text-slate-500">
               {latestOngoingPoll.votePeriodLabel}
@@ -334,15 +334,15 @@ export function ClubDashboardWidgetPersonalContent({
           <>
             <div className="grid grid-cols-3 gap-2">
               <div className="rounded-xl bg-slate-100 px-3 py-3">
-                <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-600">Waiting</p>
+                <p className="text-xs font-bold text-slate-600">대기</p>
                 <p className="mt-2 text-base font-bold text-slate-900">{pollData.waitingCount}</p>
               </div>
               <div className="rounded-xl bg-orange-50 px-3 py-3">
-                <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-orange-700">Ongoing</p>
+                <p className="text-xs font-bold text-orange-700">진행</p>
                 <p className="mt-2 text-base font-bold text-slate-900">{pollData.ongoingCount}</p>
               </div>
               <div className="rounded-xl bg-emerald-50 px-3 py-3">
-                <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-emerald-700">Closed</p>
+                <p className="text-xs font-bold text-emerald-700">종료</p>
                 <p className="mt-2 text-base font-bold text-slate-900">{pollData.closedCount}</p>
               </div>
             </div>

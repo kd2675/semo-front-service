@@ -9,7 +9,7 @@ function ShellLine({ className }: { className: string }) {
 function AdminShellFrame({
   titleWidthClassName,
   subtitleWidthClassName,
-  mainClassName = "semo-nav-bottom-space mx-auto w-full max-w-5xl space-y-6 px-4 pt-4",
+  mainClassName = "semo-page-admin semo-nav-bottom-space space-y-6 px-4 pt-4",
   children,
 }: {
   titleWidthClassName: string;
@@ -21,7 +21,7 @@ function AdminShellFrame({
     <div className="min-h-screen bg-[#f8f6f6] text-slate-900">
       <div className="min-h-screen bg-[#f8f6f6]">
         <header className="sticky top-0 z-20 border-b border-slate-200 bg-[#f8f6f6]/85 backdrop-blur-md">
-          <div className="mx-auto flex w-full max-w-5xl items-center p-4">
+          <div className="semo-page-admin flex items-center p-4">
             <div className="flex items-center gap-3">
               <div className="size-10 rounded-xl bg-[var(--primary)]/10" />
               <div className="space-y-2">
@@ -49,9 +49,9 @@ function AdminMobileShellFrame({
 }) {
   return (
     <div className="min-h-screen bg-[#f8f6f6] text-slate-900">
-      <div className="mx-auto min-h-screen max-w-md bg-[#f8f6f6] pb-40">
+      <div className="semo-page-admin min-h-screen bg-[#f8f6f6] pb-40">
         <header className="sticky top-0 z-20 border-b border-slate-200 bg-[#f8f6f6]/85 backdrop-blur-md">
-          <div className="mx-auto flex w-full max-w-md items-center gap-3 p-4">
+          <div className="flex w-full items-center gap-3 p-4">
             <div className="size-10 rounded-xl bg-[var(--primary)]/10" />
             <div className="space-y-2">
               <ShellLine className={`h-5 ${titleWidthClassName}`} />
@@ -130,7 +130,7 @@ export function AdminHomeLoadingShell() {
 
 export function AdminMenuLoadingShell() {
   return (
-    <AdminShellFrame titleWidthClassName="w-36" subtitleWidthClassName="w-24" mainClassName="mx-auto w-full max-w-5xl pb-40">
+    <AdminShellFrame titleWidthClassName="w-36" subtitleWidthClassName="w-24" mainClassName="semo-page-admin pb-40">
       <section className="p-4">
         <div className="mb-4 flex items-center gap-2">
           <div className="size-5 rounded-full bg-slate-200" />
@@ -205,7 +205,7 @@ export function AdminStatsLoadingShell() {
     <AdminShellFrame
       titleWidthClassName="w-32"
       subtitleWidthClassName="w-24"
-      mainClassName="semo-nav-bottom-space mx-auto max-w-md"
+      mainClassName="semo-page-admin semo-nav-bottom-space"
     >
       <section className="grid grid-cols-2 gap-3 p-4">
         {Array.from({ length: 4 }, (_, index) => (
@@ -246,7 +246,7 @@ export function AdminStatsLoadingShell() {
 
 export function AdminMembersLoadingShell() {
   return (
-    <AdminShellFrame titleWidthClassName="w-28" subtitleWidthClassName="w-24" mainClassName="min-h-screen bg-[#f6f6f8]">
+    <AdminShellFrame titleWidthClassName="w-28" subtitleWidthClassName="w-24" mainClassName="semo-page-admin min-h-screen bg-[#f6f6f8]">
       <div className="sticky top-[73px] z-10 border-b border-slate-200 bg-white">
         <div className="px-4 pb-4">
           <div className="h-11 w-full rounded-xl bg-slate-100" />
@@ -294,7 +294,7 @@ export function AdminAttendanceLoadingShell() {
     <div className="min-h-screen bg-[#f8f6f6] text-slate-900">
       <div className="min-h-screen bg-[#f8f6f6]">
         <header className="sticky top-0 z-20 border-b border-slate-200 bg-[#f8f6f6]/85 backdrop-blur-md">
-          <div className="mx-auto flex w-full max-w-md items-center p-4">
+          <div className="semo-page-admin flex items-center p-4">
             <div className="flex items-center gap-3">
               <div className="size-10 rounded-xl bg-[var(--primary)]/10" />
               <div className="space-y-2">
@@ -305,7 +305,7 @@ export function AdminAttendanceLoadingShell() {
           </div>
         </header>
 
-        <main className="semo-nav-bottom-space mx-auto w-full max-w-md space-y-4 px-4 pt-4">
+        <main className="semo-page-admin semo-nav-bottom-space space-y-4 px-4 pt-4">
           <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
             <div className="flex items-start justify-between gap-3">
               <div className="space-y-3">

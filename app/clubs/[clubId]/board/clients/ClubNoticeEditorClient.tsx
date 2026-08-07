@@ -324,7 +324,7 @@ export function ClubNoticeEditorClient({
               <button
                 type="button"
                 onClick={onRequestClose}
-                className="flex size-10 items-center justify-start text-slate-900"
+                className="semo-icon-control justify-start text-slate-900"
                 aria-label="공지 작성 닫기"
               >
                 <span className="material-symbols-outlined">close</span>
@@ -333,7 +333,7 @@ export function ClubNoticeEditorClient({
               <RouterLink
                 href={backHref}
                 replace={isModal}
-                className="flex size-10 items-center justify-start text-slate-900"
+                className="flex size-11 items-center justify-start text-slate-900"
                 aria-label="공지 목록으로 돌아가기"
               >
                 <span className="material-symbols-outlined">{isModal ? "close" : "arrow_back"}</span>

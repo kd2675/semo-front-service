@@ -1,8 +1,9 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { useEffect, useMemo } from "react";
-import { useRouter } from "next/navigation";
+import { useMemo } from "react";
+import { ClubRouteErrorState } from "@/app/components/ClubRouteState";
+import { getQueryErrorMessage } from "@/app/lib/queryUtils";
 import { adminActivitiesPreviewQueryOptions } from "@/app/lib/react-query/activities/queries";
 import { myClubQueryOptions } from "@/app/lib/react-query/club/queries";
 import { adminMembersQueryOptions } from "@/app/lib/react-query/members/queries";
@@ -179,7 +180,6 @@ function buildMemberActivityItems(members: ClubAdminMembersResponse | null): Clu
 }
 
 export function ClubAdminStatsFallbackClient({ clubId }: ClubAdminStatsFallbackClientProps) {
-  const router = useRouter();
   const clubQuery = useQuery(myClubQueryOptions(clubId));
   const club = clubQuery.data ?? null;
   const isAdmin = club?.admin === true;
@@ -192,12 +192,6 @@ export function ClubAdminStatsFallbackClient({ clubId }: ClubAdminStatsFallbackC
     ...adminActivitiesPreviewQueryOptions(clubId, 5),
     enabled: isAdmin,
   });
-
-  useEffect(() => {
-    if (!clubQuery.isPending && (clubQuery.isError || !club || !club.admin)) {
-      router.replace(`/clubs/${clubId}`);
-    }
-  }, [club, clubId, clubQuery.isError, clubQuery.isPending, router]);
 
   const members = membersQuery.data ?? null;
   const activities = useMemo(
@@ -223,6 +217,31 @@ export function ClubAdminStatsFallbackClient({ clubId }: ClubAdminStatsFallbackC
     [members],
   );
   const recentActivities = useMemo(() => toActivityItems(activities), [activities]);
+
+  if (club && !club.admin) {
+    return (
+      <ClubRouteErrorState
+        title="통계 대시보드"
+        heading="관리자 권한이 필요합니다"
+        message="클럽 통계는 관리자만 확인할 수 있습니다."
+        backHref={`/clubs/${clubId}`}
+        theme="admin"
+        icon="lock"
+      />
+    );
+  }
+
+  if (clubQuery.isError && !club) {
+    return (
+      <ClubRouteErrorState
+        title="통계 대시보드"
+        message={getQueryErrorMessage(clubQuery.error, "클럽 통계를 불러오지 못했습니다.")}
+        backHref={`/clubs/${clubId}/admin`}
+        theme="admin"
+        onRetry={() => void clubQuery.refetch()}
+      />
+    );
+  }
 
   if (isInitialLoading || !club) {
     return <AdminStatsLoadingShell />;

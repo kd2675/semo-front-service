@@ -34,7 +34,7 @@ export function DashboardTabPanel({
       <section className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Dashboard KPI</p>
+            <p className="text-xs font-semibold tracking-wide text-slate-400">재무 요약</p>
             <h3 className="mt-2 text-xl font-bold">현재 운영 중인 회비/청구 흐름</h3>
             <p className="mt-2 text-sm leading-6 text-slate-500">
               아직은 지출·정산 장부가 아니라 청구와 수납 현황에 집중합니다. 현재 숫자는 모두 실제 obligation / payment 데이터 기준입니다.
@@ -109,7 +109,7 @@ export function BillingTabPanel({
     <motion.section className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm" {...staggeredFadeUpMotion(2, reduceMotion)}>
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Billing Management</p>
+          <p className="text-xs font-semibold tracking-wide text-slate-400">납부 관리</p>
           <h3 className="mt-2 text-xl font-bold">회비 관리</h3>
           <p className="mt-2 text-sm leading-6 text-slate-500">운영비, 가입비, 행사비처럼 모임 기준 청구를 발행하고 멤버별 납부 상태를 마감합니다.</p>
         </div>
@@ -129,6 +129,7 @@ export function BillingTabPanel({
             ))}
           </div>
           <input
+            aria-label="재정 항목 검색"
             value={searchQuery}
             onChange={(event) => onSearchQueryChange(event.target.value)}
             placeholder="항목명, 발행자, 멤버명, 메모 검색"
@@ -260,7 +261,7 @@ export function ExpensesTabPanel({
       <section className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Expense Operations</p>
+            <p className="text-xs font-semibold tracking-wide text-slate-400">지출 운영</p>
             <h3 className="mt-2 text-xl font-bold">지출 관리</h3>
             <p className="mt-2 text-sm leading-6 text-slate-500">회원 선지출과 환불 요청을 검토하고, 운영진이 직접 입력한 지출을 같은 화면에서 관리합니다.</p>
           </div>
@@ -276,7 +277,7 @@ export function ExpensesTabPanel({
         <div className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Member Requests</p>
+              <p className="text-xs font-semibold tracking-wide text-slate-400">멤버 요청</p>
               <h4 className="mt-1 text-lg font-bold text-slate-900">선지출 / 환불 요청</h4>
             </div>
             <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-500">{advanceRequestItems.length}건</span>
@@ -302,7 +303,7 @@ export function ExpensesTabPanel({
         <div className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Expense Ledger</p>
+              <p className="text-xs font-semibold tracking-wide text-slate-400">지출 장부</p>
               <h4 className="mt-1 text-lg font-bold text-slate-900">운영 지출 입력 내역</h4>
             </div>
             <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-500">{expenses.length}건</span>
@@ -338,7 +339,7 @@ export function SettlementsTabPanel({
       <section className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Settlement Operations</p>
+            <p className="text-xs font-semibold tracking-wide text-slate-400">정산 운영</p>
             <h3 className="mt-2 text-xl font-bold">정산 관리</h3>
             <p className="mt-2 text-sm leading-6 text-slate-500">행사별 분담 계산은 다음 단계에서 붙이고, 지금은 회원이 올린 정산 요청을 운영 관점에서 검토합니다.</p>
           </div>
@@ -349,7 +350,7 @@ export function SettlementsTabPanel({
       <section className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm">
         <div className="flex items-center justify-between gap-3">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Settlement Queue</p>
+            <p className="text-xs font-semibold tracking-wide text-slate-400">정산 대기열</p>
             <h4 className="mt-1 text-lg font-bold text-slate-900">회원 정산 요청</h4>
           </div>
           <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-500">{settlementRequestItems.length}건</span>

@@ -160,7 +160,7 @@ export function ClubScheduleVoteDetailClient({
                 type="button"
                 onClick={onRequestClose}
                 aria-label="투표 상세 닫기"
-                className="rounded-full p-1 transition-colors hover:bg-gray-100"
+                className="semo-icon-control transition-colors hover:bg-gray-100"
               >
                 <span className="material-symbols-outlined text-[24px] text-gray-700">close</span>
               </button>

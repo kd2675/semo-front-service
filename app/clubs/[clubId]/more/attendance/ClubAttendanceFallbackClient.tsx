@@ -1,9 +1,9 @@
 "use client";
 
 import { useQueries } from "@tanstack/react-query";
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
+import { ClubRouteErrorState } from "@/app/components/ClubRouteState";
+import { getQueryErrorMessage } from "@/app/lib/queryUtils";
 import { attendanceQueryOptions } from "@/app/lib/react-query/attendance/queries";
 import { myClubQueryOptions } from "@/app/lib/react-query/club/queries";
 import { ClubAttendanceClient } from "./ClubAttendanceClient";
@@ -15,31 +15,24 @@ type ClubAttendanceFallbackClientProps = {
 export function ClubAttendanceFallbackClient({
   clubId,
 }: ClubAttendanceFallbackClientProps) {
-  const router = useRouter();
   const [clubQuery, attendanceQuery] = useQueries({
     queries: [myClubQueryOptions(clubId), attendanceQueryOptions(clubId)],
   });
   const club = clubQuery.data ?? null;
   const attendance = attendanceQuery.data ?? null;
 
-  useEffect(() => {
-    if (
-      !clubQuery.isPending &&
-      !attendanceQuery.isPending &&
-      (clubQuery.isError || attendanceQuery.isError || !club || !attendance)
-    ) {
-        router.replace(`/clubs/${clubId}`);
-    }
-  }, [
-    attendance,
-    attendanceQuery.isError,
-    attendanceQuery.isPending,
-    club,
-    clubId,
-    clubQuery.isError,
-    clubQuery.isPending,
-    router,
-  ]);
+  const error = clubQuery.error ?? attendanceQuery.error;
+
+  if ((clubQuery.isError || attendanceQuery.isError) && (!club || !attendance)) {
+    return (
+      <ClubRouteErrorState
+        title="출석 체크"
+        message={getQueryErrorMessage(error, "출석 정보를 불러오지 못했습니다.")}
+        backHref={`/clubs/${clubId}`}
+        onRetry={() => void Promise.all([clubQuery.refetch(), attendanceQuery.refetch()])}
+      />
+    );
+  }
 
   if (!club || !attendance) {
     return (
