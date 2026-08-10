@@ -39,6 +39,8 @@ function visibilityLabel(visibilityScope: string) {
       return "클럽 멤버 공개";
     case "OWNER_AND_OPERATORS":
       return "요청자·재정 운영진 공개";
+    case "HANDOVER_OPERATORS":
+      return "인수인계 운영진 공개";
     default:
       return "작성자·운영진 공개";
   }

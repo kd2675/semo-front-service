@@ -6,7 +6,7 @@ const IMAGE_BASE = process.env.NEXT_PUBLIC_IMAGE_BASE_URL ?? "http://localhost:8
 export const ATTACHMENT_MAX_SIZE_BYTES = 20 * 1024 * 1024;
 export const ATTACHMENT_ACCEPT = ".pdf,.txt,.csv,.docx,.xlsx,.pptx,.hwp,.hwpx,.zip";
 
-export type ResourceAttachmentType = "TODO_ITEM" | "FINANCE_REQUEST" | "FEEDBACK";
+export type ResourceAttachmentType = "TODO_ITEM" | "FINANCE_REQUEST" | "FEEDBACK" | "HANDOVER_NOTE";
 
 export type ResourceAttachment = {
   attachmentId: number;
@@ -17,7 +17,7 @@ export type ResourceAttachment = {
   originalFileName: string;
   contentType: string;
   sizeBytes: number;
-  visibilityScope: "CLUB" | "OWNER_AND_OPERATORS" | "OWNER_AND_ADMIN";
+  visibilityScope: "CLUB" | "OWNER_AND_OPERATORS" | "OWNER_AND_ADMIN" | "HANDOVER_OPERATORS";
   downloadUrl: string;
   createdAt: string | null;
 };

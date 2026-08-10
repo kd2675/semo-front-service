@@ -32,6 +32,7 @@ const FEATURE_DESCRIPTIONS: Record<string, string> = {
   FEEDBACK: "운영진에게 비공개 피드백을 보내고 답변을 확인합니다.",
   JOIN_REQUEST: "가입 신청 대기열을 검토하고 승인 또는 반려합니다.",
   ROLE_MANAGEMENT: "직책별 책임과 세부 권한을 구성하고 멤버에게 배정합니다.",
+  HANDOVER: "운영 임기, 집행부, 미완료 업무와 다음 담당자 메모를 한곳에서 관리합니다.",
 };
 
 const SCHEDULE_FEATURE_KEYS = new Set(["SCHEDULE_MANAGE", "POLL", "ATTENDANCE"]);
@@ -181,6 +182,9 @@ export function buildAdminMoreNavigation(features: ClubFeatureSummary[], clubId:
         break;
       case "ROLE_MANAGEMENT":
         items.push(featureItem(feature, "OPERATIONS", { label: "조직·권한", href: `/clubs/${clubId}/admin/more/roles` }));
+        break;
+      case "HANDOVER":
+        items.push(featureItem(feature, "OPERATIONS", { label: "인수인계 센터", href: `/clubs/${clubId}/admin/more/handover` }));
         break;
       case "TODO":
         items.push(featureItem(feature, "OPERATIONS", { label: "업무 운영", href: `/clubs/${clubId}/admin/more/todos` }));
