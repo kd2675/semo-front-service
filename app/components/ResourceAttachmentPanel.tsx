@@ -6,6 +6,7 @@ import { useRef, useState } from "react";
 import { useAppToast } from "@/app/hooks/useAppToast";
 import {
   ATTACHMENT_ACCEPT,
+  downloadResourceAttachment,
   type ResourceAttachmentType,
   uploadTempAttachment,
 } from "@/app/lib/clubs";
@@ -58,6 +59,7 @@ export function ResourceAttachmentPanel({
 }: ResourceAttachmentPanelProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
+  const [downloadingAttachmentId, setDownloadingAttachmentId] = useState<number | null>(null);
   const queryClient = useQueryClient();
   const { showToast } = useAppToast();
   const attachmentsQuery = useQuery(
@@ -103,6 +105,29 @@ export function ResourceAttachmentPanel({
       showToast("첨부파일을 삭제했습니다.", "success");
     } catch (error) {
       showToast(error instanceof Error ? error.message : "첨부파일을 삭제하지 못했습니다.", "error");
+    }
+  };
+
+  const handleDownload = async (attachmentId: number, originalFileName: string) => {
+    if (downloadingAttachmentId != null) return;
+    setDownloadingAttachmentId(attachmentId);
+    try {
+      const result = await downloadResourceAttachment(clubId, attachmentId);
+      if (!result.ok || !result.data) {
+        throw new Error(result.message || "첨부파일을 다운로드하지 못했습니다.");
+      }
+      const objectUrl = URL.createObjectURL(result.data);
+      const anchor = document.createElement("a");
+      anchor.href = objectUrl;
+      anchor.download = originalFileName;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      URL.revokeObjectURL(objectUrl);
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : "첨부파일을 다운로드하지 못했습니다.", "error");
+    } finally {
+      setDownloadingAttachmentId(null);
     }
   };
 
@@ -160,15 +185,17 @@ export function ResourceAttachmentPanel({
               <span className={`material-symbols-outlined text-[21px] ${accentClassName}`} aria-hidden="true">
                 attach_file
               </span>
-              <a
-                href={attachment.downloadUrl}
-                className="min-w-0 flex-1 rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]/30"
+              <button
+                type="button"
+                onClick={() => void handleDownload(attachment.attachmentId, attachment.originalFileName)}
+                disabled={downloadingAttachmentId != null}
+                className="min-w-0 flex-1 rounded-sm text-left outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]/30 disabled:cursor-wait disabled:opacity-60"
               >
                 <span className="block truncate text-xs font-bold text-slate-800">{attachment.originalFileName}</span>
                 <span className="mt-0.5 block text-[11px] text-slate-400">
-                  {formatFileSize(attachment.sizeBytes)} · {visibilityLabel(attachment.visibilityScope)}
+                  {downloadingAttachmentId === attachment.attachmentId ? "다운로드 중..." : `${formatFileSize(attachment.sizeBytes)} · ${visibilityLabel(attachment.visibilityScope)}`}
                 </span>
-              </a>
+              </button>
               {canDelete ? (
                 <button
                   type="button"

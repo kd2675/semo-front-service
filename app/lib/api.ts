@@ -86,33 +86,43 @@ function shouldSendCredentials(credentials?: RequestCredentials): boolean {
   return (credentials ?? "include") === "include";
 }
 
+function createRequestHeaders(
+  additionalHeaders: Record<string, string> = {},
+  includeJsonContentType = true,
+): Record<string, string> {
+  const token = getAccessToken();
+  const headers: Record<string, string> = {
+    ...(includeJsonContentType ? { "Content-Type": "application/json" } : {}),
+    ...additionalHeaders,
+  };
+
+  if (!token) {
+    return headers;
+  }
+
+  headers.Authorization = `Bearer ${token}`;
+  if (!isGatewayMode) {
+    const user = getUserFromToken(token);
+    if (user?.username) {
+      headers["X-User-Name"] = encodeURIComponent(user.username);
+    }
+    if (user?.userKey) {
+      headers["X-User-Key"] = user.userKey;
+    }
+    if (user?.role) {
+      headers["X-User-Role"] = user.role;
+    }
+  }
+  return headers;
+}
+
 async function requestJson<T>(
   path: string,
   options: RequestOptions = {},
   retried = false,
 ): Promise<ApiResult<T>> {
   const method = options.method ?? "GET";
-  const token = getAccessToken();
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-    ...(options.headers ?? {}),
-  };
-
-  if (token) {
-    headers.Authorization = `Bearer ${token}`;
-    if (!isGatewayMode) {
-      const user = getUserFromToken(token);
-      if (user?.username) {
-        headers["X-User-Name"] = encodeURIComponent(user.username);
-      }
-      if (user?.userKey) {
-        headers["X-User-Key"] = user.userKey;
-      }
-      if (user?.role) {
-        headers["X-User-Role"] = user.role;
-      }
-    }
-  }
+  const headers = createRequestHeaders(options.headers);
 
   try {
     const response = await apiClient.request<string>({
@@ -197,11 +207,69 @@ async function requestJson<T>(
   }
 }
 
+async function requestBlob(path: string, retried = false): Promise<ApiResult<Blob>> {
+  try {
+    const response = await apiClient.request<Blob>({
+      url: path,
+      baseURL: SEMO_API_BASE,
+      method: "GET",
+      headers: createRequestHeaders({}, false),
+      withCredentials: true,
+      responseType: "blob",
+    });
+
+    if (response.status === 401 && !retried) {
+      const refreshedToken = await refreshAccessToken();
+      if (refreshedToken) {
+        return requestBlob(path, true);
+      }
+      clearAccessToken();
+      notifyAuthExpired("refresh_failed");
+    }
+
+    if (response.status >= 200 && response.status < 300) {
+      return {
+        ok: true,
+        status: response.status,
+        data: response.data,
+      };
+    }
+
+    const parsed = parseResponseBody(await response.data.text());
+    return {
+      ok: false,
+      status: response.status,
+      data: null,
+      message: isEnvelope(parsed)
+        ? parsed.message
+        : (typeof parsed === "string" && parsed.trim()) || "파일 다운로드에 실패했습니다.",
+      code: isEnvelope(parsed) ? parsed.code : undefined,
+    };
+  } catch (error) {
+    if (axios.isAxiosError(error) && error.code === "ECONNABORTED") {
+      return {
+        ok: false,
+        data: null,
+        message: "파일 서버 응답이 지연되고 있습니다. 잠시 후 다시 시도해주세요.",
+      };
+    }
+    return {
+      ok: false,
+      data: null,
+      message: error instanceof Error ? error.message : "파일 다운로드 중 네트워크 오류가 발생했습니다.",
+    };
+  }
+}
+
 export function getJson<T>(
   path: string,
   headers?: Record<string, string>,
 ): Promise<ApiResult<T>> {
   return requestJson(path, { method: "GET", headers });
+}
+
+export function getBlob(path: string): Promise<ApiResult<Blob>> {
+  return requestBlob(path);
 }
 
 export function postAuthJson<T>(

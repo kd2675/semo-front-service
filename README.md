@@ -82,10 +82,14 @@ NEXT_PUBLIC_API_URL=http://localhost:8080
   - `401` 발생 시 `/auth/refresh` 재시도
   - `web-common-core`의 `{ success, code, message }` 래퍼와 일반 JSON 둘 다 처리
   - 에러 응답도 `data` 없는 공통 envelope으로 파싱합니다.
+  - 보호 첨부 다운로드는 같은 인증/refresh 흐름의 binary 요청으로 처리합니다.
 - `app/lib/clubs.ts`
   - semo 도메인 API 타입과 함수 집합
 - `app/lib/imageUpload.ts`
   - 이미지 서버로 임시 업로드
+- `app/lib/semo/attachment.ts`, `app/components/ResourceAttachmentPanel.tsx`
+  - 일반 문서 파일은 이미지 서버에 임시 업로드한 뒤 SEMO 리소스에 등록
+  - 다운로드는 최종 이미지 서버 URL을 직접 열지 않고 SEMO가 리소스 권한을 재검사하는 보호 API를 호출
 
 ### Feature modular navigation
 - More 메뉴와 영구 허브는 `/api/semo/v1/clubs/{clubId}/more/summary`의 기능 순서, capability, 미처리 건수, 즐겨찾기, 최근 사용 정보를 기준으로 렌더링합니다.
@@ -211,6 +215,7 @@ NEXT_PUBLIC_API_URL=http://localhost:8080
 - 직책관리는 `ADMIN_ONLY` 기능으로, 직책 생성/수정/삭제와 멤버 할당 화면이 따로 있습니다. 직책 변경 이력은 감사 기록이므로 삭제할 수 없습니다.
 - 피드백은 기본 비공개이며 익명 제출자의 신원은 관리자에게도 노출하지 않습니다.
 - 업무 삭제는 이력 보존을 위해 취소 상태 보관으로 처리하며, 신청이 진행 중인 업무는 먼저 신청을 정리해야 합니다.
+- 업무·재정·피드백·인수인계·결정 기록의 첨부는 공개 범위 라벨을 표시하며, 다운로드 시에도 목록 조회와 동일한 권한 검사를 다시 거칩니다.
 
 ## Key Paths
 

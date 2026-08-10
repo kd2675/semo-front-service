@@ -1,6 +1,6 @@
 import axios from "axios";
 
-import { deleteJson, getJson, postJson } from "@/app/lib/api";
+import { deleteJson, getBlob, getJson, postJson } from "@/app/lib/api";
 
 const IMAGE_BASE = process.env.NEXT_PUBLIC_IMAGE_BASE_URL ?? "http://localhost:8081";
 export const ATTACHMENT_MAX_SIZE_BYTES = 20 * 1024 * 1024;
@@ -66,6 +66,10 @@ export function deleteResourceAttachment(clubId: string, attachmentId: number) {
   return deleteJson<DeleteResourceAttachmentResult>(
     `/api/semo/v1/clubs/${clubId}/attachments/${attachmentId}`,
   );
+}
+
+export function downloadResourceAttachment(clubId: string, attachmentId: number) {
+  return getBlob(`/api/semo/v1/clubs/${clubId}/attachments/${attachmentId}/download`);
 }
 
 export async function uploadTempAttachment(
