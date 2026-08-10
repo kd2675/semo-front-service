@@ -41,6 +41,8 @@ function visibilityLabel(visibilityScope: string) {
       return "요청자·재정 운영진 공개";
     case "HANDOVER_OPERATORS":
       return "인수인계 운영진 공개";
+    case "DECISION_OPERATORS":
+      return "회의록·결정 운영진 공개";
     default:
       return "작성자·운영진 공개";
   }

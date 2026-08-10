@@ -8,6 +8,7 @@ import type {
   ClubScheduleResponse,
   ClubTournamentHomeResponse,
 } from "@/app/lib/clubs";
+import type { ClubDecisionLog } from "@/app/lib/semo/decision";
 
 export type ClubDashboardWidgetCardProps = {
   clubId: string;
@@ -39,6 +40,9 @@ export type ClubDashboardWidgetCardProps = {
   bracketData: ClubBracketHomeResponse | null;
   bracketLoading: boolean;
   bracketError: string | null;
+  decisionData: ClubDecisionLog | null;
+  decisionLoading: boolean;
+  decisionError: string | null;
   onRemove: (widgetKey: string) => void;
   onDragStart: (widgetKey: string) => void;
   onDragOver: (widgetKey: string) => void;

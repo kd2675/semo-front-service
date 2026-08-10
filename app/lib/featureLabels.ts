@@ -14,6 +14,7 @@ const FEATURE_LABELS: Record<string, string> = {
   TODO: "할 일",
   ROLE_MANAGEMENT: "직책 관리",
   HANDOVER: "인수인계 센터",
+  DECISION_LOG: "회의록·결정",
 };
 
 export function getFeatureDisplayName(feature: ClubFeatureSummary) {

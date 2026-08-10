@@ -28,6 +28,7 @@ import {
   type ClubScheduleResponse,
 } from "@/app/lib/clubs";
 import { staggeredFadeUpMotion } from "@/app/lib/motion";
+import { getClubDecisionLog, type ClubDecisionLog } from "@/app/lib/semo/decision";
 import { getQueryErrorMessage } from "@/app/lib/queryUtils";
 import {
   updateDashboardWidgetsMutationOptions,
@@ -55,6 +56,7 @@ import {
   isPollWidgetKey,
   isScheduleWidgetKey,
   isTournamentWidgetKey,
+  isDecisionWidgetKey,
   normalizeSortOrder,
   reorderEnabledWidgets,
 } from "./utils/dashboardWidgetUtils";
@@ -97,6 +99,9 @@ export function ClubDashboardFallbackClient({
   const [bracketData, setBracketData] = useState<ClubBracketHomeResponse | null>(null);
   const [bracketLoading, setBracketLoading] = useState(false);
   const [bracketError, setBracketError] = useState<string | null>(null);
+  const [decisionData, setDecisionData] = useState<ClubDecisionLog | null>(null);
+  const [decisionLoading, setDecisionLoading] = useState(false);
+  const [decisionError, setDecisionError] = useState<string | null>(null);
   const { showToast, clearToast } = useAppToast();
   const saveWidgetsMutation = useMutation(updateDashboardWidgetsMutationOptions(clubId, "USER_HOME"));
   const editorQuery = useQuery({
@@ -225,6 +230,10 @@ export function ClubDashboardFallbackClient({
   );
   const hasFinanceWidget = useMemo(
     () => hasEnabledAvailableWidget(dashboardWidgetSource, isFinanceWidgetKey),
+    [dashboardWidgetSource],
+  );
+  const hasDecisionWidget = useMemo(
+    () => hasEnabledAvailableWidget(dashboardWidgetSource, isDecisionWidgetKey),
     [dashboardWidgetSource],
   );
 
@@ -364,6 +373,21 @@ export function ClubDashboardFallbackClient({
     setBracketData(result.data);
     setBracketLoading(false);
   }, [clubId, hasBracketWidget]);
+
+  const loadDecisionData = useCallback(async () => {
+    if (!hasDecisionWidget) return;
+    setDecisionLoading(true);
+    setDecisionError(null);
+    const result = await getClubDecisionLog(clubId);
+    if (!result.ok || !result.data) {
+      setDecisionData(null);
+      setDecisionError(result.message ?? "회의록·결정을 불러오지 못했습니다.");
+      setDecisionLoading(false);
+      return;
+    }
+    setDecisionData(result.data);
+    setDecisionLoading(false);
+  }, [clubId, hasDecisionWidget]);
 
   const persistEditorWidgets = useCallback(
     async (nextWidgets: ClubDashboardWidgetSummary[], successMessage: string) => {
@@ -546,6 +570,12 @@ export function ClubDashboardFallbackClient({
     };
   }, [hasBracketWidget, loadBracketData]);
 
+  useEffect(() => {
+    if (!hasDecisionWidget) return;
+    const timerId = window.setTimeout(() => { void loadDecisionData(); }, 0);
+    return () => window.clearTimeout(timerId);
+  }, [hasDecisionWidget, loadDecisionData]);
+
   if (isLoading && !club && !error) {
     return <ClubDashboardLoadingShell />;
   }
@@ -700,6 +730,9 @@ export function ClubDashboardFallbackClient({
                     bracketData={isBracketWidgetKey(widget.widgetKey) ? bracketData : null}
                     bracketLoading={isBracketWidgetKey(widget.widgetKey) && bracketLoading}
                     bracketError={isBracketWidgetKey(widget.widgetKey) ? bracketError : null}
+                    decisionData={isDecisionWidgetKey(widget.widgetKey) ? decisionData : null}
+                    decisionLoading={isDecisionWidgetKey(widget.widgetKey) && decisionLoading}
+                    decisionError={isDecisionWidgetKey(widget.widgetKey) ? decisionError : null}
                     onRemove={() => {}}
                     onDragStart={() => {}}
                     onDragOver={() => {}}

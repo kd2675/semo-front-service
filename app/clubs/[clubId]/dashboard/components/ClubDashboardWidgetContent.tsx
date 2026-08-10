@@ -5,6 +5,7 @@ import {
   getWidgetDescription,
   getWidgetTitle,
   isAttendanceWidgetKey,
+  isDecisionWidgetKey,
   WIDGET_ACCENT_CLASS,
 } from "../utils/dashboardWidgetUtils";
 import type { ClubDashboardWidgetCardProps } from "../types/dashboardWidgetTypes";
@@ -57,6 +58,7 @@ export function ClubDashboardWidgetContent(props: ClubDashboardWidgetCardProps) 
 function matchesKnownWidget(widgetKey: string) {
   return (
     isAttendanceWidgetKey(widgetKey) ||
+    isDecisionWidgetKey(widgetKey) ||
     widgetKey === "FINANCE_STATUS" ||
     widgetKey === "FINANCE_LEDGER" ||
     widgetKey === "BOARD_NOTICE" ||

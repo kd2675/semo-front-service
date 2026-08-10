@@ -33,6 +33,7 @@ const FEATURE_DESCRIPTIONS: Record<string, string> = {
   JOIN_REQUEST: "가입 신청 대기열을 검토하고 승인 또는 반려합니다.",
   ROLE_MANAGEMENT: "직책별 책임과 세부 권한을 구성하고 멤버에게 배정합니다.",
   HANDOVER: "운영 임기, 집행부, 미완료 업무와 다음 담당자 메모를 한곳에서 관리합니다.",
+  DECISION_LOG: "회의의 배경과 결정 이유, 참여자, 관련 운영 항목과 후속 업무를 확인합니다.",
 };
 
 const SCHEDULE_FEATURE_KEYS = new Set(["SCHEDULE_MANAGE", "POLL", "ATTENDANCE"]);
@@ -127,6 +128,9 @@ export function buildUserMoreNavigation(features: ClubFeatureSummary[], clubId: 
       case "FINANCE":
         items.push(featureItem(feature, "OPERATIONS", { label: "회비·정산", href: `/clubs/${clubId}/more/finance` }));
         break;
+      case "DECISION_LOG":
+        items.push(featureItem(feature, "OPERATIONS", { label: "회의록·결정", href: `/clubs/${clubId}/more/decisions` }));
+        break;
       case "MEMBER_DIRECTORY":
         items.push(featureItem(feature, "PEOPLE", { label: "멤버·조직", href: `/clubs/${clubId}/more/members` }));
         break;
@@ -185,6 +189,9 @@ export function buildAdminMoreNavigation(features: ClubFeatureSummary[], clubId:
         break;
       case "HANDOVER":
         items.push(featureItem(feature, "OPERATIONS", { label: "인수인계 센터", href: `/clubs/${clubId}/admin/more/handover` }));
+        break;
+      case "DECISION_LOG":
+        items.push(featureItem(feature, "OPERATIONS", { label: "회의록·결정", href: `/clubs/${clubId}/admin/more/decisions` }));
         break;
       case "TODO":
         items.push(featureItem(feature, "OPERATIONS", { label: "업무 운영", href: `/clubs/${clubId}/admin/more/todos` }));

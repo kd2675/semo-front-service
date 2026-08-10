@@ -25,6 +25,9 @@ type PersonalContentProps = Pick<
   | "pollData"
   | "pollLoading"
   | "pollError"
+  | "decisionData"
+  | "decisionLoading"
+  | "decisionError"
 >;
 
 function getAttendanceStatusLabel(status: ScheduleAttendanceStatus) {
@@ -69,6 +72,9 @@ export function ClubDashboardWidgetPersonalContent({
   pollData,
   pollLoading,
   pollError,
+  decisionData,
+  decisionLoading,
+  decisionError,
 }: PersonalContentProps) {
   const isAttendanceStatusWidget = widget.widgetKey === "ATTENDANCE_STATUS";
   const isAttendanceRecentWidget = widget.widgetKey === "ATTENDANCE_RECENT";
@@ -76,6 +82,8 @@ export function ClubDashboardWidgetPersonalContent({
   const isFinanceLedgerWidget = widget.widgetKey === "FINANCE_LEDGER";
   const isPollStatusWidget = widget.widgetKey === "POLL_STATUS";
   const isPollPulseWidget = widget.widgetKey === "POLL_PULSE";
+  const isDecisionLatestWidget = widget.widgetKey === "DECISION_LATEST";
+  const latestDecision = decisionData?.records[0] ?? null;
   const nextAttendanceEvent = attendanceData?.nextEvent ?? null;
   const recentAttendanceEvents = useMemo(
     () => attendanceData?.recentEvents.slice(0, 3) ?? [],
@@ -114,6 +122,26 @@ export function ClubDashboardWidgetPersonalContent({
         return rightValue.localeCompare(leftValue);
       })[0] ?? null;
   }, [pollData]);
+
+  if (isDecisionLatestWidget) {
+    return (
+      <div className="space-y-3">
+        {decisionLoading ? (
+          <><div className="h-4 w-24 rounded-full bg-slate-100" /><div className="h-20 w-full rounded-xl bg-slate-50" /></>
+        ) : decisionError ? (
+          <p className="text-sm text-slate-500">최근 운영 결정을 가져오지 못했습니다.</p>
+        ) : latestDecision ? (
+          <RouterLink href={`/clubs/${clubId}/more/decisions`} className="block rounded-xl border border-indigo-100 bg-indigo-50/40 p-4 transition-colors hover:border-indigo-300">
+            <div className="flex items-center justify-between gap-2"><span className="rounded-full bg-white px-2 py-0.5 text-[11px] font-bold text-indigo-700">{latestDecision.recordType === "MEETING_MINUTES" ? "회의록" : "운영 결정"}</span>{latestDecision.effectiveDate ? <span className="text-[11px] font-semibold text-slate-400">시행 {latestDecision.effectiveDate.replaceAll("-", ".")}</span> : null}</div>
+            <p className="mt-3 line-clamp-1 text-sm font-bold text-slate-900">{latestDecision.title}</p>
+            <p className="mt-1 line-clamp-2 text-xs leading-5 text-slate-500">{latestDecision.decisionContent}</p>
+          </RouterLink>
+        ) : (
+          <><p className="text-sm font-semibold text-slate-900">공개된 운영 결정이 없습니다.</p><p className="text-xs leading-5 text-slate-500">운영진이 기록을 확정하면 이곳에서 바로 확인할 수 있습니다.</p></>
+        )}
+      </div>
+    );
+  }
 
   if (isAttendanceStatusWidget) {
     return (

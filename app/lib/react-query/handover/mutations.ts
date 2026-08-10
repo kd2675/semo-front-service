@@ -9,6 +9,7 @@ import {
   deleteExecutiveAssignment,
   deleteHandoverNote,
   updateCarryoverStatus,
+  updateHandoverNote,
   updateOperatingTerm,
   upsertExecutiveAssignment,
 } from "@/app/lib/semo/handover";
@@ -41,6 +42,11 @@ export const deleteExecutiveAssignmentMutationOptions = (clubId: string) => muta
 
 export const createHandoverNoteMutationOptions = (clubId: string) => mutationOptions({
   mutationFn: (request: Parameters<typeof createHandoverNote>[1]) => createHandoverNote(clubId, request),
+});
+
+export const updateHandoverNoteMutationOptions = (clubId: string) => mutationOptions({
+  mutationFn: ({ noteId, request }: { noteId: number; request: Parameters<typeof updateHandoverNote>[2] }) =>
+    updateHandoverNote(clubId, noteId, request),
 });
 
 export const acknowledgeHandoverNoteMutationOptions = (clubId: string) => mutationOptions({

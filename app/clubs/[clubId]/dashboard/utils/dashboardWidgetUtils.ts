@@ -13,6 +13,7 @@ const TOURNAMENT_WIDGET_KEYS = new Set([
   "TOURNAMENT_RECORD_LATEST",
   "TOURNAMENT_RECORD_MINE",
 ]);
+const DECISION_WIDGET_KEYS = new Set(["DECISION_LATEST"]);
 
 export const WIDGET_ACCENT_CLASS: Record<string, string> = {
   BOARD_NOTICE: "bg-blue-50 text-blue-600",
@@ -30,6 +31,7 @@ export const WIDGET_ACCENT_CLASS: Record<string, string> = {
   TOURNAMENT_RECORD_MINE: "bg-lime-50 text-lime-700",
   BRACKET_LATEST: "bg-amber-50 text-amber-700",
   BRACKET_WORKBENCH: "bg-yellow-50 text-yellow-700",
+  DECISION_LATEST: "bg-indigo-50 text-indigo-700",
 };
 
 const WIDGET_COPY: Record<string, { title: string; description: string }> = {
@@ -93,6 +95,10 @@ const WIDGET_COPY: Record<string, { title: string; description: string }> = {
     title: "회비 요약",
     description: "미납 및 납부 완료 회비를 한눈에 확인합니다.",
   },
+  DECISION_LATEST: {
+    title: "최근 운영 결정",
+    description: "최근 확정된 회의록과 운영 결정을 확인합니다.",
+  },
 };
 
 export function getWidgetDisplayName(widget: ClubDashboardWidgetSummary) {
@@ -138,6 +144,10 @@ export function isScheduleWidgetKey(widgetKey: string) {
 
 export function isTournamentWidgetKey(widgetKey: string) {
   return TOURNAMENT_WIDGET_KEYS.has(widgetKey);
+}
+
+export function isDecisionWidgetKey(widgetKey: string) {
+  return DECISION_WIDGET_KEYS.has(widgetKey);
 }
 
 export function hasEnabledAvailableWidget(
@@ -250,6 +260,7 @@ export function getWidgetFeatureLabel(widget: ClubDashboardWidgetSummary) {
     FINANCE: "회비",
     POLL: "투표",
     TOURNAMENT_RECORD: "대회",
+    DECISION_LOG: "회의록·결정",
   }[widget.requiredFeatureKey] ?? widget.requiredFeatureKey;
   return `${featureName} 기능 필요`;
 }

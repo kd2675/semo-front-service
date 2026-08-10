@@ -104,6 +104,15 @@ export type ClubTermMetrics = {
   currencyCode: string;
 };
 
+export type HandoverRecentDecision = {
+  decisionRecordId: number;
+  recordType: string;
+  title: string;
+  effectiveDate: string | null;
+  confirmedAt: string | null;
+  targetPath: string;
+};
+
 export type HandoverMemberOption = {
   clubMemberId: number;
   clubProfileId: number;
@@ -134,6 +143,7 @@ export type ClubHandoverCenter = {
   carryoverItems: ClubTermCarryoverItem[];
   queueSummary: HandoverQueueSummary;
   queueItems: HandoverQueueItem[];
+  recentDecisions: HandoverRecentDecision[];
   activeTermMetrics: ClubTermMetrics;
   memberOptions: HandoverMemberOption[];
   positionOptions: HandoverPositionOption[];

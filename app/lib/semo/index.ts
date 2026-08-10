@@ -5,6 +5,7 @@ export * from "./competition";
 export * from "./feedback";
 export * from "./finance";
 export * from "./handover";
+export * from "./decision";
 export * from "./memberAdmin";
 export * from "./notification";
 export * from "./schedule";

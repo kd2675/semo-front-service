@@ -18,6 +18,7 @@ import {
   deleteExecutiveAssignmentMutationOptions,
   deleteHandoverNoteMutationOptions,
   updateCarryoverStatusMutationOptions,
+  updateHandoverNoteMutationOptions,
   updateOperatingTermMutationOptions,
   upsertExecutiveAssignmentMutationOptions,
 } from "@/app/lib/react-query/handover/mutations";
@@ -110,6 +111,7 @@ export function ClubAdminHandoverClient({ clubId }: { clubId: string }) {
   const [selectedTermId, setSelectedTermId] = useState<number | null>(null);
   const [showTermForm, setShowTermForm] = useState(false);
   const [editingTermId, setEditingTermId] = useState<number | null>(null);
+  const [editingNoteId, setEditingNoteId] = useState<number | null>(null);
   const [termForm, setTermForm] = useState<UpsertOperatingTermRequest>(EMPTY_TERM_FORM);
   const [executiveForm, setExecutiveForm] = useState({ memberId: "", positionId: "", responsibility: "" });
   const [noteForm, setNoteForm] = useState({
@@ -130,6 +132,7 @@ export function ClubAdminHandoverClient({ clubId }: { clubId: string }) {
   const executiveMutation = useMutation(upsertExecutiveAssignmentMutationOptions(clubId));
   const deleteExecutiveMutation = useMutation(deleteExecutiveAssignmentMutationOptions(clubId));
   const createNoteMutation = useMutation(createHandoverNoteMutationOptions(clubId));
+  const updateNoteMutation = useMutation(updateHandoverNoteMutationOptions(clubId));
   const acknowledgeMutation = useMutation(acknowledgeHandoverNoteMutationOptions(clubId));
   const deleteNoteMutation = useMutation(deleteHandoverNoteMutationOptions(clubId));
   const carryoverMutation = useMutation(updateCarryoverStatusMutationOptions(clubId));
@@ -192,15 +195,15 @@ export function ClubAdminHandoverClient({ clubId }: { clubId: string }) {
   const activateTerm = async (term: ClubOperatingTerm) => {
     const currentName = center?.activeTerm?.termName;
     const message = currentName && center?.activeTerm?.clubOperatingTermId !== term.clubOperatingTermId
-      ? `${term.termName}을 시작하면 ${currentName}은 종료되고 미완료 항목이 새 임기로 이관됩니다. 계속할까요?`
-      : `${term.termName}을 현재 운영 임기로 시작할까요?`;
+      ? `새 임기를 시작하면 현재 운영 임기가 종료되고 미완료 항목이 이관됩니다.\n\n새 임기: ${term.termName}\n현재 임기: ${currentName}\n\n계속할까요?`
+      : `현재 운영 임기로 시작할까요?\n\n대상 임기: ${term.termName}`;
     if (!window.confirm(message)) return;
     const result = await activateTermMutation.mutateAsync(term.clubOperatingTermId);
     if (await reportResult(result, "새 운영 임기를 시작했습니다.")) setSelectedTermId(term.clubOperatingTermId);
   };
 
   const closeTerm = async (term: ClubOperatingTerm) => {
-    if (!window.confirm(`${term.termName}을 종료할까요? 종료된 임기와 집행부 스냅샷은 수정할 수 없습니다.`)) return;
+    if (!window.confirm(`운영 임기를 종료할까요?\n\n대상 임기: ${term.termName}\n종료된 임기와 집행부 스냅샷은 수정할 수 없습니다.`)) return;
     const result = await closeTermMutation.mutateAsync(term.clubOperatingTermId);
     await reportResult(result, "운영 임기를 종료했습니다.");
   };
@@ -231,19 +234,46 @@ export function ClubAdminHandoverClient({ clubId }: { clubId: string }) {
       showToast("먼저 운영 임기를 만들어주세요.", "error");
       return;
     }
-    const result = await createNoteMutation.mutateAsync({
-      fromTermId: center?.activeTerm?.clubOperatingTermId ?? displayedTermId,
-      toTermId: center?.nextTerm?.clubOperatingTermId ?? null,
+    const editingNote = editingNoteId == null
+      ? null
+      : center?.handoverNotes.find((note) => note.clubHandoverNoteId === editingNoteId) ?? null;
+    const request = {
+      fromTermId: editingNote?.fromTermId ?? center?.activeTerm?.clubOperatingTermId ?? displayedTermId,
+      toTermId: editingNote?.toTermId ?? center?.nextTerm?.clubOperatingTermId ?? null,
       clubPositionId: noteForm.positionId ? Number(noteForm.positionId) : null,
       assignedClubProfileId: noteForm.assignedProfileId ? Number(noteForm.assignedProfileId) : null,
       title: noteForm.title,
       content: noteForm.content,
       statusCode: noteForm.ready ? "READY" : "DRAFT",
       dueAt: noteForm.dueAt ? `${noteForm.dueAt}:00` : null,
-    });
-    if (await reportResult(result, "인수인계 메모를 저장했습니다.")) {
+    } as const;
+    const result = editingNoteId == null
+      ? await createNoteMutation.mutateAsync(request)
+      : await updateNoteMutation.mutateAsync({ noteId: editingNoteId, request });
+    if (await reportResult(result, editingNoteId == null ? "인수인계 메모를 저장했습니다." : "인수인계 메모를 수정했습니다.")) {
       setNoteForm({ title: "", content: "", assignedProfileId: "", positionId: "", dueAt: "", ready: true });
+      setEditingNoteId(null);
     }
+  };
+
+  const startEditNote = (note: ClubHandoverNote) => {
+    setEditingNoteId(note.clubHandoverNoteId);
+    setNoteForm({
+      title: note.title,
+      content: note.content,
+      assignedProfileId: note.assignedClubProfileId == null ? "" : String(note.assignedClubProfileId),
+      positionId: note.clubPositionId == null ? "" : String(note.clubPositionId),
+      dueAt: note.dueAt?.slice(0, 16) ?? "",
+      ready: note.statusCode === "READY",
+    });
+    window.requestAnimationFrame(() => {
+      document.getElementById("handover-note-form")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  };
+
+  const cancelEditNote = () => {
+    setEditingNoteId(null);
+    setNoteForm({ title: "", content: "", assignedProfileId: "", positionId: "", dueAt: "", ready: true });
   };
 
   if (centerQuery.isError && !center) {
@@ -298,19 +328,19 @@ export function ClubAdminHandoverClient({ clubId }: { clubId: string }) {
           </div>
         </section>
 
-        <div className="mt-4 overflow-x-auto pb-1">
-          <div className="inline-flex min-w-full gap-2 rounded-2xl border border-slate-200 bg-white p-2 shadow-sm">
+        <div className="mt-4">
+          <div className="grid min-w-full grid-cols-4 gap-1 rounded-2xl border border-slate-200 bg-white p-2 shadow-sm sm:gap-2">
             {TABS.map((tab) => (
               <button
                 key={tab.key}
                 type="button"
                 onClick={() => setActiveTab(tab.key)}
                 aria-pressed={activeTab === tab.key}
-                className={`flex min-h-11 min-w-[104px] flex-1 items-center justify-center gap-1.5 rounded-xl px-3 text-sm font-bold transition ${
+                className={`flex min-h-11 min-w-0 items-center justify-center gap-1.5 rounded-xl px-1 text-xs font-bold transition sm:px-3 sm:text-sm ${
                   activeTab === tab.key ? "bg-orange-500 text-white" : "text-slate-500 hover:bg-slate-50"
                 }`}
               >
-                <span className="material-symbols-outlined text-[18px]" aria-hidden="true">{tab.icon}</span>
+                <span className="material-symbols-outlined hidden text-[18px] sm:inline" aria-hidden="true">{tab.icon}</span>
                 {tab.label}
               </button>
             ))}
@@ -357,6 +387,8 @@ export function ClubAdminHandoverClient({ clubId }: { clubId: string }) {
           <ExecutivesTab
             center={center}
             displayedTerm={displayedTerm}
+            selectedTermId={selectedTermId}
+            onSelectTerm={setSelectedTermId}
             assignments={displayedAssignments}
             form={executiveForm}
             onFormChange={setExecutiveForm}
@@ -373,19 +405,24 @@ export function ClubAdminHandoverClient({ clubId }: { clubId: string }) {
         {activeTab === "NOTES" ? (
           <NotesTab
             center={center}
+            selectedTermId={selectedTermId}
+            editingNoteId={editingNoteId}
             form={noteForm}
             onFormChange={setNoteForm}
             onSubmit={submitNote}
+            onSelectTerm={setSelectedTermId}
+            onEdit={startEditNote}
+            onCancelEdit={cancelEditNote}
             onAcknowledge={async (note) => {
               const result = await acknowledgeMutation.mutateAsync(note.clubHandoverNoteId);
               await reportResult(result, "인수인계 메모를 확인했습니다.");
             }}
             onDelete={async (note) => {
-              if (!window.confirm(`인수인계 메모 ${note.title}을 삭제할까요?`)) return;
+              if (!window.confirm(`인수인계 메모를 삭제할까요?\n\n대상 메모: ${note.title}`)) return;
               const result = await deleteNoteMutation.mutateAsync(note.clubHandoverNoteId);
               await reportResult(result, "인수인계 메모를 삭제했습니다.");
             }}
-            pending={createNoteMutation.isPending || acknowledgeMutation.isPending || deleteNoteMutation.isPending}
+            pending={createNoteMutation.isPending || updateNoteMutation.isPending || acknowledgeMutation.isPending || deleteNoteMutation.isPending}
           />
         ) : null}
       </main>
@@ -509,6 +546,21 @@ function OverviewTab({
         </div>
       </section>
 
+      {(center.recentDecisions ?? []).length > 0 ? (
+        <section>
+          <SectionTitle title="최근 주요 결정" description="확정된 회의록과 운영 결정의 맥락을 다음 집행부가 바로 확인할 수 있습니다." />
+          <div className="space-y-2">
+            {(center.recentDecisions ?? []).map((decision) => (
+              <RouterLink key={decision.decisionRecordId} href={decision.targetPath} className="flex min-h-16 items-center gap-3 rounded-2xl border border-indigo-100 bg-indigo-50/40 px-4 py-3 transition hover:border-indigo-200">
+                <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-indigo-100 text-indigo-700"><span className="material-symbols-outlined text-[20px]" aria-hidden="true">{decision.recordType === "MEETING_MINUTES" ? "meeting_room" : "gavel"}</span></span>
+                <span className="min-w-0 flex-1"><span className="block truncate text-sm font-black text-slate-800">{decision.title}</span><span className="mt-1 block text-xs text-slate-500">{decision.effectiveDate ? `시행 ${formatDate(decision.effectiveDate)}` : decision.confirmedAt ? `확정 ${formatDateTime(decision.confirmedAt)}` : "확정 기록"}</span></span>
+                <span className="material-symbols-outlined text-[20px] text-indigo-300" aria-hidden="true">chevron_right</span>
+              </RouterLink>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
       <RouterLink href={`/clubs/${clubId}/admin/logs`} className="flex min-h-12 items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-700 shadow-sm">
         <span className="inline-flex items-center gap-2"><span className="material-symbols-outlined text-[20px] text-orange-500" aria-hidden="true">history</span>운영 감사 로그 확인</span>
         <span className="material-symbols-outlined text-[20px] text-slate-400" aria-hidden="true">chevron_right</span>
@@ -605,13 +657,15 @@ function TermsTab({ terms, canManage, showForm, editingTermId, form, pending, on
   );
 }
 
-function ExecutivesTab({ center, displayedTerm, assignments, form, onFormChange, onSubmit, onDelete, pending }: {
+function ExecutivesTab({ center, displayedTerm, selectedTermId, assignments, form, onFormChange, onSubmit, onSelectTerm, onDelete, pending }: {
   center: ClubHandoverCenter;
   displayedTerm: ClubOperatingTerm | null;
+  selectedTermId: number | null;
   assignments: ClubExecutiveAssignment[];
   form: { memberId: string; positionId: string; responsibility: string };
   onFormChange: (value: { memberId: string; positionId: string; responsibility: string }) => void;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
+  onSelectTerm: (termId: number | null) => void;
   onDelete: (assignmentId: number) => void;
   pending: boolean;
 }) {
@@ -619,6 +673,7 @@ function ExecutivesTab({ center, displayedTerm, assignments, form, onFormChange,
   return (
     <div className="mt-6 space-y-5">
       <SectionTitle title="집행부 구성" description={`${displayedTerm?.termName ?? "선택한 임기 없음"} 기준의 책임과 담당자를 보존합니다. 이 명단 자체는 실제 권한을 부여하지 않습니다.`} />
+      <HandoverTermFilter terms={center.terms} selectedTermId={selectedTermId} onSelectTerm={onSelectTerm} />
       {editable ? (
         <form onSubmit={onSubmit} className="rounded-[26px] border border-slate-200 bg-white p-5 shadow-sm">
           <h3 className="text-sm font-black">집행부 멤버 추가 또는 책임 수정</h3>
@@ -643,11 +698,16 @@ function ExecutivesTab({ center, displayedTerm, assignments, form, onFormChange,
   );
 }
 
-function NotesTab({ center, form, onFormChange, onSubmit, onAcknowledge, onDelete, pending }: {
+function NotesTab({ center, selectedTermId, editingNoteId, form, onFormChange, onSubmit, onSelectTerm, onEdit, onCancelEdit, onAcknowledge, onDelete, pending }: {
   center: ClubHandoverCenter;
+  selectedTermId: number | null;
+  editingNoteId: number | null;
   form: { title: string; content: string; assignedProfileId: string; positionId: string; dueAt: string; ready: boolean };
   onFormChange: (value: { title: string; content: string; assignedProfileId: string; positionId: string; dueAt: string; ready: boolean }) => void;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
+  onSelectTerm: (termId: number | null) => void;
+  onEdit: (note: ClubHandoverNote) => void;
+  onCancelEdit: () => void;
   onAcknowledge: (note: ClubHandoverNote) => void;
   onDelete: (note: ClubHandoverNote) => void;
   pending: boolean;
@@ -655,20 +715,27 @@ function NotesTab({ center, form, onFormChange, onSubmit, onAcknowledge, onDelet
   return (
     <div className="mt-6 space-y-5">
       <SectionTitle title="다음 담당자 메모" description="역할별 책임, 주의사항과 후속 작업을 지정된 담당자에게 전달합니다." />
+      <HandoverTermFilter terms={center.terms} selectedTermId={selectedTermId} onSelectTerm={onSelectTerm} />
       {center.canManage ? (
-        <form onSubmit={onSubmit} className="rounded-[26px] border border-slate-200 bg-white p-5 shadow-sm">
+        <form id="handover-note-form" onSubmit={onSubmit} className="scroll-mt-24 rounded-[26px] border border-slate-200 bg-white p-5 shadow-sm">
+          <h3 className="mb-4 text-sm font-black text-slate-900">
+            {editingNoteId == null ? "새 인수인계 메모" : "인수인계 메모 수정"}
+          </h3>
           <div className="grid gap-4 sm:grid-cols-2"><FormField label="제목"><input aria-label="인수인계 제목" required maxLength={200} value={form.title} onChange={(event) => onFormChange({ ...form, title: event.target.value })} className={fieldClassName} placeholder="예: 월 회비 마감 절차" /></FormField><FormField label="담당 직책"><select aria-label="인수인계 담당 직책" value={form.positionId} onChange={(event) => onFormChange({ ...form, positionId: event.target.value })} className={fieldClassName}><option value="">직책 미지정</option>{center.positionOptions.map((item) => <option key={item.clubPositionId} value={item.clubPositionId}>{item.displayName}</option>)}</select></FormField><FormField label="다음 담당자"><select aria-label="인수인계 다음 담당자" value={form.assignedProfileId} onChange={(event) => onFormChange({ ...form, assignedProfileId: event.target.value })} className={fieldClassName}><option value="">담당자 미지정</option>{center.memberOptions.map((item) => <option key={item.clubProfileId} value={item.clubProfileId}>{item.displayName}</option>)}</select></FormField><FormField label="확인 기한"><input aria-label="인수인계 확인 기한" type="datetime-local" value={form.dueAt} onChange={(event) => onFormChange({ ...form, dueAt: event.target.value })} className={fieldClassName} /></FormField></div>
           <div className="mt-4"><FormField label="인계 내용"><textarea aria-label="인수인계 내용" required rows={5} maxLength={10000} value={form.content} onChange={(event) => onFormChange({ ...form, content: event.target.value })} className={textareaClassName} placeholder="진행 방법, 계정·문서 위치, 예외 상황과 다음 행동을 구체적으로 적어주세요." /></FormField></div>
           <label className="mt-4 flex min-h-11 items-center gap-3 rounded-2xl bg-slate-50 px-4 text-sm font-bold text-slate-700"><input type="checkbox" checked={form.ready} onChange={(event) => onFormChange({ ...form, ready: event.target.checked })} className="size-4 accent-orange-500" />작성 즉시 인계 준비 상태로 표시</label>
-          <button type="submit" disabled={pending} className="mt-4 min-h-11 w-full rounded-2xl bg-orange-500 text-sm font-bold text-white disabled:opacity-50">인수인계 메모 저장</button>
+          <div className="mt-4 flex gap-2">
+            {editingNoteId != null ? <button type="button" onClick={onCancelEdit} className="min-h-11 flex-1 rounded-2xl bg-slate-100 text-sm font-bold text-slate-700">수정 취소</button> : null}
+            <button type="submit" disabled={pending} className="min-h-11 flex-1 rounded-2xl bg-orange-500 text-sm font-bold text-white disabled:opacity-50">{editingNoteId == null ? "인수인계 메모 저장" : "수정 저장"}</button>
+          </div>
         </form>
       ) : null}
-      <div className="space-y-3">{center.handoverNotes.length > 0 ? center.handoverNotes.map((note) => <HandoverNoteCard key={note.clubHandoverNoteId} clubId={String(center.clubId)} note={note} canManage={center.canManage} canAcknowledge={center.canManage || note.assignedClubProfileId === center.viewerClubProfileId} pending={pending} onAcknowledge={onAcknowledge} onDelete={onDelete} />) : <EmptyState icon="assignment" title="작성된 인수인계 메모가 없습니다." description="다음 담당자가 그대로 실행할 수 있을 만큼 구체적인 메모를 남겨보세요." />}</div>
+      <div className="space-y-3">{center.handoverNotes.length > 0 ? center.handoverNotes.map((note) => <HandoverNoteCard key={note.clubHandoverNoteId} clubId={String(center.clubId)} note={note} canManage={center.canManage} canAcknowledge={center.canManage || note.assignedClubProfileId === center.viewerClubProfileId} pending={pending} onEdit={onEdit} onAcknowledge={onAcknowledge} onDelete={onDelete} />) : <EmptyState icon="assignment" title="작성된 인수인계 메모가 없습니다." description="다음 담당자가 그대로 실행할 수 있을 만큼 구체적인 메모를 남겨보세요." />}</div>
     </div>
   );
 }
 
-function HandoverNoteCard({ clubId, note, canManage, canAcknowledge, pending, onAcknowledge, onDelete }: { clubId: string; note: ClubHandoverNote; canManage: boolean; canAcknowledge: boolean; pending: boolean; onAcknowledge: (note: ClubHandoverNote) => void; onDelete: (note: ClubHandoverNote) => void }) {
+function HandoverNoteCard({ clubId, note, canManage, canAcknowledge, pending, onEdit, onAcknowledge, onDelete }: { clubId: string; note: ClubHandoverNote; canManage: boolean; canAcknowledge: boolean; pending: boolean; onEdit: (note: ClubHandoverNote) => void; onAcknowledge: (note: ClubHandoverNote) => void; onDelete: (note: ClubHandoverNote) => void }) {
   const acknowledged = note.statusCode === "ACKNOWLEDGED";
   const [attachmentsOpen, setAttachmentsOpen] = useState(false);
   return (
@@ -681,8 +748,29 @@ function HandoverNoteCard({ clubId, note, canManage, canAcknowledge, pending, on
         <span className="material-symbols-outlined text-[18px]" aria-hidden="true">{attachmentsOpen ? "expand_less" : "expand_more"}</span>
       </button>
       {attachmentsOpen ? <div className="mt-3"><ResourceAttachmentPanel clubId={clubId} resourceType="HANDOVER_NOTE" resourceId={note.clubHandoverNoteId} canUpload={canManage} canDelete={canManage} theme="admin" /></div> : null}
-      <div className="mt-4 flex gap-2">{!acknowledged && canAcknowledge ? <button type="button" disabled={pending} onClick={() => onAcknowledge(note)} className="min-h-10 flex-1 rounded-xl bg-slate-900 px-3 text-xs font-bold text-white disabled:opacity-50">확인 완료</button> : null}{canManage ? <button type="button" disabled={pending} onClick={() => onDelete(note)} className="min-h-10 flex-1 rounded-xl bg-slate-100 px-3 text-xs font-bold text-slate-600 disabled:opacity-50">삭제</button> : null}</div>
+      <div className="mt-4 flex flex-wrap gap-2">{!acknowledged && canManage ? <button type="button" disabled={pending} onClick={() => onEdit(note)} className="min-h-10 min-w-24 flex-1 rounded-xl bg-orange-50 px-3 text-xs font-bold text-orange-700 disabled:opacity-50">수정</button> : null}{!acknowledged && canAcknowledge ? <button type="button" disabled={pending} onClick={() => onAcknowledge(note)} className="min-h-10 min-w-24 flex-1 rounded-xl bg-slate-900 px-3 text-xs font-bold text-white disabled:opacity-50">확인 완료</button> : null}{canManage ? <button type="button" disabled={pending} onClick={() => onDelete(note)} className="min-h-10 min-w-24 flex-1 rounded-xl bg-slate-100 px-3 text-xs font-bold text-slate-600 disabled:opacity-50">삭제</button> : null}</div>
     </article>
+  );
+}
+
+function HandoverTermFilter({ terms, selectedTermId, onSelectTerm }: {
+  terms: ClubOperatingTerm[];
+  selectedTermId: number | null;
+  onSelectTerm: (termId: number | null) => void;
+}) {
+  return (
+    <label className="block text-xs font-bold text-slate-500">
+      <span className="mb-2 block">조회 임기</span>
+      <select
+        aria-label="조회 임기"
+        value={selectedTermId ?? ""}
+        onChange={(event) => onSelectTerm(event.target.value ? Number(event.target.value) : null)}
+        className={fieldClassName}
+      >
+        <option value="">현재 또는 다음 임기</option>
+        {terms.map((term) => <option key={term.clubOperatingTermId} value={term.clubOperatingTermId}>{term.termName}</option>)}
+      </select>
+    </label>
   );
 }
 
