@@ -180,7 +180,30 @@ export type ClubMoreSummary = {
   fullAdmin: boolean;
   grantedPermissionKeys: string[];
   adminToolFeatureKeys: string[];
+  userPendingCount: number;
+  userOverdueCount: number;
+  adminPendingCount: number;
+  adminOverdueCount: number;
+  featureStatuses: ClubMoreFeatureStatus[];
   features: ClubFeatureSummary[];
+};
+
+export type ClubMoreFeatureStatus = {
+  featureKey: string;
+  userAccessible: boolean;
+  adminAccessible: boolean;
+  userPendingCount: number;
+  userOverdueCount: number;
+  adminPendingCount: number;
+  adminOverdueCount: number;
+  favorite: boolean;
+  lastUsedAt: string | null;
+};
+
+export type ClubMorePreferenceResponse = {
+  featureKey: string;
+  favorite: boolean;
+  lastUsedAt: string | null;
 };
 
 export type DashboardScope = "USER_HOME" | "ADMIN_HOME";
@@ -264,6 +287,20 @@ export function getClubFeatures(clubId: ClubId) {
 
 export function getClubMoreSummary(clubId: ClubId) {
   return getJson<ClubMoreSummary>(`/api/semo/v1/clubs/${clubId}/more/summary`);
+}
+
+export function updateClubMoreFavorite(clubId: ClubId, featureKey: string, favorite: boolean) {
+  return putJson<ClubMorePreferenceResponse>(
+    `/api/semo/v1/clubs/${clubId}/more/preferences/${featureKey}`,
+    { favorite },
+  );
+}
+
+export function markClubMoreFeatureUsed(clubId: ClubId, featureKey: string) {
+  return postJson<ClubMorePreferenceResponse>(
+    `/api/semo/v1/clubs/${clubId}/more/preferences/${featureKey}/usage`,
+    {},
+  );
 }
 
 export function getClubDashboardWidgets(clubId: ClubId, scope: DashboardScope = "USER_HOME") {

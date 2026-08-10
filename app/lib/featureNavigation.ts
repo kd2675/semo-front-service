@@ -1,4 +1,4 @@
-import type { ClubFeatureSummary } from "@/app/lib/clubs";
+import type { ClubFeatureSummary, ClubMoreFeatureStatus } from "@/app/lib/clubs";
 
 export type MoreNavigationGroup = "CONTENT" | "OPERATIONS" | "PEOPLE" | "COMPETITION" | "DELEGATED";
 
@@ -11,6 +11,10 @@ export type MoreNavigationItem = {
   group: MoreNavigationGroup;
   featureKeys: string[];
   sortOrder: number;
+  pendingCount?: number;
+  overdueCount?: number;
+  favorite?: boolean;
+  lastUsedAt?: string | null;
 };
 
 const GROUP_LABELS: Record<MoreNavigationGroup, string> = {
@@ -203,4 +207,33 @@ export function buildDelegatedAdminNavigation(
     .filter((item) => item.group !== "CONTENT")
     .filter((item) => item.featureKeys.some((featureKey) => allowedFeatureKeys.has(featureKey)))
     .map((item) => ({ ...item, key: `DELEGATED_${item.key}`, group: "DELEGATED" }));
+}
+
+export function decorateMoreNavigationItems(
+  items: MoreNavigationItem[],
+  statuses: ClubMoreFeatureStatus[],
+  mode: "user" | "admin",
+): MoreNavigationItem[] {
+  const statusByFeatureKey = new Map(statuses.map((status) => [status.featureKey, status]));
+
+  return items.map((item) => {
+    const itemStatuses = item.featureKeys
+      .map((featureKey) => statusByFeatureKey.get(featureKey))
+      .filter((status): status is ClubMoreFeatureStatus => Boolean(status));
+    const primaryStatus = statusByFeatureKey.get(item.featureKeys[0] ?? "");
+
+    return {
+      ...item,
+      pendingCount: itemStatuses.reduce(
+        (total, status) => total + (mode === "admin" ? status.adminPendingCount : status.userPendingCount),
+        0,
+      ),
+      overdueCount: itemStatuses.reduce(
+        (total, status) => total + (mode === "admin" ? status.adminOverdueCount : status.userOverdueCount),
+        0,
+      ),
+      favorite: primaryStatus?.favorite ?? false,
+      lastUsedAt: primaryStatus?.lastUsedAt ?? null,
+    };
+  });
 }

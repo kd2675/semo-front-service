@@ -4,7 +4,7 @@ import { getMoreNavigationGroupLabel, type MoreNavigationItem } from "@/app/lib/
 type MoreNavigationMenuProps = {
   items: MoreNavigationItem[];
   mode: "user" | "admin";
-  onNavigate: () => void;
+  onNavigate: (item: MoreNavigationItem) => void;
 };
 
 export function MoreNavigationMenu({ items, mode, onNavigate }: MoreNavigationMenuProps) {
@@ -28,27 +28,47 @@ export function MoreNavigationMenu({ items, mode, onNavigate }: MoreNavigationMe
       {items.map((item, index) => {
         const showGroupLabel = index === 0 || items[index - 1]?.group !== item.group;
         return (
-          <section key={item.key} aria-labelledby={`more-item-${mode}-${item.key}`}>
+          <div key={item.key}>
             {showGroupLabel ? (
               <h2 className="mb-2 px-1 text-xs font-bold tracking-wide text-slate-400">
                 {getMoreNavigationGroupLabel(item.group)}
               </h2>
             ) : null}
             <RouterLink
-              id={`more-item-${mode}-${item.key}`}
               href={item.href}
-              onClick={onNavigate}
+              onClick={() => onNavigate(item)}
               className={`group flex min-h-18 items-center gap-3 rounded-[var(--radius-card)] border border-slate-200 bg-white p-3 text-left transition hover:border-slate-300 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 ${focusClassName}`}
             >
               <span className={`flex size-10 shrink-0 items-center justify-center rounded-[var(--radius-control)] ${iconSurfaceClassName} ${accentClassName}`}>
                 <span className="material-symbols-outlined text-[22px]" aria-hidden="true">{item.iconName}</span>
               </span>
-              <span className="min-w-0">
-                <span className="block text-sm font-bold text-slate-800">{item.label}</span>
+              <span className="min-w-0 flex-1">
+                <span className="flex items-center gap-1.5">
+                  <span className="truncate text-sm font-bold text-slate-800">{item.label}</span>
+                  {item.favorite ? (
+                    <span className="material-symbols-outlined text-[17px] text-amber-500" aria-hidden="true">
+                      star
+                    </span>
+                  ) : null}
+                </span>
                 <span className="mt-0.5 line-clamp-2 block text-xs leading-5 text-slate-500">{item.description}</span>
               </span>
+              {(item.pendingCount ?? 0) > 0 ? (
+                <span
+                  className={`shrink-0 rounded-full px-2 py-1 text-[11px] font-bold ${
+                    (item.overdueCount ?? 0) > 0
+                      ? "bg-rose-50 text-rose-700"
+                      : mode === "admin"
+                        ? "bg-orange-50 text-orange-700"
+                        : "bg-blue-50 text-blue-700"
+                  }`}
+                  aria-label={`${item.label} 미처리 ${item.pendingCount}건${(item.overdueCount ?? 0) > 0 ? `, 지연 ${item.overdueCount}건` : ""}`}
+                >
+                  {(item.overdueCount ?? 0) > 0 ? `지연 ${item.overdueCount}` : item.pendingCount}
+                </span>
+              ) : null}
             </RouterLink>
-          </section>
+          </div>
         );
       })}
     </div>

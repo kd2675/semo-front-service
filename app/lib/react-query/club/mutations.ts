@@ -1,12 +1,27 @@
 import { mutationOptions } from "@tanstack/react-query";
 import {
+  markClubMoreFeatureUsed,
   updateClubDashboardWidgets,
   updateClubFeatures,
+  updateClubMoreFavorite,
   updateClubProfile,
   updateClubSettings,
   type DashboardScope,
   type ClubDashboardWidgetSummary,
 } from "@/app/lib/clubs";
+
+export function updateClubMoreFavoriteMutationOptions(clubId: string) {
+  return mutationOptions({
+    mutationFn: ({ featureKey, favorite }: { featureKey: string; favorite: boolean }) =>
+      updateClubMoreFavorite(clubId, featureKey, favorite),
+  });
+}
+
+export function markClubMoreFeatureUsedMutationOptions(clubId: string) {
+  return mutationOptions({
+    mutationFn: (featureKey: string) => markClubMoreFeatureUsed(clubId, featureKey),
+  });
+}
 
 export function updateClubFeaturesMutationOptions(clubId: string) {
   return mutationOptions({

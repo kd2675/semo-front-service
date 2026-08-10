@@ -88,12 +88,14 @@ NEXT_PUBLIC_API_URL=http://localhost:8080
   - 이미지 서버로 임시 업로드
 
 ### Feature modular navigation
-- More 메뉴는 하드코딩보다 `/api/semo/v1/clubs/{clubId}/features` 응답을 우선합니다.
+- More 메뉴와 영구 허브는 `/api/semo/v1/clubs/{clubId}/more/summary`의 기능 순서, capability, 미처리 건수, 즐겨찾기, 최근 사용 정보를 기준으로 렌더링합니다.
 - 관리자 메뉴 화면과 관리자 하단 `More` 메뉴는 enabled feature 순서를 저장합니다.
 - 저장 후 `semo:club-features-updated` 이벤트로 네비게이션을 동기화합니다.
 - `NOTICE`는 게시판, `SCHEDULE_MANAGE`·`POLL`·`ATTENDANCE`는 캘린더가 대표 화면입니다.
 - 위 기능의 기존 `/more` URL은 북마크 호환을 위해 대표 화면으로 redirect하며 More 메뉴에는 중복 노출하지 않습니다.
 - More에는 회비·정산, 업무, 대회, 대진표 초안, 회원 디렉터리, 비공개 피드백 등 독립 작업 흐름만 노출합니다.
+- 하단 More는 빠른 이동 모달이고 `/clubs/{clubId}/more`, `/clubs/{clubId}/admin/more`는 확인 필요·즐겨찾기·최근 사용·전체 기능을 제공하는 영구 허브입니다.
+- 관리자 모드의 사용자 화면 복귀는 콘텐츠를 가리는 FAB가 아니라 관리자 하단 내비게이션의 `사용자 모드` 항목으로 제공합니다.
 
 ### Dashboard / modal route pattern
 - 홈은 위젯 API를 이용해 사용자 대시보드를 렌더링합니다.
@@ -141,6 +143,8 @@ NEXT_PUBLIC_API_URL=http://localhost:8080
   - 기능 토글과 무관하게 본인이 수행한 활동만 조회
 
 ### User `/more`
+- `/clubs/[clubId]/more`
+  - 사용자별 미처리·지연 건수, 즐겨찾기, 최근 사용, capability 위임 도구를 제공하는 영구 허브
 - `/clubs/[clubId]/more/notices`, `/more/schedules`, `/more/polls`, `/more/attendance`
   - 기존 링크 호환용이며 게시판 또는 캘린더 대표 화면으로 이동
 - `/clubs/[clubId]/more/timeline`
@@ -161,6 +165,8 @@ NEXT_PUBLIC_API_URL=http://localhost:8080
 - `/clubs/[clubId]/admin/logs`
 
 ### Admin `/more`
+- `/clubs/[clubId]/admin/more`
+  - 관리자 또는 위임받은 운영자에게 허용된 도구만 모아 보여주는 영구 운영 허브
 - `/clubs/[clubId]/admin/more/notices`, `/admin/more/schedules`, `/admin/more/polls`, `/admin/more/attendance`
   - 기존 링크 호환용이며 게시판 또는 캘린더 대표 화면으로 이동
 - `/clubs/[clubId]/admin/more/timeline`

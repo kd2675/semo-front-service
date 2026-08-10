@@ -1,6 +1,6 @@
 "use client";
 
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
@@ -8,16 +8,22 @@ import { MoreNavigationMenu } from "@/app/components/MoreNavigationMenu";
 import { RouterLink } from "@/app/components/RouterLink";
 import { useBottomNavScrollDocking } from "@/app/hooks/useBottomNavScrollDocking";
 import { useDialogFocusManagement } from "@/app/hooks/useDialogFocusManagement";
-import { buildAdminMoreNavigation } from "@/app/lib/featureNavigation";
+import {
+  buildAdminMoreNavigation,
+  buildDelegatedAdminNavigation,
+  decorateMoreNavigationItems,
+  type MoreNavigationItem,
+} from "@/app/lib/featureNavigation";
 import { overlayFadeMotion, popInMotion } from "@/app/lib/motion";
-import { clubFeaturesQueryOptions, clubQueryKeys } from "@/app/lib/react-query/club/queries";
+import { markClubMoreFeatureUsedMutationOptions } from "@/app/lib/react-query/club/mutations";
+import { clubMoreSummaryQueryOptions, clubQueryKeys } from "@/app/lib/react-query/club/queries";
 
 type AdminBottomNavProps = {
   clubId: string;
 };
 
 type AdminNavItem = {
-  key: "HOME" | "MENU" | "MEMBERS" | "MORE" | "STATS";
+  key: "HOME" | "MENU" | "MEMBERS" | "MORE" | "STATS" | "USER";
   label: string;
   icon: string;
   href?: (clubId: string) => string;
@@ -30,6 +36,7 @@ const ADMIN_ITEMS: AdminNavItem[] = [
   { key: "MEMBERS", label: "멤버", icon: "groups", href: (clubId) => `/clubs/${clubId}/admin/members` },
   { key: "MORE", label: "더보기", icon: "more_horiz" },
   { key: "STATS", label: "통계", icon: "insights", href: (clubId) => `/clubs/${clubId}/admin/stats` },
+  { key: "USER", label: "사용자 모드", icon: "exit_to_app", href: (clubId) => `/clubs/${clubId}`, exact: true },
 ];
 
 const ADMIN_ACTIVE_TEXT_CLASS = "text-[var(--color-admin-primary)]";
@@ -47,12 +54,29 @@ export function AdminBottomNav({ clubId }: AdminBottomNavProps) {
   const isDocked = useBottomNavScrollDocking({ routeKey: pathname });
   const [openMenuPathname, setOpenMenuPathname] = useState<string | null>(null);
   const queryClient = useQueryClient();
-  const { data: featureData } = useQuery(clubFeaturesQueryOptions(clubId));
+  const { data: moreSummary } = useQuery(clubMoreSummaryQueryOptions(clubId));
+  const usageMutation = useMutation({
+    ...markClubMoreFeatureUsedMutationOptions(clubId),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: clubQueryKeys.moreSummary(clubId) });
+    },
+  });
   const menuItems = useMemo(
-    () => buildAdminMoreNavigation(featureData ?? [], clubId),
-    [clubId, featureData],
+    () => {
+      const features = moreSummary?.features ?? [];
+      const baseItems = moreSummary && !moreSummary.fullAdmin
+        ? buildDelegatedAdminNavigation(features, clubId, moreSummary.adminToolFeatureKeys)
+        : buildAdminMoreNavigation(features, clubId);
+      return decorateMoreNavigationItems(
+        baseItems,
+        moreSummary?.featureStatuses ?? [],
+        "admin",
+      );
+    },
+    [clubId, moreSummary],
   );
   const isMoreOpen = openMenuPathname === pathname;
+  const morePendingCount = menuItems.reduce((total, item) => total + (item.pendingCount ?? 0), 0);
   const moreMenuRef = useDialogFocusManagement<HTMLDivElement>({
     active: isMoreOpen,
     onDismiss: () => setOpenMenuPathname(null),
@@ -62,9 +86,17 @@ export function AdminBottomNav({ clubId }: AdminBottomNavProps) {
     return pathname === targetPath || pathname.startsWith(`${targetPath}/`);
   });
 
+  const handleFeatureNavigate = (item: MoreNavigationItem) => {
+    const featureKey = item.featureKeys[0];
+    if (featureKey) {
+      usageMutation.mutate(featureKey);
+    }
+    setOpenMenuPathname(null);
+  };
+
   useEffect(() => {
     const onFeatureUpdate = () => {
-      void queryClient.invalidateQueries({ queryKey: clubQueryKeys.features(clubId) });
+      void queryClient.invalidateQueries({ queryKey: clubQueryKeys.moreSummary(clubId) });
     };
     window.addEventListener("semo:club-features-updated", onFeatureUpdate);
     return () => window.removeEventListener("semo:club-features-updated", onFeatureUpdate);
@@ -107,7 +139,7 @@ export function AdminBottomNav({ clubId }: AdminBottomNavProps) {
             className={`semo-icon-control relative touch-manipulation transition ${textClassName}`}
             aria-expanded={isMoreOpen}
             aria-haspopup="dialog"
-            aria-label={item.label}
+            aria-label={morePendingCount > 0 ? `${item.label}, 확인할 항목 ${morePendingCount}건` : item.label}
           >
             <span className="material-symbols-outlined text-[24px]" aria-hidden="true">{item.icon}</span>
             {isActive ? (
@@ -115,6 +147,11 @@ export function AdminBottomNav({ clubId }: AdminBottomNavProps) {
                 layoutId="admin-nav-active-dot"
                 className="absolute right-1 top-1 size-2 rounded-full border-2 border-white bg-[var(--color-admin-primary)]"
               />
+            ) : null}
+            {morePendingCount > 0 ? (
+              <span className="absolute -right-1 -top-0.5 min-w-5 rounded-full border-2 border-white bg-rose-500 px-1 text-center text-[11px] font-bold leading-4 text-white">
+                {morePendingCount > 99 ? "99+" : morePendingCount}
+              </span>
             ) : null}
           </motion.button>
         );
@@ -147,13 +184,13 @@ export function AdminBottomNav({ clubId }: AdminBottomNavProps) {
     });
 
   const floatingMenu = (
-    <nav className="flex w-[clamp(280px,33vw,460px)] max-w-[calc(100vw-2.5rem)] items-center justify-center gap-3 rounded-full border border-white/70 bg-white/85 px-4 py-3 shadow-[var(--shadow-floating)] backdrop-blur-md">
+    <nav className="flex w-[clamp(320px,38vw,520px)] max-w-[calc(100vw-2rem)] items-center justify-between rounded-full border border-white/70 bg-white/85 px-4 py-3 shadow-[var(--shadow-floating)] backdrop-blur-md">
       {renderButtons()}
     </nav>
   );
   const dockedMenu = (
     <nav className="flex w-full items-center justify-center border-t border-slate-200/70 bg-white/90 px-4 pt-3 pb-[calc(env(safe-area-inset-bottom)+12px)] backdrop-blur-md">
-      <div className="flex w-[clamp(360px,44vw,640px)] max-w-[calc(100vw-1.5rem)] items-center justify-center gap-6">
+      <div className="flex w-[clamp(360px,48vw,680px)] max-w-full items-center justify-between">
         {renderButtons()}
       </div>
     </nav>
@@ -200,8 +237,16 @@ export function AdminBottomNav({ clubId }: AdminBottomNavProps) {
                   <MoreNavigationMenu
                     items={menuItems}
                     mode="admin"
-                    onNavigate={() => setOpenMenuPathname(null)}
+                    onNavigate={handleFeatureNavigate}
                   />
+                  <RouterLink
+                    href={`/clubs/${clubId}/admin/more`}
+                    onClick={() => setOpenMenuPathname(null)}
+                    className="mt-4 flex min-h-11 items-center justify-center gap-2 rounded-[var(--radius-control)] bg-[var(--color-admin-primary)] px-4 text-sm font-bold text-white transition hover:brightness-95"
+                  >
+                    전체 운영 허브
+                    <span className="material-symbols-outlined text-[18px]" aria-hidden="true">arrow_forward</span>
+                  </RouterLink>
                 </div>
               </div>
             </motion.div>
