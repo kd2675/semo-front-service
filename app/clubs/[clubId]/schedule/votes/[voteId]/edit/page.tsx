@@ -1,4 +1,4 @@
-import { redirect } from "next/navigation";
+import { ClubScheduleVoteEditorClient } from "../../../clients/ClubScheduleVoteEditorClient";
 
 type ClubScheduleVoteEditPageProps = {
   params: Promise<{
@@ -11,5 +11,12 @@ export default async function ClubScheduleVoteEditPage({
   params,
 }: ClubScheduleVoteEditPageProps) {
   const { clubId, voteId } = await params;
-  redirect(`/clubs/${clubId}/more/polls/${voteId}/edit`);
+  return (
+    <ClubScheduleVoteEditorClient
+      clubId={clubId}
+      voteId={voteId}
+      presentation="page"
+      basePath={`/clubs/${clubId}/schedule`}
+    />
+  );
 }

@@ -4,10 +4,9 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { RouterLink } from "@/app/components/RouterLink";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
-import {
-  type ClubFeatureSummary,
-} from "@/app/lib/clubs";
+import { useEffect, useMemo, useState } from "react";
+import { MoreNavigationMenu } from "@/app/components/MoreNavigationMenu";
+import { buildUserMoreNavigation } from "@/app/lib/featureNavigation";
 import { overlayFadeMotion, popInMotion } from "@/app/lib/motion";
 import { clubFeaturesQueryOptions, clubQueryKeys } from "@/app/lib/react-query/club/queries";
 import { useBottomNavScrollDocking } from "@/app/hooks/useBottomNavScrollDocking";
@@ -33,43 +32,10 @@ const BASE_NAV_ITEMS: NavItem[] = [
   { key: "PROFILE", label: "프로필", icon: "person", href: (clubId) => `/clubs/${clubId}/profile` },
 ];
 
-const FEATURE_ACCENT_CLASS: Record<string, string> = {
-  JOIN_REQUEST: "bg-blue-50 text-blue-600",
-  ATTENDANCE: "bg-blue-50 text-blue-600",
-  TIMELINE: "bg-indigo-50 text-indigo-600",
-  NOTICE: "bg-blue-50 text-blue-600",
-  POLL: "bg-sky-50 text-sky-600",
-  SCHEDULE_MANAGE: "bg-cyan-50 text-cyan-600",
-  MEMBER_DIRECTORY: "bg-rose-50 text-rose-600",
-  TOURNAMENT_RECORD: "bg-emerald-50 text-emerald-600",
-  BRACKET: "bg-amber-50 text-amber-700",
-  FINANCE: "bg-emerald-50 text-emerald-700",
-  FEEDBACK: "bg-violet-50 text-violet-700",
-  TODO: "bg-amber-50 text-amber-700",
-};
-
-function getFeatureDisplayName(feature: ClubFeatureSummary) {
-  return feature.displayName;
-}
-
 function stripQuery(path: string) {
   const [pathname] = path.split("?");
   return pathname ?? path;
 }
-
-const POPOVER_ITEM_VARIANTS = {
-  hidden: { opacity: 0, y: 12, scale: 0.96 },
-  visible: (index: number) => ({
-    opacity: 1,
-    y: 0,
-    scale: 1,
-    transition: {
-      duration: 0.2,
-      ease: "easeOut" as const,
-      delay: Math.min(index * 0.04, 0.18),
-    },
-  }),
-};
 
 const USER_ACTIVE_TEXT_CLASS = "text-[#135bec]";
 const USER_INACTIVE_TEXT_CLASS = "text-slate-400";
@@ -84,13 +50,13 @@ export function ClubBottomNav({ clubId, isAdmin = false }: ClubBottomNavProps) {
   const [openMenuPathname, setOpenMenuPathname] = useState<string | null>(null);
   const queryClient = useQueryClient();
   const { data: featureData } = useQuery(clubFeaturesQueryOptions(clubId));
-  const enabledFeatures: ClubFeatureSummary[] = (featureData ?? []).filter(
-    (feature) => feature.enabled && feature.navigationScope !== "ADMIN_ONLY",
+  const menuItems = useMemo(
+    () => buildUserMoreNavigation(featureData ?? [], clubId),
+    [clubId, featureData],
   );
-  const menuItems = enabledFeatures;
   const isMoreOpen = openMenuPathname === pathname;
   const isFeatureRouteActive = menuItems.some((feature) => {
-    const targetPath = stripQuery(feature.userPath);
+    const targetPath = stripQuery(feature.href);
     return pathname === targetPath || pathname.startsWith(`${targetPath}/`);
   });
   const moreMenuRef = useDialogFocusManagement<HTMLDivElement>({
@@ -136,7 +102,9 @@ export function ClubBottomNav({ clubId, isAdmin = false }: ClubBottomNavProps) {
       const isActive = isMoreItem
         ? isMoreOpen || isFeatureRouteActive
         : href
-          ? pathname === href
+          ? item.key === "HOME"
+            ? pathname === href
+            : pathname === href || pathname.startsWith(`${href}/`)
           : false;
       const textClassName = isActive ? USER_ACTIVE_TEXT_CLASS : USER_INACTIVE_TEXT_CLASS;
       const iconClassName = isActive ? USER_ACTIVE_TEXT_CLASS : USER_INACTIVE_TEXT_CLASS;
@@ -253,45 +221,27 @@ export function ClubBottomNav({ clubId, isAdmin = false }: ClubBottomNavProps) {
                   aria-modal="true"
                   aria-label="클럽 기능 더보기"
                   tabIndex={-1}
-                  className="relative rounded-[var(--radius-modal)] bg-white p-6 shadow-[var(--shadow-modal)]"
+                  className="relative max-h-[min(70vh,36rem)] overflow-y-auto rounded-[var(--radius-modal)] bg-white p-4 shadow-[var(--shadow-modal)]"
                 >
-                  <div className="grid grid-cols-3 gap-6">
-                    {menuItems.map((item, index) => (
-                      <motion.div
-                        key={`${item.featureKey || item.userPath || "feature"}-${index}`}
-                        custom={index}
-                        variants={POPOVER_ITEM_VARIANTS}
-                        initial="hidden"
-                        animate="visible"
-                        exit="hidden"
-                      >
-                        <RouterLink
-                          href={item.userPath}
-                          className="flex flex-col items-center space-y-2"
-                          onClick={() => setOpenMenuPathname(null)}
-                        >
-                          <div
-                            className={`flex h-14 w-14 items-center justify-center rounded-2xl ${
-                              FEATURE_ACCENT_CLASS[item.featureKey] ?? "bg-slate-100 text-slate-600"
-                            }`}
-                          >
-                            <span className="material-symbols-outlined text-[28px]" aria-hidden="true">
-                              {item.iconName}
-                            </span>
-                          </div>
-                          <span className="text-center text-[11px] font-semibold leading-4">
-                            {getFeatureDisplayName(item)}
-                          </span>
-                        </RouterLink>
-                      </motion.div>
-                    ))}
-                    {menuItems.length === 0 ? (
-                      <div className="col-span-3 rounded-2xl bg-slate-50 px-4 py-5 text-center text-xs font-medium text-slate-500">
-                        활성화된 기능이 없습니다.
-                      </div>
-                    ) : null}
+                  <div className="mb-4 flex items-start justify-between gap-4 px-1">
+                    <div>
+                      <p className="text-base font-bold text-slate-900">클럽 운영 도구</p>
+                      <p className="mt-1 text-xs text-slate-500">게시물은 게시판, 일정과 투표는 캘린더에서 확인하세요.</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setOpenMenuPathname(null)}
+                      className="semo-icon-control -mr-2 -mt-2 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+                      aria-label="더보기 닫기"
+                    >
+                      <span className="material-symbols-outlined" aria-hidden="true">close</span>
+                    </button>
                   </div>
-                  <div className="absolute -bottom-2 left-[70%] h-5 w-5 -translate-x-1/2 rotate-45 border-b border-r border-slate-100 bg-white" />
+                  <MoreNavigationMenu
+                    items={menuItems}
+                    mode="user"
+                    onNavigate={() => setOpenMenuPathname(null)}
+                  />
                 </div>
               </div>
             </motion.div>

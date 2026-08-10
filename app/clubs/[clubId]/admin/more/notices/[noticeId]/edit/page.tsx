@@ -1,4 +1,4 @@
-import { ClubNoticeEditRouteModal } from "@/app/clubs/[clubId]/more/notices/ClubNoticeEditRouteModal";
+import { redirect } from "next/navigation";
 
 type ClubAdminNoticeEditPageProps = {
   params: Promise<{
@@ -9,5 +9,5 @@ type ClubAdminNoticeEditPageProps = {
 
 export default async function ClubAdminNoticeEditPage({ params }: ClubAdminNoticeEditPageProps) {
   const { clubId, noticeId } = await params;
-  return <ClubNoticeEditRouteModal clubId={clubId} noticeId={noticeId} mode="admin" />;
+  redirect(`/clubs/${clubId}/board/${noticeId}/edit`);
 }

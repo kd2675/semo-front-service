@@ -321,44 +321,51 @@ export function ClubScheduleEditorClient({
         }
       >
         <div
-          className={`sticky top-0 z-10 bg-[var(--background-light)]/92 backdrop-blur ${
-            isModal ? "px-4 pt-4" : ""
-          }`}
+          className="sticky top-0 z-10 bg-[var(--background-light)]/92 backdrop-blur"
         >
           <ClubPageHeader
             title={isEdit ? "일정 수정" : "일정 생성"}
             subtitle={clubName}
             icon="edit_calendar"
             sticky={false}
+            layout={isModal ? "modal" : "page"}
             className="border-[var(--primary)]/10"
-            containerClassName={isModal ? "max-w-none px-0" : "max-w-md"}
+            containerClassName={isModal ? undefined : "max-w-md"}
             leftSlot={
+              !isModal ? (
+                <RouterLink
+                  href={backHref}
+                  className="flex size-11 shrink-0 items-center justify-center text-slate-900"
+                  aria-label="일정으로 돌아가기"
+                >
+                  <span className="material-symbols-outlined" aria-hidden="true">arrow_back</span>
+                </RouterLink>
+              ) : undefined
+            }
+            rightSlot={
               isModal && onRequestClose ? (
                 <button
                   type="button"
                   onClick={onRequestClose}
-                  className="semo-icon-control shrink-0 text-slate-900"
+                  className="semo-icon-control shrink-0 text-slate-900 transition-colors hover:bg-slate-100"
                   aria-label={isEdit ? "일정 수정 닫기" : "일정 작성 닫기"}
                 >
-                  <span className="material-symbols-outlined">close</span>
+                  <span className="material-symbols-outlined" aria-hidden="true">close</span>
                 </button>
-              ) : (
-                <RouterLink
-                  href={backHref}
-                  replace={isModal}
-                  className="flex size-11 shrink-0 items-center justify-center text-slate-900"
-                  aria-label="일정으로 돌아가기"
-                >
-                  <span className="material-symbols-outlined">arrow_back</span>
-                </RouterLink>
-              )
+              ) : undefined
             }
           />
 
-          <div className={`mx-auto flex w-full max-w-md flex-col gap-2 px-4 pb-4 ${isModal ? "max-w-none px-0" : ""}`}>
+          <div className={`mx-auto flex w-full max-w-md flex-col gap-2 px-4 pb-4 ${isModal ? "max-w-none px-5" : ""}`}>
             <p className="text-sm font-medium text-slate-700">일정 정보 입력</p>
-            <p className="text-xs text-slate-500">{clubName}</p>
-            <div className="h-1.5 overflow-hidden rounded-full bg-[var(--primary)]/10">
+            <div
+              className="h-1.5 overflow-hidden rounded-full bg-[var(--primary)]/10"
+              role="progressbar"
+              aria-label="일정 입력 진행률"
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-valuenow={Math.round(progressWidth)}
+            >
               <div
                 className="h-full rounded-full bg-[var(--primary)] transition-[width] duration-200"
                 style={{ width: `${progressWidth}%` }}
@@ -375,7 +382,7 @@ export function ClubScheduleEditorClient({
           <form id={formId} onSubmit={handleSubmit}>
             <section className="space-y-4 p-4">
               <div className="mb-2 flex items-center gap-2">
-                <span className="material-symbols-outlined text-sm text-[var(--primary)]">info</span>
+                <span className="material-symbols-outlined text-sm text-[var(--primary)]" aria-hidden="true">info</span>
                 <h3 className="text-base font-bold text-slate-900">필수 항목</h3>
               </div>
 
@@ -459,7 +466,7 @@ export function ClubScheduleEditorClient({
 
             <section className="space-y-6 p-4">
               <div className="mb-2 flex items-center gap-2">
-                <span className="material-symbols-outlined text-sm text-[var(--primary)]">settings</span>
+                <span className="material-symbols-outlined text-sm text-[var(--primary)]" aria-hidden="true">settings</span>
                 <h3 className="text-base font-bold text-slate-900">추가 옵션</h3>
               </div>
 
@@ -497,7 +504,7 @@ export function ClubScheduleEditorClient({
               <div className="space-y-3 border-t border-slate-100 pt-4">
                 <div className="flex items-center justify-between rounded-xl border border-[var(--primary)]/5 bg-white p-4 shadow-sm">
                   <div className="flex items-center gap-3">
-                    <span className="material-symbols-outlined text-[var(--primary)]">campaign</span>
+                    <span className="material-symbols-outlined text-[var(--primary)]" aria-hidden="true">campaign</span>
                     <div>
                       <span className="block text-sm font-semibold text-slate-900">게시판에도 공유</span>
                       <span className="mt-0.5 block text-[11px] text-slate-500">
@@ -508,6 +515,7 @@ export function ClubScheduleEditorClient({
                   <label className="relative inline-flex cursor-pointer items-center">
                     <input
                       checked={postToBoard}
+                      aria-label="게시판 공유"
                       className="peer sr-only"
                       type="checkbox"
                       onChange={(event) => setPostToBoard(event.target.checked)}
@@ -518,7 +526,7 @@ export function ClubScheduleEditorClient({
 
                 <div className="flex items-center justify-between rounded-xl border border-[var(--primary)]/5 bg-white p-4 shadow-sm">
                   <div className="flex items-center gap-3">
-                    <span className="material-symbols-outlined text-[var(--primary)]">calendar_month</span>
+                    <span className="material-symbols-outlined text-[var(--primary)]" aria-hidden="true">calendar_month</span>
                     <div>
                       <span className="block text-sm font-semibold text-slate-900">캘린더에도 공유</span>
                       <span className="mt-0.5 block text-[11px] text-slate-500">
@@ -529,6 +537,7 @@ export function ClubScheduleEditorClient({
                   <label className="relative inline-flex cursor-pointer items-center">
                     <input
                       checked={postToCalendar}
+                      aria-label="캘린더 공유"
                       className="peer sr-only"
                       type="checkbox"
                       onChange={(event) => setPostToCalendar(event.target.checked)}
@@ -539,7 +548,7 @@ export function ClubScheduleEditorClient({
 
                 <div className="flex items-center justify-between rounded-xl border border-[var(--primary)]/5 bg-white p-4 shadow-sm">
                   <div className="flex items-center gap-3">
-                    <span className="material-symbols-outlined text-[var(--primary)]">push_pin</span>
+                    <span className="material-symbols-outlined text-[var(--primary)]" aria-hidden="true">push_pin</span>
                     <div>
                       <span className="block text-sm font-semibold text-slate-900">핀 고정</span>
                       <span className="mt-0.5 block text-[11px] text-slate-500">
@@ -550,6 +559,7 @@ export function ClubScheduleEditorClient({
                   <label className="relative inline-flex cursor-pointer items-center">
                     <input
                       checked={pinned}
+                      aria-label="중요 일정 고정"
                       className="peer sr-only"
                       type="checkbox"
                       onChange={(event) => setPinned(event.target.checked)}
@@ -562,7 +572,7 @@ export function ClubScheduleEditorClient({
               <div className="space-y-3 border-t border-slate-100 pt-4">
                 <div className="flex items-center justify-between rounded-xl border border-[var(--primary)]/5 bg-white p-4 shadow-sm">
                   <div className="flex items-center gap-3">
-                    <span className="material-symbols-outlined text-[var(--primary)]">payments</span>
+                    <span className="material-symbols-outlined text-[var(--primary)]" aria-hidden="true">payments</span>
                     <div>
                       <span className="block text-sm font-semibold text-slate-900">참가비</span>
                       <span className="mt-0.5 block text-[11px] text-slate-500">
@@ -573,6 +583,7 @@ export function ClubScheduleEditorClient({
                   <label className="relative inline-flex cursor-pointer items-center">
                     <input
                       checked={feeRequired}
+                      aria-label="참가비 사용"
                       className="peer sr-only"
                       type="checkbox"
                       onChange={(event) => handleFeeRequiredChange(event.target.checked)}
@@ -602,11 +613,12 @@ export function ClubScheduleEditorClient({
                     <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
                       <div className="flex flex-col">
                         <span className="text-sm font-medium text-slate-700">금액 미정</span>
-                        <span className="text-[10px] text-slate-400">아직 금액이 확정되지 않았으면 켜두세요</span>
+                        <span className="text-[11px] text-slate-400">아직 금액이 확정되지 않았으면 켜두세요</span>
                       </div>
                       <label className="relative inline-flex cursor-pointer items-center">
                         <input
                           checked={feeAmountUndecided}
+                          aria-label="참가비 금액 미정"
                           className="peer sr-only"
                           type="checkbox"
                           onChange={(event) => setFeeAmountUndecided(event.target.checked)}
@@ -621,9 +633,9 @@ export function ClubScheduleEditorClient({
               <div className="space-y-4 border-t border-slate-100 pt-4">
                 <div className="flex items-center justify-between rounded-xl border border-[var(--primary)]/5 bg-white p-4 shadow-sm">
                   <div className="flex items-center gap-3">
-                    <span className="material-symbols-outlined text-[var(--primary)]">how_to_reg</span>
+                    <span className="material-symbols-outlined text-[var(--primary)]" aria-hidden="true">how_to_reg</span>
                     <div>
-                      <span className="block text-sm font-semibold text-slate-900">참석 응답 (RSVP)</span>
+                      <span className="block text-sm font-semibold text-slate-900">참석 응답</span>
                       <span className="mt-0.5 block text-[11px] text-slate-500">
                         {participationEnabled ? "사용 중" : "미사용"}
                       </span>
@@ -632,6 +644,7 @@ export function ClubScheduleEditorClient({
                   <label className="relative inline-flex cursor-pointer items-center">
                     <input
                       checked={participationEnabled}
+                      aria-label="참석 응답 사용"
                       className="peer sr-only"
                       type="checkbox"
                       onChange={(event) => handleParticipationEnabledChange(event.target.checked)}
@@ -675,7 +688,7 @@ export function ClubScheduleEditorClient({
                 <div className="space-y-3 border-t border-slate-100 pt-4">
                   <div className="flex items-center justify-between rounded-xl border border-[var(--primary)]/10 bg-white p-4 shadow-sm">
                     <div className="flex items-center gap-3">
-                      <span className="material-symbols-outlined text-[var(--primary)]">account_balance_wallet</span>
+                      <span className="material-symbols-outlined text-[var(--primary)]" aria-hidden="true">account_balance_wallet</span>
                       <div>
                         <span className="block text-sm font-semibold text-slate-900">1/n 정산</span>
                         <span className="mt-0.5 block text-[11px] text-slate-500">
@@ -686,6 +699,7 @@ export function ClubScheduleEditorClient({
                     <label className="relative inline-flex cursor-pointer items-center">
                       <input
                         checked={feeNWaySplit}
+                        aria-label="참석 인원 기준 더치페이"
                         className="peer sr-only"
                         type="checkbox"
                         onChange={(event) => setFeeNWaySplit(event.target.checked)}
@@ -715,7 +729,7 @@ export function ClubScheduleEditorClient({
                   disabled={deleting || saving}
                   className="flex h-14 flex-1 items-center justify-center gap-2 rounded-xl bg-rose-500 text-base font-bold text-white shadow-lg shadow-rose-500/25 transition-all hover:bg-rose-600 disabled:opacity-60"
                 >
-                  <span className="material-symbols-outlined text-xl">delete</span>
+                  <span className="material-symbols-outlined text-xl" aria-hidden="true">delete</span>
                   {deleting ? "삭제 중..." : "삭제"}
                 </button>
               ) : null}

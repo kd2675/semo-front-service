@@ -1,4 +1,4 @@
-import { ClubJoinRequestFallbackClient } from "./ClubJoinRequestFallbackClient";
+import { redirect } from "next/navigation";
 
 type ClubJoinRequestPageProps = {
   params: Promise<{
@@ -8,5 +8,5 @@ type ClubJoinRequestPageProps = {
 
 export default async function ClubJoinRequestPage({ params }: ClubJoinRequestPageProps) {
   const { clubId } = await params;
-  return <ClubJoinRequestFallbackClient clubId={clubId} />;
+  redirect(`/clubs/${clubId}`);
 }

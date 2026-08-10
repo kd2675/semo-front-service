@@ -307,7 +307,7 @@ export function ClubMemberDirectoryClient({
 
             <div className="relative">
               <p className="text-[11px] font-bold uppercase tracking-[0.28em] text-[var(--primary)]">
-                Member Directory
+                멤버 명단
               </p>
               <h2 className="mt-3 text-[28px] font-black tracking-[-0.04em] text-slate-900">
                 함께 활동하는 멤버를
@@ -315,8 +315,7 @@ export function ClubMemberDirectoryClient({
                 한 화면에서 찾으세요.
               </h2>
               <p className="mt-3 text-sm leading-6 text-slate-600">
-                레퍼런스의 카드 밀도는 가져오되, `semo` 사용자 화면 톤에 맞게 직책, 소개, 최근 활동을
-                차분하게 정리했습니다.
+                직책과 소개, 최근 활동을 한눈에 확인하고 함께할 멤버를 찾아보세요.
               </p>
 
               <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -377,7 +376,7 @@ export function ClubMemberDirectoryClient({
             {...staggeredFadeUpMotion(1, reduceMotion)}
           >
             <label className="flex items-center gap-3 rounded-[22px] border border-slate-200 bg-slate-50/90 px-4 py-3 transition focus-within:border-[var(--primary)]/30 focus-within:bg-white">
-              <span className="material-symbols-outlined text-slate-400">search</span>
+              <span className="material-symbols-outlined text-slate-400" aria-hidden="true">search</span>
               <input
                 value={query}
                 onChange={(event) => {
@@ -435,7 +434,7 @@ export function ClubMemberDirectoryClient({
               {...staggeredFadeUpMotion(2, reduceMotion)}
             >
               <div className="mx-auto flex size-14 items-center justify-center rounded-2xl bg-[var(--primary)]/10 text-[var(--primary)]">
-                <span className="material-symbols-outlined text-[28px]">person_search</span>
+                <span className="material-symbols-outlined text-[28px]" aria-hidden="true">person_search</span>
               </div>
               <p className="mt-4 text-base font-black tracking-tight text-slate-900">조건에 맞는 회원이 없습니다.</p>
               <p className="mt-2 text-sm leading-6 text-slate-500">
@@ -527,7 +526,7 @@ export function ClubMemberDirectoryClient({
 
                         <div className="mt-4 rounded-[24px] border border-dashed border-slate-200 bg-white/80 px-4 py-4">
                           <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.22em] text-slate-400">
-                            <span className="material-symbols-outlined text-[18px] text-[var(--primary)]">
+                            <span className="material-symbols-outlined text-[18px] text-[var(--primary)]" aria-hidden="true">
                               monitoring
                             </span>
                             최근 활동

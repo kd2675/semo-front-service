@@ -1,6 +1,7 @@
 "use client";
 
 import type { ClubAdminMember } from "@/app/lib/clubs";
+import { getClubRoleLabel } from "@/app/lib/roleLabels";
 import { getRoleMemberSubtitle, getRoleToneClass, makeInitials, DEFAULT_ROLE_COLOR } from "../utils/roleUtils";
 
 type RoleMemberIdentityProps = {
@@ -31,12 +32,12 @@ export function RoleMemberIdentity({
       <div className="min-w-0">
         <div className="flex flex-wrap items-center gap-2">
           <p className="truncate text-sm font-semibold text-slate-900">{member.displayName}</p>
-          <span className={`rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.18em] ${getRoleToneClass(member)}`}>
-            {member.roleCode}
+          <span className={`rounded-full px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.18em] ${getRoleToneClass(member)}`}>
+            {getClubRoleLabel(member.roleCode)}
           </span>
           {showSelf && member.self ? (
-            <span className="rounded-full bg-slate-900 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-white">
-              ME
+            <span className="rounded-full bg-slate-900 px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-white">
+              나
             </span>
           ) : null}
         </div>
@@ -73,6 +74,7 @@ export function RoleOtherPositions({
           >
             <span
               className="material-symbols-outlined text-[15px]"
+              aria-hidden="true"
               style={{ color: position.colorHex ?? DEFAULT_ROLE_COLOR }}
             >
               {position.iconName ?? "badge"}

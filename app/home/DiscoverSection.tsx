@@ -80,11 +80,12 @@ export function DiscoverSection({
         <label className="flex w-full flex-col">
           <div className="flex h-12 w-full items-stretch rounded-xl border border-transparent bg-slate-100 transition-all focus-within:border-[var(--primary)]/50">
             <div className="flex items-center justify-center pl-4 text-slate-500">
-              <span className="material-symbols-outlined text-xl">search</span>
+              <span className="material-symbols-outlined text-xl" aria-hidden="true">search</span>
             </div>
             <input
               className="form-input flex w-full border-none bg-transparent px-3 text-base font-normal text-slate-900 placeholder:text-slate-500 focus:ring-0"
               placeholder="클럽 이름이나 소개를 검색해 보세요."
+              aria-label="클럽 검색"
               value={searchQuery}
               onChange={(event) => {
                 const nextValue = event.target.value;
@@ -98,7 +99,7 @@ export function DiscoverSection({
       <motion.section className="px-4 pb-3 pt-6" {...staggeredFadeUpMotion(6, reduceMotion)}>
         <div className="flex items-baseline gap-2">
           <h2 className="text-lg font-bold text-slate-900">{discoverTitle}</h2>
-          <span className="text-[10px] font-medium text-slate-400">클럽 찾기/가입신청</span>
+          <span className="text-[11px] font-medium text-slate-400">클럽 찾기/가입신청</span>
         </div>
         <p className="mt-1 text-xs text-slate-500">{discoverSubtitle}</p>
       </motion.section>
@@ -129,23 +130,23 @@ export function DiscoverSection({
                   >
                     {!club.imageUrl ? (
                       <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-[var(--primary)]/12 to-blue-100 text-[var(--primary)]">
-                        <span className="material-symbols-outlined text-3xl">groups</span>
+                        <span className="material-symbols-outlined text-3xl" aria-hidden="true">groups</span>
                       </div>
                     ) : null}
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
                       <p className="text-base font-bold text-slate-900">{club.name}</p>
-                      <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold uppercase text-slate-600">
+                      <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-bold uppercase text-slate-600">
                         {getPrimaryClubActivityLabel(club.activityTags, club.activityCategory, club.categoryKey)}
                       </span>
                       {club.recommendedByTags || club.recommendedByCategory ? (
-                        <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold uppercase text-emerald-600">
+                        <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-bold uppercase text-emerald-600">
                           추천
                         </span>
                       ) : null}
                       {joinStatusLabel ? (
-                        <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-bold uppercase text-amber-700">
+                        <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-bold uppercase text-amber-700">
                           {joinStatusLabel}
                         </span>
                       ) : null}

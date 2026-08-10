@@ -5,7 +5,7 @@ import { ClubRouteErrorState } from "@/app/components/ClubRouteState";
 import { getQueryErrorMessage } from "@/app/lib/queryUtils";
 import { myClubQueryOptions } from "@/app/lib/react-query/club/queries";
 import {
-  adminFeedbackDetailFallbackQueryOptions,
+  adminFeedbackDetailQueryOptions,
   adminFeedbackHomeQueryOptions,
 } from "@/app/lib/react-query/feedback/queries";
 import { AdminFeatureSettingsLoadingShell } from "../../AdminRouteLoadingShells";
@@ -27,7 +27,7 @@ export function ClubAdminFeedbackFallbackClient({
   const [initialDetailQuery] = useQueries({
     queries: [
       {
-        ...adminFeedbackDetailFallbackQueryOptions(clubId, firstFeedbackId as number),
+        ...adminFeedbackDetailQueryOptions(clubId, firstFeedbackId as number),
         enabled: firstFeedbackId != null,
       },
     ],
@@ -47,19 +47,29 @@ export function ClubAdminFeedbackFallbackClient({
     );
   }
 
-  if ((clubQuery.isError || feedbackHomeQuery.isError) && (!club || !feedbackHome)) {
+  if (
+    (clubQuery.isError || feedbackHomeQuery.isError || initialDetailQuery.isError)
+    && (!club || !feedbackHome || (firstFeedbackId != null && !initialDetail))
+  ) {
     return (
       <ClubRouteErrorState
         title="피드백 관리"
-        message={getQueryErrorMessage(clubQuery.error ?? feedbackHomeQuery.error, "피드백을 불러오지 못했습니다.")}
+        message={getQueryErrorMessage(
+          clubQuery.error ?? feedbackHomeQuery.error ?? initialDetailQuery.error,
+          "피드백을 불러오지 못했습니다.",
+        )}
         backHref={`/clubs/${clubId}/admin`}
         theme="admin"
-        onRetry={() => void Promise.all([clubQuery.refetch(), feedbackHomeQuery.refetch()])}
+        onRetry={() => void Promise.all([
+          clubQuery.refetch(),
+          feedbackHomeQuery.refetch(),
+          initialDetailQuery.refetch(),
+        ])}
       />
     );
   }
 
-  if (!club || !feedbackHome) {
+  if (!club || !feedbackHome || (firstFeedbackId != null && !initialDetail)) {
     return <AdminFeatureSettingsLoadingShell />;
   }
 

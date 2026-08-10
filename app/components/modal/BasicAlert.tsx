@@ -72,11 +72,11 @@ export function BasicAlert({ alert }: BasicAlertProps) {
       >
         <div className={`pointer-events-none absolute -right-10 -top-10 h-28 w-28 rounded-full blur-2xl ${styles.glowClassName}`} />
         <div className={`relative mt-0.5 flex size-11 shrink-0 items-center justify-center rounded-[1.05rem] ${styles.iconWrapClassName}`}>
-          <span className="material-symbols-outlined text-[22px]">{styles.icon}</span>
+          <span className="material-symbols-outlined text-[22px]" aria-hidden="true">{styles.icon}</span>
         </div>
         <div className="relative min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <span className="text-[10px] font-black tracking-[0.24em] opacity-70">{styles.label}</span>
+            <span className="text-[11px] font-black tracking-[0.24em] opacity-70">{styles.label}</span>
             <span className="h-1.5 w-1.5 rounded-full bg-current opacity-30" />
             <span className="text-[11px] font-semibold opacity-60">SEMO</span>
           </div>

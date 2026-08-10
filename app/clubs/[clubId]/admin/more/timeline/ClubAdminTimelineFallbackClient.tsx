@@ -50,5 +50,5 @@ export function ClubAdminTimelineFallbackClient({
     return <AdminTimelineLoadingShell />;
   }
 
-  return <ClubAdminTimelineClient clubId={clubId} initialData={timeline} />;
+  return <ClubAdminTimelineClient initialData={timeline} />;
 }

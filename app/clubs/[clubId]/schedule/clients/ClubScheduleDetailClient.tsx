@@ -160,8 +160,20 @@ export function ClubScheduleDetailClient({
           title="일정 상세"
           subtitle={payload?.clubName}
           icon="calendar_month"
-          containerClassName="max-w-md"
+          layout={isModal ? "modal" : "page"}
+          containerClassName={isModal ? "max-w-none px-6" : "max-w-md"}
           leftSlot={
+            !isModal ? (
+              <RouterLink
+                href={backHref}
+                className="rounded-full p-2 transition-colors hover:bg-slate-100"
+                aria-label="일정 목록으로 돌아가기"
+              >
+                <span className="material-symbols-outlined text-[24px]" aria-hidden="true">arrow_back</span>
+              </RouterLink>
+            ) : undefined
+          }
+          rightSlot={
             isModal && onRequestClose ? (
               <button
                 type="button"
@@ -169,17 +181,9 @@ export function ClubScheduleDetailClient({
                 className="semo-icon-control transition-colors hover:bg-slate-100"
                 aria-label="일정 상세 닫기"
               >
-                <span className="material-symbols-outlined text-[24px]">close</span>
+                <span className="material-symbols-outlined text-[24px]" aria-hidden="true">close</span>
               </button>
-            ) : (
-              <RouterLink
-                href={backHref}
-                className="rounded-full p-2 transition-colors hover:bg-slate-100"
-                aria-label="일정 목록으로 돌아가기"
-              >
-                <span className="material-symbols-outlined text-[24px]">arrow_back</span>
-              </RouterLink>
-            )
+            ) : undefined
           }
         />
 
@@ -221,11 +225,11 @@ export function ClubScheduleDetailClient({
 
                 <div className="space-y-3">
                   <div className="flex items-center text-slate-600">
-                    <span className="material-symbols-outlined mr-3 text-[#135bec]">calendar_today</span>
+                    <span className="material-symbols-outlined mr-3 text-[#135bec]" aria-hidden="true">calendar_today</span>
                     <span className="text-[15px]">{payload.dateLabel}</span>
                   </div>
                   <div className="flex items-center text-slate-600">
-                    <span className="material-symbols-outlined mr-3 text-[#135bec]">schedule</span>
+                    <span className="material-symbols-outlined mr-3 text-[#135bec]" aria-hidden="true">schedule</span>
                     <span className="text-[15px]">
                       {payload.timeLabel ?? "시간 미정"}
                       {durationLabel ? <small className="ml-1 text-slate-400">({durationLabel})</small> : null}
@@ -254,7 +258,7 @@ export function ClubScheduleDetailClient({
                     </div>
 
                     <div className="mb-3 flex items-start gap-3">
-                      <span className="material-symbols-outlined mt-0.5 shrink-0 text-[#135bec]">location_on</span>
+                      <span className="material-symbols-outlined mt-0.5 shrink-0 text-[#135bec]" aria-hidden="true">location_on</span>
                       <div>
                         <p className="font-semibold">{payload.locationLabel}</p>
                         <p className="text-sm text-slate-500">등록된 위치 정보를 기준으로 지도 앱으로 이동할 수 있습니다.</p>
@@ -263,8 +267,8 @@ export function ClubScheduleDetailClient({
 
                     <div className="relative flex h-32 w-full items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-[linear-gradient(135deg,#f3f4f6_25%,#e5e7eb_100%)]">
                       <div className="flex flex-col items-center text-slate-400">
-                        <span className="material-symbols-outlined mb-1 text-[32px]">map</span>
-                        <span className="text-[10px] font-bold uppercase tracking-[0.24em]">지도 미리보기</span>
+                        <span className="material-symbols-outlined mb-1 text-[32px]" aria-hidden="true">map</span>
+                        <span className="text-[11px] font-bold uppercase tracking-[0.24em]">지도 미리보기</span>
                       </div>
                     </div>
                   </div>
@@ -295,7 +299,7 @@ export function ClubScheduleDetailClient({
                   <div className="flex items-center justify-between rounded-xl border border-[#e7effd] bg-[#e7effd]/40 p-4">
                     <div className="flex items-center gap-3">
                       <div className="rounded-lg bg-[#135bec] p-2 text-white">
-                        <span className="material-symbols-outlined text-[20px]">payments</span>
+                        <span className="material-symbols-outlined text-[20px]" aria-hidden="true">payments</span>
                       </div>
                       <div>
                         <p className="text-sm font-bold text-[#135bec]">
@@ -319,14 +323,24 @@ export function ClubScheduleDetailClient({
 
               </motion.section>
 
-              <div className={showFooter ? "h-48" : "h-24"} />
+              <div className={isModal ? "h-6" : showFooter ? "h-48" : "h-24"} />
             </>
           ) : null}
         </main>
 
         {showFooter && payload ? (
-          <footer className="fixed bottom-0 left-0 right-0 z-30 border-t border-[#f3f4f6] bg-white p-4 shadow-[0_-4px_12px_rgba(0,0,0,0.05)]">
-            <div className="mx-auto max-w-md space-y-3 pb-[calc(env(safe-area-inset-bottom)+4.75rem)]">
+          <footer
+            className={`${
+              isModal ? "sticky" : "fixed left-0 right-0"
+            } bottom-0 z-30 border-t border-[#f3f4f6] bg-white p-4 shadow-[0_-4px_12px_rgba(0,0,0,0.05)]`}
+          >
+            <div
+              className={`mx-auto space-y-3 ${
+                isModal
+                  ? "max-w-none pb-[env(safe-area-inset-bottom)]"
+                  : "max-w-md pb-[calc(env(safe-area-inset-bottom)+4.75rem)]"
+              }`}
+            >
               {showParticipationActions ? (
                 payload.myParticipationStatus == null ? (
                   <div className="grid grid-cols-2 gap-3">
@@ -365,7 +379,7 @@ export function ClubScheduleDetailClient({
 
         <AnimatePresence initial={false} mode="wait">
           {payload && showGoingParticipants ? (
-            <RouteModal onDismiss={() => setShowGoingParticipants(false)} contentClassName="max-w-md">
+            <RouteModal ariaLabel="일정 참석 명단" onDismiss={() => setShowGoingParticipants(false)} contentClassName="max-w-md">
               <div className="flex min-h-0 flex-1 flex-col">
                 <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
                   <div>
@@ -375,10 +389,10 @@ export function ClubScheduleDetailClient({
                   <button
                     type="button"
                     onClick={() => setShowGoingParticipants(false)}
-                    className="rounded-full p-2 text-slate-500 transition hover:bg-slate-100"
+                    className="semo-icon-control rounded-full text-slate-500 transition hover:bg-slate-100"
                     aria-label="참석 명단 닫기"
                   >
-                    <span className="material-symbols-outlined text-[20px]">close</span>
+                    <span className="material-symbols-outlined text-[20px]" aria-hidden="true">close</span>
                   </button>
                 </div>
 

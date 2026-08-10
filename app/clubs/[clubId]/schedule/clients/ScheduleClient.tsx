@@ -4,6 +4,7 @@ import { startTransition, useMemo, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { ClubModeSwitchFab } from "@/app/components/ClubModeSwitchFab";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
+import { RouteModal } from "@/app/components/RouteModal";
 import {
   ClubNoticeDetailModal,
   ClubPollDetailModal,
@@ -27,6 +28,8 @@ import type {
   ClubScheduleVoteSummary,
   TournamentSummary,
 } from "@/app/lib/clubs";
+import { ClubScheduleEditorClient } from "./ClubScheduleEditorClient";
+import { ClubScheduleVoteEditorClient } from "./ClubScheduleVoteEditorClient";
 
 type ScheduleClientProps = {
   clubId: string;
@@ -35,6 +38,7 @@ type ScheduleClientProps = {
   activeMonth: number;
   isMonthLoading: boolean;
   onChangeMonth: (year: number, month: number) => void;
+  onContentChanged: () => void;
 };
 
 type CalendarMonth = {
@@ -209,15 +213,15 @@ function getEventSecondaryText(event: ClubScheduleEventSummary) {
 
 function getEventStatusLabel(event: ClubScheduleEventSummary) {
   if (!event.participationEnabled) {
-    return "OPEN";
+    return "참여 가능";
   }
   if (event.myParticipationStatus === "GOING") {
-    return "JOINED";
+    return "참석";
   }
   if (event.myParticipationStatus === "NOT_GOING") {
-    return "DECLINED";
+    return "불참";
   }
-  return "RSVP";
+  return "응답 필요";
 }
 
 function formatNoticeTimeValue(value: string | null | undefined) {
@@ -320,7 +324,7 @@ function EventCard({
         <div
           className={`flex size-12 shrink-0 items-center justify-center rounded-lg ${visual.iconSurfaceClassName} ${visual.iconClassName}`}
         >
-          <span className="material-symbols-outlined">{visual.icon}</span>
+          <span className="material-symbols-outlined" aria-hidden="true">{visual.icon}</span>
         </div>
         <div className="flex flex-1 flex-col justify-center">
           <div className="mb-2 flex flex-wrap items-center gap-2">
@@ -369,7 +373,7 @@ function NoticeCard({
     >
       <div className="flex items-center gap-4 rounded-xl border border-slate-100 bg-white p-3 shadow-sm transition-all hover:border-sky-500/50 hover:bg-slate-50">
         <div className="flex size-12 shrink-0 items-center justify-center rounded-lg bg-sky-500/10 text-sky-600">
-          <span className="material-symbols-outlined">campaign</span>
+          <span className="material-symbols-outlined" aria-hidden="true">campaign</span>
         </div>
         <div className="flex flex-1 flex-col justify-center">
           <div className="mb-2 flex flex-wrap items-center gap-2">
@@ -418,7 +422,7 @@ function VoteCard({
     >
       <div className="flex items-center gap-4 rounded-xl border border-slate-100 bg-white p-3 shadow-sm transition-all hover:border-amber-500/50 hover:bg-slate-50">
         <div className="flex size-12 shrink-0 items-center justify-center rounded-lg bg-amber-500/10 text-amber-500">
-          <span className="material-symbols-outlined">poll</span>
+          <span className="material-symbols-outlined" aria-hidden="true">poll</span>
         </div>
         <div className="flex flex-1 flex-col justify-center">
           <div className="mb-2 flex flex-wrap items-center gap-2">
@@ -471,7 +475,7 @@ function TournamentCard({
     >
       <div className="flex items-center gap-4 rounded-xl border border-slate-100 bg-white p-3 shadow-sm transition-all hover:border-emerald-500/50 hover:bg-slate-50">
         <div className="flex size-12 shrink-0 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600">
-          <span className="material-symbols-outlined">emoji_events</span>
+          <span className="material-symbols-outlined" aria-hidden="true">emoji_events</span>
         </div>
         <div className="flex flex-1 flex-col justify-center">
           <div className="mb-2 flex flex-wrap items-center gap-2">
@@ -515,6 +519,7 @@ export function ScheduleClient({
   activeMonth,
   isMonthLoading,
   onChangeMonth,
+  onContentChanged,
 }: ScheduleClientProps) {
   const prefersReducedMotion = useReducedMotion();
   const reduceMotion = Boolean(prefersReducedMotion);
@@ -530,6 +535,7 @@ export function ScheduleClient({
   const [detailEventId, setDetailEventId] = useState<string | null>(null);
   const [detailVoteId, setDetailVoteId] = useState<string | null>(null);
   const [detailTournamentId, setDetailTournamentId] = useState<string | null>(null);
+  const [composer, setComposer] = useState<"chooser" | "event" | "poll" | null>(null);
 
   const dayItems = month.itemsByDay[selectedDay] ?? [];
   const selectedDateValue = getDateValue(month.year, month.month, selectedDay);
@@ -575,6 +581,7 @@ export function ScheduleClient({
     })
     .sort((left, right) => left.sortValue.localeCompare(right.sortValue));
   const maxEventCount = Math.max(0, ...Object.values(month.scheduleItemCountByDay));
+  const canCreateContent = payload.canCreateSchedule || payload.canCreatePoll;
 
   const openCalendarItemDetail = (item: SelectedScheduleItem) => {
     if (item.type === "notice") {
@@ -606,7 +613,21 @@ export function ScheduleClient({
   return (
     <div className="bg-[var(--background-light)] font-display text-slate-900">
       <div className="relative mx-auto flex min-h-full w-full max-w-md flex-col bg-[var(--background-light)]">
-        <ClubPageHeader title="캘린더" subtitle={payload.clubName} />
+        <ClubPageHeader
+          title="캘린더"
+          subtitle={payload.clubName}
+          icon="calendar_month"
+          rightSlot={canCreateContent ? (
+            <button
+              type="button"
+              onClick={() => setComposer("chooser")}
+              className="semo-control inline-flex items-center gap-1.5 bg-[var(--primary)] px-3.5 text-sm font-bold text-white shadow-[var(--shadow-card)] transition hover:brightness-105"
+            >
+              <span className="material-symbols-outlined text-[19px]" aria-hidden="true">add</span>
+              추가
+            </button>
+          ) : null}
+        />
 
         <main className="semo-nav-bottom-space relative flex-1">
           <motion.div className="bg-white p-4 shadow-sm" {...staggeredFadeUpMotion(0, reduceMotion)}>
@@ -614,19 +635,19 @@ export function ScheduleClient({
               <button
                 type="button"
                 onClick={() => handleMoveMonth("prev")}
-                className="rounded-full p-1 text-slate-900 transition-colors hover:bg-slate-100"
+                className="semo-icon-control rounded-full text-slate-900 transition-colors hover:bg-slate-100"
                 aria-label="이전 달"
               >
-                <span className="material-symbols-outlined">chevron_left</span>
+                <span className="material-symbols-outlined" aria-hidden="true">chevron_left</span>
               </button>
               <p className="text-base font-bold text-slate-900">{month.label}</p>
               <button
                 type="button"
                 onClick={() => handleMoveMonth("next")}
-                className="rounded-full p-1 text-slate-900 transition-colors hover:bg-slate-100"
+                className="semo-icon-control rounded-full text-slate-900 transition-colors hover:bg-slate-100"
                 aria-label="다음 달"
               >
-                <span className="material-symbols-outlined">chevron_right</span>
+                <span className="material-symbols-outlined" aria-hidden="true">chevron_right</span>
               </button>
             </div>
 
@@ -667,6 +688,8 @@ export function ScheduleClient({
                     key={`${month.id}-${day}`}
                     type="button"
                     onClick={() => handleSelectDay(day)}
+                    aria-label={`${month.year}년 ${month.month}월 ${day}일${eventCount > 0 ? `, 일정 ${eventCount}건` : ""}`}
+                    aria-pressed={isActive}
                     className="flex h-11 w-full items-center justify-center text-sm font-medium"
                   >
                     {isActive ? (
@@ -779,6 +802,77 @@ export function ScheduleClient({
 
         {payload.admin ? <ClubModeSwitchFab clubId={clubId} mode="user" /> : null}
         <AnimatePresence>
+          {composer === "chooser" ? (
+            <RouteModal ariaLabel="캘린더 항목 추가" onDismiss={() => setComposer(null)}>
+              <div className="bg-white">
+                <ClubPageHeader
+                  title="캘린더에 추가"
+                  subtitle={`${month.shortLabel} ${selectedDay}일을 기준으로 작성합니다.`}
+                  icon="add_circle"
+                  layout="modal"
+                  sticky={false}
+                  rightSlot={(
+                    <button
+                      type="button"
+                      onClick={() => setComposer(null)}
+                      className="semo-icon-control text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+                      aria-label="추가 메뉴 닫기"
+                    >
+                      <span className="material-symbols-outlined" aria-hidden="true">close</span>
+                    </button>
+                  )}
+                />
+                <div className="grid grid-cols-2 gap-3 p-5">
+                  {payload.canCreateSchedule ? (
+                    <button type="button" onClick={() => setComposer("event")} className="rounded-[var(--radius-card)] border border-slate-200 p-4 text-left transition hover:border-[var(--primary)]/30 hover:bg-blue-50/50">
+                      <span className="material-symbols-outlined text-[var(--primary)]" aria-hidden="true">event</span>
+                      <span className="mt-3 block text-sm font-bold text-slate-900">일정 만들기</span>
+                      <span className="mt-1 block text-xs leading-5 text-slate-500">시간, 장소와 참석 응답을 설정합니다.</span>
+                    </button>
+                  ) : null}
+                  {payload.canCreatePoll ? (
+                    <button type="button" onClick={() => setComposer("poll")} className="rounded-[var(--radius-card)] border border-slate-200 p-4 text-left transition hover:border-[var(--primary)]/30 hover:bg-blue-50/50">
+                      <span className="material-symbols-outlined text-[var(--primary)]" aria-hidden="true">poll</span>
+                      <span className="mt-3 block text-sm font-bold text-slate-900">투표 만들기</span>
+                      <span className="mt-1 block text-xs leading-5 text-slate-500">기간과 선택지를 정해 의견을 받습니다.</span>
+                    </button>
+                  ) : null}
+                </div>
+              </div>
+            </RouteModal>
+          ) : null}
+          {composer === "event" ? (
+            <RouteModal ariaLabel="일정 작성" onDismiss={() => setComposer(null)} dismissOnBackdrop={false}>
+              <ClubScheduleEditorClient
+                clubId={clubId}
+                clubName={payload.clubName}
+                presentation="modal"
+                initialEventDate={selectedDateValue}
+                onRequestClose={() => setComposer(null)}
+                onSaved={(eventId) => {
+                  setComposer(null);
+                  onContentChanged();
+                  setDetailEventId(String(eventId));
+                }}
+              />
+            </RouteModal>
+          ) : null}
+          {composer === "poll" ? (
+            <RouteModal ariaLabel="투표 작성" onDismiss={() => setComposer(null)} dismissOnBackdrop={false}>
+              <ClubScheduleVoteEditorClient
+                clubId={clubId}
+                clubName={payload.clubName}
+                presentation="modal"
+                basePath={`/clubs/${clubId}/schedule`}
+                onRequestClose={() => setComposer(null)}
+                onSaved={(voteId) => {
+                  setComposer(null);
+                  onContentChanged();
+                  setDetailVoteId(String(voteId));
+                }}
+              />
+            </RouteModal>
+          ) : null}
           {detailNoticeId ? (
             <ClubNoticeDetailModal
               clubId={clubId}

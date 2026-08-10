@@ -9,6 +9,7 @@ import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import { uploadTempImage } from "@/app/lib/imageUpload";
 import { staggeredFadeUpMotion } from "@/app/lib/motion";
 import { getQueryErrorMessage } from "@/app/lib/queryUtils";
+import { getClubRoleLabel, getMembershipStatusLabel } from "@/app/lib/roleLabels";
 import { updateClubProfileMutationOptions } from "@/app/lib/react-query/club/mutations";
 import { clubProfileQueryOptions } from "@/app/lib/react-query/club/queries";
 import { invalidateClubQueries } from "@/app/lib/react-query/common";
@@ -17,6 +18,23 @@ import { ClubProfileLoadingShell } from "../ClubRouteLoadingShells";
 type ClubProfileFallbackClientProps = {
   clubId: string;
 };
+
+function getClubRecordPresentation(record: { title: string; value: string }) {
+  switch (record.title) {
+    case "Club Name":
+      return { title: "클럽 이름", value: record.value };
+    case "Region":
+      return { title: "활동 지역", value: record.value };
+    case "Membership":
+      return { title: "가입 상태", value: getMembershipStatusLabel(record.value) };
+    case "Club Role":
+      return { title: "클럽 역할", value: getClubRoleLabel(record.value) };
+    case "Joined":
+      return { title: "가입일", value: record.value };
+    default:
+      return { title: record.title, value: record.value };
+  }
+}
 
 export function ClubProfileFallbackClient({ clubId }: ClubProfileFallbackClientProps) {
   const queryClient = useQueryClient();
@@ -144,7 +162,7 @@ export function ClubProfileFallbackClient({ clubId }: ClubProfileFallbackClientP
             <div className="rounded-2xl border border-slate-100 bg-slate-50 p-5">
               <p className="text-xs font-semibold tracking-wide text-slate-400">앱 프로필</p>
               <h2 className="mt-3 text-2xl font-extrabold tracking-tight">
-                {appProfile?.displayName ?? "SEMO User"}
+                {appProfile?.displayName ?? "SEMO 사용자"}
               </h2>
               <p className="mt-2 text-sm text-slate-500">
                 {appProfile?.tagline ?? "앱 프로필 정보가 준비 중입니다."}
@@ -210,6 +228,7 @@ export function ClubProfileFallbackClient({ clubId }: ClubProfileFallbackClientP
                       }}
                       className="h-11 flex-1 rounded-[8px] border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[var(--primary)]"
                       placeholder="클럽 안에서 보여줄 닉네임"
+                      aria-label="클럽 닉네임"
                       maxLength={100}
                     />
                     <button
@@ -229,10 +248,10 @@ export function ClubProfileFallbackClient({ clubId }: ClubProfileFallbackClientP
               </p>
               <div className="mt-3 flex flex-wrap items-center gap-2">
                 <span className="rounded-full bg-[var(--primary)]/10 px-3 py-1 text-xs font-bold text-[var(--primary)]">
-                  {clubProfile?.roleCode ?? "MEMBER"}
+                  {getClubRoleLabel(clubProfile?.roleCode)}
                 </span>
                 <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-500">
-                  {clubProfile?.membershipStatus ?? "ACTIVE"}
+                  {getMembershipStatusLabel(clubProfile?.membershipStatus)}
                 </span>
                 <span className="text-sm text-slate-500">
                   {clubProfile?.joinedLabel ?? "-"}
@@ -243,19 +262,22 @@ export function ClubProfileFallbackClient({ clubId }: ClubProfileFallbackClientP
 
           <section className="px-4 pb-12">
             <div className="grid grid-cols-2 gap-4">
-              {(payload?.clubRecords ?? []).map((record, index) => (
-                <motion.article
-                  key={record.id}
-                  className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm"
-                  {...staggeredFadeUpMotion(index + 2, reduceMotion)}
-                >
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
-                    {record.title}
-                  </p>
-                  <p className="mt-2 text-xl font-extrabold tracking-tight">{record.value}</p>
-                  <p className="mt-2 text-xs text-slate-500">{record.description}</p>
-                </motion.article>
-              ))}
+              {(payload?.clubRecords ?? []).map((record, index) => {
+                const presentation = getClubRecordPresentation(record);
+                return (
+                  <motion.article
+                    key={record.id}
+                    className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm"
+                    {...staggeredFadeUpMotion(index + 2, reduceMotion)}
+                  >
+                    <p className="text-xs font-semibold tracking-wide text-slate-400">
+                      {presentation.title}
+                    </p>
+                    <p className="mt-2 text-xl font-extrabold tracking-tight">{presentation.value}</p>
+                    <p className="mt-2 text-xs text-slate-500">{record.description}</p>
+                  </motion.article>
+                );
+              })}
             </div>
           </section>
         </main>

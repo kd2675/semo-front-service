@@ -5,7 +5,7 @@ import {
   getClubFeedbackDetail,
   getClubFeedbackHome,
 } from "@/app/lib/clubs";
-import { getApiDataOrFallback, requireApiData } from "@/app/lib/queryUtils";
+import { requireApiData } from "@/app/lib/queryUtils";
 
 export const feedbackQueryKeys = {
   feedbackHome: (clubId: string) => ["semo", "clubs", clubId, "feedback-home"] as const,
@@ -35,14 +35,6 @@ export function feedbackDetailQueryOptions(clubId: string, feedbackId: string | 
   });
 }
 
-export function feedbackDetailFallbackQueryOptions(clubId: string, feedbackId: string | number) {
-  return queryOptions({
-    queryKey: feedbackQueryKeys.feedbackDetail(clubId, feedbackId),
-    queryFn: async () =>
-      getApiDataOrFallback(await getClubFeedbackDetail(clubId, feedbackId), null),
-  });
-}
-
 export function adminFeedbackHomeQueryOptions(clubId: string) {
   return queryOptions({
     queryKey: feedbackQueryKeys.adminFeedbackHome(clubId),
@@ -59,16 +51,5 @@ export function adminFeedbackDetailQueryOptions(clubId: string, feedbackId: stri
         await getClubAdminFeedbackDetail(clubId, feedbackId),
         "피드백 상세를 불러오지 못했습니다.",
       ),
-  });
-}
-
-export function adminFeedbackDetailFallbackQueryOptions(
-  clubId: string,
-  feedbackId: string | number,
-) {
-  return queryOptions({
-    queryKey: feedbackQueryKeys.adminFeedbackDetail(clubId, feedbackId),
-    queryFn: async () =>
-      getApiDataOrFallback(await getClubAdminFeedbackDetail(clubId, feedbackId), null),
   });
 }

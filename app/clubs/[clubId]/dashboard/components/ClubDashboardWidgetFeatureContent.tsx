@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import { RouterLink } from "@/app/components/RouterLink";
+import { localizeRelativeTimeLabel } from "@/app/lib/dateLabels";
 import {
   getTournamentFeeLabel,
   getTournamentFormatLabel,
@@ -119,7 +120,7 @@ export function ClubDashboardWidgetFeatureContent({
   const latestMyBracket = bracketData?.myBrackets?.[0] ?? null;
   const featuredBracket = bracketData?.featuredBracket ?? bracketData?.publishedBrackets?.[0] ?? null;
   const bracketHero = latestMyBracket ?? featuredBracket;
-  const bracketHeroLabel = latestMyBracket?.mine ? "My Latest Bracket" : "Featured Bracket";
+  const bracketHeroLabel = latestMyBracket?.mine ? "내 최근 대진표" : "추천 대진표";
 
   if (isBoardNoticeWidget) {
     return (
@@ -149,7 +150,7 @@ export function ClubDashboardWidgetFeatureContent({
             <div className="flex items-center justify-between rounded-lg bg-slate-50 px-3 py-2">
               <p className="text-xs font-medium text-slate-500">{latestNotice.author}</p>
               <span className="rounded-full bg-blue-100 px-2 py-0.5 text-[11px] font-bold text-blue-600">
-                {latestNotice.timeAgo}
+                {localizeRelativeTimeLabel(latestNotice.timeAgo)}
               </span>
             </div>
           </>
@@ -185,7 +186,7 @@ export function ClubDashboardWidgetFeatureContent({
                   <p className="truncate text-sm font-bold text-slate-900">{notice.title}</p>
                   <p className="truncate text-xs text-slate-500">{notice.summary}</p>
                 </div>
-                <span className="shrink-0 text-[11px] font-bold text-sky-600">{notice.timeAgo}</span>
+                <span className="shrink-0 text-[11px] font-bold text-sky-600">{localizeRelativeTimeLabel(notice.timeAgo)}</span>
               </RouterLink>
             ))}
           </>
@@ -220,7 +221,7 @@ export function ClubDashboardWidgetFeatureContent({
                       className="flex items-center gap-3 rounded-xl border border-slate-100 bg-white p-3 shadow-sm transition-all hover:border-[var(--primary)]/40"
                     >
                       <div className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-[var(--primary)]/10 text-[var(--primary)]">
-                        <span className="material-symbols-outlined">edit_calendar</span>
+                        <span className="material-symbols-outlined" aria-hidden="true">edit_calendar</span>
                       </div>
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-sm font-bold text-slate-900">{item.event.title}</p>
@@ -242,7 +243,7 @@ export function ClubDashboardWidgetFeatureContent({
                       className="flex items-center gap-3 rounded-xl border border-slate-100 bg-white p-3 shadow-sm transition-all hover:border-amber-500/40"
                     >
                       <div className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-amber-500/10 text-amber-500">
-                        <span className="material-symbols-outlined">poll</span>
+                        <span className="material-symbols-outlined" aria-hidden="true">poll</span>
                       </div>
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-sm font-bold text-slate-900">{item.vote.title}</p>
@@ -267,12 +268,12 @@ export function ClubDashboardWidgetFeatureContent({
                       className="flex items-center gap-3 rounded-xl border border-slate-100 bg-white p-3 shadow-sm transition-all hover:border-sky-500/40"
                     >
                       <div className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-sky-500/10 text-sky-600">
-                        <span className="material-symbols-outlined">campaign</span>
+                        <span className="material-symbols-outlined" aria-hidden="true">campaign</span>
                       </div>
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-sm font-bold text-slate-900">{item.notice.title}</p>
                         <p className="truncate text-xs text-slate-500">
-                          {item.notice.locationLabel ?? item.notice.scheduleAtLabel ?? item.notice.timeAgo}
+                          {item.notice.locationLabel ?? item.notice.scheduleAtLabel ?? localizeRelativeTimeLabel(item.notice.timeAgo)}
                         </p>
                       </div>
                       <div className="shrink-0 text-right">
@@ -367,7 +368,7 @@ export function ClubDashboardWidgetFeatureContent({
             <div className="flex items-start justify-between gap-3">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.16em] text-emerald-600">
-                  {closestMyTournament ? "My Tournament" : "Featured Tournament"}
+                  {closestMyTournament ? "내 대회" : "추천 대회"}
                 </p>
                 <p className="mt-2 line-clamp-2 text-base font-bold text-slate-900">{tournamentHero.title}</p>
               </div>

@@ -1,14 +1,12 @@
 "use client";
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useMemo, useState } from "react";
 
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import { RouterLink } from "@/app/components/RouterLink";
-import { useAppToast } from "@/app/hooks/useAppToast";
-import { ScheduleActionConfirmModal } from "@/app/clubs/[clubId]/schedule/modals/ScheduleActionConfirmModal";
 import { FAB_RIGHT_OFFSET_CLASS_NAME, getActionFabBottomClass } from "@/app/lib/fab";
 import { staggeredFadeUpMotion } from "@/app/lib/motion";
 import type {
@@ -17,7 +15,6 @@ import type {
   ClubPositionHistoryItem,
   ClubPositionSummary,
 } from "@/app/lib/clubs";
-import { deleteRoleHistoryMutationOptions } from "@/app/lib/react-query/roles/mutations";
 import {
   adminRoleHistoryQueryOptions,
   adminRoleManagementQueryOptions,
@@ -74,7 +71,7 @@ function RoleAvatar({ role }: { role: ClubPositionSummary }) {
       className="flex size-12 shrink-0 items-center justify-center rounded-2xl text-white shadow-sm"
       style={{ backgroundColor: colorHex }}
     >
-      <span className="material-symbols-outlined text-[26px]">{role.iconName ?? "badge"}</span>
+      <span className="material-symbols-outlined text-[26px]" aria-hidden="true">{role.iconName ?? "badge"}</span>
     </div>
   );
 }
@@ -91,7 +88,7 @@ function RoleMetricChip({
   return (
     <div className="rounded-2xl bg-slate-50 px-4 py-3">
       <div className="flex items-center gap-2 text-xs font-semibold text-slate-500">
-        <span className="material-symbols-outlined text-[17px] text-[var(--primary)]">{icon}</span>
+        <span className="material-symbols-outlined text-[17px] text-[var(--primary)]" aria-hidden="true">{icon}</span>
         {label}
       </div>
       <p className="mt-1 text-lg font-extrabold text-slate-900">{value}</p>
@@ -128,7 +125,7 @@ function RoleOverviewCard({
           </p>
         </div>
         <div className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-orange-50 text-[var(--primary)]">
-          <span className="material-symbols-outlined text-[26px]">admin_panel_settings</span>
+          <span className="material-symbols-outlined text-[26px]" aria-hidden="true">admin_panel_settings</span>
         </div>
       </div>
 
@@ -144,7 +141,7 @@ function RoleOverviewCard({
           href={`/clubs/${clubId}/admin/more/roles/assignments`}
           className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-2 text-xs font-bold text-slate-700"
         >
-          <span className="material-symbols-outlined text-[16px]">manage_accounts</span>
+          <span className="material-symbols-outlined text-[16px]" aria-hidden="true">manage_accounts</span>
           멤버별 배정
         </RouterLink>
         {featureFilter ? (
@@ -152,7 +149,7 @@ function RoleOverviewCard({
             href={`/clubs/${clubId}/admin/more/roles`}
             className="inline-flex items-center gap-1.5 rounded-full bg-orange-50 px-3 py-2 text-xs font-bold text-[var(--primary)]"
           >
-            <span className="material-symbols-outlined text-[16px]">filter_alt_off</span>
+            <span className="material-symbols-outlined text-[16px]" aria-hidden="true">filter_alt_off</span>
             기능 필터 해제
           </RouterLink>
         ) : null}
@@ -177,6 +174,7 @@ function RoleTabBar({
           <button
             key={tab.key}
             type="button"
+            aria-pressed={activeTab === tab.key}
             onClick={() => onChange(tab.key)}
             className={`flex min-h-11 items-center justify-center gap-1.5 rounded-[18px] px-2 text-sm font-bold transition ${
               activeTab === tab.key
@@ -184,7 +182,7 @@ function RoleTabBar({
                 : "bg-slate-50 text-slate-600 hover:bg-slate-100"
             }`}
           >
-            <span className="material-symbols-outlined text-[18px]">{tab.icon}</span>
+            <span className="material-symbols-outlined text-[18px]" aria-hidden="true">{tab.icon}</span>
             {tab.label}
           </button>
         ))}
@@ -222,7 +220,7 @@ function RoleCard({
             <div className="min-w-0">
               <h3 className="truncate text-lg font-extrabold tracking-tight text-slate-900">{role.displayName}</h3>
               <p className="mt-1 truncate text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
-                {role.positionCode}
+                직책 코드 · {role.positionCode}
               </p>
             </div>
             <span
@@ -272,7 +270,7 @@ function RoleCard({
           onClick={() => onOpenSheet(role, "overview")}
           className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[#ec5b13] px-4 py-3 text-sm font-bold text-white transition active:scale-[0.98]"
         >
-          <span className="material-symbols-outlined text-[18px]">edit</span>
+          <span className="material-symbols-outlined text-[18px]" aria-hidden="true">edit</span>
           설정
         </button>
         <button
@@ -280,7 +278,7 @@ function RoleCard({
           onClick={() => onOpenSheet(role, "members")}
           className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-700 transition active:scale-[0.98]"
         >
-          <span className="material-symbols-outlined text-[18px]">person_add</span>
+          <span className="material-symbols-outlined text-[18px]" aria-hidden="true">person_add</span>
           배정
         </button>
       </div>
@@ -292,7 +290,7 @@ function EmptyRoleState({ clubId, reduceMotion }: { clubId: string; reduceMotion
   return (
     <motion.section className="rounded-[28px] border border-dashed border-slate-300 bg-white p-6 text-center shadow-sm" {...staggeredFadeUpMotion(2, reduceMotion)}>
       <div className="mx-auto flex size-14 items-center justify-center rounded-2xl bg-orange-50 text-[var(--primary)]">
-        <span className="material-symbols-outlined text-[30px]">add_moderator</span>
+        <span className="material-symbols-outlined text-[30px]" aria-hidden="true">add_moderator</span>
       </div>
       <h3 className="mt-4 text-lg font-bold">아직 만든 직책이 없습니다.</h3>
       <p className="mt-2 text-sm leading-6 text-slate-500">회장, 총무, 경기운영 같은 운영 직책을 먼저 등록하세요.</p>
@@ -300,7 +298,7 @@ function EmptyRoleState({ clubId, reduceMotion }: { clubId: string; reduceMotion
         href={`/clubs/${clubId}/admin/more/roles/new`}
         className="mt-5 inline-flex items-center justify-center gap-2 rounded-2xl bg-[#ec5b13] px-5 py-3 text-sm font-bold text-white"
       >
-        <span className="material-symbols-outlined text-[18px]">add</span>
+        <span className="material-symbols-outlined text-[18px]" aria-hidden="true">add</span>
         직책 만들기
       </RouterLink>
     </motion.section>
@@ -371,12 +369,10 @@ function PermissionGroupCard({
 function RoleHistoryCard({
   history,
   index,
-  onDeleteRequest,
   reduceMotion,
 }: {
   history: ClubPositionHistoryItem;
   index: number;
-  onDeleteRequest: (history: ClubPositionHistoryItem) => void;
   reduceMotion: boolean;
 }) {
   return (
@@ -393,14 +389,9 @@ function RoleHistoryCard({
             </span>
           </div>
         </div>
-        <button
-          type="button"
-          onClick={() => onDeleteRequest(history)}
-          className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-rose-50 text-rose-500 transition active:scale-95"
-          aria-label={`${history.memberDisplayName} 직책 보유 이력 삭제`}
-        >
-          <span className="material-symbols-outlined text-[20px]">delete</span>
-        </button>
+        <span className="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-bold text-slate-500">
+          변경 불가
+        </span>
       </div>
       <div className="mt-4 grid grid-cols-[auto_1fr] gap-x-3 gap-y-2 text-sm">
         <span className="font-semibold text-slate-400">시작</span>
@@ -409,7 +400,7 @@ function RoleHistoryCard({
         <span className="font-bold text-slate-700">{history.endedAtLabel ?? "현재"}</span>
       </div>
       <p className="mt-4 break-all text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">
-        {history.positionCode}
+        직책 코드 · {history.positionCode}
       </p>
     </motion.article>
   );
@@ -422,7 +413,6 @@ export function ClubAdminRolesClient({ clubId, initialData }: ClubAdminRolesClie
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const { showToast } = useAppToast();
   const featureFilter = searchParams.get("feature")?.trim().toUpperCase() ?? "";
   const requestedEditPositionId = Number(searchParams.get("editPositionId") ?? "");
   const requestedEditTab = normalizeRoleSheetTab(searchParams.get("tab"));
@@ -431,10 +421,8 @@ export function ClubAdminRolesClient({ clubId, initialData }: ClubAdminRolesClie
     initialData,
   });
   const roleHistoryQuery = useQuery(adminRoleHistoryQueryOptions(clubId));
-  const deleteHistoryMutation = useMutation(deleteRoleHistoryMutationOptions(clubId));
   const [roleManagementState, setRoleManagement] = useState<ClubAdminRoleManagementResponse | null>(null);
   const [activeTab, setActiveTab] = useState<RolePageTab>("ROLES");
-  const [pendingDeleteHistory, setPendingDeleteHistory] = useState<ClubPositionHistoryItem | null>(null);
   const [selectedSheetState, setSelectedSheetState] = useState<{
     positionId: number;
     tab: RoleSheetTab;
@@ -551,20 +539,6 @@ export function ClubAdminRolesClient({ clubId, initialData }: ClubAdminRolesClie
     }
   };
 
-  const handleConfirmDeleteHistory = async () => {
-    if (!pendingDeleteHistory) {
-      return;
-    }
-    try {
-      await deleteHistoryMutation.mutateAsync(pendingDeleteHistory.positionHistoryId);
-      await queryClient.invalidateQueries({ queryKey: roleQueryKeys.adminRoleHistory(clubId) });
-      showToast("직책 보유 이력을 삭제했습니다.", "success");
-      setPendingDeleteHistory(null);
-    } catch {
-      showToast("직책 보유 이력을 삭제하지 못했습니다.", "error");
-    }
-  };
-
   return (
     <div className="min-h-screen bg-[var(--background-light)] text-slate-900">
       <div className="min-h-screen bg-[#f8f6f6]">
@@ -650,7 +624,6 @@ export function ClubAdminRolesClient({ clubId, initialData }: ClubAdminRolesClie
                     history={history}
                     index={index}
                     reduceMotion={reduceMotion}
-                    onDeleteRequest={setPendingDeleteHistory}
                   />
                 ))
               )}
@@ -664,24 +637,8 @@ export function ClubAdminRolesClient({ clubId, initialData }: ClubAdminRolesClie
           className={`fixed ${FAB_RIGHT_OFFSET_CLASS_NAME} ${getActionFabBottomClass(true)} z-40 flex h-14 w-14 items-center justify-center rounded-full bg-[#ec5b13] text-white transition-transform active:scale-95`}
           style={{ boxShadow: "0 6px 16px rgba(236, 91, 19, 0.32)" }}
         >
-          <span className="material-symbols-outlined text-[28px]">add</span>
+          <span className="material-symbols-outlined text-[28px]" aria-hidden="true">add</span>
         </RouterLink>
-
-        {pendingDeleteHistory ? (
-          <ScheduleActionConfirmModal
-            title="직책 보유 이력을 삭제할까요?"
-            description="삭제하면 활동 로그의 직책 필터 기준에서도 제외됩니다. 현재 직책 배정은 멤버별 배정 화면에서 별도로 조정해야 합니다."
-            confirmLabel="이력 삭제"
-            busyLabel="삭제 중..."
-            busy={deleteHistoryMutation.isPending}
-            onCancel={() => {
-              if (!deleteHistoryMutation.isPending) {
-                setPendingDeleteHistory(null);
-              }
-            }}
-            onConfirm={() => void handleConfirmDeleteHistory()}
-          />
-        ) : null}
 
         <AnimatePresence>
           {selectedEditRole ? (

@@ -11,7 +11,6 @@ import { staggeredFadeUpMotion } from "@/app/lib/motion";
 import { getObligationFrameClassName } from "../utils/financeUtils";
 import {
   AdminFinanceRequestCard,
-  AdminPlaceholderPanel,
   EmptyAdminState,
   ExpenseLedgerCard,
   MetricCard,
@@ -37,7 +36,7 @@ export function DashboardTabPanel({
             <p className="text-xs font-semibold tracking-wide text-slate-400">재무 요약</p>
             <h3 className="mt-2 text-xl font-bold">현재 운영 중인 회비/청구 흐름</h3>
             <p className="mt-2 text-sm leading-6 text-slate-500">
-              아직은 지출·정산 장부가 아니라 청구와 수납 현황에 집중합니다. 현재 숫자는 모두 실제 obligation / payment 데이터 기준입니다.
+              청구, 수납, 미납 현황을 한눈에 확인하고 필요한 후속 처리를 이어갈 수 있습니다.
             </p>
           </div>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -52,8 +51,8 @@ export function DashboardTabPanel({
       <section className="grid gap-4 xl:grid-cols-2">
         <WorkspaceStatusCard
           title="회비 관리"
-          status="실동작"
-          description="청구 발행, 멤버별 납부 상태 관리, 면제 처리까지 현재 바로 운영할 수 있습니다."
+          status="운영 중"
+          description="청구 발행부터 멤버별 납부 상태 확인과 면제 처리까지 한곳에서 관리합니다."
           metrics={[
             { label: "활성 멤버", value: `${finance.activeMemberCount}명` },
             { label: "미납", value: `${finance.pendingPaymentCount}건` },
@@ -61,13 +60,13 @@ export function DashboardTabPanel({
           ]}
         />
         <WorkspaceStatusCard
-          title="확장 예정 영역"
-          status="실동작"
-          description="회원 요청 검토와 운영 지출 입력까지는 연결했습니다. 행사별 정산 마감과 장부 리포트는 다음 단계입니다."
+          title="재정 운영 현황"
+          status="운영 중"
+          description="회원 요청과 운영 지출을 함께 확인하고 처리할 수 있습니다."
           metrics={[
             { label: "요청 대기", value: `${pendingRequestCount}건` },
             { label: "지출 입력", value: `${expenseCount}건` },
-            { label: "장부/리포트", value: "다음 단계" },
+            { label: "관리 범위", value: "요청 · 지출" },
           ]}
           muted
         />
@@ -178,7 +177,7 @@ export function BillingTabPanel({
                         <h4 className="text-xl font-bold text-slate-900">{obligation.title}</h4>
                         <p className="mt-2 text-sm text-slate-500">{obligation.amountLabel} · 마감 {obligation.dueAtLabel ?? "미정"} · 발행 {obligation.issuedByDisplayName}</p>
                       </div>
-                      <span className="material-symbols-outlined text-slate-400">chevron_right</span>
+                      <span className="material-symbols-outlined text-slate-400" aria-hidden="true">chevron_right</span>
                     </div>
                   </div>
 
@@ -341,7 +340,7 @@ export function SettlementsTabPanel({
           <div>
             <p className="text-xs font-semibold tracking-wide text-slate-400">정산 운영</p>
             <h3 className="mt-2 text-xl font-bold">정산 관리</h3>
-            <p className="mt-2 text-sm leading-6 text-slate-500">행사별 분담 계산은 다음 단계에서 붙이고, 지금은 회원이 올린 정산 요청을 운영 관점에서 검토합니다.</p>
+            <p className="mt-2 text-sm leading-6 text-slate-500">회원이 제출한 정산 요청을 확인하고 승인 또는 반려할 수 있습니다.</p>
           </div>
           <MetricCard label="정산 요청" value={settlementRequestItems.length} accent />
         </div>
@@ -372,19 +371,6 @@ export function SettlementsTabPanel({
           )}
         </div>
       </section>
-    </motion.section>
-  );
-}
-
-export function LedgerTabPanel({ reduceMotion }: { reduceMotion: boolean }) {
-  return (
-    <motion.section className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm" {...staggeredFadeUpMotion(2, reduceMotion)}>
-      <AdminPlaceholderPanel
-        icon="menu_book"
-        title="장부와 리포트는 수입·지출 원장이 붙으면 활성화됩니다."
-        description="입금/출금/조정 내역, 카테고리별 집계, 활동 로그, 권한 분리와 리포트 출력을 이 탭에서 관리하게 됩니다."
-        bullets={["수입 / 지출 / 조정 장부", "카테고리 및 계정 관리", "활동 로그와 권한 관리"]}
-      />
     </motion.section>
   );
 }

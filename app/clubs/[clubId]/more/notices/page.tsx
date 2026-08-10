@@ -1,4 +1,4 @@
-import { ClubNoticeHomeFallbackClient } from "./ClubNoticeHomeFallbackClient";
+import { redirect } from "next/navigation";
 
 type ClubNoticeHomePageProps = {
   params: Promise<{
@@ -8,5 +8,5 @@ type ClubNoticeHomePageProps = {
 
 export default async function ClubNoticeHomePage({ params }: ClubNoticeHomePageProps) {
   const { clubId } = await params;
-  return <ClubNoticeHomeFallbackClient clubId={clubId} />;
+  redirect(`/clubs/${clubId}/board`);
 }

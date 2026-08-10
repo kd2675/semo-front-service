@@ -18,6 +18,7 @@ export function ClubScheduleFallbackClient({ clubId }: ClubScheduleFallbackClien
     data: payload,
     isPending,
     isFetching,
+    refetch,
   } = useQuery(clubScheduleQueryOptions(clubId, activeYear, activeMonth));
 
   const handleMonthChange = (year: number, month: number) => {
@@ -40,6 +41,8 @@ export function ClubScheduleFallbackClient({ clubId }: ClubScheduleFallbackClien
           clubId: Number(clubId),
           clubName: "일정 스튜디오",
           admin: false,
+          canCreateSchedule: false,
+          canCreatePoll: false,
           calendarYear: activeYear,
           calendarMonth: activeMonth,
           overview: {
@@ -58,6 +61,7 @@ export function ClubScheduleFallbackClient({ clubId }: ClubScheduleFallbackClien
       activeMonth={payload?.calendarMonth ?? activeMonth}
       isMonthLoading={isFetching}
       onChangeMonth={handleMonthChange}
+      onContentChanged={() => void refetch()}
     />
   );
 }

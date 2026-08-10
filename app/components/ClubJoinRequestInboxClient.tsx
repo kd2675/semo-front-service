@@ -97,13 +97,13 @@ function JoinRequestCard({
           <div className="flex flex-wrap items-center gap-2">
             <p className="text-base font-black tracking-tight text-slate-900">{item.displayName}</p>
             <span
-              className={`rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] ${accentClassName}`}
+              className={`rounded-full px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.16em] ${accentClassName}`}
             >
               대기 중
             </span>
             {isRequestedToday(item.requestedAt) ? (
-              <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-600">
-                today
+              <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.16em] text-slate-600">
+                오늘
               </span>
             ) : null}
           </div>
@@ -264,10 +264,10 @@ export function ClubJoinRequestInboxClient({
             />
             <div className="relative">
               <p className="text-[11px] font-bold uppercase tracking-[0.28em] text-[var(--primary)]">
-                Join Request
+                가입 요청
               </p>
               <h2 className="mt-3 text-[28px] font-black tracking-[-0.04em] text-slate-900">
-                {isAdminMode ? "가입 승인 대기열을 운영하고" : "지금 접수된 신규가입 대기열을"}
+                {isAdminMode ? "가입 승인 대기열을 운영하고" : "지금 접수된 신규 가입 대기열을"}
                 <br />
                 {isAdminMode ? "가입 이후 운영 동선까지 이어갑니다." : "한 화면에서 빠르게 확인하세요."}
               </h2>
@@ -335,7 +335,7 @@ export function ClubJoinRequestInboxClient({
             </div>
 
             <label className="mt-4 flex items-center gap-3 rounded-[22px] border border-slate-200 bg-slate-50/90 px-4 py-3 transition focus-within:border-[var(--primary)]/30 focus-within:bg-white">
-              <span className="material-symbols-outlined text-slate-400">search</span>
+              <span className="material-symbols-outlined text-slate-400" aria-hidden="true">search</span>
               <input
                 value={query}
                 onChange={(event) => {

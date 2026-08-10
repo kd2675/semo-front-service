@@ -144,7 +144,7 @@ export function ClubScheduleVoteDetailClient({
     || submittingVoteOptionId !== null
     || selectedOptionId === payload?.mySelectedOptionId;
   const isModal = presentation === "modal";
-  const backHref = basePath ?? `/clubs/${clubId}/more/polls`;
+  const backHref = basePath ?? `/clubs/${clubId}/schedule`;
 
   return (
     <div className={isModal ? "flex min-h-0 flex-1 flex-col bg-white font-display text-gray-900 antialiased" : "min-h-full bg-gray-50 font-display text-gray-900 antialiased"}>
@@ -153,8 +153,20 @@ export function ClubScheduleVoteDetailClient({
           title="투표 상세"
           subtitle={payload?.clubName}
           icon="how_to_vote"
-          containerClassName="max-w-md"
+          layout={isModal ? "modal" : "page"}
+          containerClassName={isModal ? undefined : "max-w-md"}
           leftSlot={
+            !isModal ? (
+              <RouterLink
+                href={backHref}
+                aria-label="뒤로 가기"
+                className="rounded-full p-1 transition-colors hover:bg-gray-100"
+              >
+                <span className="material-symbols-outlined text-[24px] text-gray-700" aria-hidden="true">arrow_back</span>
+              </RouterLink>
+            ) : undefined
+          }
+          rightSlot={
             isModal && onRequestClose ? (
               <button
                 type="button"
@@ -162,17 +174,9 @@ export function ClubScheduleVoteDetailClient({
                 aria-label="투표 상세 닫기"
                 className="semo-icon-control transition-colors hover:bg-gray-100"
               >
-                <span className="material-symbols-outlined text-[24px] text-gray-700">close</span>
+                <span className="material-symbols-outlined text-[24px] text-gray-700" aria-hidden="true">close</span>
               </button>
-            ) : (
-              <RouterLink
-                href={backHref}
-                aria-label="뒤로 가기"
-                className="rounded-full p-1 transition-colors hover:bg-gray-100"
-              >
-                <span className="material-symbols-outlined text-[24px] text-gray-700">arrow_back</span>
-              </RouterLink>
-            )
+            ) : undefined
           }
         />
 
@@ -257,7 +261,7 @@ export function ClubScheduleVoteDetailClient({
                         <div className="flex items-center gap-2">
                           {isSelected ? (
                             <span className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-500 text-white">
-                              <span className="material-symbols-outlined text-[16px]">check</span>
+                              <span className="material-symbols-outlined text-[16px]" aria-hidden="true">check</span>
                             </span>
                           ) : (
                             <span className="h-6 w-6 rounded-full border-2 border-gray-200" />
@@ -279,7 +283,7 @@ export function ClubScheduleVoteDetailClient({
                       </div>
 
                       {isPersistedSelection ? (
-                        <div className="mt-2 text-[10px] font-bold uppercase text-blue-500">나의 선택</div>
+                        <div className="mt-2 text-[11px] font-bold uppercase text-blue-500">나의 선택</div>
                       ) : null}
                     </button>
                   );

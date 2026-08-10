@@ -70,6 +70,15 @@ type BoardReadStatusModalState = {
   status: BoardItemReadStatusResponse | null;
 };
 
+type BoardComposer = "chooser" | "notice" | "event" | "poll" | "tournament";
+
+type BoardCreatePermissions = {
+  notice: boolean;
+  event: boolean;
+  poll: boolean;
+  tournament: boolean;
+};
+
 function isPinnedBoardItem(item: ClubBoardFeedItem) {
   return Boolean(
     (item.contentType === "NOTICE" && item.notice?.pinned)
@@ -188,7 +197,7 @@ function BoardVoteCard({
                 }}
                 className="mt-2 inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-600 transition hover:bg-slate-200 hover:text-slate-900"
               >
-                <span className="material-symbols-outlined text-[14px]">visibility</span>
+                <span className="material-symbols-outlined text-[14px]" aria-hidden="true">visibility</span>
                 읽음 {readCount}명
               </button>
             ) : null}
@@ -204,7 +213,7 @@ function BoardVoteCard({
                 }}
                 className="rounded-full p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
               >
-                <span className="material-symbols-outlined text-[20px]">more_horiz</span>
+                <span className="material-symbols-outlined text-[20px]" aria-hidden="true">more_horiz</span>
               </button>
               <AnimatePresence initial={false}>
                 {open ? (
@@ -225,7 +234,7 @@ function BoardVoteCard({
                         }}
                         className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm font-semibold text-amber-600 transition hover:bg-amber-50"
                       >
-                        <span className="material-symbols-outlined text-[18px]">edit</span>
+                        <span className="material-symbols-outlined text-[18px]" aria-hidden="true">edit</span>
                         수정
                       </button>
                     ) : null}
@@ -241,7 +250,7 @@ function BoardVoteCard({
                           canEdit ? "border-t border-slate-100" : ""
                         }`}
                       >
-                        <span className="material-symbols-outlined text-[18px]">delete</span>
+                        <span className="material-symbols-outlined text-[18px]" aria-hidden="true">delete</span>
                         삭제
                       </button>
                     ) : null}
@@ -261,7 +270,7 @@ export function ClubBoardFeedClient({ clubId }: ClubBoardFeedClientProps) {
   const prefersReducedMotion = useReducedMotion();
   const reduceMotion = Boolean(prefersReducedMotion);
   const [items, setItems] = useState<ClubBoardFeedItem[]>([]);
-  const [clubName, setClubName] = useState("Notice Board");
+  const [clubName, setClubName] = useState("게시판");
   const [isAdmin, setIsAdmin] = useState(false);
   const [hasNext, setHasNext] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -284,6 +293,13 @@ export function ClubBoardFeedClient({ clubId }: ClubBoardFeedClientProps) {
   const [readStatusModal, setReadStatusModal] = useState<BoardReadStatusModalState | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
   const [pinnedOnly, setPinnedOnly] = useState(false);
+  const [composer, setComposer] = useState<BoardComposer | null>(null);
+  const [createPermissions, setCreatePermissions] = useState<BoardCreatePermissions>({
+    notice: false,
+    event: false,
+    poll: false,
+    tournament: false,
+  });
   const [cursor, setCursor] = useState<CursorState>({ boardItemId: null });
   const [sentinelNode, setSentinelNode] = useState<HTMLDivElement | null>(null);
   const loadingRef = useRef(false);
@@ -335,6 +351,12 @@ export function ClubBoardFeedClient({ clubId }: ClubBoardFeedClientProps) {
     setInitialLoaded(true);
     setClubName(payload.clubName);
     setIsAdmin(payload.admin);
+    setCreatePermissions({
+      notice: payload.canCreateNotice,
+      event: payload.canCreateSchedule,
+      poll: payload.canCreatePoll,
+      tournament: payload.canCreateTournament,
+    });
     setHasNext(payload.hasNext);
     setCursor({
       boardItemId: payload.nextCursorBoardItemId,
@@ -504,11 +526,26 @@ export function ClubBoardFeedClient({ clubId }: ClubBoardFeedClientProps) {
 
   const pinnedItems = items.filter(isPinnedBoardItem);
   const visibleItems = items;
+  const canCreateContent = Object.values(createPermissions).some(Boolean);
 
   return (
     <div className="bg-[var(--background-light)] font-display text-slate-900">
       <div className="relative mx-auto flex min-h-full max-w-md flex-col bg-white">
-        <ClubPageHeader title="게시판" subtitle={clubName} icon="campaign" />
+        <ClubPageHeader
+          title="게시판"
+          subtitle={clubName}
+          icon="forum"
+          rightSlot={canCreateContent ? (
+            <button
+              type="button"
+              onClick={() => setComposer("chooser")}
+              className="semo-control inline-flex items-center gap-1.5 bg-[var(--primary)] px-3.5 text-sm font-bold text-white shadow-[var(--shadow-card)] transition hover:brightness-105"
+            >
+              <span className="material-symbols-outlined text-[19px]" aria-hidden="true">add</span>
+              작성
+            </button>
+          ) : null}
+        />
 
         <main className="semo-nav-bottom-space flex-1">
           <div className="space-y-6 px-4 pt-6">
@@ -518,6 +555,7 @@ export function ClubBoardFeedClient({ clubId }: ClubBoardFeedClientProps) {
                   <h2 className="flex items-center gap-2 text-base font-bold text-slate-900">
                     <span
                       className="material-symbols-outlined text-red-500 text-[20px]"
+                      aria-hidden="true"
                       style={{ fontVariationSettings: "'FILL' 1, 'wght' 600, 'GRAD' 0, 'opsz' 20" }}
                     >
                       push_pin
@@ -539,6 +577,7 @@ export function ClubBoardFeedClient({ clubId }: ClubBoardFeedClientProps) {
                   <h2 className="flex items-center gap-2 text-base font-bold text-slate-900">
                     <span
                       className="material-symbols-outlined text-red-500 text-[20px]"
+                      aria-hidden="true"
                       style={{ fontVariationSettings: "'FILL' 1, 'wght' 600, 'GRAD' 0, 'opsz' 20" }}
                     >
                       push_pin
@@ -743,6 +782,123 @@ export function ClubBoardFeedClient({ clubId }: ClubBoardFeedClientProps) {
 
         {isAdmin ? <ClubModeSwitchFab clubId={clubId} mode="user" /> : null}
         <AnimatePresence>
+          {composer === "chooser" ? (
+            <RouteModal ariaLabel="게시 콘텐츠 작성" onDismiss={() => setComposer(null)}>
+              <div className="bg-white">
+                <ClubPageHeader
+                  title="새 콘텐츠"
+                  subtitle="대표 화면에 바로 반영됩니다."
+                  icon="add_circle"
+                  layout="modal"
+                  sticky={false}
+                  rightSlot={(
+                    <button
+                      type="button"
+                      onClick={() => setComposer(null)}
+                      className="semo-icon-control text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+                      aria-label="작성 메뉴 닫기"
+                    >
+                      <span className="material-symbols-outlined" aria-hidden="true">close</span>
+                    </button>
+                  )}
+                />
+                <div className="grid grid-cols-2 gap-3 p-5">
+                  {createPermissions.notice ? (
+                    <button type="button" onClick={() => setComposer("notice")} className="rounded-[var(--radius-card)] border border-slate-200 p-4 text-left transition hover:border-[var(--primary)]/30 hover:bg-blue-50/50">
+                      <span className="material-symbols-outlined text-[var(--primary)]" aria-hidden="true">campaign</span>
+                      <span className="mt-3 block text-sm font-bold text-slate-900">공지</span>
+                      <span className="mt-1 block text-xs leading-5 text-slate-500">게시판 공지를 작성합니다.</span>
+                    </button>
+                  ) : null}
+                  {createPermissions.event ? (
+                    <button type="button" onClick={() => setComposer("event")} className="rounded-[var(--radius-card)] border border-slate-200 p-4 text-left transition hover:border-[var(--primary)]/30 hover:bg-blue-50/50">
+                      <span className="material-symbols-outlined text-[var(--primary)]" aria-hidden="true">event</span>
+                      <span className="mt-3 block text-sm font-bold text-slate-900">일정</span>
+                      <span className="mt-1 block text-xs leading-5 text-slate-500">캘린더와 게시판에 공유합니다.</span>
+                    </button>
+                  ) : null}
+                  {createPermissions.poll ? (
+                    <button type="button" onClick={() => setComposer("poll")} className="rounded-[var(--radius-card)] border border-slate-200 p-4 text-left transition hover:border-[var(--primary)]/30 hover:bg-blue-50/50">
+                      <span className="material-symbols-outlined text-[var(--primary)]" aria-hidden="true">poll</span>
+                      <span className="mt-3 block text-sm font-bold text-slate-900">투표</span>
+                      <span className="mt-1 block text-xs leading-5 text-slate-500">기간과 선택지를 정해 의견을 받습니다.</span>
+                    </button>
+                  ) : null}
+                  {createPermissions.tournament ? (
+                    <button type="button" onClick={() => setComposer("tournament")} className="rounded-[var(--radius-card)] border border-slate-200 p-4 text-left transition hover:border-[var(--primary)]/30 hover:bg-blue-50/50">
+                      <span className="material-symbols-outlined text-[var(--primary)]" aria-hidden="true">emoji_events</span>
+                      <span className="mt-3 block text-sm font-bold text-slate-900">대회</span>
+                      <span className="mt-1 block text-xs leading-5 text-slate-500">대회를 등록하고 승인을 요청합니다.</span>
+                    </button>
+                  ) : null}
+                </div>
+              </div>
+            </RouteModal>
+          ) : null}
+          {composer === "notice" ? (
+            <RouteModal ariaLabel="공지 작성" onDismiss={() => setComposer(null)} dismissOnBackdrop={false}>
+              <ClubNoticeEditorClient
+                clubId={clubId}
+                presentation="modal"
+                basePath={`/clubs/${clubId}/board`}
+                onRequestClose={() => setComposer(null)}
+                onSaved={(noticeId) => {
+                  setComposer(null);
+                  void invalidateClubQueries(queryClient, clubId);
+                  setReloadKey((current) => current + 1);
+                  setDetailNoticeId(String(noticeId));
+                }}
+              />
+            </RouteModal>
+          ) : null}
+          {composer === "event" ? (
+            <RouteModal ariaLabel="일정 작성" onDismiss={() => setComposer(null)} dismissOnBackdrop={false}>
+              <ClubScheduleEditorClient
+                clubId={clubId}
+                clubName={clubName}
+                presentation="modal"
+                onRequestClose={() => setComposer(null)}
+                onSaved={(eventId) => {
+                  setComposer(null);
+                  void invalidateClubQueries(queryClient, clubId);
+                  setReloadKey((current) => current + 1);
+                  setDetailEventId(String(eventId));
+                }}
+              />
+            </RouteModal>
+          ) : null}
+          {composer === "poll" ? (
+            <RouteModal ariaLabel="투표 작성" onDismiss={() => setComposer(null)} dismissOnBackdrop={false}>
+              <ClubScheduleVoteEditorClient
+                clubId={clubId}
+                clubName={clubName}
+                presentation="modal"
+                basePath={`/clubs/${clubId}/schedule`}
+                onRequestClose={() => setComposer(null)}
+                onSaved={(voteId) => {
+                  setComposer(null);
+                  void invalidateClubQueries(queryClient, clubId);
+                  setReloadKey((current) => current + 1);
+                  setDetailVoteId(String(voteId));
+                }}
+              />
+            </RouteModal>
+          ) : null}
+          {composer === "tournament" ? (
+            <RouteModal ariaLabel="대회 작성" onDismiss={() => setComposer(null)} dismissOnBackdrop={false}>
+              <ClubTournamentEditorClient
+                clubId={clubId}
+                presentation="modal"
+                onRequestClose={() => setComposer(null)}
+                onSaved={(tournamentId) => {
+                  setComposer(null);
+                  void invalidateClubQueries(queryClient, clubId);
+                  setReloadKey((current) => current + 1);
+                  setDetailTournamentId(String(tournamentId));
+                }}
+              />
+            </RouteModal>
+          ) : null}
           {detailNoticeId ? (
             <ClubNoticeDetailModal
               clubId={clubId}
@@ -773,6 +929,7 @@ export function ClubBoardFeedClient({ clubId }: ClubBoardFeedClientProps) {
           ) : null}
           {editingNoticeId ? (
             <RouteModal
+              ariaLabel="공지 수정"
               onDismiss={() => {
                 setEditingNoticeId(null);
               }}
@@ -794,7 +951,7 @@ export function ClubBoardFeedClient({ clubId }: ClubBoardFeedClientProps) {
             </RouteModal>
           ) : null}
           {editingEventId ? (
-            <RouteModal onDismiss={() => setEditingEventId(null)} dismissOnBackdrop={false}>
+            <RouteModal ariaLabel="일정 수정" onDismiss={() => setEditingEventId(null)} dismissOnBackdrop={false}>
               <ClubScheduleEditorClient
                 clubId={clubId}
                 eventId={editingEventId}
@@ -816,13 +973,13 @@ export function ClubBoardFeedClient({ clubId }: ClubBoardFeedClientProps) {
             </RouteModal>
           ) : null}
           {editingVoteId ? (
-            <RouteModal onDismiss={() => setEditingVoteId(null)} dismissOnBackdrop={false}>
+            <RouteModal ariaLabel="투표 수정" onDismiss={() => setEditingVoteId(null)} dismissOnBackdrop={false}>
               <ClubScheduleVoteEditorClient
                 clubId={clubId}
                 voteId={editingVoteId}
                 clubName={clubName}
                 presentation="modal"
-                basePath={`/clubs/${clubId}/more/polls`}
+                basePath={`/clubs/${clubId}/schedule`}
                 onRequestClose={() => setEditingVoteId(null)}
                 onSaved={(savedVoteId) => {
                   setEditingVoteId(null);
@@ -834,7 +991,7 @@ export function ClubBoardFeedClient({ clubId }: ClubBoardFeedClientProps) {
             </RouteModal>
           ) : null}
           {editingTournamentId ? (
-            <RouteModal onDismiss={() => setEditingTournamentId(null)} dismissOnBackdrop={false}>
+            <RouteModal ariaLabel="대회 수정" onDismiss={() => setEditingTournamentId(null)} dismissOnBackdrop={false}>
               <ClubTournamentEditorClient
                 clubId={clubId}
                 tournamentRecordId={editingTournamentId}

@@ -53,6 +53,10 @@ export type ClubNoticeFeedResponse = {
   clubId: number;
   clubName: string;
   admin: boolean;
+  canCreateNotice: boolean;
+  canCreateSchedule: boolean;
+  canCreatePoll: boolean;
+  canCreateTournament: boolean;
   items: ClubBoardFeedItem[];
   nextCursorBoardItemId: number | null;
   hasNext: boolean;

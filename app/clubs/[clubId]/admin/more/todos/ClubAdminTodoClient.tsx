@@ -414,21 +414,21 @@ export function ClubAdminTodoClient({ clubId, initialData }: ClubAdminTodoClient
     try {
       const result = await deleteTodoMutation.mutateAsync(deletingTodoItem.todoItemId);
       if (!result.ok) {
-        showToast(result.message ?? "할 일을 삭제하지 못했습니다.", "error");
+        showToast(result.message ?? "할 일을 보관하지 못했습니다.", "error");
         return;
       }
       setDeletingTodoItem(null);
 
       const reloaded = await reloadTodos(undefined, undefined, undefined, { showErrorToast: false });
       if (!reloaded) {
-        showToast("할 일은 삭제했지만 목록을 다시 불러오지 못했습니다.", "error");
+        showToast("할 일은 보관했지만 목록을 다시 불러오지 못했습니다.", "error");
         return;
       }
 
       void invalidateClubQueries(queryClient, clubId);
-      showToast("할 일을 삭제했습니다.", "success");
+      showToast("할 일을 보관했습니다. 신청 기록은 유지됩니다.", "success");
     } catch (error) {
-      showToast(resolveErrorMessage(error, "할 일을 삭제하지 못했습니다."), "error");
+      showToast(resolveErrorMessage(error, "할 일을 보관하지 못했습니다."), "error");
     } finally {
       setPendingTodoId(null);
     }
@@ -476,17 +476,17 @@ export function ClubAdminTodoClient({ clubId, initialData }: ClubAdminTodoClient
             className={`fixed ${FAB_RIGHT_OFFSET_CLASS_NAME} ${getActionFabBottomClass(true)} z-40 flex h-14 w-14 items-center justify-center rounded-full bg-[#ec5b13] text-white transition-transform active:scale-95`}
             style={{ boxShadow: "0 6px 16px rgba(236, 91, 19, 0.32)" }}
           >
-            <span className="material-symbols-outlined text-[28px]">assignment_add</span>
+            <span className="material-symbols-outlined text-[28px]" aria-hidden="true">assignment_add</span>
           </button>
         ) : null}
 
 
         {deletingTodoItem ? (
           <ScheduleActionConfirmModal
-            title="할 일을 삭제할까요?"
-            description="삭제하면 연결된 신청 기록도 함께 지워집니다. 취소 상태와 달리 복구할 수 없습니다."
-            confirmLabel="할 일 삭제"
-            busyLabel="삭제 중..."
+            title="할 일을 보관할까요?"
+            description="목록에서는 숨겨지지만 업무와 신청 기록은 감사 이력으로 유지됩니다."
+            confirmLabel="보관"
+            busyLabel="보관 중..."
             busy={pendingTodoId === deletingTodoItem.todoItemId}
             onCancel={() => {
               if (pendingTodoId !== deletingTodoItem.todoItemId) {

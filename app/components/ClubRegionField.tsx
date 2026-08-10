@@ -87,7 +87,7 @@ export function ClubRegionField({
     <div className="space-y-4">
       <div>
         <p className="mb-2 text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">
-          Region Scope
+          활동 지역
         </p>
         <div className="grid grid-cols-3 gap-2">
           {REGION_SCOPE_OPTIONS.map((option) => {

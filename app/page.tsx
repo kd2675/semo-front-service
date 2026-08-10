@@ -22,6 +22,7 @@ import {
 } from "@/app/lib/clubs";
 import { overlayFadeMotion, popInMotion, staggeredFadeUpMotion } from "@/app/lib/motion";
 import { getQueryErrorMessage } from "@/app/lib/queryUtils";
+import { getClubRoleLabel } from "@/app/lib/roleLabels";
 import { cancelClubJoinMutationOptions, submitClubJoinMutationOptions } from "@/app/lib/react-query/home/mutations";
 import { discoverClubsQueryOptions, myClubsQueryOptions } from "@/app/lib/react-query/home/queries";
 import type { AuthUser } from "@/app/types/auth";
@@ -198,7 +199,7 @@ export default function Home() {
             >
               <div className="semo-panel w-full max-w-sm px-6 py-7 text-center">
                 <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--primary)]">
-                  SIGNING OUT
+                  로그아웃 처리
                 </p>
                 <h2 className="mt-3 text-2xl font-extrabold tracking-tight">로그아웃 중입니다.</h2>
                 <p className="mt-2 text-sm text-[var(--muted)]">
@@ -228,13 +229,6 @@ export default function Home() {
             </div>
             <h2 className="ml-3 flex-1 text-xl font-bold leading-tight tracking-tight text-slate-900">SEMO</h2>
             <div className="flex items-center justify-end gap-2">
-              <button
-                type="button"
-              className="semo-icon-control bg-slate-100 text-slate-700"
-                aria-label="알림"
-              >
-                <span className="material-symbols-outlined">notifications</span>
-              </button>
               <motion.button
                 type="button"
                 onClick={handleSignOut}
@@ -305,7 +299,7 @@ export default function Home() {
                         >
                           {!club.imageUrl ? (
                             <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-[var(--primary)]/10 to-blue-100 text-[var(--primary)]">
-                              <span className="material-symbols-outlined text-4xl">groups</span>
+                              <span className="material-symbols-outlined text-4xl" aria-hidden="true">groups</span>
                             </div>
                           ) : null}
                         </div>
@@ -313,7 +307,7 @@ export default function Home() {
                           <div className="flex items-center justify-between gap-3">
                             <p className="text-base font-bold text-slate-900">{club.name}</p>
                             {club.admin ? (
-                              <span className="rounded-full bg-[var(--primary)]/10 px-2 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--primary)]">
+                              <span className="rounded-full bg-[var(--primary)]/10 px-2 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-[var(--primary)]">
                                 관리자
                               </span>
                             ) : null}
@@ -322,8 +316,8 @@ export default function Home() {
                             {club.summary ?? club.description ?? "클럽 소개가 아직 없습니다."}
                           </p>
                           <div className="mt-3 flex flex-wrap items-center gap-1.5 text-xs font-medium text-slate-500">
-                            <span className="material-symbols-outlined text-sm text-[var(--primary)]">group</span>
-                            <span>{club.roleCode}</span>
+                            <span className="material-symbols-outlined text-sm text-[var(--primary)]" aria-hidden="true">group</span>
+                            <span>{getClubRoleLabel(club.roleCode)}</span>
                             <span>· {getPrimaryClubActivityLabel(club.activityTags, club.activityCategory, club.categoryKey)}</span>
                             {club.affiliationType ? <span>· {getAffiliationTypeLabel(club.affiliationType)}</span> : null}
                             {club.regionLabel ? <span>· {club.regionLabel}</span> : null}
@@ -369,7 +363,7 @@ export default function Home() {
               aria-label="클럽 만들기"
               className="flex size-full items-center justify-center"
             >
-              <span className="material-symbols-outlined text-3xl">add</span>
+              <span className="material-symbols-outlined text-3xl" aria-hidden="true">add</span>
             </RouterLink>
           </motion.div>
         </main>

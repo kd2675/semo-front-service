@@ -30,7 +30,7 @@ type ClubFeedbackClientProps = {
   canPersist?: boolean;
 };
 
-type FeedbackFilterKey = "all" | "mine" | "answered" | "public";
+type FeedbackFilterKey = "all" | "mine" | "answered";
 
 const FEEDBACK_TYPE_OPTIONS: Array<{ value: ClubFeedbackType; label: string }> = [
   { value: "SUGGESTION", label: "건의" },
@@ -63,8 +63,6 @@ function matchesFilter(item: ClubFeedbackSummary, filter: FeedbackFilterKey) {
       return item.mine;
     case "answered":
       return item.answered;
-    case "public":
-      return item.visibilityScope === "PUBLIC";
     default:
       return true;
   }
@@ -143,7 +141,7 @@ export function ClubFeedbackClient({
       return;
     }
     if (!canPersist) {
-      showToast("Mock mode에서는 피드백 저장이 되지 않습니다.", "info");
+      showToast("데모 환경에서는 피드백을 저장할 수 없습니다.", "info");
       return;
     }
 
@@ -195,7 +193,7 @@ export function ClubFeedbackClient({
             {...staggeredFadeUpMotion(0, reduceMotion)}
           >
             <p className="text-xs font-bold tracking-wide text-[var(--primary)]">
-              Feedback Box
+              피드백함
             </p>
             <h2 className="mt-3 text-[28px] font-black tracking-[-0.04em] text-slate-900">
               불편과 아이디어를
@@ -203,13 +201,13 @@ export function ClubFeedbackClient({
               운영팀에게 바로 남기세요.
             </h2>
             <p className="mt-3 text-sm leading-6 text-slate-600">
-              익명으로 남길 수 있고, 운영 답변이 달리면 이 화면에서 바로 확인할 수 있습니다.
+              모든 피드백은 운영진에게만 전달됩니다. 익명으로 남기면 운영진에게도 작성자가 표시되지 않습니다.
             </p>
 
             <div className="mt-5 grid grid-cols-2 gap-3">
               <div className="rounded-[22px] border border-white/90 bg-white/85 px-4 py-3 shadow-sm">
                 <p className="text-xs font-semibold text-slate-400">
-                  전체 노출
+                  확인 가능한 요청
                 </p>
                 <p className="mt-2 text-2xl font-black tracking-tight text-slate-950">
                   {feedbackHome.totalVisibleCount}
@@ -234,7 +232,7 @@ export function ClubFeedbackClient({
               <div>
                 <h3 className="text-base font-bold text-slate-950">새 피드백 남기기</h3>
                 <p className="mt-1 text-sm text-slate-500">
-                  접수 후 운영진이 분류와 공개 여부를 조정합니다.
+                  접수 내용과 답변은 작성자와 운영진만 확인할 수 있습니다.
                 </p>
               </div>
               <label className="flex items-center gap-2 rounded-full bg-slate-100 px-3 py-2 text-xs font-semibold text-slate-600">
@@ -301,7 +299,7 @@ export function ClubFeedbackClient({
               <div>
                 <h3 className="text-base font-bold text-slate-950">피드백 목록</h3>
                 <p className="mt-1 text-sm text-slate-500">
-                  공개된 답변과 내가 남긴 요청을 함께 봅니다.
+                  내가 남긴 요청의 처리 상태와 운영 답변을 확인합니다.
                 </p>
               </div>
               <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-bold text-[var(--primary)]">
@@ -314,7 +312,6 @@ export function ClubFeedbackClient({
                 { key: "all", label: "전체" },
                 { key: "mine", label: "내 요청" },
                 { key: "answered", label: "답변 완료" },
-                { key: "public", label: "공개" },
               ].map((filter) => (
                 <button
                   key={filter.key}
@@ -382,7 +379,7 @@ export function ClubFeedbackClient({
               <div>
                 <h3 className="text-base font-bold text-slate-950">상세</h3>
                 <p className="mt-1 text-sm text-slate-500">
-                  운영 답변과 공개 상태를 확인할 수 있습니다.
+                  운영 답변과 처리 상태를 확인할 수 있습니다.
                 </p>
               </div>
               {isDetailLoading ? (

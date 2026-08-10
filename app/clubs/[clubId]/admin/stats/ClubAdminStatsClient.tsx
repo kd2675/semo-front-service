@@ -207,7 +207,7 @@ export function ClubAdminStatsClient({
                           <p className="truncate text-sm font-bold text-slate-900">{activity.subject}</p>
                           <p className="mt-1 text-sm text-slate-600">{activity.detail}</p>
                         </div>
-                        <span className={`shrink-0 rounded-full px-2 py-1 text-[10px] font-bold ${statusClass}`}>
+                        <span className={`shrink-0 rounded-full px-2 py-1 text-[11px] font-bold ${statusClass}`}>
                           {activity.status === "FAIL" ? "실패" : "성공"}
                         </span>
                       </div>

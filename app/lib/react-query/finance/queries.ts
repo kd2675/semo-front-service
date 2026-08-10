@@ -8,7 +8,7 @@ import {
   getClubFinance,
   getClubFinanceRequests,
 } from "@/app/lib/clubs";
-import { getApiDataOrFallback, requireApiData } from "@/app/lib/queryUtils";
+import { requireApiData } from "@/app/lib/queryUtils";
 
 export const financeQueryKeys = {
   financeHome: (clubId: string) => ["semo", "clubs", clubId, "finance"] as const,
@@ -50,18 +50,6 @@ export function financeRequestsQueryOptions(clubId: string) {
   });
 }
 
-export function financeRequestsFallbackQueryOptions(clubId: string) {
-  return queryOptions({
-    queryKey: financeQueryKeys.financeRequests(clubId),
-    queryFn: async () =>
-      getApiDataOrFallback(await getClubFinanceRequests(clubId), {
-        clubId: Number(clubId),
-        clubName: "",
-        items: [],
-      }),
-  });
-}
-
 export function adminFinanceHomeQueryOptions(clubId: string) {
   return queryOptions({
     queryKey: financeQueryKeys.adminFinanceHome(clubId),
@@ -81,18 +69,6 @@ export function adminFinanceRequestsQueryOptions(clubId: string) {
   });
 }
 
-export function adminFinanceRequestsFallbackQueryOptions(clubId: string) {
-  return queryOptions({
-    queryKey: financeQueryKeys.adminFinanceRequests(clubId),
-    queryFn: async () =>
-      getApiDataOrFallback(await getClubAdminFinanceRequests(clubId), {
-        clubId: Number(clubId),
-        clubName: "",
-        items: [],
-      }),
-  });
-}
-
 export function adminFinanceExpensesQueryOptions(clubId: string) {
   return queryOptions({
     queryKey: financeQueryKeys.adminFinanceExpenses(clubId),
@@ -101,18 +77,6 @@ export function adminFinanceExpensesQueryOptions(clubId: string) {
         await getClubAdminFinanceExpenses(clubId),
         "지출 목록을 다시 불러오지 못했습니다.",
       ),
-  });
-}
-
-export function adminFinanceExpensesFallbackQueryOptions(clubId: string) {
-  return queryOptions({
-    queryKey: financeQueryKeys.adminFinanceExpenses(clubId),
-    queryFn: async () =>
-      getApiDataOrFallback(await getClubAdminFinanceExpenses(clubId), {
-        clubId: Number(clubId),
-        clubName: "",
-        items: [],
-      }),
   });
 }
 

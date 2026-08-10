@@ -21,6 +21,7 @@ function LoginPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { authStatus, isHydrated, user } = useAuthSession();
+  const [isClientReady, setIsClientReady] = useState(false);
   const [mode, setMode] = useState<LoginMode>("login");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -34,6 +35,10 @@ function LoginPageContent() {
     [searchParams],
   );
   const queryMessage = resolveQueryMessage(searchParams);
+
+  useEffect(() => {
+    setIsClientReady(true);
+  }, []);
 
   useEffect(() => {
     if (isSubmitting || !isHydrated || authStatus === "unknown" || authStatus === "out") {
@@ -97,7 +102,7 @@ function LoginPageContent() {
     window.location.replace(`${AUTH_API_BASE}/oauth2/authorize/${provider}`);
   };
 
-  if (!isHydrated || authStatus === "unknown" || (authStatus === "in" && !isSubmitting)) {
+  if (!isClientReady || !isHydrated || authStatus === "unknown" || (authStatus === "in" && !isSubmitting)) {
     return <SemoLoginProgress reduceMotion={reduceMotion} />;
   }
 

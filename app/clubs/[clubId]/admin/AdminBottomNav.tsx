@@ -1,36 +1,16 @@
 "use client";
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-  DndContext,
-  DragOverlay,
-  PointerSensor,
-  TouchSensor,
-  closestCenter,
-  useSensor,
-  useSensors,
-  type DragEndEvent,
-  type DragStartEvent,
-} from "@dnd-kit/core";
-import {
-  SortableContext,
-  arrayMove,
-  rectSortingStrategy,
-  useSortable,
-} from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
-import { RouterLink } from "@/app/components/RouterLink";
-import { useAppToast } from "@/app/hooks/useAppToast";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { type ClubFeatureSummary } from "@/app/lib/clubs";
-import { overlayFadeMotion, popInMotion } from "@/app/lib/motion";
-import { getQueryErrorMessage } from "@/app/lib/queryUtils";
-import { persistFeatureOrderMutationOptions } from "@/app/lib/react-query/club/mutations";
-import { clubFeaturesQueryOptions, clubQueryKeys } from "@/app/lib/react-query/club/queries";
+import { MoreNavigationMenu } from "@/app/components/MoreNavigationMenu";
+import { RouterLink } from "@/app/components/RouterLink";
 import { useBottomNavScrollDocking } from "@/app/hooks/useBottomNavScrollDocking";
 import { useDialogFocusManagement } from "@/app/hooks/useDialogFocusManagement";
+import { buildAdminMoreNavigation } from "@/app/lib/featureNavigation";
+import { overlayFadeMotion, popInMotion } from "@/app/lib/motion";
+import { clubFeaturesQueryOptions, clubQueryKeys } from "@/app/lib/react-query/club/queries";
 
 type AdminBottomNavProps = {
   clubId: string;
@@ -45,124 +25,19 @@ type AdminNavItem = {
 };
 
 const ADMIN_ITEMS: AdminNavItem[] = [
-  { key: "HOME", label: "홈", icon: "home", href: (clubId: string) => `/clubs/${clubId}/admin`, exact: true },
-  { key: "MENU", label: "메뉴", icon: "apps", href: (clubId: string) => `/clubs/${clubId}/admin/menu` },
-  { key: "MEMBERS", label: "멤버", icon: "groups", href: (clubId: string) => `/clubs/${clubId}/admin/members` },
+  { key: "HOME", label: "홈", icon: "home", href: (clubId) => `/clubs/${clubId}/admin`, exact: true },
+  { key: "MENU", label: "메뉴", icon: "apps", href: (clubId) => `/clubs/${clubId}/admin/menu` },
+  { key: "MEMBERS", label: "멤버", icon: "groups", href: (clubId) => `/clubs/${clubId}/admin/members` },
   { key: "MORE", label: "더보기", icon: "more_horiz" },
-  { key: "STATS", label: "통계", icon: "insights", href: (clubId: string) => `/clubs/${clubId}/admin/stats` },
+  { key: "STATS", label: "통계", icon: "insights", href: (clubId) => `/clubs/${clubId}/admin/stats` },
 ];
 
-const FEATURE_ACCENT_CLASS: Record<string, string> = {
-  JOIN_REQUEST: "bg-sky-50 text-sky-700",
-  ATTENDANCE: "bg-orange-50 text-orange-500",
-  TIMELINE: "bg-orange-50 text-[#ec5b13]",
-  NOTICE: "bg-orange-50 text-[#ec5b13]",
-  POLL: "bg-amber-50 text-[#ec5b13]",
-  SCHEDULE_MANAGE: "bg-cyan-50 text-cyan-600",
-  MEMBER_DIRECTORY: "bg-rose-50 text-rose-600",
-  TOURNAMENT_RECORD: "bg-emerald-50 text-emerald-700",
-  BRACKET: "bg-amber-50 text-amber-700",
-  FINANCE: "bg-emerald-50 text-emerald-700",
-  FEEDBACK: "bg-violet-50 text-violet-700",
-  TODO: "bg-amber-50 text-amber-700",
-};
-
-function getFeatureDisplayName(feature: ClubFeatureSummary) {
-  return feature.displayName;
-}
+const ADMIN_ACTIVE_TEXT_CLASS = "text-[var(--color-admin-primary)]";
+const ADMIN_INACTIVE_TEXT_CLASS = "text-slate-400";
 
 function stripQuery(path: string) {
   const [pathname] = path.split("?");
   return pathname ?? path;
-}
-
-const POPOVER_ITEM_VARIANTS = {
-  hidden: { opacity: 0, y: 12, scale: 0.96 },
-  visible: (index: number) => ({
-    opacity: 1,
-    y: 0,
-    scale: 1,
-    transition: {
-      duration: 0.2,
-      ease: "easeOut" as const,
-      delay: Math.min(index * 0.04, 0.18),
-    },
-  }),
-};
-
-const ADMIN_ACTIVE_TEXT_CLASS = "text-[#ec5b13]";
-const ADMIN_INACTIVE_TEXT_CLASS = "text-slate-400";
-const ADMIN_ACTIVE_DOT_CLASS = "bg-[#ec5b13]";
-
-type AdminMoreSortableItemProps = {
-  feature: ClubFeatureSummary;
-};
-
-function AdminMoreSortableItem({ feature }: AdminMoreSortableItemProps) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    setActivatorNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: feature.featureKey });
-
-  return (
-    <article
-      ref={setNodeRef}
-      style={{
-        transform: CSS.Transform.toString(transform),
-        transition,
-      }}
-      className={`relative flex flex-col items-center space-y-2 ${
-        isDragging ? "opacity-0" : ""
-      }`}
-    >
-      <button
-        ref={setActivatorNodeRef}
-        type="button"
-        {...attributes}
-        {...listeners}
-        className="absolute -right-3 -top-3 z-10 flex size-11 touch-none shrink-0 cursor-grab items-center justify-center rounded-full border border-[#ec5b13]/30 bg-white text-[#ec5b13] shadow-sm transition hover:bg-[#ec5b13]/10 active:cursor-grabbing"
-        aria-label={`${getFeatureDisplayName(feature)} 순서 변경 핸들`}
-        title="드래그해서 순서를 변경합니다."
-      >
-        <span className="material-symbols-outlined text-[18px]" aria-hidden="true">drag_indicator</span>
-      </button>
-      <div
-        className={`flex h-14 w-14 items-center justify-center rounded-2xl ${
-          FEATURE_ACCENT_CLASS[feature.featureKey] ?? "bg-slate-100 text-slate-600"
-        }`}
-      >
-        <span className="material-symbols-outlined text-[28px]" aria-hidden="true">{feature.iconName}</span>
-      </div>
-      <span className="text-center text-[11px] font-semibold leading-4">
-        {getFeatureDisplayName(feature)}
-      </span>
-    </article>
-  );
-}
-
-function AdminMoreSortableOverlay({ feature }: { feature: ClubFeatureSummary }) {
-  return (
-    <article className="pointer-events-none relative flex flex-col items-center space-y-2 rounded-2xl border border-[#ec5b13]/35 bg-white px-3 py-3 shadow-[0_16px_36px_rgba(15,23,42,0.2)] ring-2 ring-[#ec5b13]/20">
-      <div className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full border border-[#ec5b13]/30 bg-white text-[#ec5b13] shadow-sm">
-        <span className="font-mono text-[10px] font-bold tracking-[-0.2em]">::</span>
-      </div>
-      <div
-        className={`flex h-14 w-14 items-center justify-center rounded-2xl ${
-          FEATURE_ACCENT_CLASS[feature.featureKey] ?? "bg-slate-100 text-slate-600"
-        }`}
-      >
-        <span className="material-symbols-outlined text-[28px]" aria-hidden="true">{feature.iconName}</span>
-      </div>
-      <span className="text-center text-[11px] font-semibold leading-4">
-        {getFeatureDisplayName(feature)}
-      </span>
-    </article>
-  );
 }
 
 export function AdminBottomNav({ clubId }: AdminBottomNavProps) {
@@ -171,104 +46,29 @@ export function AdminBottomNav({ clubId }: AdminBottomNavProps) {
   const reduceMotion = Boolean(prefersReducedMotion);
   const isDocked = useBottomNavScrollDocking({ routeKey: pathname });
   const [openMenuPathname, setOpenMenuPathname] = useState<string | null>(null);
-  const [reorderEnabled, setReorderEnabled] = useState(false);
-  const [orderedMenuItems, setOrderedMenuItems] = useState<ClubFeatureSummary[]>([]);
-  const [activeFeatureKey, setActiveFeatureKey] = useState<string | null>(null);
-  const [reorderFeedback, setReorderFeedback] = useState<string | null>(null);
-  const { showToast, clearToast } = useAppToast();
   const queryClient = useQueryClient();
   const { data: featureData } = useQuery(clubFeaturesQueryOptions(clubId));
-  const enabledFeatures = useMemo(
-    () => (featureData ?? []).filter((feature) => feature.enabled),
-    [featureData],
+  const menuItems = useMemo(
+    () => buildAdminMoreNavigation(featureData ?? [], clubId),
+    [clubId, featureData],
   );
-  const persistFeatureOrderMutation = useMutation(persistFeatureOrderMutationOptions(clubId));
-  const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: {
-        distance: 6,
-      },
-    }),
-    useSensor(TouchSensor, {
-      activationConstraint: {
-        delay: 120,
-        tolerance: 10,
-      },
-    }),
-  );
-  const menuItems = enabledFeatures;
   const isMoreOpen = openMenuPathname === pathname;
   const moreMenuRef = useDialogFocusManagement<HTMLDivElement>({
     active: isMoreOpen,
     onDismiss: () => setOpenMenuPathname(null),
   });
-  const isFeatureRouteActive = menuItems.some((feature) => {
-    const targetPath = stripQuery(feature.adminPath);
+  const isFeatureRouteActive = menuItems.some((item) => {
+    const targetPath = stripQuery(item.href);
     return pathname === targetPath || pathname.startsWith(`${targetPath}/`);
   });
 
   useEffect(() => {
     const onFeatureUpdate = () => {
-      void queryClient.invalidateQueries({
-        queryKey: clubQueryKeys.features(clubId),
-      });
+      void queryClient.invalidateQueries({ queryKey: clubQueryKeys.features(clubId) });
     };
-
     window.addEventListener("semo:club-features-updated", onFeatureUpdate);
-    return () => {
-      window.removeEventListener("semo:club-features-updated", onFeatureUpdate);
-    };
+    return () => window.removeEventListener("semo:club-features-updated", onFeatureUpdate);
   }, [clubId, queryClient]);
-
-  useEffect(() => {
-    setOrderedMenuItems(enabledFeatures);
-  }, [enabledFeatures]);
-
-  const persistFeatureOrder = async (nextOrderedFeatures: ClubFeatureSummary[]) => {
-    setReorderFeedback(null);
-    clearToast();
-    try {
-      const nextFeatures = await persistFeatureOrderMutation.mutateAsync(nextOrderedFeatures);
-      queryClient.setQueryData(clubQueryKeys.features(clubId), nextFeatures);
-      setReorderFeedback(null);
-      showToast("순서를 저장했습니다.", "success");
-      window.dispatchEvent(new Event("semo:club-features-updated"));
-    } catch (error) {
-      const message = getQueryErrorMessage(error, "순서 저장에 실패했습니다.");
-      setReorderFeedback(message);
-      showToast(message, "error");
-    }
-  };
-
-  const handleReorderDragStart = (event: DragStartEvent) => {
-    if (!reorderEnabled) {
-      return;
-    }
-    const nextActiveKey = String(event.active.id);
-    setActiveFeatureKey(nextActiveKey);
-  };
-
-  const handleReorderDragEnd = (event: DragEndEvent) => {
-    setActiveFeatureKey(null);
-    if (!reorderEnabled) {
-      return;
-    }
-
-    const activeId = String(event.active.id);
-    const overId = event.over?.id == null ? null : String(event.over.id);
-    if (overId == null || activeId === overId) {
-      return;
-    }
-
-    const fromIndex = orderedMenuItems.findIndex((feature) => feature.featureKey === activeId);
-    const toIndex = orderedMenuItems.findIndex((feature) => feature.featureKey === overId);
-    if (fromIndex < 0 || toIndex < 0) {
-      return;
-    }
-
-    const reordered = arrayMove(orderedMenuItems, fromIndex, toIndex);
-    setOrderedMenuItems(reordered);
-  };
 
   const unifiedMotion = reduceMotion
     ? {
@@ -283,68 +83,19 @@ export function AdminBottomNav({ clubId }: AdminBottomNavProps) {
         exit: { opacity: 0, y: 10, scale: 0.93 },
         transition: { duration: 0.3, ease: "easeOut" as const },
       };
-  const displayMenuItems = reorderEnabled ? orderedMenuItems : menuItems;
-  const activeFeature =
-    activeFeatureKey == null
-      ? null
-      : orderedMenuItems.find((feature) => feature.featureKey === activeFeatureKey) ?? null;
-  const reorderDirty = useMemo(() => {
-    if (!reorderEnabled) {
-      return false;
-    }
-    if (orderedMenuItems.length !== enabledFeatures.length) {
-      return true;
-    }
-    return orderedMenuItems.some(
-      (feature, index) => feature.featureKey !== enabledFeatures[index]?.featureKey,
-    );
-  }, [enabledFeatures, orderedMenuItems, reorderEnabled]);
-  const isReorderSaving = persistFeatureOrderMutation.isPending;
-
-  const handleReorderReset = () => {
-    setActiveFeatureKey(null);
-    setOrderedMenuItems(enabledFeatures);
-    setReorderFeedback(null);
-    clearToast();
-  };
-
-  const closeMoreMenu = () => {
-    setOpenMenuPathname(null);
-    setReorderEnabled(false);
-    setActiveFeatureKey(null);
-    setReorderFeedback(null);
-    clearToast();
-    setOrderedMenuItems(enabledFeatures);
-  };
-
-  const toggleMoreMenu = () => {
-    if (isMoreOpen) {
-      closeMoreMenu();
-      return;
-    }
-
-    setReorderEnabled(false);
-    setActiveFeatureKey(null);
-    setReorderFeedback(null);
-    clearToast();
-    setOrderedMenuItems(enabledFeatures);
-    setOpenMenuPathname(pathname);
-  };
 
   const renderButtons = () =>
     ADMIN_ITEMS.map((item) => {
-      const href = item.href?.(clubId);
+      const href = item.href?.(clubId) ?? null;
       const isMoreItem = item.key === "MORE";
-      const isActive = Boolean(
-        isMoreItem
-          ? isMoreOpen || isFeatureRouteActive
-          : href &&
-              (item.exact
-                ? pathname === href
-                : pathname === href || pathname.startsWith(`${href}/`)),
-      );
+      const isActive = isMoreItem
+        ? isMoreOpen || isFeatureRouteActive
+        : href
+          ? item.exact
+            ? pathname === href
+            : pathname === href || pathname.startsWith(`${href}/`)
+          : false;
       const textClassName = isActive ? ADMIN_ACTIVE_TEXT_CLASS : ADMIN_INACTIVE_TEXT_CLASS;
-      const iconClassName = isActive ? ADMIN_ACTIVE_TEXT_CLASS : ADMIN_INACTIVE_TEXT_CLASS;
 
       if (isMoreItem) {
         return (
@@ -352,84 +103,56 @@ export function AdminBottomNav({ clubId }: AdminBottomNavProps) {
             key={item.key}
             type="button"
             whileTap={reduceMotion ? undefined : { scale: 0.92 }}
-            onClick={() =>
-              toggleMoreMenu()
-            }
-            className={`semo-icon-control touch-manipulation transition ${textClassName}`}
+            onClick={() => setOpenMenuPathname((current) => (current === pathname ? null : pathname))}
+            className={`semo-icon-control relative touch-manipulation transition ${textClassName}`}
             aria-expanded={isMoreOpen}
             aria-haspopup="dialog"
             aria-label={item.label}
           >
-            <div className="relative flex h-11 w-11 items-center justify-center">
-              <span className={`material-symbols-outlined text-[24px] ${iconClassName}`} aria-hidden="true">
-                {item.icon}
-              </span>
-              {isActive ? (
-                <motion.div
-                  layoutId="admin-nav-active-dot"
-                  className={`absolute -right-0.5 top-1 size-2 rounded-full border-2 border-white ${ADMIN_ACTIVE_DOT_CLASS}`}
-                />
-              ) : null}
-            </div>
+            <span className="material-symbols-outlined text-[24px]" aria-hidden="true">{item.icon}</span>
+            {isActive ? (
+              <motion.span
+                layoutId="admin-nav-active-dot"
+                className="absolute right-1 top-1 size-2 rounded-full border-2 border-white bg-[var(--color-admin-primary)]"
+              />
+            ) : null}
           </motion.button>
         );
       }
 
-      if (!href) {
-        return (
-          <button
-            key={item.key}
-            type="button"
-            aria-disabled="true"
-            aria-label={item.label}
-            className={`semo-icon-control touch-manipulation transition ${textClassName}`}
-          >
-            <div className="relative flex h-11 w-11 items-center justify-center">
-              <span className={`material-symbols-outlined text-[24px] ${iconClassName}`} aria-hidden="true">
-                {item.icon}
-              </span>
-            </div>
-          </button>
-        );
-      }
-
-      return (
+      return href ? (
         <RouterLink
           key={item.key}
           href={href}
           className={`semo-icon-control touch-manipulation transition ${textClassName}`}
           aria-label={item.label}
         >
-          <motion.div
-            whileTap={reduceMotion ? undefined : { scale: 0.92 }}
-            className="relative flex h-11 w-11 items-center justify-center"
-          >
+          <motion.span className="relative flex size-11 items-center justify-center" whileTap={reduceMotion ? undefined : { scale: 0.92 }}>
             <span
-              className={`material-symbols-outlined text-[24px] ${iconClassName}`}
+              className="material-symbols-outlined text-[24px]"
               aria-hidden="true"
               style={isActive ? { fontVariationSettings: "'FILL' 1" } : undefined}
             >
               {item.icon}
             </span>
             {isActive ? (
-              <motion.div
+              <motion.span
                 layoutId="admin-nav-active-dot"
-                className={`absolute -right-0.5 top-1 size-2 rounded-full border-2 border-white ${ADMIN_ACTIVE_DOT_CLASS}`}
+                className="absolute right-0 top-0 size-2 rounded-full border-2 border-white bg-[var(--color-admin-primary)]"
               />
             ) : null}
-          </motion.div>
+          </motion.span>
         </RouterLink>
-      );
+      ) : null;
     });
 
-  const FloatingMenu = (
-    <nav className="flex w-[clamp(280px,33vw,460px)] max-w-[calc(100vw-2.5rem)] items-center justify-center gap-3 rounded-full border border-white/70 bg-white/82 px-4 py-3 shadow-[0_18px_42px_rgba(15,23,42,0.12)] backdrop-blur-md">
+  const floatingMenu = (
+    <nav className="flex w-[clamp(280px,33vw,460px)] max-w-[calc(100vw-2.5rem)] items-center justify-center gap-3 rounded-full border border-white/70 bg-white/85 px-4 py-3 shadow-[var(--shadow-floating)] backdrop-blur-md">
       {renderButtons()}
     </nav>
   );
-
-  const DockedMenu = (
-    <nav className="flex w-full items-center justify-center border-t border-slate-200/70 bg-white/88 px-4 pt-3 pb-[calc(env(safe-area-inset-bottom)+12px)] backdrop-blur-md">
+  const dockedMenu = (
+    <nav className="flex w-full items-center justify-center border-t border-slate-200/70 bg-white/90 px-4 pt-3 pb-[calc(env(safe-area-inset-bottom)+12px)] backdrop-blur-md">
       <div className="flex w-[clamp(360px,44vw,640px)] max-w-[calc(100vw-1.5rem)] items-center justify-center gap-6">
         {renderButtons()}
       </div>
@@ -444,148 +167,47 @@ export function AdminBottomNav({ clubId }: AdminBottomNavProps) {
             <motion.div
               aria-hidden="true"
               className="fixed inset-0 z-40 bg-black/20 backdrop-blur-[2px]"
-              onClick={closeMoreMenu}
+              onClick={() => setOpenMenuPathname(null)}
               {...overlayFadeMotion(reduceMotion)}
             />
             <motion.div
-              className="pointer-events-none fixed inset-x-0 bottom-24 z-50 px-6"
+              className="pointer-events-none fixed inset-x-0 bottom-24 z-50 px-4"
               {...popInMotion(reduceMotion)}
             >
-              <div className="pointer-events-auto mx-auto w-full max-w-sm">
+              <div className="pointer-events-auto mx-auto w-full max-w-lg">
                 <div
                   ref={moreMenuRef}
                   role="dialog"
                   aria-modal="true"
-                  aria-label="관리자 기능 더보기"
+                  aria-label="관리자 운영 기능 더보기"
                   tabIndex={-1}
-                  className="relative rounded-[var(--radius-modal)] bg-white p-6 shadow-[var(--shadow-modal)]"
+                  className="max-h-[min(72vh,42rem)] overflow-y-auto rounded-[var(--radius-modal)] bg-white p-4 shadow-[var(--shadow-modal)]"
                 >
-                  <div className="absolute right-0 -top-10 z-10 flex items-center gap-2">
-                    {reorderEnabled && reorderDirty ? (
-                      <>
-                        <button
-                          type="button"
-                          onClick={handleReorderReset}
-                          disabled={isReorderSaving}
-                          aria-label="순서 변경 리셋"
-                          title="순서 변경 리셋"
-                          className="semo-icon-control border border-slate-300 bg-white text-slate-600 shadow-sm transition hover:bg-slate-50 disabled:opacity-60"
-                        >
-                          <span className="material-symbols-outlined text-[17px]" aria-hidden="true">restart_alt</span>
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => void persistFeatureOrder(orderedMenuItems)}
-                          disabled={isReorderSaving}
-                          className="inline-flex h-11 items-center justify-center rounded-full border border-[#ec5b13]/30 bg-[#ec5b13] px-4 text-xs font-semibold text-white shadow-sm transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-60"
-                        >
-                          저장
-                        </button>
-                      </>
-                    ) : null}
+                  <div className="mb-4 flex items-start justify-between gap-4 px-1">
+                    <div>
+                      <p className="text-base font-bold text-slate-900">운영 영역</p>
+                      <p className="mt-1 text-xs leading-5 text-slate-500">기능 순서는 메뉴 설정에서 관리하고, 여기서는 업무 영역으로 이동합니다.</p>
+                    </div>
                     <button
                       type="button"
-                      onClick={() => {
-                        setReorderEnabled((current) => !current);
-                        setReorderFeedback(null);
-                      }}
-                      className={`inline-flex size-11 items-center justify-center rounded-full border transition ${
-                        reorderEnabled
-                          ? "border-[#ec5b13]/30 bg-[#ec5b13]/10 text-[#ec5b13]"
-                          : "border-slate-200 bg-white text-slate-500 hover:bg-slate-50"
-                      }`}
-                      aria-pressed={reorderEnabled}
-                      aria-label="순서 변경 모드 전환"
-                      title="순서 변경"
+                      onClick={() => setOpenMenuPathname(null)}
+                      className="semo-icon-control -mr-2 -mt-2 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+                      aria-label="더보기 닫기"
                     >
-                      <span className="material-symbols-outlined text-[18px]" aria-hidden="true">swap_vert</span>
+                      <span className="material-symbols-outlined" aria-hidden="true">close</span>
                     </button>
                   </div>
-
-                  {displayMenuItems.length === 0 ? (
-                    <div className="rounded-2xl bg-slate-50 px-4 py-5 text-center text-xs font-medium text-slate-500">
-                      활성화된 기능이 없습니다.
-                    </div>
-                  ) : reorderEnabled ? (
-                    <div className="space-y-2">
-                      <DndContext
-                        sensors={sensors}
-                        collisionDetection={closestCenter}
-                        onDragStart={handleReorderDragStart}
-                        onDragEnd={handleReorderDragEnd}
-                        onDragCancel={() => {
-                          setActiveFeatureKey(null);
-                        }}
-                      >
-                        <SortableContext
-                          items={displayMenuItems.map((feature) => feature.featureKey)}
-                          strategy={rectSortingStrategy}
-                        >
-                          <div className="grid grid-cols-3 gap-6">
-                            {displayMenuItems.map((item, index) => (
-                              <AdminMoreSortableItem
-                                key={`${item.featureKey || item.adminPath || "feature"}-${index}`}
-                                feature={item}
-                              />
-                            ))}
-                          </div>
-                        </SortableContext>
-                        <DragOverlay dropAnimation={null}>
-                          {activeFeature ? <AdminMoreSortableOverlay feature={activeFeature} /> : null}
-                        </DragOverlay>
-                      </DndContext>
-                      {reorderFeedback ? (
-                        <p className="text-center text-[11px] font-medium text-slate-500">
-                          {reorderFeedback}
-                        </p>
-                      ) : null}
-                      {isReorderSaving ? (
-                        <p className="text-center text-[11px] font-medium text-[#ec5b13]">
-                          순서 저장 중...
-                        </p>
-                      ) : null}
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-3 gap-6">
-                      {displayMenuItems.map((item, index) => (
-                        <motion.div
-                          key={`${item.featureKey || item.adminPath || "feature"}-${index}`}
-                          custom={index}
-                          variants={POPOVER_ITEM_VARIANTS}
-                          initial="hidden"
-                          animate="visible"
-                          exit="hidden"
-                        >
-                          <RouterLink
-                            href={item.adminPath}
-                            className="flex flex-col items-center space-y-2"
-                            onClick={closeMoreMenu}
-                          >
-                            <div
-                              className={`flex h-14 w-14 items-center justify-center rounded-2xl ${
-                                FEATURE_ACCENT_CLASS[item.featureKey] ?? "bg-slate-100 text-slate-600"
-                              }`}
-                            >
-                              <span className="material-symbols-outlined text-[28px]" aria-hidden="true">
-                                {item.iconName}
-                              </span>
-                            </div>
-                            <span className="text-center text-[11px] font-semibold leading-4">
-                              {getFeatureDisplayName(item)}
-                            </span>
-                          </RouterLink>
-                        </motion.div>
-                      ))}
-                    </div>
-                  )}
-                  <div className="absolute -bottom-2 left-[70%] h-5 w-5 -translate-x-1/2 rotate-45 border-b border-r border-slate-100 bg-white" />
+                  <MoreNavigationMenu
+                    items={menuItems}
+                    mode="admin"
+                    onNavigate={() => setOpenMenuPathname(null)}
+                  />
                 </div>
               </div>
             </motion.div>
           </>
         ) : null}
       </AnimatePresence>
-
 
       <AnimatePresence initial={false}>
         {isDocked ? (
@@ -594,15 +216,15 @@ export function AdminBottomNav({ clubId }: AdminBottomNavProps) {
             {...unifiedMotion}
             className="pointer-events-auto fixed inset-x-0 bottom-0 z-30 flex flex-col items-stretch"
           >
-            {DockedMenu}
+            {dockedMenu}
           </motion.div>
         ) : (
           <motion.div
             key="admin-bottom-floating"
             {...unifiedMotion}
-            className="pointer-events-auto fixed bottom-0 left-1/2 z-30 flex -translate-x-1/2 flex-col items-center gap-4 pb-[calc(env(safe-area-inset-bottom)+12px)]"
+            className="pointer-events-auto fixed bottom-0 left-1/2 z-30 flex -translate-x-1/2 flex-col items-center pb-[calc(env(safe-area-inset-bottom)+12px)]"
           >
-            {FloatingMenu}
+            {floatingMenu}
           </motion.div>
         )}
       </AnimatePresence>

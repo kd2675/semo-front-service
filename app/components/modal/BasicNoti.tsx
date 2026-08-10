@@ -75,7 +75,7 @@ export function BasicNoti({
       <div className={`absolute inset-y-0 left-0 w-1.5 ${styles.railClassName}`} />
       <div className="flex items-start gap-3 px-4 py-4">
         <div className={`mt-0.5 flex size-10 shrink-0 items-center justify-center rounded-[1rem] ${styles.iconWrapClassName}`}>
-          <span className="material-symbols-outlined text-[20px]">{styles.icon}</span>
+          <span className="material-symbols-outlined text-[20px]" aria-hidden="true">{styles.icon}</span>
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-3">
@@ -96,7 +96,7 @@ export function BasicNoti({
               className="semo-icon-control border border-black/5 bg-white/75 text-slate-400 transition-colors hover:text-slate-700"
               aria-label="알림 닫기"
             >
-              <span className="material-symbols-outlined text-[20px]">close</span>
+              <span className="material-symbols-outlined text-[20px]" aria-hidden="true">close</span>
             </button>
           </div>
           {notification.actionLabel ? (

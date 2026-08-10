@@ -1,9 +1,11 @@
 "use client";
 
-import { RouterLink } from "@/app/components/RouterLink";
 import type { ReactNode } from "react";
 
+import { RouterLink } from "@/app/components/RouterLink";
+
 type ClubPageHeaderTheme = "user" | "admin";
+type ClubPageHeaderLayout = "page" | "modal";
 
 type ClubPageHeaderProps = {
   title: string;
@@ -15,6 +17,7 @@ type ClubPageHeaderProps = {
   className?: string;
   containerClassName?: string;
   sticky?: boolean;
+  layout?: ClubPageHeaderLayout;
 };
 
 export function ClubPageHeader({
@@ -27,12 +30,19 @@ export function ClubPageHeader({
   className,
   containerClassName,
   sticky = true,
+  layout = "page",
 }: ClubPageHeaderProps) {
   const headerClassName = `${sticky ? "sticky top-0 z-50" : ""} border-b border-slate-200 backdrop-blur-md ${
     theme === "admin" ? "bg-[#f8f6f6]/85" : "bg-[var(--background-light)]/85"
   } ${className ?? ""}`;
   const resolvedContainerClassName =
-    containerClassName ?? (theme === "admin" ? "semo-page-admin" : "semo-page-user");
+    containerClassName ?? (
+      layout === "modal"
+        ? "max-w-none px-5"
+        : theme === "admin"
+          ? "semo-page-admin"
+          : "semo-page-user"
+    );
   const iconElement = (
     <div className="semo-icon-control shrink-0 rounded-xl bg-[var(--primary)]/10 text-[var(--primary)]">
       <span className="material-symbols-outlined" aria-hidden="true">{icon}</span>
@@ -40,8 +50,11 @@ export function ClubPageHeader({
   );
 
   return (
-    <header className={headerClassName}>
-      <div className={`mx-auto flex w-full items-center justify-between gap-3 p-4 ${resolvedContainerClassName}`}>
+    <header className={headerClassName} data-semo-page-header data-layout={layout}>
+      <div
+        className={`mx-auto flex w-full items-center justify-between gap-3 p-4 ${resolvedContainerClassName}`}
+        data-semo-page-header-inner
+      >
         <div className="min-w-0 flex items-center gap-3">
           {leftSlot ? <div className="shrink-0">{leftSlot}</div> : null}
           {icon === "home" ? (

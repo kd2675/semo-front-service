@@ -24,6 +24,7 @@ type ClubNoticeEditorClientProps = {
   noticeId?: string;
   presentation?: "page" | "modal";
   basePath?: string;
+  initialClubName?: string;
   initialScheduleAt?: string;
   initialScheduleEndAt?: string;
   onRequestClose?: () => void;
@@ -58,9 +59,11 @@ function combineDateTimeValue(dateValue: string, timeValue: string) {
 
 function SettingSwitch({
   checked,
+  label,
   onChange,
 }: {
   checked: boolean;
+  label: string;
   onChange: (checked: boolean) => void;
 }) {
   return (
@@ -71,6 +74,7 @@ function SettingSwitch({
     >
       <input
         checked={checked}
+        aria-label={label}
         className="sr-only"
         type="checkbox"
         onChange={(event) => onChange(event.target.checked)}
@@ -89,6 +93,7 @@ export function ClubNoticeEditorClient({
   noticeId,
   presentation = "page",
   basePath,
+  initialClubName,
   initialScheduleAt,
   initialScheduleEndAt,
   onRequestClose,
@@ -118,9 +123,9 @@ export function ClubNoticeEditorClient({
   );
   const [scheduleTimeEnabled, setScheduleTimeEnabled] = useState(false);
   const [postToBoard, setPostToBoard] = useState(true);
-  const [postToCalendar, setPostToCalendar] = useState(true);
+  const [postToCalendar, setPostToCalendar] = useState(Boolean(initialScheduleAt));
   const [pinned, setPinned] = useState(false);
-  const [clubName, setClubName] = useState("Notice");
+  const [clubName, setClubName] = useState(initialClubName ?? "SEMO");
   const [loading, setLoading] = useState(isEdit);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -130,7 +135,7 @@ export function ClubNoticeEditorClient({
   const [error, setError] = useState<string | null>(null);
   const saveNoticeMutation = useMutation(saveNoticeMutationOptions(clubId, noticeId));
   const deleteNoticeMutation = useMutation(deleteNoticeMutationOptions(clubId, noticeId));
-  const resolvedBasePath = basePath ?? `/clubs/${clubId}/more/notices`;
+  const resolvedBasePath = basePath ?? `/clubs/${clubId}/board`;
   const backHref = isEdit && noticeId ? `${resolvedBasePath}/${noticeId}` : resolvedBasePath;
 
   const loadDetail = useEffectEvent(async () => {
@@ -318,27 +323,31 @@ export function ClubNoticeEditorClient({
           title={isEdit ? "공지 수정" : "공지 작성"}
           subtitle={clubName}
           icon="edit_square"
-          containerClassName="max-w-md"
+          layout={isModal ? "modal" : "page"}
+          containerClassName={isModal ? undefined : "max-w-md"}
           leftSlot={
-            isModal && onRequestClose ? (
-              <button
-                type="button"
-                onClick={onRequestClose}
-                className="semo-icon-control justify-start text-slate-900"
-                aria-label="공지 작성 닫기"
-              >
-                <span className="material-symbols-outlined">close</span>
-              </button>
-            ) : (
+            !isModal ? (
               <RouterLink
                 href={backHref}
                 replace={isModal}
                 className="flex size-11 items-center justify-start text-slate-900"
                 aria-label="공지 목록으로 돌아가기"
               >
-                <span className="material-symbols-outlined">{isModal ? "close" : "arrow_back"}</span>
+                <span className="material-symbols-outlined" aria-hidden="true">arrow_back</span>
               </RouterLink>
-            )
+            ) : undefined
+          }
+          rightSlot={
+            isModal && onRequestClose ? (
+              <button
+                type="button"
+                onClick={onRequestClose}
+                className="semo-icon-control text-slate-700 transition-colors hover:bg-slate-100"
+                aria-label="공지 작성 닫기"
+              >
+                <span className="material-symbols-outlined" aria-hidden="true">close</span>
+              </button>
+            ) : undefined
           }
         />
 
@@ -348,11 +357,9 @@ export function ClubNoticeEditorClient({
           <form id={formId} className="space-y-0" onSubmit={handleSubmit}>
             <section className="space-y-4 p-4">
               <div className="mb-2 flex items-center gap-2">
-                <span className="material-symbols-outlined text-sm text-[var(--primary)]">edit_square</span>
+                <span className="material-symbols-outlined text-sm text-[var(--primary)]" aria-hidden="true">edit_square</span>
                 <h3 className="text-base font-bold text-slate-900">필수 항목</h3>
               </div>
-
-              <p className="text-sm font-bold text-slate-800">{clubName}</p>
 
               <label className="block">
                 <span className="mb-1.5 block text-sm font-medium text-slate-700">공지 제목</span>
@@ -392,14 +399,14 @@ export function ClubNoticeEditorClient({
                   ) : (
                     <div className="flex h-44 items-center justify-center bg-slate-100 text-slate-400">
                       <div className="text-center">
-                        <span className="material-symbols-outlined text-[34px]">image</span>
+                        <span className="material-symbols-outlined text-[34px]" aria-hidden="true">image</span>
                         <p className="mt-2 text-xs font-medium">대표 이미지를 등록하면 공지 카드에 함께 노출됩니다.</p>
                       </div>
                     </div>
                   )}
                   <div className="flex items-center justify-between gap-3 border-t border-slate-100 px-4 py-3">
                     <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl bg-[var(--primary)]/10 px-3 py-2 text-xs font-bold text-[var(--primary)]">
-                      <span className="material-symbols-outlined text-[18px]">upload</span>
+                      <span className="material-symbols-outlined text-[18px]" aria-hidden="true">upload</span>
                       {uploadingImage ? "업로드 중..." : imageUrl ? "이미지 변경" : "이미지 업로드"}
                       <input type="file" accept="image/*" className="hidden" onChange={handleImageChange} />
                     </label>
@@ -425,14 +432,14 @@ export function ClubNoticeEditorClient({
 
             <section className="space-y-4 p-4">
               <div className="mb-2 flex items-center gap-2">
-                <span className="material-symbols-outlined text-sm text-[var(--primary)]">settings</span>
+                <span className="material-symbols-outlined text-sm text-[var(--primary)]" aria-hidden="true">settings</span>
                 <h3 className="text-base font-bold text-slate-900">추가 옵션</h3>
               </div>
 
               <div className="space-y-3">
                 <div className="flex items-center justify-between rounded-xl border border-[var(--primary)]/5 bg-white p-4 shadow-sm">
                   <div className="flex items-center gap-3">
-                    <span className="material-symbols-outlined text-[var(--primary)]">leaderboard</span>
+                    <span className="material-symbols-outlined text-[var(--primary)]" aria-hidden="true">leaderboard</span>
                     <div>
                       <span className="block text-sm font-semibold text-slate-900">게시판에도 공유</span>
                       <span className="mt-0.5 block text-[11px] text-slate-500">
@@ -440,12 +447,12 @@ export function ClubNoticeEditorClient({
                       </span>
                     </div>
                   </div>
-                  <SettingSwitch checked={postToBoard} onChange={setPostToBoard} />
+                  <SettingSwitch checked={postToBoard} label="게시판 공유" onChange={setPostToBoard} />
                 </div>
 
                 <div className="flex items-center justify-between rounded-xl border border-[var(--primary)]/5 bg-white p-4 shadow-sm">
                   <div className="flex items-center gap-3">
-                    <span className="material-symbols-outlined text-[var(--primary)]">event_upcoming</span>
+                    <span className="material-symbols-outlined text-[var(--primary)]" aria-hidden="true">event_upcoming</span>
                     <div>
                       <span className="block text-sm font-semibold text-slate-900">캘린더에도 공유</span>
                       <span className="mt-0.5 block text-[11px] text-slate-500">
@@ -453,7 +460,7 @@ export function ClubNoticeEditorClient({
                       </span>
                     </div>
                   </div>
-                  <SettingSwitch checked={postToCalendar} onChange={setPostToCalendar} />
+                  <SettingSwitch checked={postToCalendar} label="캘린더 공유" onChange={setPostToCalendar} />
                 </div>
 
                 {postToCalendar ? (
@@ -520,7 +527,7 @@ export function ClubNoticeEditorClient({
                     <div className="space-y-3 border-t border-[var(--primary)]/10 pt-4">
                       <div className="flex items-center justify-between rounded-xl border border-[var(--primary)]/10 bg-white p-4 shadow-sm">
                         <div className="flex items-center gap-3">
-                          <span className="material-symbols-outlined text-[var(--primary)]">schedule</span>
+                          <span className="material-symbols-outlined text-[var(--primary)]" aria-hidden="true">schedule</span>
                           <div>
                             <span className="block text-sm font-semibold text-slate-900">시간 입력</span>
                             <span className="mt-0.5 block text-[11px] text-slate-500">
@@ -528,7 +535,7 @@ export function ClubNoticeEditorClient({
                             </span>
                           </div>
                         </div>
-                        <SettingSwitch checked={scheduleTimeEnabled} onChange={handleScheduleTimeEnabledChange} />
+                        <SettingSwitch checked={scheduleTimeEnabled} label="게시 시간 예약" onChange={handleScheduleTimeEnabledChange} />
                       </div>
 
                       {scheduleTimeEnabled ? (
@@ -568,7 +575,7 @@ export function ClubNoticeEditorClient({
 
               <div className="flex items-center justify-between rounded-xl border border-[var(--primary)]/5 bg-white p-4 shadow-sm">
                 <div className="flex items-center gap-3">
-                  <span className="material-symbols-outlined text-[var(--primary)]">keep</span>
+                  <span className="material-symbols-outlined text-[var(--primary)]" aria-hidden="true">keep</span>
                   <div>
                     <span className="block text-sm font-semibold text-slate-900">핀 고정</span>
                     <span className="mt-0.5 block text-[11px] text-slate-500">
@@ -576,7 +583,7 @@ export function ClubNoticeEditorClient({
                     </span>
                   </div>
                 </div>
-                <SettingSwitch checked={pinned} onChange={setPinned} />
+                <SettingSwitch checked={pinned} label="중요 공지 고정" onChange={setPinned} />
               </div>
 
               {isEdit && (!canEdit || !canDelete) ? (
@@ -609,7 +616,11 @@ export function ClubNoticeEditorClient({
         </main>
 
         {isEdit && (canEdit || canDelete) ? (
-          <div className="fixed bottom-0 left-0 right-0 mx-auto max-w-md border-t border-slate-100 bg-white p-4">
+          <div
+            className={`${
+              isModal ? "sticky max-w-none" : "fixed left-0 right-0 mx-auto max-w-md"
+            } bottom-0 z-20 border-t border-slate-100 bg-white p-4`}
+          >
             <div className="flex gap-3">
               {canDelete ? (
                 <button
@@ -618,7 +629,7 @@ export function ClubNoticeEditorClient({
                   disabled={deleting || saving}
                   className="flex h-14 flex-1 items-center justify-center gap-2 rounded-xl bg-rose-500 text-base font-bold text-white shadow-lg shadow-rose-500/25 transition-all hover:bg-rose-600 disabled:opacity-60"
                 >
-                  <span className="material-symbols-outlined text-xl">delete</span>
+                  <span className="material-symbols-outlined text-xl" aria-hidden="true">delete</span>
                   {deleting ? "삭제 중..." : "삭제"}
                 </button>
               ) : null}

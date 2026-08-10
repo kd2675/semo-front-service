@@ -1,10 +1,12 @@
 "use client";
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { RouterLink } from "@/app/components/RouterLink";
-import { ClubPageHeader } from "@/app/components/ClubPageHeader";
-import { type BracketDetailResponse } from "@/app/lib/clubs";
 import { useState } from "react";
+
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+
+import { ClubPageHeader } from "@/app/components/ClubPageHeader";
+import { RouterLink } from "@/app/components/RouterLink";
+import { type BracketDetailResponse } from "@/app/lib/clubs";
 import { getQueryErrorMessage } from "@/app/lib/queryUtils";
 import { invalidateClubQueries } from "@/app/lib/react-query/common";
 import {
@@ -16,6 +18,7 @@ import {
   bracketQueryKeys,
 } from "@/app/lib/react-query/brackets/queries";
 import { ClubDetailLoadingShell } from "../../ClubRouteLoadingShells";
+import { BracketRejectModal } from "./BracketRejectModal";
 
 type ClubBracketDetailClientProps = {
   clubId: string;
@@ -26,6 +29,15 @@ type ClubBracketDetailClientProps = {
   onRequestClose?: () => void;
   onReload?: () => void;
 };
+
+function getBracketParticipantLabel(name: string | null) {
+  if (!name) {
+    return "부전승";
+  }
+
+  const winnerMatch = /^Winner M(\d+)$/.exec(name);
+  return winnerMatch ? `${winnerMatch[1]}경기 승자` : name;
+}
 
 function approvalBadgeClass(status: string) {
   switch (status) {
@@ -75,6 +87,8 @@ export function ClubBracketDetailClient({
   const [payloadState, setPayload] = useState<BracketDetailResponse | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [rejectModalOpen, setRejectModalOpen] = useState(false);
+  const [rejectionReason, setRejectionReason] = useState("");
   const submitBracketMutation = useMutation(submitBracketMutationOptions(clubId));
   const reviewBracketMutation = useMutation(reviewBracketMutationOptions(clubId));
   const isModal = presentation === "modal";
@@ -109,33 +123,30 @@ export function ClubBracketDetailClient({
     onReload?.();
   };
 
-  const handleReview = async (approvalStatus: "APPROVED" | "REJECTED") => {
+  const handleReview = async (
+    approvalStatus: "APPROVED" | "REJECTED",
+    reason: string | null = null,
+  ): Promise<boolean> => {
     if (!payload) {
-      return;
+      return false;
     }
-    const rejectionReason = approvalStatus === "REJECTED"
-      ? window.prompt("반려 사유를 입력하세요.", "참가자 구성을 한 번 더 확인해 주세요.") ?? ""
-      : null;
-    if (approvalStatus === "REJECTED" && !(rejectionReason ?? "").trim()) {
-      return;
-    }
-
     setSubmitting(true);
     setActionError(null);
     const result = await reviewBracketMutation.mutateAsync({
       bracketRecordId: payload.bracketRecordId,
       approvalStatus,
-      rejectionReason,
+      rejectionReason: reason,
     });
     setSubmitting(false);
     if (!result.ok || !result.data) {
       setActionError(result.message ?? "대진표 검토에 실패했습니다.");
-      return;
+      return false;
     }
     queryClient.setQueryData(bracketQueryKeys.bracketDetail(clubId, bracketRecordId), result.data);
     setPayload(result.data);
     void invalidateClubQueries(queryClient, clubId);
     onReload?.();
+    return true;
   };
 
   if (loading && !payload) {
@@ -157,28 +168,30 @@ export function ClubBracketDetailClient({
         style={{ backgroundColor: "var(--background-light)" }}
       >
         <ClubPageHeader
-          title="대진표 상세"
+          title="대진표 초안 상세"
           subtitle={payload.clubName}
           icon="account_tree"
           theme={isAdminMode ? "admin" : "user"}
-          leftSlot={isModal && onRequestClose ? (
+          layout={isModal ? "modal" : "page"}
+          leftSlot={!isModal ? (
+            <RouterLink
+              href={fallbackBasePath}
+              className="rounded-full p-2 transition-colors hover:bg-slate-100"
+              aria-label="대진표 목록으로 돌아가기"
+            >
+              <span className="material-symbols-outlined text-[24px]" aria-hidden="true">arrow_back</span>
+            </RouterLink>
+          ) : undefined}
+          rightSlot={isModal && onRequestClose ? (
             <button
               type="button"
               onClick={onRequestClose}
               className="semo-icon-control transition-colors hover:bg-slate-100"
               aria-label="대진표 상세 닫기"
             >
-              <span className="material-symbols-outlined text-[24px]">close</span>
+              <span className="material-symbols-outlined text-[24px]" aria-hidden="true">close</span>
             </button>
-          ) : (
-            <RouterLink
-              href={fallbackBasePath}
-              className="rounded-full p-2 transition-colors hover:bg-slate-100"
-              aria-label="대진표 목록으로 돌아가기"
-            >
-              <span className="material-symbols-outlined text-[24px]">arrow_back</span>
-            </RouterLink>
-          )}
+          ) : undefined}
         />
 
         <main className={`flex-1 ${isModal ? "overflow-y-auto" : "semo-nav-bottom-space"} px-4 pb-24 pt-5`}>
@@ -189,26 +202,26 @@ export function ClubBracketDetailClient({
           ) : null}
 
           <section className={`overflow-hidden rounded-[30px] p-6 ring-1 ${heroClassName}`}>
-            <div className="flex items-start justify-between gap-4">
-              <div className="max-w-[74%]">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+              <div className="min-w-0 sm:max-w-[74%]">
                 <div className="mb-3 flex flex-wrap gap-2">
-                  <span className={`rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-[0.22em] ${approvalBadgeClass(payload.approvalStatus)}`}>
+                  <span className={`rounded-full px-3 py-1 text-[11px] font-black uppercase tracking-[0.22em] ${approvalBadgeClass(payload.approvalStatus)}`}>
                     {approvalLabel(payload.approvalStatus)}
                   </span>
-                  <span className="rounded-full bg-white px-3 py-1 text-[10px] font-black uppercase tracking-[0.22em] text-slate-600">
+                  <span className="rounded-full bg-white px-3 py-1 text-[11px] font-black uppercase tracking-[0.22em] text-slate-600">
                     {sourceLabel(payload.sourceType)}
                   </span>
-                  <span className="rounded-full bg-white px-3 py-1 text-[10px] font-black uppercase tracking-[0.22em] text-slate-600">
+                  <span className="rounded-full bg-white px-3 py-1 text-[11px] font-black uppercase tracking-[0.22em] text-slate-600">
                     {payload.participantCount}명
                   </span>
                 </div>
-                <h2 className="text-3xl font-black tracking-tight text-slate-900">{payload.title}</h2>
+                <h2 className="text-2xl font-black tracking-tight text-slate-900 sm:text-3xl">{payload.title}</h2>
                 <p className="mt-3 text-sm leading-6 text-slate-600">
                   {payload.summaryText ?? "대진표 설명이 아직 없습니다."}
                 </p>
               </div>
-              <div className="rounded-[22px] bg-white/85 px-4 py-3 text-right shadow-sm">
-                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">작성자</p>
+              <div className="w-full rounded-[22px] bg-white/85 px-4 py-3 text-left shadow-sm sm:w-auto sm:text-right">
+                <p className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">작성자</p>
                 <p className="mt-1 text-lg font-black text-slate-900">{payload.authorDisplayName ?? "-"}</p>
               </div>
             </div>
@@ -249,7 +262,10 @@ export function ClubBracketDetailClient({
                 <button
                   type="button"
                   disabled={submitting}
-                  onClick={() => void handleReview("REJECTED")}
+                  onClick={() => {
+                    setRejectionReason("");
+                    setRejectModalOpen(true);
+                  }}
                   className="rounded-full bg-rose-600 px-5 py-3 text-sm font-black text-white transition hover:opacity-95 disabled:opacity-60"
                 >
                   반려
@@ -273,14 +289,14 @@ export function ClubBracketDetailClient({
                     <div className="min-w-0">
                       <p className="truncate text-sm font-bold text-slate-900">{participant.displayName}</p>
                       <p className="mt-1 text-xs font-medium text-slate-400">
-                        Seed {participant.seedNumber} · {participant.entrySourceType === "TOURNAMENT"
+                        시드 {participant.seedNumber} · {participant.entrySourceType === "TOURNAMENT"
                           ? "대회 불러오기"
                           : participant.guestEntry
                             ? "게스트"
                             : "직접 입력"}
                       </p>
                     </div>
-                    <span className="rounded-full bg-white px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-slate-600">
+                    <span className="rounded-full bg-white px-3 py-1 text-[11px] font-black uppercase tracking-[0.18em] text-slate-600">
                       {participant.seedNumber}
                     </span>
                   </div>
@@ -301,14 +317,14 @@ export function ClubBracketDetailClient({
                       {round.matches.map((match) => (
                         <div key={match.matchNumber} className="rounded-xl bg-white px-3 py-3">
                           <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">
-                            Match {match.matchNumber}
+                            경기 {match.matchNumber}
                           </p>
                           <div className="mt-2 space-y-1">
                             <p className="rounded-lg bg-slate-50 px-3 py-2 text-sm font-medium text-slate-700">
-                              {match.homeParticipantName ?? "BYE"}
+                              {getBracketParticipantLabel(match.homeParticipantName)}
                             </p>
                             <p className="rounded-lg bg-slate-50 px-3 py-2 text-sm font-medium text-slate-700">
-                              {match.awayParticipantName ?? "BYE"}
+                              {getBracketParticipantLabel(match.awayParticipantName)}
                             </p>
                           </div>
                         </div>
@@ -321,6 +337,27 @@ export function ClubBracketDetailClient({
           </section>
         </main>
       </div>
+      {rejectModalOpen ? (
+        <BracketRejectModal
+          reason={rejectionReason}
+          busy={submitting}
+          onReasonChange={setRejectionReason}
+          onCancel={() => {
+            if (!submitting) {
+              setRejectModalOpen(false);
+              setRejectionReason("");
+            }
+          }}
+          onConfirm={() => {
+            void handleReview("REJECTED", rejectionReason.trim()).then((succeeded) => {
+              if (succeeded) {
+                setRejectModalOpen(false);
+                setRejectionReason("");
+              }
+            });
+          }}
+        />
+      ) : null}
     </div>
   );
 }

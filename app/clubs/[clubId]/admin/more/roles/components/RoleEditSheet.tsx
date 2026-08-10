@@ -24,6 +24,7 @@ import {
   buildRoleFormValue,
   DEFAULT_ROLE_COLOR,
   ROLE_COLOR_OPTIONS,
+  ROLE_ICON_LABELS,
   ROLE_ICON_OPTIONS,
   type RoleFormValue,
 } from "../utils/roleUtils";
@@ -68,7 +69,7 @@ function MemberAssignmentCard({
               : "bg-[var(--primary)] text-white shadow-sm hover:bg-orange-700"
           }`}
         >
-          <span className="material-symbols-outlined text-[18px]">
+          <span className="material-symbols-outlined text-[18px]" aria-hidden="true">
             {assigned ? "person_remove" : "person_add"}
           </span>
           {busy ? "처리 중" : assigned ? "해제" : "부여"}
@@ -77,12 +78,12 @@ function MemberAssignmentCard({
 
       <div className="mt-4 flex flex-wrap gap-2">
         <span className="inline-flex items-center gap-1.5 rounded-full bg-[#f5efe7] px-3 py-1.5 text-[11px] font-semibold text-[#7d4300]">
-          <span className="material-symbols-outlined text-[16px]">workspace_premium</span>
+          <span className="material-symbols-outlined text-[16px]" aria-hidden="true">workspace_premium</span>
           {assigned ? `${role.displayName} 연결됨` : "직책 미연결"}
         </span>
         {member.joinedAtLabel ? (
           <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1.5 text-[11px] font-semibold text-slate-600">
-            <span className="material-symbols-outlined text-[16px]">calendar_month</span>
+            <span className="material-symbols-outlined text-[16px]" aria-hidden="true">calendar_month</span>
             {member.joinedAtLabel}
           </span>
         ) : null}
@@ -320,7 +321,7 @@ export function RoleEditSheet({
                   className="flex size-14 items-center justify-center rounded-[1.25rem] text-white shadow-[0_16px_32px_rgba(144,78,0,0.24)]"
                   style={{ backgroundColor: colorHex }}
                 >
-                  <span className="material-symbols-outlined text-[30px]">{form.iconName}</span>
+                  <span className="material-symbols-outlined text-[30px]" aria-hidden="true">{form.iconName}</span>
                 </div>
                 <div>
                   <p className="text-[11px] font-black uppercase tracking-[0.28em] text-[#8b4b00]">
@@ -354,6 +355,7 @@ export function RoleEditSheet({
                   <button
                     key={tabItem.key}
                     type="button"
+                    aria-pressed={active}
                     onClick={() => setActiveTab(tabItem.key)}
                     className={`inline-flex items-center gap-2 rounded-full px-4 py-2.5 text-sm font-semibold transition ${
                       active
@@ -361,7 +363,7 @@ export function RoleEditSheet({
                         : "bg-white text-slate-600 hover:bg-[#fff5eb]"
                     }`}
                   >
-                    <span className="material-symbols-outlined text-[18px]">{tabItem.icon}</span>
+                    <span className="material-symbols-outlined text-[18px]" aria-hidden="true">{tabItem.icon}</span>
                     {tabItem.label}
                   </button>
                 );
@@ -431,6 +433,7 @@ export function RoleEditSheet({
                             type="button"
                             role="switch"
                             aria-checked={form.active}
+                            aria-label="직책 활성 상태"
                             onClick={() => setForm((current) => ({ ...current, active: !current.active }))}
                             className={`relative inline-flex h-11 w-16 items-center rounded-full transition ${
                               form.active ? "bg-[var(--primary)]" : "bg-slate-300"
@@ -457,13 +460,15 @@ export function RoleEditSheet({
                                 key={iconName}
                                 type="button"
                                 onClick={() => setForm((current) => ({ ...current, iconName }))}
+                                aria-label={`대표 아이콘 ${ROLE_ICON_LABELS[iconName]}`}
+                                aria-pressed={selected}
                                 className={`flex size-12 items-center justify-center rounded-xl transition ${
                                   selected
                                     ? "bg-[var(--primary)] text-white shadow-md ring-2 ring-orange-200 ring-offset-2"
                                     : "bg-[#eff4f7] text-slate-500 hover:bg-[#e4ecef]"
                                 }`}
                               >
-                                <span className="material-symbols-outlined">{iconName}</span>
+                                <span className="material-symbols-outlined" aria-hidden="true">{iconName}</span>
                               </button>
                             );
                           })}
@@ -496,14 +501,14 @@ export function RoleEditSheet({
                             className="flex size-14 items-center justify-center rounded-[18px] text-white shadow-sm"
                             style={{ backgroundColor: colorHex }}
                           >
-                            <span className="material-symbols-outlined text-[28px]">{form.iconName}</span>
+                            <span className="material-symbols-outlined text-[28px]" aria-hidden="true">{form.iconName}</span>
                           </div>
                           <div>
                             <p className="text-2xl font-extrabold tracking-tight text-slate-900">
                               {form.displayName || "직책"}
                             </p>
                             <p className="mt-1 text-xs font-bold uppercase tracking-[0.18em] text-slate-500">
-                              {form.positionCode}
+                              직책 코드 · {form.positionCode}
                             </p>
                           </div>
                         </div>
@@ -544,11 +549,11 @@ export function RoleEditSheet({
                             key={item.label}
                             className="inline-flex items-center gap-3 rounded-full bg-[#f7fafc] px-3.5 py-2 ring-1 ring-slate-200"
                           >
-                            <span className="material-symbols-outlined text-[18px]" style={{ color: colorHex }}>
+                            <span className="material-symbols-outlined text-[18px]" aria-hidden="true" style={{ color: colorHex }}>
                               {item.icon}
                             </span>
                             <div>
-                              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">{item.label}</p>
+                              <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400">{item.label}</p>
                               <p className="text-lg font-black tracking-tight text-slate-900">
                               {item.value}
                               </p>
@@ -657,7 +662,7 @@ export function RoleEditSheet({
                   disabled={loading || submitting}
                   className="inline-flex items-center gap-2 rounded-2xl border border-rose-200 bg-white px-4 py-2.5 text-sm font-semibold text-rose-600 transition hover:bg-rose-50 disabled:opacity-60"
                 >
-                  <span className="material-symbols-outlined text-[18px]">delete</span>
+                  <span className="material-symbols-outlined text-[18px]" aria-hidden="true">delete</span>
                   삭제
                 </button>
                 <button
@@ -666,7 +671,7 @@ export function RoleEditSheet({
                   disabled={loading || submitting}
                   className="semo-control inline-flex items-center gap-2 bg-[var(--primary)] px-5 text-sm font-bold text-white transition hover:bg-orange-700 disabled:opacity-60"
                 >
-                  <span className="material-symbols-outlined text-[18px]">done</span>
+                  <span className="material-symbols-outlined text-[18px]" aria-hidden="true">done</span>
                   {submitting ? "저장 중..." : "변경사항 저장"}
                 </button>
               </div>

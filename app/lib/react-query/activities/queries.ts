@@ -6,7 +6,7 @@ import {
   getClubAdminTimeline,
   getClubTimeline,
 } from "@/app/lib/clubs";
-import { getApiDataOrFallback, requireApiData } from "@/app/lib/queryUtils";
+import { requireApiData } from "@/app/lib/queryUtils";
 
 export const activityQueryKeys = {
   adminActivities: (clubId: string, size: number, positionId: number | null = null) =>
@@ -34,16 +34,10 @@ export function adminActivitiesPreviewQueryOptions(clubId: string, size: number)
   return queryOptions({
     queryKey: activityQueryKeys.adminActivities(clubId, size),
     queryFn: async () =>
-      getApiDataOrFallback(await getClubAdminActivities(clubId, { size }), {
-        clubId: Number(clubId),
-        clubName: "",
-        selectedPositionId: null,
-        positionFilters: [],
-        activities: [],
-        nextCursorCreatedAt: null,
-        nextCursorActivityId: null,
-        hasNext: false,
-      }),
+      requireApiData(
+        await getClubAdminActivities(clubId, { size }),
+        "최근 활동을 불러오지 못했습니다.",
+      ),
   });
 }
 

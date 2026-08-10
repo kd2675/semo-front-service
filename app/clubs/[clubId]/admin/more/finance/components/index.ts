@@ -8,7 +8,6 @@ export {
   BillingTabPanel,
   ExpensesTabPanel,
   SettlementsTabPanel,
-  LedgerTabPanel,
 } from "./financePanels";
 
 export {

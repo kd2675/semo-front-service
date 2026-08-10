@@ -392,7 +392,3 @@ export function updateClubAdminRole(clubId: ClubId, clubPositionId: string | num
 export function deleteClubAdminRole(clubId: ClubId, clubPositionId: string | number) {
   return deleteJson<boolean>(`/api/semo/v1/clubs/${clubId}/admin/more/roles/${clubPositionId}`);
 }
-
-export function deleteClubAdminRoleHistory(clubId: ClubId, positionHistoryId: string | number) {
-  return deleteJson<boolean>(`/api/semo/v1/clubs/${clubId}/admin/more/roles/history/${positionHistoryId}`);
-}

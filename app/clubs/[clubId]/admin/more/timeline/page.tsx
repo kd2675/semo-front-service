@@ -1,4 +1,4 @@
-import { ClubAdminTimelineFallbackClient } from "./ClubAdminTimelineFallbackClient";
+import { redirect } from "next/navigation";
 
 type ClubAdminTimelinePageProps = {
   params: Promise<{
@@ -10,5 +10,5 @@ export default async function ClubAdminTimelinePage({
   params,
 }: ClubAdminTimelinePageProps) {
   const { clubId } = await params;
-  return <ClubAdminTimelineFallbackClient clubId={clubId} />;
+  redirect(`/clubs/${clubId}/admin/logs`);
 }

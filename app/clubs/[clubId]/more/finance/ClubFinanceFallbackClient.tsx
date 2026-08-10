@@ -7,7 +7,7 @@ import { getQueryErrorMessage } from "@/app/lib/queryUtils";
 import { myClubQueryOptions } from "@/app/lib/react-query/club/queries";
 import {
   financeHomeQueryOptions,
-  financeRequestsFallbackQueryOptions,
+  financeRequestsQueryOptions,
 } from "@/app/lib/react-query/finance/queries";
 import { ClubFinanceClient } from "./ClubFinanceClient";
 
@@ -20,7 +20,7 @@ export function ClubFinanceFallbackClient({ clubId }: ClubFinanceFallbackClientP
     queries: [
       myClubQueryOptions(clubId),
       financeHomeQueryOptions(clubId),
-      financeRequestsFallbackQueryOptions(clubId),
+      financeRequestsQueryOptions(clubId),
     ],
   });
   const club = clubQuery.data ?? null;

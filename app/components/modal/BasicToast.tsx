@@ -22,7 +22,7 @@ function getToastToneStyles(tone: ToastItem["tone"]) {
     case "error":
       return {
         icon: "error",
-        eyebrow: "ERROR FEEDBACK",
+        eyebrow: "오류 안내",
         shellClassName: "border-rose-200/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.96),rgba(255,241,242,0.94))]",
         iconWrapClassName: "bg-rose-600 text-white shadow-[0_16px_32px_rgba(225,29,72,0.28)]",
         progressClassName: "from-rose-500 via-rose-400 to-rose-300",
@@ -32,7 +32,7 @@ function getToastToneStyles(tone: ToastItem["tone"]) {
     case "warning":
       return {
         icon: "warning",
-        eyebrow: "WARNING FEEDBACK",
+        eyebrow: "주의 안내",
         shellClassName: "border-amber-200/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.96),rgba(255,247,237,0.94))]",
         iconWrapClassName: "bg-amber-500 text-white shadow-[0_16px_32px_rgba(217,119,6,0.24)]",
         progressClassName: "from-amber-500 via-amber-400 to-amber-300",
@@ -42,7 +42,7 @@ function getToastToneStyles(tone: ToastItem["tone"]) {
     case "info":
       return {
         icon: "info",
-        eyebrow: "INFO FEEDBACK",
+        eyebrow: "정보 안내",
         shellClassName: "border-sky-200/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.96),rgba(240,249,255,0.94))]",
         iconWrapClassName: "bg-sky-500 text-white shadow-[0_16px_32px_rgba(2,132,199,0.24)]",
         progressClassName: "from-sky-500 via-sky-400 to-cyan-300",
@@ -52,7 +52,7 @@ function getToastToneStyles(tone: ToastItem["tone"]) {
     default:
       return {
         icon: "check_circle",
-        eyebrow: "SUCCESS FEEDBACK",
+        eyebrow: "완료 안내",
         shellClassName: "border-emerald-200/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.96),rgba(236,253,245,0.94))]",
         iconWrapClassName: "bg-emerald-500 text-white shadow-[0_16px_32px_rgba(5,150,105,0.24)]",
         progressClassName: "from-emerald-500 via-emerald-400 to-lime-300",
@@ -81,6 +81,7 @@ export function BasicToast({
 
   return (
     <RouteModal
+      ariaLabel={toast.title ? `${toast.title} 알림` : "알림"}
       onDismiss={onClose}
       dismissOnBackdrop={false}
       contentClassName="max-w-[25rem] rounded-[2rem] border-0 bg-transparent p-0 shadow-none sm:rounded-[2rem]"
@@ -89,7 +90,7 @@ export function BasicToast({
         <div className="absolute inset-x-0 top-0 h-24 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.95),transparent_70%)]" />
         <div className="relative px-5 pb-5 pt-4">
           <div className="flex items-start justify-between gap-3">
-            <span className={`inline-flex rounded-full px-2.5 py-1 text-[10px] font-black tracking-[0.22em] ${styles.badgeClassName}`}>
+            <span className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-black tracking-[0.22em] ${styles.badgeClassName}`}>
               {styles.eyebrow}
             </span>
             <button
@@ -98,13 +99,13 @@ export function BasicToast({
               aria-label="토스트 닫기"
               className="semo-icon-control border border-black/5 bg-white/80 text-slate-400 transition-colors hover:text-slate-700"
             >
-              <span className="material-symbols-outlined text-[20px]">close</span>
+              <span className="material-symbols-outlined text-[20px]" aria-hidden="true">close</span>
             </button>
           </div>
 
           <div className="mt-4 text-center">
             <div className={`mx-auto flex size-14 items-center justify-center rounded-[1.25rem] ${styles.iconWrapClassName}`}>
-              <span className="material-symbols-outlined text-[28px]">{styles.icon}</span>
+              <span className="material-symbols-outlined text-[28px]" aria-hidden="true">{styles.icon}</span>
             </div>
             {toast.title ? <h3 className="mt-4 text-[1.15rem] font-black tracking-tight text-slate-950">{toast.title}</h3> : null}
             <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-slate-600">{toast.message}</p>
@@ -117,7 +118,7 @@ export function BasicToast({
         <div className="px-5">
           <div className="mb-2 flex items-center justify-between">
             <span className="text-[11px] font-black tracking-[0.18em] text-slate-400">
-              AUTO CLOSE
+              자동 닫힘
             </span>
             <span className="text-xs font-black tabular-nums text-slate-500">
               {progressLabel}%

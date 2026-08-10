@@ -81,6 +81,11 @@ body {
   letter-spacing: -0.015em;
 }
 
+:where(h1, h2, h3, h4) {
+  word-break: keep-all;
+  overflow-wrap: break-word;
+}
+
 .hide-scrollbar::-webkit-scrollbar {
   display: none;
 }
@@ -105,6 +110,11 @@ a {
 
 :where(button, input, textarea, select):disabled {
   cursor: not-allowed;
+}
+
+button {
+  min-height: var(--control-default);
+  touch-action: manipulation;
 }
 
 .material-symbols-outlined {

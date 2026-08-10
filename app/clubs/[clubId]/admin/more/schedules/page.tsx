@@ -1,4 +1,4 @@
-import { ClubScheduleHomeFallbackClient } from "../../../more/schedules/ClubScheduleHomeFallbackClient";
+import { redirect } from "next/navigation";
 
 type ClubAdminScheduleHomePageProps = {
   params: Promise<{
@@ -10,5 +10,5 @@ export default async function ClubAdminScheduleHomePage({
   params,
 }: ClubAdminScheduleHomePageProps) {
   const { clubId } = await params;
-  return <ClubScheduleHomeFallbackClient clubId={clubId} mode="admin" />;
+  redirect(`/clubs/${clubId}/schedule`);
 }

@@ -5,7 +5,7 @@ import { ClubRouteErrorState } from "@/app/components/ClubRouteState";
 import { getQueryErrorMessage } from "@/app/lib/queryUtils";
 import { myClubQueryOptions } from "@/app/lib/react-query/club/queries";
 import {
-  feedbackDetailFallbackQueryOptions,
+  feedbackDetailQueryOptions,
   feedbackHomeQueryOptions,
 } from "@/app/lib/react-query/feedback/queries";
 import { ClubTimelineLoadingShell } from "../../ClubRouteLoadingShells";
@@ -27,27 +27,34 @@ export function ClubFeedbackFallbackClient({
   const [initialDetailQuery] = useQueries({
     queries: [
       {
-        ...feedbackDetailFallbackQueryOptions(clubId, firstFeedbackId as number),
+        ...feedbackDetailQueryOptions(clubId, firstFeedbackId as number),
         enabled: firstFeedbackId != null,
       },
     ],
   });
   const initialDetail = initialDetailQuery.data ?? null;
 
-  const error = clubQuery.error ?? feedbackHomeQuery.error;
+  const error = clubQuery.error ?? feedbackHomeQuery.error ?? initialDetailQuery.error;
 
-  if ((clubQuery.isError || feedbackHomeQuery.isError) && (!club || !feedbackHome)) {
+  if (
+    (clubQuery.isError || feedbackHomeQuery.isError || initialDetailQuery.isError)
+    && (!club || !feedbackHome || (firstFeedbackId != null && !initialDetail))
+  ) {
     return (
       <ClubRouteErrorState
         title="피드백"
         message={getQueryErrorMessage(error, "피드백을 불러오지 못했습니다.")}
         backHref={`/clubs/${clubId}`}
-        onRetry={() => void Promise.all([clubQuery.refetch(), feedbackHomeQuery.refetch()])}
+        onRetry={() => void Promise.all([
+          clubQuery.refetch(),
+          feedbackHomeQuery.refetch(),
+          initialDetailQuery.refetch(),
+        ])}
       />
     );
   }
 
-  if (!club || !feedbackHome) {
+  if (!club || !feedbackHome || (firstFeedbackId != null && !initialDetail)) {
     return <ClubTimelineLoadingShell />;
   }
 

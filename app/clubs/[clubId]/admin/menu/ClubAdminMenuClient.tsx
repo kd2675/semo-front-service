@@ -27,6 +27,7 @@ import { useAppToast } from "@/app/hooks/useAppToast";
 import { motion, useReducedMotion } from "motion/react";
 import { startTransition, useEffect, useMemo, useState } from "react";
 import { type ClubFeatureSummary } from "@/app/lib/clubs";
+import { getFeatureDisplayName } from "@/app/lib/featureLabels";
 import { staggeredFadeUpMotion } from "@/app/lib/motion";
 import { updateClubFeaturesMutationOptions } from "@/app/lib/react-query/club/mutations";
 import { invalidateClubQueries } from "@/app/lib/react-query/common";
@@ -39,10 +40,6 @@ function extractEnabledFeatureKeys(features: ClubFeatureSummary[]) {
 
 function cloneFeatures(features: ClubFeatureSummary[]) {
   return features.map((feature) => ({ ...feature }));
-}
-
-function getFeatureDisplayName(feature: ClubFeatureSummary) {
-  return feature.displayName;
 }
 
 function getFeatureDescription(feature: ClubFeatureSummary) {
@@ -102,7 +99,7 @@ function EnabledFeatureCard({
         <span className="font-mono text-sm font-bold tracking-[-0.2em]">::</span>
       </button>
       <div className="flex size-12 shrink-0 items-center justify-center rounded-lg bg-[var(--primary)]/10 text-[var(--primary)]">
-        <span className="material-symbols-outlined">{feature.iconName}</span>
+        <span className="material-symbols-outlined" aria-hidden="true">{feature.iconName}</span>
       </div>
       <div className="flex flex-1 flex-col">
         <p className="text-base font-bold">{getFeatureDisplayName(feature)}</p>
@@ -127,7 +124,7 @@ function EnabledFeatureOverlayCard({ feature }: { feature: ClubFeatureSummary })
           <span className="font-mono text-sm font-bold tracking-[-0.2em]">::</span>
         </div>
         <div className="flex size-12 shrink-0 items-center justify-center rounded-lg bg-[var(--primary)]/10 text-[var(--primary)]">
-          <span className="material-symbols-outlined">{feature.iconName}</span>
+          <span className="material-symbols-outlined" aria-hidden="true">{feature.iconName}</span>
         </div>
         <div className="flex flex-1 flex-col">
           <p className="text-base font-bold">{getFeatureDisplayName(feature)}</p>
@@ -308,7 +305,7 @@ export function ClubAdminMenuClient({
         <main className="semo-page-admin semo-nav-bottom-space">
           <motion.section className="p-4" {...staggeredFadeUpMotion(0, reduceMotion)}>
             <div className="mb-4 flex items-center gap-2">
-              <span className="material-symbols-outlined text-[var(--primary)]">dashboard</span>
+              <span className="material-symbols-outlined text-[var(--primary)]" aria-hidden="true">dashboard</span>
               <h2 className="text-lg font-bold">기능 개요</h2>
             </div>
             <div className="grid grid-cols-1 gap-3">
@@ -353,7 +350,7 @@ export function ClubAdminMenuClient({
 
           <motion.section className="px-4 py-4" {...staggeredFadeUpMotion(1, reduceMotion)}>
             <div className="mb-4 flex items-center gap-2">
-              <span className="material-symbols-outlined text-[var(--primary)]">view_quilt</span>
+              <span className="material-symbols-outlined text-[var(--primary)]" aria-hidden="true">view_quilt</span>
               <h2 className="text-lg font-bold">활성화된 기능</h2>
             </div>
             <div className="flex flex-col gap-3">
@@ -397,7 +394,7 @@ export function ClubAdminMenuClient({
 
           <motion.section className="mb-8 px-4 py-4" {...staggeredFadeUpMotion(4, reduceMotion)}>
             <div className="mb-4 flex items-center gap-2">
-              <span className="material-symbols-outlined text-slate-500">add_box</span>
+              <span className="material-symbols-outlined text-slate-500" aria-hidden="true">add_box</span>
               <h2 className="text-lg font-bold">사용 가능 기능</h2>
             </div>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -413,7 +410,7 @@ export function ClubAdminMenuClient({
                     {...staggeredFadeUpMotion(index + 5, reduceMotion)}
                   >
                     <div className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-slate-200 text-slate-600">
-                      <span className="material-symbols-outlined text-[22px]">
+                      <span className="material-symbols-outlined text-[22px]" aria-hidden="true">
                         {feature.iconName}
                       </span>
                     </div>
@@ -426,7 +423,7 @@ export function ClubAdminMenuClient({
                       onClick={() => handleToggle(feature.featureKey)}
                       className="inline-flex shrink-0 items-center justify-center gap-1 rounded-lg bg-slate-200 px-3 py-2 text-xs font-bold text-slate-700 transition-colors hover:bg-slate-300"
                     >
-                      <span className="material-symbols-outlined text-sm">add</span>
+                      <span className="material-symbols-outlined text-sm" aria-hidden="true">add</span>
                       활성화
                     </button>
                   </motion.article>
@@ -448,7 +445,7 @@ export function ClubAdminMenuClient({
                   title="변경 사항 되돌리기"
                   className="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-600 shadow-sm transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-70"
                 >
-                  <span className="material-symbols-outlined text-[18px]">restart_alt</span>
+                  <span className="material-symbols-outlined text-[18px]" aria-hidden="true">restart_alt</span>
                 </button>
                 <button
                   type="button"
@@ -456,7 +453,7 @@ export function ClubAdminMenuClient({
                   disabled={isSaving}
                   className="flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--primary)] py-4 text-base font-bold text-white shadow-lg transition-all hover:scale-[1.01] hover:shadow-[0_18px_36px_rgba(236,91,19,0.22)] disabled:cursor-not-allowed disabled:opacity-70"
                 >
-                  <span className="material-symbols-outlined">
+                  <span className="material-symbols-outlined" aria-hidden="true">
                     {isSaving ? "progress_activity" : "save"}
                   </span>
                   {isSaving ? "저장 중..." : "변경사항 저장"}

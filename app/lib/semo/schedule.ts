@@ -8,6 +8,8 @@ export type ClubScheduleResponse = {
   clubId: number;
   clubName: string;
   admin: boolean;
+  canCreateSchedule: boolean;
+  canCreatePoll: boolean;
   calendarYear: number;
   calendarMonth: number;
   overview: {

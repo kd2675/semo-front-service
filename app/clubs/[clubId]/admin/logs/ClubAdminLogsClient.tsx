@@ -110,7 +110,7 @@ export function ClubAdminLogsClient({ clubId, clubName, initialData }: ClubAdmin
                 href={`/clubs/${clubId}/admin`}
                 className="inline-flex items-center gap-2 rounded-xl bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-200"
               >
-                <span className="material-symbols-outlined text-[18px]">arrow_back</span>
+                <span className="material-symbols-outlined text-[18px]" aria-hidden="true">arrow_back</span>
                 관리자 홈
               </RouterLink>
             </div>

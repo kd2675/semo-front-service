@@ -120,6 +120,7 @@ export function RouteModal({
         aria-label={ariaLabelledBy ? undefined : ariaLabel}
         aria-labelledby={ariaLabelledBy}
         tabIndex={-1}
+        data-route-modal
         className={`relative flex max-h-[92dvh] w-full max-w-2xl flex-col overflow-visible border border-white/70 bg-[rgba(248,250,255,0.96)] shadow-[var(--shadow-modal)] rounded-t-[var(--radius-modal)] rounded-b-none sm:rounded-[var(--radius-modal)] ${contentClassName ?? ""}`}
         onClick={(event) => {
           event.stopPropagation();

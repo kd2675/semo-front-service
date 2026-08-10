@@ -200,7 +200,7 @@ export function ClubTimelineClient({
     <div className="min-h-full bg-[var(--background-light)] text-slate-900">
       <div className="mx-auto flex min-h-full max-w-md flex-col bg-[var(--background-light)]">
         <ClubPageHeader
-          title="타임라인"
+          title="내 활동"
           icon="timeline"
           subtitle={initialData.clubName}
           className="border-[#135bec]/10 bg-white/85 backdrop-blur-md"
@@ -212,7 +212,7 @@ export function ClubTimelineClient({
             {...staggeredFadeUpMotion(0, reduceMotion)}
           >
             <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[#135bec]/60">
-              My Activity Timeline
+              내 활동 기록
             </p>
             <h2 className="mt-2 text-xl font-bold text-slate-900">내가 남긴 활동만 시간순으로 확인</h2>
             <p className="mt-2 text-sm leading-relaxed text-slate-500">
@@ -249,7 +249,7 @@ export function ClubTimelineClient({
                     <div
                       className={`z-10 flex h-10 w-10 items-center justify-center rounded-full border-2 border-white ring-2 ${subjectMeta.avatarClassName}`}
                     >
-                      <span className="material-symbols-outlined text-[20px]">
+                      <span className="material-symbols-outlined text-[20px]" aria-hidden="true">
                         {subjectMeta.icon}
                       </span>
                     </div>

@@ -1,4 +1,4 @@
-import { ClubAdminPollDetailRouteModal } from "./ClubAdminPollDetailRouteModal";
+import { redirect } from "next/navigation";
 
 type ClubAdminPollDetailPageProps = {
   params: Promise<{
@@ -11,5 +11,5 @@ export default async function ClubAdminPollDetailPage({
   params,
 }: ClubAdminPollDetailPageProps) {
   const { clubId, voteId } = await params;
-  return <ClubAdminPollDetailRouteModal clubId={clubId} voteId={voteId} />;
+  redirect(`/clubs/${clubId}/schedule/votes/${voteId}`);
 }

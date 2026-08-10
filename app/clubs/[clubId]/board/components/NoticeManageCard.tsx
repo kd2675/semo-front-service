@@ -126,7 +126,7 @@ export function NoticeManageCard({
                     }}
                     className="mt-2 inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-600 transition hover:bg-slate-200 hover:text-slate-900"
                   >
-                    <span className="material-symbols-outlined text-[14px]">visibility</span>
+                    <span className="material-symbols-outlined text-[14px]" aria-hidden="true">visibility</span>
                     읽음 {readCount}명
                   </button>
                 ) : null}
@@ -143,7 +143,7 @@ export function NoticeManageCard({
                     }}
                     className="rounded-full p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
                   >
-                    <span className="material-symbols-outlined text-[20px]">more_horiz</span>
+                    <span className="material-symbols-outlined text-[20px]" aria-hidden="true">more_horiz</span>
                   </button>
 
                   <AnimatePresence initial={false}>
@@ -165,7 +165,7 @@ export function NoticeManageCard({
                             }}
                             className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm font-semibold text-amber-600 transition hover:bg-amber-50"
                           >
-                            <span className="material-symbols-outlined text-[18px]">edit</span>
+                            <span className="material-symbols-outlined text-[18px]" aria-hidden="true">edit</span>
                             수정
                           </button>
                         ) : null}
@@ -181,7 +181,7 @@ export function NoticeManageCard({
                               canEdit ? "border-t border-slate-100" : ""
                             }`}
                           >
-                            <span className="material-symbols-outlined text-[18px]">delete</span>
+                            <span className="material-symbols-outlined text-[18px]" aria-hidden="true">delete</span>
                             삭제
                           </button>
                         ) : null}

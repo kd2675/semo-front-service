@@ -12,7 +12,6 @@ import {
   type ClubFeedbackStatusCode,
   type ClubFeedbackSummary,
   type ClubFeedbackType,
-  type ClubFeedbackVisibilityScope,
 } from "@/app/lib/clubs";
 import { staggeredFadeUpMotion } from "@/app/lib/motion";
 import { invalidateClubQueries } from "@/app/lib/react-query/common";
@@ -30,7 +29,6 @@ type ClubAdminFeedbackClientProps = {
 };
 
 type StatusFilter = "ALL" | ClubFeedbackStatusCode;
-type VisibilityFilter = "ALL" | ClubFeedbackVisibilityScope;
 
 const FEEDBACK_TYPE_OPTIONS: Array<{ value: ClubFeedbackType; label: string }> = [
   { value: "SUGGESTION", label: "건의" },
@@ -50,12 +48,6 @@ const STATUS_FILTER_OPTIONS: Array<{ value: StatusFilter; label: string }> = [
   ...STATUS_OPTIONS,
 ];
 
-const VISIBILITY_FILTER_OPTIONS: Array<{ value: VisibilityFilter; label: string }> = [
-  { value: "ALL", label: "공개 전체" },
-  { value: "PRIVATE", label: "비공개" },
-  { value: "PUBLIC", label: "공개" },
-];
-
 function getStatusTone(statusCode: ClubFeedbackStatusCode) {
   switch (statusCode) {
     case "ANSWERED":
@@ -69,7 +61,7 @@ function getStatusTone(statusCode: ClubFeedbackStatusCode) {
   }
 }
 
-function getVisibilityTone(visibilityScope: ClubFeedbackVisibilityScope) {
+function getVisibilityTone(visibilityScope: ClubFeedbackSummary["visibilityScope"]) {
   return visibilityScope === "PUBLIC"
     ? "bg-violet-50 text-violet-700"
     : "bg-slate-100 text-slate-600";
@@ -78,12 +70,8 @@ function getVisibilityTone(visibilityScope: ClubFeedbackVisibilityScope) {
 function matchesAdminFilters(
   item: ClubFeedbackSummary,
   statusFilter: StatusFilter,
-  visibilityFilter: VisibilityFilter,
 ) {
-  const matchesStatus = statusFilter === "ALL" || item.statusCode === statusFilter;
-  const matchesVisibility =
-    visibilityFilter === "ALL" || item.visibilityScope === visibilityFilter;
-  return matchesStatus && matchesVisibility;
+  return statusFilter === "ALL" || item.statusCode === statusFilter;
 }
 
 export function ClubAdminFeedbackClient({
@@ -100,7 +88,6 @@ export function ClubAdminFeedbackClient({
   });
   const feedbackHome = feedbackHomeQuery.data;
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("ALL");
-  const [visibilityFilter, setVisibilityFilter] = useState<VisibilityFilter>("ALL");
   const [selectedFeedbackId, setSelectedFeedbackId] = useState<number | null>(
     initialDetail?.feedbackId ?? initialData.items[0]?.feedbackId ?? null,
   );
@@ -115,9 +102,6 @@ export function ClubAdminFeedbackClient({
   const [statusCode, setStatusCode] = useState<ClubFeedbackStatusCode>(
     initialDetail?.statusCode ?? "RECEIVED",
   );
-  const [visibilityScope, setVisibilityScope] = useState<ClubFeedbackVisibilityScope>(
-    initialDetail?.visibilityScope ?? "PRIVATE",
-  );
   const [adminAnswer, setAdminAnswer] = useState(initialDetail?.adminAnswer ?? "");
   const { showToast, clearToast } = useAppToast();
   const updateFeedbackMutation = useMutation(updateFeedbackMutationOptions(clubId, selectedFeedbackId ?? 0));
@@ -125,9 +109,9 @@ export function ClubAdminFeedbackClient({
   const filteredItems = useMemo(
     () =>
       feedbackHome.items.filter((item) =>
-        matchesAdminFilters(item, statusFilter, visibilityFilter),
+        matchesAdminFilters(item, statusFilter),
       ),
-    [feedbackHome.items, statusFilter, visibilityFilter],
+    [feedbackHome.items, statusFilter],
   );
 
   const loadDetail = async (feedbackId: number) => {
@@ -140,7 +124,6 @@ export function ClubAdminFeedbackClient({
       setSelectedDetail(detail);
       setFeedbackType(detail.feedbackType);
       setStatusCode(detail.statusCode);
-      setVisibilityScope(detail.visibilityScope);
       setAdminAnswer(detail.adminAnswer ?? "");
     } catch {
       showToast("피드백 상세를 불러오지 못했습니다.", "error");
@@ -174,7 +157,7 @@ export function ClubAdminFeedbackClient({
     const result = await updateFeedbackMutation.mutateAsync({
       feedbackType,
       statusCode,
-      visibilityScope,
+      visibilityScope: selectedDetail?.visibilityScope ?? "PRIVATE",
       adminAnswer,
     });
     setIsSaving(false);
@@ -192,7 +175,6 @@ export function ClubAdminFeedbackClient({
     setSelectedDetail(result.data);
     setFeedbackType(result.data.feedbackType);
     setStatusCode(result.data.statusCode);
-    setVisibilityScope(result.data.visibilityScope);
     setAdminAnswer(result.data.adminAnswer ?? "");
     showToast("피드백 상태를 저장했습니다.", "success");
     void refreshAdminHome(result.data.feedbackId);
@@ -210,7 +192,7 @@ export function ClubAdminFeedbackClient({
     >
       <div className="semo-page-admin min-h-screen bg-[var(--background-light)]">
         <ClubPageHeader
-          title="피드백 관리"
+          title="비공개 피드백함"
           subtitle={feedbackHome.clubName}
           icon="forum"
           theme="admin"
@@ -223,13 +205,16 @@ export function ClubAdminFeedbackClient({
             {...staggeredFadeUpMotion(0, reduceMotion)}
           >
             <p className="text-xs font-bold tracking-wide text-[var(--primary)]">
-              Feedback Operations
+              비공개 접수함
             </p>
             <h2 className="mt-3 text-[28px] font-black tracking-[-0.04em] text-slate-950">
-              접수부터 답변까지
+              제보자의 신뢰를 지키며
               <br />
-              한 화면에서 처리합니다.
+              접수부터 답변까지 처리합니다.
             </h2>
+            <p className="mt-3 text-sm leading-6 text-slate-600">
+              익명 제출은 운영진에게도 작성자가 표시되지 않으며, 접수 내용을 임의로 공개할 수 없습니다.
+            </p>
             <div className="mt-5 grid grid-cols-2 gap-3">
               <div className="rounded-[22px] border border-white/80 bg-white/85 px-4 py-3 shadow-sm">
                 <p className="text-xs font-semibold text-slate-400">
@@ -258,7 +243,7 @@ export function ClubAdminFeedbackClient({
               <div>
                 <h3 className="text-base font-bold text-slate-950">관리 목록</h3>
                 <p className="mt-1 text-sm text-slate-500">
-                  상태와 공개 범위 기준으로 빠르게 정리할 수 있습니다.
+                  처리 상태 기준으로 확인하고 답변할 수 있습니다.
                 </p>
               </div>
               <span className="rounded-full bg-orange-50 px-3 py-1 text-xs font-bold text-[#ec5b13]">
@@ -276,23 +261,6 @@ export function ClubAdminFeedbackClient({
                     statusFilter === option.value
                       ? "bg-slate-900 text-white"
                       : "bg-slate-100 text-slate-500 hover:bg-slate-200"
-                  }`}
-                >
-                  {option.label}
-                </button>
-              ))}
-            </div>
-
-            <div className="mt-3 flex flex-wrap gap-2">
-              {VISIBILITY_FILTER_OPTIONS.map((option) => (
-                <button
-                  key={option.value}
-                  type="button"
-                  onClick={() => setVisibilityFilter(option.value as VisibilityFilter)}
-                  className={`rounded-full px-3.5 py-2 text-xs font-bold transition ${
-                    visibilityFilter === option.value
-                      ? "bg-[#ec5b13] text-white"
-                      : "bg-orange-50 text-[#b4541a] hover:bg-[#ffe7d8]"
                   }`}
                 >
                   {option.label}
@@ -351,7 +319,7 @@ export function ClubAdminFeedbackClient({
               <div>
                 <h3 className="text-base font-bold text-slate-950">상세 편집</h3>
                 <p className="mt-1 text-sm text-slate-500">
-                  분류, 상태, 공개 범위, 답변을 한 번에 관리합니다.
+                  분류와 처리 상태를 정리하고 작성자에게 답변합니다.
                 </p>
               </div>
               {isDetailLoading ? (
@@ -425,20 +393,6 @@ export function ClubAdminFeedbackClient({
                       </select>
                     </label>
                   </div>
-
-                  <label className="space-y-2">
-                    <span className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
-                      공개 범위
-                    </span>
-                    <select
-                      value={visibilityScope}
-                      onChange={(event) => setVisibilityScope(event.target.value)}
-                      className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-[#ec5b13] focus:ring-2 focus:ring-[#ec5b13]/10"
-                    >
-                      <option value="PRIVATE">비공개</option>
-                      <option value="PUBLIC">공개</option>
-                    </select>
-                  </label>
 
                   <label className="space-y-2">
                     <span className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">

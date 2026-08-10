@@ -228,7 +228,7 @@ export function ClubFinanceClient({
             {...staggeredFadeUpMotion(0, reduceMotion)}
           >
             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">
-              What Needs Attention
+              확인이 필요한 항목
             </p>
             <h2 className="mt-3 text-[26px] font-bold leading-tight text-slate-900">
               {finance.nextPayableObligation
@@ -249,7 +249,7 @@ export function ClubFinanceClient({
             <div className="mt-4 rounded-2xl bg-slate-50 px-4 py-4">
               <div className="flex items-start gap-3">
                 <div className="mt-0.5 rounded-full bg-[#135bec]/10 p-2 text-[#135bec]">
-                  <span className="material-symbols-outlined text-[18px]">task_alt</span>
+                  <span className="material-symbols-outlined text-[18px]" aria-hidden="true">task_alt</span>
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-bold text-slate-900">지금 할 일</p>
@@ -408,7 +408,7 @@ export function ClubFinanceClient({
           className={`fixed ${FAB_RIGHT_OFFSET_CLASS_NAME} ${getActionFabBottomClass(isAdmin)} z-40 flex h-14 w-14 items-center justify-center rounded-full bg-[#135bec] text-white transition-transform active:scale-95`}
           style={{ boxShadow: "0 10px 24px rgba(19, 91, 236, 0.34)" }}
         >
-          <span className="material-symbols-outlined text-[28px]">add</span>
+          <span className="material-symbols-outlined text-[28px]" aria-hidden="true">add</span>
         </button>
 
         {isAdmin ? <ClubModeSwitchFab clubId={clubId} mode="user" /> : null}
@@ -416,6 +416,7 @@ export function ClubFinanceClient({
         <AnimatePresence>
           {showActionSheet ? (
             <RouteModal
+              ariaLabel="재정 요청 메뉴"
               onDismiss={() => setShowActionSheet(false)}
               contentClassName="max-w-md rounded-[2rem] sm:rounded-[2rem]"
             >
@@ -423,7 +424,7 @@ export function ClubFinanceClient({
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">
-                      Member Actions
+                      멤버 재정 요청
                     </p>
                     <h3 className="mt-1 text-xl font-bold text-slate-900">운영진에게 제출할 재정 요청</h3>
                   </div>
@@ -431,9 +432,9 @@ export function ClubFinanceClient({
                     type="button"
                     aria-label="제출 메뉴 닫기"
                     onClick={() => setShowActionSheet(false)}
-            className="semo-icon-control rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+                    className="semo-icon-control rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
                   >
-                    <span className="material-symbols-outlined">close</span>
+                    <span className="material-symbols-outlined" aria-hidden="true">close</span>
                   </button>
                 </div>
 
@@ -446,7 +447,7 @@ export function ClubFinanceClient({
                       className="flex w-full items-start gap-3 rounded-3xl border border-slate-200 bg-white px-4 py-4 text-left transition hover:border-[#135bec]/30 hover:bg-[#f4f8ff]"
                     >
                       <div className="rounded-full bg-[#135bec]/10 p-2 text-[#135bec]">
-                        <span className="material-symbols-outlined text-[20px]">{option.icon}</span>
+                        <span className="material-symbols-outlined text-[20px]" aria-hidden="true">{option.icon}</span>
                       </div>
                       <div className="min-w-0 flex-1">
                         <p className="text-sm font-bold text-slate-900">{option.label}</p>
@@ -461,6 +462,7 @@ export function ClubFinanceClient({
 
           {activeAction ? (
             <RouteModal
+              ariaLabel="재정 요청 제출"
               onDismiss={closeRequestModal}
               dismissOnBackdrop={false}
               contentClassName="max-w-xl"
@@ -661,9 +663,9 @@ function FinanceRequestModal({
           type="button"
           aria-label="요청 제출 닫기"
           onClick={onClose}
-          className="rounded-full p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+          className="semo-icon-control rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
         >
-          <span className="material-symbols-outlined">close</span>
+          <span className="material-symbols-outlined" aria-hidden="true">close</span>
         </button>
       </div>
 
@@ -739,7 +741,7 @@ function PlaceholderPanel({
     <article className="rounded-3xl border border-dashed border-slate-200 bg-slate-50 px-5 py-5">
       <div className="flex items-start gap-3">
         <div className="rounded-full bg-white p-2 text-slate-500">
-          <span className="material-symbols-outlined text-[20px]">{icon}</span>
+          <span className="material-symbols-outlined text-[20px]" aria-hidden="true">{icon}</span>
         </div>
         <div className="min-w-0 flex-1">
           <h4 className="text-base font-bold text-slate-900">{title}</h4>

@@ -9,9 +9,16 @@ import {
 } from "@/app/lib/auth";
 
 const API_MODE = process.env.NEXT_PUBLIC_API_MODE ?? "direct";
-const DEFAULT_GATEWAY_API_BASE = "http://localhost:8080";
-const DEFAULT_DIRECT_SEMO_API_BASE = "http://localhost:20280";
-const DEFAULT_DIRECT_AUTH_API_BASE = "http://localhost:9000";
+function getLocalApiBase(port: number) {
+  if (typeof window !== "undefined" && ["localhost", "127.0.0.1"].includes(window.location.hostname)) {
+    return `${window.location.protocol}//${window.location.hostname}:${port}`;
+  }
+  return `http://localhost:${port}`;
+}
+
+const DEFAULT_GATEWAY_API_BASE = getLocalApiBase(8080);
+const DEFAULT_DIRECT_SEMO_API_BASE = getLocalApiBase(20280);
+const DEFAULT_DIRECT_AUTH_API_BASE = getLocalApiBase(9000);
 const isGatewayMode = API_MODE === "gateway";
 
 export const SEMO_API_BASE =
@@ -45,6 +52,7 @@ type RequestOptions = {
 };
 
 const apiClient = axios.create({
+  timeout: 10_000,
   transformResponse: [(value) => value],
   validateStatus: () => true,
 });
@@ -166,6 +174,13 @@ async function requestJson<T>(
         "요청 처리에 실패했습니다.",
     };
   } catch (error) {
+    if (axios.isAxiosError(error) && error.code === "ECONNABORTED") {
+      return {
+        ok: false,
+        data: null,
+        message: "서버 응답이 지연되고 있습니다. 연결 상태를 확인한 뒤 다시 시도해주세요.",
+      };
+    }
     if (error instanceof Error) {
       return {
         ok: false,

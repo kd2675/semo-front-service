@@ -328,7 +328,7 @@ export function TimePopoverField({
                           aria-selected={active}
                         >
                           <span>{formatUnit(hour)}</span>
-                          <span className={`text-[10px] font-black uppercase tracking-[0.16em] ${active ? "text-white/80" : "text-slate-300"}`}>
+                          <span className={`text-[11px] font-black uppercase tracking-[0.16em] ${active ? "text-white/80" : "text-slate-300"}`}>
                             시
                           </span>
                         </button>
@@ -361,7 +361,7 @@ export function TimePopoverField({
                           aria-selected={active}
                         >
                           <span>{formatUnit(minute)}</span>
-                          <span className={`text-[10px] font-black uppercase tracking-[0.16em] ${active ? "text-white/80" : "text-slate-300"}`}>
+                          <span className={`text-[11px] font-black uppercase tracking-[0.16em] ${active ? "text-white/80" : "text-slate-300"}`}>
                             분
                           </span>
                         </button>

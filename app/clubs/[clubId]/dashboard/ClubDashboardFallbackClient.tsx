@@ -592,7 +592,7 @@ export function ClubDashboardFallbackClient({
       <div className="relative flex min-h-full w-full flex-col">
         <ClubPageHeader
           title={club?.name ?? "모임 홈"}
-          subtitle={club?.admin ? "운영자 모드" : "사용자 모드"}
+          subtitle="클럽 홈"
           icon="home"
           containerClassName="semo-page-dashboard"
           rightSlot={
@@ -607,9 +607,10 @@ export function ClubDashboardFallbackClient({
                   }
                   setEditMode((current) => !current);
                 }}
+                aria-pressed={editMode}
                 className="rounded-full bg-[var(--primary)]/10 px-3 py-1.5 text-xs font-bold text-[var(--primary)] transition-colors hover:bg-[var(--primary)]/20"
               >
-                {editMode ? "완료" : "편집"}
+                {editMode ? "편집 완료" : "홈 편집"}
               </button>
             ) : null
           }
@@ -769,7 +770,7 @@ export function ClubDashboardFallbackClient({
                   title="위젯 편집 초안 되돌리기"
                   className="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-600 shadow-sm transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-70"
                 >
-                  <span className="material-symbols-outlined text-[18px]">restart_alt</span>
+                  <span className="material-symbols-outlined text-[18px]" aria-hidden="true">restart_alt</span>
                 </button>
                 <button
                   type="button"
@@ -777,7 +778,7 @@ export function ClubDashboardFallbackClient({
                   disabled={isSaving}
                   className="flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--primary)] py-4 text-base font-bold text-white shadow-lg transition-all hover:scale-[1.01] hover:shadow-[0_18px_36px_rgba(19,91,236,0.24)] disabled:cursor-not-allowed disabled:opacity-70"
                 >
-                  <span className="material-symbols-outlined">
+                  <span className="material-symbols-outlined" aria-hidden="true">
                     {isSaving ? "progress_activity" : "save"}
                   </span>
                   {isSaving ? "저장 중..." : "변경사항 저장"}

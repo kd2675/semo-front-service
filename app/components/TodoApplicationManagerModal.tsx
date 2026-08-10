@@ -22,7 +22,7 @@ export function TodoApplicationManagerModal({
   onReview,
 }: TodoApplicationManagerModalProps) {
   return (
-    <RouteModal onDismiss={onDismiss} dismissOnBackdrop={false}>
+    <RouteModal ariaLabel="업무 신청 관리" onDismiss={onDismiss} dismissOnBackdrop={false}>
       <section className="flex min-h-0 flex-1 flex-col">
         <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
           <div>
@@ -37,7 +37,7 @@ export function TodoApplicationManagerModal({
             onClick={onDismiss}
             className="semo-icon-control rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
           >
-            <span className="material-symbols-outlined">close</span>
+            <span className="material-symbols-outlined" aria-hidden="true">close</span>
           </button>
         </div>
 

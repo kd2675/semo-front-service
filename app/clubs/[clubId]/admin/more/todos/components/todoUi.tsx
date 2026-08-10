@@ -6,6 +6,7 @@ import { RouteModal } from "@/app/components/RouteModal";
 import { TimePopoverField } from "@/app/components/TimePopoverField";
 import type { ClubAdminTodoResponse, TodoSummary } from "@/app/lib/clubs";
 import { staggeredFadeUpMotion } from "@/app/lib/motion";
+import { getClubRoleLabel } from "@/app/lib/roleLabels";
 import {
   APPLICATION_OPTIONS,
   ASSIGNMENT_MODE_OPTIONS,
@@ -218,12 +219,16 @@ export function TodoEditorModal({
   onSubmit: () => void;
 }) {
   return (
-    <RouteModal onDismiss={onClose} dismissOnBackdrop={false}>
+    <RouteModal
+      ariaLabel={editorModal.mode === "create" ? "새 할 일 등록" : "업무 수정"}
+      onDismiss={onClose}
+      dismissOnBackdrop={false}
+    >
       <section className="flex min-h-0 flex-1 flex-col">
         <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">
-              {editorModal.mode === "create" ? "Create Todo" : "Edit Todo"}
+              {editorModal.mode === "create" ? "할 일 등록" : "할 일 수정"}
             </p>
             <h3 className="mt-1 text-xl font-bold text-slate-900">
               {editorModal.mode === "create" ? "새 할 일 등록" : canCreate ? "업무 수정" : "업무 배정"}
@@ -235,7 +240,7 @@ export function TodoEditorModal({
             onClick={onClose}
             className="semo-icon-control rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
           >
-            <span className="material-symbols-outlined">close</span>
+            <span className="material-symbols-outlined" aria-hidden="true">close</span>
           </button>
         </div>
 
@@ -315,7 +320,7 @@ export function TodoEditorModal({
                         <div className="grid gap-2 sm:grid-cols-2">
                           <label className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm text-slate-700 transition focus-within:border-[#ec5b13] focus-within:bg-white">
                             <span className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
-                              <span className="material-symbols-outlined text-[16px]">calendar_month</span>
+                              <span className="material-symbols-outlined text-[16px]" aria-hidden="true">calendar_month</span>
                               날짜
                             </span>
                             <DatePopoverField
@@ -332,7 +337,7 @@ export function TodoEditorModal({
                             }`}
                           >
                             <span className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
-                              <span className="material-symbols-outlined text-[16px]">schedule</span>
+                              <span className="material-symbols-outlined text-[16px]" aria-hidden="true">schedule</span>
                               시간
                             </span>
                             <TimePopoverField
@@ -494,7 +499,7 @@ export function TodoFilterModal({
   onApply: () => void;
 }) {
   return (
-    <RouteModal onDismiss={onClose} dismissOnBackdrop={false}>
+    <RouteModal ariaLabel="업무 필터 선택" onDismiss={onClose} dismissOnBackdrop={false}>
       <section className="flex min-h-0 flex-1 flex-col">
         <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
           <div>
@@ -507,7 +512,7 @@ export function TodoFilterModal({
             onClick={onClose}
             className="semo-icon-control rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
           >
-            <span className="material-symbols-outlined">close</span>
+            <span className="material-symbols-outlined" aria-hidden="true">close</span>
           </button>
         </div>
 
@@ -651,7 +656,7 @@ function TodoListCard({
             disabled={pendingTodoId === item.todoItemId}
             className="rounded-full bg-rose-50 px-3 py-2 text-xs font-bold text-rose-700 ring-1 ring-rose-200 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500"
           >
-            삭제
+            보관
           </button>
         ) : null}
         {item.canManageStatus ? (
@@ -778,13 +783,13 @@ function SelectableCard({
           selected ? "bg-[#ec5b13] text-white" : "bg-slate-100 text-slate-500"
         }`}
       >
-        <span className="material-symbols-outlined text-[20px]">{icon}</span>
+        <span className="material-symbols-outlined text-[20px]" aria-hidden="true">{icon}</span>
       </div>
       <div className="min-w-0">
         <div className="flex items-center gap-2">
           <p className="text-sm font-bold text-slate-900">{label}</p>
           {selected ? (
-            <span className="rounded-full bg-[#ec5b13] px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.14em] text-white">
+            <span className="rounded-full bg-[#ec5b13] px-2 py-0.5 text-[11px] font-bold uppercase tracking-[0.14em] text-white">
               선택됨
             </span>
           ) : null}
@@ -818,14 +823,14 @@ function SelectableMemberCard({
     >
       <div className="min-w-0">
         <p className="truncate text-sm font-bold text-slate-900">{label}</p>
-        <p className="mt-1 text-xs font-medium uppercase tracking-[0.16em] text-slate-400">{roleCode}</p>
+        <p className="mt-1 text-xs font-medium tracking-[0.08em] text-slate-400">{getClubRoleLabel(roleCode)}</p>
       </div>
       <div
         className={`flex size-8 shrink-0 items-center justify-center rounded-full ${
           selected ? "bg-[#ec5b13] text-white" : "bg-white text-slate-300"
         }`}
       >
-        <span className="material-symbols-outlined text-[18px]">
+        <span className="material-symbols-outlined text-[18px]" aria-hidden="true">
           {selected ? "check" : "radio_button_unchecked"}
         </span>
       </div>

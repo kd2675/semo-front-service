@@ -25,6 +25,7 @@ import {
   saveBracketDraftMutationOptions,
   submitBracketMutationOptions,
 } from "@/app/lib/react-query/brackets/mutations";
+import { BracketRejectModal } from "./BracketRejectModal";
 
 type ClubBracketHomeClientProps = {
   clubId: string;
@@ -192,6 +193,8 @@ export function ClubBracketHomeClient({
   const hasModeSwitchFab = !isAdminMode && Boolean(userPayload?.admin);
   const [detailBracketId, setDetailBracketId] = useState<string | null>(null);
   const [pendingDeleteBracketId, setPendingDeleteBracketId] = useState<number | null>(null);
+  const [pendingRejectBracketId, setPendingRejectBracketId] = useState<number | null>(null);
+  const [rejectionReason, setRejectionReason] = useState("");
   const [formOpen, setFormOpen] = useState(false);
   const [editingBracketId, setEditingBracketId] = useState<number | null>(null);
   const [form, setForm] = useState<FormState>(createEmptyForm());
@@ -312,32 +315,31 @@ export function ClubBracketHomeClient({
     onReload();
   };
 
-  const handleReview = async (bracketRecordId: number, approvalStatus: "APPROVED" | "REJECTED") => {
-    const rejectionReason = approvalStatus === "REJECTED"
-      ? window.prompt("반려 사유를 입력하세요.", "참가자 구성을 한 번 더 확인해 주세요.") ?? ""
-      : null;
-    if (approvalStatus === "REJECTED" && !(rejectionReason ?? "").trim()) {
-      return;
-    }
+  const handleReview = async (
+    bracketRecordId: number,
+    approvalStatus: "APPROVED" | "REJECTED",
+    reason: string | null = null,
+  ): Promise<boolean> => {
     setSubmitting(true);
     setFeedback(null);
     setError(null);
     const result = await reviewBracketMutation.mutateAsync({
       bracketRecordId,
       approvalStatus,
-      rejectionReason,
+      rejectionReason: reason,
     });
     setSubmitting(false);
     if (!result.ok || !result.data) {
       setError(result.message ?? "대진표 검토에 실패했습니다.");
-      return;
+      return false;
     }
     setFeedback(approvalStatus === "APPROVED" ? "대진표를 승인했습니다." : "대진표를 반려했습니다.");
     void invalidateClubQueries(queryClient, clubId);
     onReload();
+    return true;
   };
 
-  const handleDelete = async (bracketRecordId: number) => {
+  const handleDelete = async (bracketRecordId: number): Promise<boolean> => {
     setSubmitting(true);
     setFeedback(null);
     setError(null);
@@ -345,7 +347,7 @@ export function ClubBracketHomeClient({
     setSubmitting(false);
     if (!result.ok) {
       setError(result.message ?? "대진표 삭제에 실패했습니다.");
-      return;
+      return false;
     }
     if (detailBracketId === String(bracketRecordId)) {
       setDetailBracketId(null);
@@ -353,6 +355,7 @@ export function ClubBracketHomeClient({
     setFeedback("대진표를 삭제했습니다.");
     void invalidateClubQueries(queryClient, clubId);
     onReload();
+    return true;
   };
 
   const list = isAdminMode
@@ -370,7 +373,7 @@ export function ClubBracketHomeClient({
     <div className="min-h-screen text-slate-900 antialiased">
       <div className="min-h-screen" style={{ backgroundColor: "var(--background-light)" }}>
         <ClubPageHeader
-          title={isAdminMode ? "대진표 승인" : "대진표"}
+          title={isAdminMode ? "대진표 초안 검토" : "대진표 초안"}
           subtitle={payload.clubName}
           icon="account_tree"
           theme={isAdminMode ? "admin" : "user"}
@@ -468,8 +471,8 @@ export function ClubBracketHomeClient({
                       key={bracket.bracketRecordId}
                       bracket={bracket}
                       onOpen={() => setDetailBracketId(String(bracket.bracketRecordId))}
-                      onEdit={() => void openEditForm(bracket)}
-                      onSubmit={() => void handleSubmit(bracket.bracketRecordId)}
+                      onEdit={bracket.canEdit ? () => void openEditForm(bracket) : null}
+                      onSubmit={bracket.canSubmit ? () => void handleSubmit(bracket.bracketRecordId) : null}
                       onApprove={null}
                       onReject={null}
                       onDelete={bracket.canDelete ? () => setPendingDeleteBracketId(bracket.bracketRecordId) : null}
@@ -527,7 +530,10 @@ export function ClubBracketHomeClient({
                       ? () => void handleReview(bracket.bracketRecordId, "APPROVED")
                       : null}
                     onReject={bracket.approvalStatus === "PENDING"
-                      ? () => void handleReview(bracket.bracketRecordId, "REJECTED")
+                      ? () => {
+                          setPendingRejectBracketId(bracket.bracketRecordId);
+                          setRejectionReason("");
+                        }
                       : null}
                     onDelete={bracket.canDelete ? () => setPendingDeleteBracketId(bracket.bracketRecordId) : null}
                   />
@@ -550,7 +556,7 @@ export function ClubBracketHomeClient({
             className={`fixed ${FAB_RIGHT_OFFSET_CLASS_NAME} ${getActionFabBottomClass(hasModeSwitchFab)} z-40 flex h-14 w-14 items-center justify-center rounded-full bg-[var(--primary)] text-white transition-transform active:scale-95`}
             style={{ boxShadow: "0 8px 20px rgba(19, 91, 236, 0.28)" }}
           >
-            <span className="material-symbols-outlined text-[28px]">account_tree</span>
+            <span className="material-symbols-outlined text-[28px]" aria-hidden="true">account_tree</span>
           </button>
         ) : null}
 
@@ -559,6 +565,7 @@ export function ClubBracketHomeClient({
         <AnimatePresence>
           {formOpen ? (
             <RouteModal
+              ariaLabel={editingBracketId == null ? "대진표 작성" : "대진표 수정"}
               onDismiss={() => setFormOpen(false)}
               dismissOnBackdrop={false}
               contentClassName="max-w-3xl"
@@ -577,10 +584,10 @@ export function ClubBracketHomeClient({
                   <button
                     type="button"
                     onClick={() => setFormOpen(false)}
-                    className="rounded-full bg-slate-100 p-2 text-slate-500 transition hover:bg-slate-200"
+                    className="semo-icon-control rounded-full bg-slate-100 text-slate-500 transition hover:bg-slate-200"
                     aria-label="닫기"
                   >
-                    <span className="material-symbols-outlined">close</span>
+                    <span className="material-symbols-outlined" aria-hidden="true">close</span>
                   </button>
                 </div>
 
@@ -704,8 +711,8 @@ export function ClubBracketHomeClient({
                   </div>
 
                   <div className="mt-6 rounded-3xl border border-slate-200 bg-slate-50 p-4">
-                    <div className="flex items-center justify-between gap-3">
-                      <div>
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
                         <h4 className="text-base font-bold text-slate-900">참가자</h4>
                         <p className="mt-1 text-sm text-slate-500">
                           {isTournamentImportMode
@@ -713,7 +720,7 @@ export function ClubBracketHomeClient({
                             : "순서가 그대로 시드 순서가 됩니다. 불러온 참가자도 제출 전까지 이름을 수정할 수 있습니다."}
                         </p>
                       </div>
-                      <div className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-slate-500">
+                      <div className="shrink-0 whitespace-nowrap rounded-full bg-white px-3 py-1 text-xs font-semibold text-slate-500">
                         {form.participants.length}명
                       </div>
                     </div>
@@ -729,7 +736,7 @@ export function ClubBracketHomeClient({
                                 {index + 1}
                               </div>
                               <div>
-                                <p className="text-sm font-semibold text-slate-900">Seed {index + 1}</p>
+                                <p className="text-sm font-semibold text-slate-900">시드 {index + 1}</p>
                                 <p className="text-xs text-slate-400">
                                   {participant.sourceTournamentApplicationId ? "대회 불러오기 참가자" : "직접 편집 참가자"}
                                 </p>
@@ -802,7 +809,7 @@ export function ClubBracketHomeClient({
                           ]))}
                           className="flex w-full items-center justify-center gap-2 rounded-[22px] border border-dashed border-[var(--primary)]/35 bg-white px-4 py-4 text-sm font-semibold text-[var(--primary)] transition hover:bg-blue-50"
                         >
-                          <span className="material-symbols-outlined text-[20px]">add_circle</span>
+                          <span className="material-symbols-outlined text-[20px]" aria-hidden="true">add_circle</span>
                           참가자 추가
                         </button>
                       )}
@@ -854,11 +861,35 @@ export function ClubBracketHomeClient({
                   setPendingDeleteBracketId(null);
                 }
               }}
-              onConfirm={() =>
-                void handleDelete(pendingDeleteBracketId).finally(() => {
-                  setPendingDeleteBracketId(null);
-                })
-              }
+              onConfirm={() => {
+                void handleDelete(pendingDeleteBracketId).then((succeeded) => {
+                  if (succeeded) {
+                    setPendingDeleteBracketId(null);
+                  }
+                });
+              }}
+            />
+          ) : null}
+          {pendingRejectBracketId != null ? (
+            <BracketRejectModal
+              reason={rejectionReason}
+              busy={submitting}
+              onReasonChange={setRejectionReason}
+              onCancel={() => {
+                if (!submitting) {
+                  setPendingRejectBracketId(null);
+                  setRejectionReason("");
+                }
+              }}
+              onConfirm={() => {
+                const bracketRecordId = pendingRejectBracketId;
+                void handleReview(bracketRecordId, "REJECTED", rejectionReason.trim()).then((succeeded) => {
+                  if (succeeded) {
+                    setPendingRejectBracketId(null);
+                    setRejectionReason("");
+                  }
+                });
+              }}
             />
           ) : null}
         </AnimatePresence>

@@ -6,6 +6,7 @@ import type {
   ClubFinanceExpense,
   ClubFinanceRequest,
 } from "@/app/lib/clubs";
+import { getClubRoleLabel } from "@/app/lib/roleLabels";
 import {
   getFinanceRequestStatusClassName,
   getObligationFrameClassName,
@@ -75,46 +76,13 @@ export function WorkspaceStatusCard({
         </span>
       </div>
       <p className="mt-3 text-sm leading-6 text-slate-500">{description}</p>
-      <div className="mt-4 grid gap-3 sm:grid-cols-3">
+      <div className="mt-4 grid grid-cols-3 gap-3">
         {metrics.map((metric) => (
           <div key={metric.label} className="rounded-2xl bg-white px-4 py-4">
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">{metric.label}</p>
             <p className="mt-2 text-base font-bold text-slate-900">{metric.value}</p>
           </div>
         ))}
-      </div>
-    </article>
-  );
-}
-
-export function AdminPlaceholderPanel({
-  icon,
-  title,
-  description,
-  bullets,
-}: {
-  icon: string;
-  title: string;
-  description: string;
-  bullets: string[];
-}) {
-  return (
-    <article className="rounded-[28px] border border-dashed border-slate-200 bg-slate-50 px-5 py-5">
-      <div className="flex items-start gap-3">
-        <div className="rounded-full bg-white p-2 text-slate-500">
-          <span className="material-symbols-outlined text-[20px]">{icon}</span>
-        </div>
-        <div className="min-w-0 flex-1">
-          <h3 className="text-lg font-bold text-slate-900">{title}</h3>
-          <p className="mt-2 text-sm leading-6 text-slate-500">{description}</p>
-          <div className="mt-4 grid gap-3 sm:grid-cols-3">
-            {bullets.map((bullet) => (
-              <div key={bullet} className="rounded-2xl bg-white px-4 py-4 text-sm font-semibold text-slate-700">
-                {bullet}
-              </div>
-            ))}
-          </div>
-        </div>
       </div>
     </article>
   );
@@ -182,7 +150,7 @@ export function AdminFinanceRequestCard({
           onClick={onApprove}
           className="rounded-full bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-700 transition hover:bg-emerald-100 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500"
         >
-          {busy ? "처리 중..." : "승인"}
+          {busy ? "처리 중..." : "승인 후 지출 반영"}
         </button>
         <button
           type="button"
@@ -203,6 +171,11 @@ export function AdminFinanceRequestCard({
           </span>
         ) : null}
       </div>
+      {!reviewDone ? (
+        <p className="mt-3 text-xs leading-5 text-slate-500">
+          승인하면 같은 금액의 지출 원장이 자동 생성되어 요청과 회계 기록이 연결됩니다.
+        </p>
+      ) : null}
     </article>
   );
 }
@@ -226,6 +199,9 @@ export function ExpenseLedgerCard({ expense }: { expense: ClubFinanceExpense }) 
         <MetaItem label="지출 시각" value={expense.spentAtLabel ?? "미정"} />
         <MetaItem label="관련 행사" value={expense.relatedEventName ?? "없음"} />
         <MetaItem label="메모" value={expense.note ?? "없음"} />
+        {expense.sourceRequestId != null ? (
+          <MetaItem label="연결 요청" value={`#${expense.sourceRequestId}`} strong />
+        ) : null}
       </div>
     </article>
   );
@@ -304,7 +280,7 @@ export function ObligationDetailPanel({
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
                       <p className="text-base font-bold text-slate-900">{payment.memberDisplayName}</p>
-                      <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-500">{payment.memberRoleCode ?? "MEMBER"}</span>
+                      <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-500">{getClubRoleLabel(payment.memberRoleCode)}</span>
                       <span className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${getPaymentStatusClassName(payment)}`}>{payment.paymentStatusLabel}</span>
                     </div>
                     <div className="mt-3 grid gap-3 text-sm text-slate-600 sm:grid-cols-3">

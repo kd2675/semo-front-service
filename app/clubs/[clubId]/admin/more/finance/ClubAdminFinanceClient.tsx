@@ -47,7 +47,6 @@ import {
   ExpenseEntryModal,
   ExpensesTabPanel,
   FinanceActionSheetModal,
-  LedgerTabPanel,
   MetricCard,
   ObligationDetailModal,
   PermissionChip,
@@ -64,14 +63,13 @@ type ClubAdminFinanceClientProps = {
 
 type ObligationFilter = "ALL" | "OPEN" | "SETTLED";
 type TargetScope = "ALL_ACTIVE_MEMBERS" | "SELECTED_MEMBERS";
-type AdminFinanceTabKey = "DASHBOARD" | "BILLING" | "EXPENSES" | "SETTLEMENTS" | "LEDGER";
+type AdminFinanceTabKey = "DASHBOARD" | "BILLING" | "EXPENSES" | "SETTLEMENTS";
 
 const ADMIN_FINANCE_TABS: Array<{ key: AdminFinanceTabKey; label: string }> = [
   { key: "DASHBOARD", label: "재정 대시보드" },
   { key: "BILLING", label: "회비 관리" },
   { key: "EXPENSES", label: "지출 관리" },
   { key: "SETTLEMENTS", label: "정산 관리" },
-  { key: "LEDGER", label: "장부" },
 ];
 
 function combineDateTimeValue(dateValue: string, timeValue: string) {
@@ -552,7 +550,12 @@ export function ClubAdminFinanceClient({
       return;
     }
     void invalidateClubQueries(queryClient, clubId);
-    showToast(`${result.data.requestTypeLabel}을 ${result.data.statusLabel} 처리했습니다.`, "success");
+    showToast(
+      statusCode === "APPROVED"
+        ? `${result.data.requestTypeLabel}을 승인하고 지출 원장에 반영했습니다.`
+        : `${result.data.requestTypeLabel}을 반려했습니다.`,
+      "success",
+    );
   };
 
   const toggleSelectedMember = (member: ClubFinanceMemberOption) => {
@@ -603,10 +606,9 @@ export function ClubAdminFinanceClient({
             <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
               <div className="max-w-3xl">
                 <p className="text-xs font-semibold tracking-wide text-slate-400">재무 운영</p>
-                <h2 className="mt-2 text-2xl font-bold">모임 돈을 운영하고 마감하는 흐름으로 재정 화면을 정리했습니다.</h2>
+                <h2 className="mt-2 text-2xl font-bold">모임의 재정 흐름을 한곳에서 관리하세요.</h2>
                 <p className="mt-2 text-sm leading-6 text-slate-500">
-                  청구 발행과 수납 상태는 기존 obligation/payment 데이터로 유지하고, 회원 요청과 운영 지출은
-                  FAB 입력 흐름으로 바로 이어지게 재구성했습니다.
+                  회비 발행과 수납 현황부터 회원 요청, 운영 지출까지 필요한 업무를 빠르게 이어갈 수 있습니다.
                 </p>
                 <div className="mt-4 flex flex-wrap gap-2">
                   <PermissionChip label="조회" enabled />
@@ -615,7 +617,7 @@ export function ClubAdminFinanceClient({
                   <PermissionChip label="면제" enabled={finance.canMarkWaive} />
                 </div>
               </div>
-              <div className="grid w-full gap-3 sm:grid-cols-2 xl:max-w-[420px]">
+              <div className="grid w-full grid-cols-2 gap-3 xl:max-w-[420px]">
                 <MetricCard label="총 청구액" value={finance.totalBilledAmountLabel} accent />
                 <MetricCard label="수납 완료" value={finance.totalCollectedAmountLabel} />
                 <MetricCard label="미수금" value={finance.totalOutstandingAmountLabel} />
@@ -628,13 +630,14 @@ export function ClubAdminFinanceClient({
             className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm"
             {...staggeredFadeUpMotion(1, reduceMotion)}
           >
-            <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
+            <div className="grid grid-cols-2 gap-2 sm:flex">
               {ADMIN_FINANCE_TABS.map((tab) => (
                 <button
                   key={tab.key}
                   type="button"
                   onClick={() => setActiveTab(tab.key)}
-                  className={`shrink-0 rounded-full px-4 py-2.5 text-sm font-bold transition ${
+                  aria-pressed={activeTab === tab.key}
+                  className={`w-full rounded-full px-4 py-2.5 text-sm font-bold transition sm:w-auto sm:shrink-0 ${
                     activeTab === tab.key
                       ? "bg-[#ec5b13] text-white"
                       : "bg-slate-100 text-slate-600 hover:bg-slate-200"
@@ -696,7 +699,6 @@ export function ClubAdminFinanceClient({
             />
           ) : null}
 
-          {activeTab === "LEDGER" ? <LedgerTabPanel reduceMotion={reduceMotion} /> : null}
         </main>
 
         {finance.canIssue ? (
@@ -707,7 +709,7 @@ export function ClubAdminFinanceClient({
             className={`fixed ${FAB_RIGHT_OFFSET_CLASS_NAME} ${getActionFabBottomClass(true)} z-40 flex h-14 w-14 items-center justify-center rounded-full bg-[#ec5b13] text-white transition-transform active:scale-95`}
             style={{ boxShadow: "0 6px 16px rgba(236, 91, 19, 0.32)" }}
           >
-            <span className="material-symbols-outlined text-[28px]">add</span>
+            <span className="material-symbols-outlined text-[28px]" aria-hidden="true">add</span>
           </button>
         ) : null}
 

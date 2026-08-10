@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { RouteModal } from "@/app/components/RouteModal";
 import type { ItemReadMember } from "@/app/lib/clubs";
+import { getClubRoleLabel } from "@/app/lib/roleLabels";
 
 type ItemReadStatusModalProps = {
   title: string;
@@ -19,6 +20,7 @@ export function ItemReadStatusModal({
 }: ItemReadStatusModalProps) {
   return (
     <RouteModal
+      ariaLabel={`${title} 읽음 현황`}
       onDismiss={onClose}
       contentClassName="max-w-[30rem] rounded-[2rem] sm:rounded-[2rem]"
     >
@@ -37,7 +39,7 @@ export function ItemReadStatusModal({
             className="semo-icon-control rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
             aria-label="읽음 현황 닫기"
           >
-            <span className="material-symbols-outlined text-[20px]">close</span>
+            <span className="material-symbols-outlined text-[20px]" aria-hidden="true">close</span>
           </button>
         </div>
 
@@ -76,7 +78,7 @@ export function ItemReadStatusModal({
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-semibold text-slate-900">{reader.displayName}</p>
                       <p className="truncate text-xs text-slate-500">
-                        {reader.roleCode ?? "멤버"}
+                        {getClubRoleLabel(reader.roleCode)}
                         {" · "}
                         {reader.lastReadAtLabel}
                       </p>

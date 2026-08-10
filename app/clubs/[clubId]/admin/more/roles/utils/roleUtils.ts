@@ -1,4 +1,5 @@
 import type { ClubAdminMember, ClubPositionSummary } from "@/app/lib/clubs";
+import { getClubRoleLabel } from "@/app/lib/roleLabels";
 
 export const DEFAULT_ROLE_COLOR = "#904e00";
 
@@ -14,6 +15,19 @@ export const ROLE_ICON_OPTIONS = [
   "forum",
   "manage_accounts",
 ] as const;
+
+export const ROLE_ICON_LABELS: Record<(typeof ROLE_ICON_OPTIONS)[number], string> = {
+  shield: "방패",
+  workspace_premium: "인증 배지",
+  verified: "승인 배지",
+  stars: "별",
+  military_tech: "메달",
+  campaign: "공지",
+  calendar_month: "달력",
+  poll: "투표",
+  forum: "대화",
+  manage_accounts: "멤버 관리",
+};
 
 export const ROLE_COLOR_OPTIONS = [
   DEFAULT_ROLE_COLOR,
@@ -53,7 +67,7 @@ export function makeInitials(value: string, fallback = "MB") {
 }
 
 export function getRoleMemberSubtitle(member: ClubAdminMember) {
-  return member.tagline?.trim() || member.roleCode;
+  return member.tagline?.trim() || getClubRoleLabel(member.roleCode);
 }
 
 export function getRoleToneClass(member: ClubAdminMember) {

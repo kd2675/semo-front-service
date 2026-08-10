@@ -135,6 +135,7 @@ export type ReviewFinanceRequestRequest = {
 
 export type ClubFinanceExpense = {
   expenseId: number;
+  sourceRequestId: number | null;
   expenseTypeCode: string;
   expenseTypeLabel: string;
   categoryCode: string;

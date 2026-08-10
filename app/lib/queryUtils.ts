@@ -26,17 +26,6 @@ export function requireApiData<T>(
   });
 }
 
-export function getApiDataOrFallback<T>(
-  result: ApiResult<T>,
-  fallbackValue: T,
-): T {
-  if (result.ok && result.data != null) {
-    return result.data;
-  }
-
-  return fallbackValue;
-}
-
 export function getQueryErrorMessage(
   error: unknown,
   fallbackMessage: string,

@@ -32,6 +32,86 @@ export const WIDGET_ACCENT_CLASS: Record<string, string> = {
   BRACKET_WORKBENCH: "bg-yellow-50 text-yellow-700",
 };
 
+const WIDGET_COPY: Record<string, { title: string; description: string }> = {
+  BOARD_NOTICE: {
+    title: "최근 공지",
+    description: "게시판의 최신 공지를 바로 확인합니다.",
+  },
+  BOARD_STRIP: {
+    title: "공지 모아보기",
+    description: "최근 공지를 간결한 목록으로 확인합니다.",
+  },
+  SCHEDULE_OVERVIEW: {
+    title: "오늘 일정",
+    description: "오늘 예정된 일정과 주요 항목을 확인합니다.",
+  },
+  SCHEDULE_INSIGHT: {
+    title: "일정 요약",
+    description: "다가오는 일정과 투표, 공지 현황을 확인합니다.",
+  },
+  POLL_STATUS: {
+    title: "진행 중인 투표",
+    description: "클럽에서 진행 중인 최신 투표를 확인합니다.",
+  },
+  POLL_PULSE: {
+    title: "투표 현황",
+    description: "대기, 진행 중, 마감된 투표 수를 확인합니다.",
+  },
+  PROFILE_SUMMARY: {
+    title: "내 프로필",
+    description: "클럽 프로필을 바로 확인하고 관리합니다.",
+  },
+  TOURNAMENT_RECORD_LATEST: {
+    title: "대회 센터",
+    description: "주요 대회와 내게 가까운 대회를 확인합니다.",
+  },
+  TOURNAMENT_RECORD_MINE: {
+    title: "내 대회",
+    description: "내 대회 신청과 참가 현황을 확인합니다.",
+  },
+  BRACKET_LATEST: {
+    title: "대진표",
+    description: "승인된 대진표와 내 최신 초안을 확인합니다.",
+  },
+  BRACKET_WORKBENCH: {
+    title: "대진표 작업실",
+    description: "대진표 초안과 검토 상태를 확인합니다.",
+  },
+  ATTENDANCE_STATUS: {
+    title: "출석 체크",
+    description: "출석하고 오늘의 출석 상태를 확인합니다.",
+  },
+  ATTENDANCE_RECENT: {
+    title: "최근 출석",
+    description: "최근 출석 기록과 출석률을 확인합니다.",
+  },
+  FINANCE_STATUS: {
+    title: "내 납부 현황",
+    description: "미납 항목과 최근 납부 상태를 확인합니다.",
+  },
+  FINANCE_LEDGER: {
+    title: "회비 요약",
+    description: "미납 및 납부 완료 회비를 한눈에 확인합니다.",
+  },
+};
+
+export function getWidgetDisplayName(widget: ClubDashboardWidgetSummary) {
+  return WIDGET_COPY[widget.widgetKey]?.title ?? widget.displayName;
+}
+
+export function getWidgetTitle(widget: ClubDashboardWidgetSummary) {
+  if (widget.title !== widget.displayName) {
+    return widget.title;
+  }
+  return getWidgetDisplayName(widget);
+}
+
+export function getWidgetDescription(widget: ClubDashboardWidgetSummary) {
+  return WIDGET_COPY[widget.widgetKey]?.description
+    ?? widget.description
+    ?? "홈에서 빠르게 확인할 수 있는 위젯입니다.";
+}
+
 export function isAttendanceWidgetKey(widgetKey: string) {
   return ATTENDANCE_WIDGET_KEYS.has(widgetKey);
 }
@@ -164,5 +244,12 @@ export function getWidgetFeatureLabel(widget: ClubDashboardWidgetSummary) {
   if (!widget.requiredFeatureKey) {
     return "기본 위젯";
   }
-  return `${widget.requiredFeatureKey} 기능 필요`;
+  const featureName = {
+    ATTENDANCE: "출석",
+    BRACKET: "대진표",
+    FINANCE: "회비",
+    POLL: "투표",
+    TOURNAMENT_RECORD: "대회",
+  }[widget.requiredFeatureKey] ?? widget.requiredFeatureKey;
+  return `${featureName} 기능 필요`;
 }

@@ -49,6 +49,7 @@ export type ClubTodoResponse = {
   myApplyingCount: number;
   claimableOpenCount: number;
   overdueCount: number;
+  hasMoreClaimable: boolean;
   myTodos: TodoSummary[];
   claimableTodos: TodoSummary[];
   recentCompletedTodos: TodoSummary[];
@@ -140,8 +141,9 @@ export type TodoActionResponse = {
   completedAtLabel: string | null;
 };
 
-export function getClubTodos(clubId: ClubId) {
-  return getJson<ClubTodoResponse>(`/api/semo/v1/clubs/${clubId}/more/todos`);
+export function getClubTodos(clubId: ClubId, claimableSize?: number) {
+  const query = claimableSize == null ? "" : `?claimableSize=${claimableSize}`;
+  return getJson<ClubTodoResponse>(`/api/semo/v1/clubs/${clubId}/more/todos${query}`);
 }
 
 export function applyClubTodo(
@@ -150,10 +152,6 @@ export function applyClubTodo(
   request: CreateTodoApplicationRequest = {},
 ) {
   return postJson<TodoItemApplicationSummary>(`/api/semo/v1/clubs/${clubId}/more/todos/${todoItemId}/apply`, request);
-}
-
-export function claimClubTodo(clubId: ClubId, todoItemId: string | number) {
-  return postJson<TodoActionResponse>(`/api/semo/v1/clubs/${clubId}/more/todos/${todoItemId}/claim`, undefined);
 }
 
 export function cancelMyClubTodoApplication(clubId: ClubId, todoItemId: string | number) {

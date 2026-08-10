@@ -227,16 +227,17 @@ export function ClubTournamentEditorClient({
       <div className={isModal ? "flex min-h-0 flex-1 flex-col bg-white" : "mx-auto flex min-h-screen max-w-md flex-col bg-white"}>
         <ClubPageHeader
           title={isEdit ? "대회 수정" : "대회 생성"}
-          subtitle="Tournament Studio"
+          subtitle="대회 운영"
           icon="emoji_events"
-          leftSlot={isModal && onRequestClose ? (
+          layout={isModal ? "modal" : "page"}
+          rightSlot={isModal && onRequestClose ? (
             <button
               type="button"
               onClick={onRequestClose}
               className="semo-icon-control transition-colors hover:bg-slate-100"
               aria-label="대회 폼 닫기"
             >
-              <span className="material-symbols-outlined text-[24px]">close</span>
+              <span className="material-symbols-outlined text-[24px]" aria-hidden="true">close</span>
             </button>
           ) : undefined}
         />
@@ -256,7 +257,7 @@ export function ClubTournamentEditorClient({
                     value={title}
                     onChange={(event) => setTitle(event.target.value)}
                     className={inputClassName}
-                    placeholder="예: 2026 SEMO Spring Open"
+                  placeholder="예: 2026 SEMO 봄 오픈"
                     required
                   />
                 </label>

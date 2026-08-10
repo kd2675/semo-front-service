@@ -5,10 +5,10 @@ import { ClubRouteErrorState } from "@/app/components/ClubRouteState";
 import { getQueryErrorMessage } from "@/app/lib/queryUtils";
 import { myClubQueryOptions } from "@/app/lib/react-query/club/queries";
 import {
-  adminFinanceExpensesFallbackQueryOptions,
+  adminFinanceExpensesQueryOptions,
   adminFinanceHomeQueryOptions,
   adminFinanceObligationsQueryOptions,
-  adminFinanceRequestsFallbackQueryOptions,
+  adminFinanceRequestsQueryOptions,
 } from "@/app/lib/react-query/finance/queries";
 import { ClubAdminFinanceClient } from "./ClubAdminFinanceClient";
 import { AdminAttendanceLoadingShell } from "../../AdminRouteLoadingShells";
@@ -23,8 +23,8 @@ export function ClubAdminFinanceFallbackClient({ clubId }: ClubAdminFinanceFallb
       myClubQueryOptions(clubId),
       adminFinanceHomeQueryOptions(clubId),
       adminFinanceObligationsQueryOptions(clubId, { size: 10 }),
-      adminFinanceRequestsFallbackQueryOptions(clubId),
-      adminFinanceExpensesFallbackQueryOptions(clubId),
+      adminFinanceRequestsQueryOptions(clubId),
+      adminFinanceExpensesQueryOptions(clubId),
     ],
   });
   const club = clubQuery.data ?? null;

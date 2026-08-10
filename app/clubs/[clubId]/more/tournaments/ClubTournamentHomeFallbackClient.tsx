@@ -8,6 +8,7 @@ import {
   tournamentQueryKeys,
 } from "@/app/lib/react-query/tournaments/queries";
 import { getQueryErrorMessage } from "@/app/lib/queryUtils";
+import { clubFeaturesQueryOptions } from "@/app/lib/react-query/club/queries";
 import { ClubDataLoadingShell } from "../../ClubRouteLoadingShells";
 import { ClubTournamentHomeClient } from "./clients/ClubTournamentHomeClient";
 
@@ -34,6 +35,7 @@ export function ClubTournamentHomeFallbackClient({
     ...tournamentHomeQueryOptions(clubId),
     enabled: !isAdminMode,
   });
+  const featuresQuery = useQuery(clubFeaturesQueryOptions(clubId));
   const payload = isAdminMode ? adminQuery.data : userQuery.data;
   const isPending = isAdminMode ? adminQuery.isPending : userQuery.isPending;
   const isError = isAdminMode ? adminQuery.isError : userQuery.isError;
@@ -64,6 +66,7 @@ export function ClubTournamentHomeFallbackClient({
       clubId={clubId}
       payload={payload}
       mode={mode}
+      bracketEnabled={featuresQuery.data?.some((feature) => feature.featureKey === "BRACKET" && feature.enabled) ?? false}
       onReload={handleReload}
     />
   );

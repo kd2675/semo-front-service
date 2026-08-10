@@ -18,6 +18,7 @@ import {
   createAutoPositionCode,
   DEFAULT_ROLE_COLOR,
   ROLE_COLOR_OPTIONS,
+  ROLE_ICON_LABELS,
   ROLE_ICON_OPTIONS,
   type RoleFormValue,
 } from "../utils/roleUtils";
@@ -206,6 +207,8 @@ export function RoleEditorForm({
                           key={iconName}
                           type="button"
                           onClick={() => setForm((current) => ({ ...current, iconName }))}
+                          aria-label={`대표 아이콘 ${ROLE_ICON_LABELS[iconName]}`}
+                          aria-pressed={selected}
                           className={`flex size-12 items-center justify-center rounded-xl transition ${
                             selected
                               ? "bg-[var(--primary)] text-white shadow-md ring-2 ring-orange-200 ring-offset-2"
@@ -248,7 +251,7 @@ export function RoleEditorForm({
                   className="flex size-14 items-center justify-center rounded-[18px] text-white shadow-sm"
                   style={{ backgroundColor: form.colorHex || DEFAULT_ROLE_COLOR }}
                 >
-                  <span className="material-symbols-outlined text-[28px]">{form.iconName}</span>
+                  <span className="material-symbols-outlined text-[28px]" aria-hidden="true">{form.iconName}</span>
                 </div>
                 <div>
                   <p className="text-2xl font-extrabold tracking-tight text-slate-900">
@@ -377,7 +380,7 @@ export function RoleEditorForm({
                         className="flex size-14 items-center justify-center rounded-[18px] text-white shadow-sm"
                         style={{ backgroundColor: form.colorHex }}
                       >
-                        <span className="material-symbols-outlined text-[30px]">{form.iconName}</span>
+                        <span className="material-symbols-outlined text-[30px]" aria-hidden="true">{form.iconName}</span>
                       </div>
                       <div>
                         <p className="text-2xl font-extrabold tracking-tight text-slate-900">

@@ -38,7 +38,7 @@ function AdminInsightTile({
     <div className="rounded-[24px] border border-orange-100 bg-white/90 p-4 shadow-sm">
       <div className="flex items-center gap-3">
         <div className="flex size-11 items-center justify-center rounded-2xl bg-orange-50 text-orange-600">
-          <span className="material-symbols-outlined text-[22px]">{icon}</span>
+          <span className="material-symbols-outlined text-[22px]" aria-hidden="true">{icon}</span>
         </div>
         <div>
           <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">{label}</p>
@@ -109,7 +109,7 @@ export function ClubNoticeHomeClient({
                   <div className="flex items-start justify-between gap-4">
                     <div className="max-w-[70%]">
                       <p className="text-[11px] font-bold uppercase tracking-[0.26em] text-orange-500">
-                        Notice Control
+                        공지 운영
                       </p>
                       <h2 className="mt-3 text-3xl font-black tracking-tight text-slate-900">공지 운영 현황</h2>
                       <p className="mt-2 text-sm leading-6 text-slate-600">
@@ -117,7 +117,7 @@ export function ClubNoticeHomeClient({
                       </p>
                     </div>
                     <div className="flex size-14 shrink-0 items-center justify-center rounded-3xl bg-orange-500 text-white shadow-lg shadow-orange-500/20">
-                      <span className="material-symbols-outlined text-[30px]">campaign</span>
+                      <span className="material-symbols-outlined text-[30px]" aria-hidden="true">campaign</span>
                     </div>
                   </div>
                   <div className="mt-5 rounded-[24px] bg-white/80 p-4">
@@ -223,7 +223,7 @@ export function ClubNoticeHomeClient({
           </section>
         </main>
 
-        {payload.canCreate && mode !== "admin" ? (
+        {payload.canCreate ? (
           <button
             type="button"
             aria-label="게시글 작성"
@@ -231,7 +231,7 @@ export function ClubNoticeHomeClient({
             className={`fixed ${FAB_RIGHT_OFFSET_CLASS_NAME} ${getActionFabBottomClass(hasModeSwitchFab)} z-40 flex h-14 w-14 items-center justify-center rounded-full bg-[var(--primary)] text-white transition-transform active:scale-95`}
             style={{ boxShadow: "0 6px 16px rgba(19, 91, 236, 0.32)" }}
           >
-            <span className="material-symbols-outlined text-[28px]">edit_square</span>
+            <span className="material-symbols-outlined text-[28px]" aria-hidden="true">edit_square</span>
           </button>
         ) : null}
 
@@ -239,11 +239,12 @@ export function ClubNoticeHomeClient({
 
         <AnimatePresence>
           {showCreateModal ? (
-            <RouteModal onDismiss={() => setShowCreateModal(false)} dismissOnBackdrop={false}>
+            <RouteModal ariaLabel="공지 작성" onDismiss={() => setShowCreateModal(false)} dismissOnBackdrop={false}>
               <ClubNoticeEditorClient
                 clubId={clubId}
                 presentation="modal"
                 basePath={basePath}
+                initialClubName={payload.clubName}
                 onRequestClose={() => setShowCreateModal(false)}
                 onSaved={(savedNoticeId) => {
                   setShowCreateModal(false);
@@ -264,7 +265,7 @@ export function ClubNoticeHomeClient({
           ) : null}
 
           {editingNoticeId ? (
-            <RouteModal onDismiss={() => setEditingNoticeId(null)} dismissOnBackdrop={false}>
+            <RouteModal ariaLabel="공지 수정" onDismiss={() => setEditingNoticeId(null)} dismissOnBackdrop={false}>
               <ClubNoticeEditorClient
                 clubId={clubId}
                 noticeId={editingNoticeId}

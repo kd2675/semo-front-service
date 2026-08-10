@@ -51,18 +51,18 @@ function NoticeDetailBody({ payload, error, reduceMotion }: NoticeDetailBodyProp
             {...staggeredFadeUpMotion(2, reduceMotion)}
           >
             <div className="mb-3 flex flex-wrap items-center gap-2">
-              <span className={`rounded-full px-2 py-1 text-[10px] font-bold uppercase tracking-wider ${badge.className}`}>
+              <span className={`rounded-full px-2 py-1 text-[11px] font-bold uppercase tracking-wider ${badge.className}`}>
                 {badge.label}
               </span>
               {payload.pinned ? (
-                <span className="rounded-full bg-slate-100 px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-600">
+                <span className="rounded-full bg-slate-100 px-2 py-1 text-[11px] font-bold uppercase tracking-wider text-slate-600">
                   핀 고정
                 </span>
               ) : null}
               {shareBadges.map((shareBadge) => (
                 <span
                   key={shareBadge.label}
-                  className={`rounded-full px-2 py-1 text-[10px] font-bold uppercase tracking-wider ${shareBadge.className}`}
+                  className={`rounded-full px-2 py-1 text-[11px] font-bold uppercase tracking-wider ${shareBadge.className}`}
                 >
                   {shareBadge.label}
                 </span>
@@ -96,8 +96,8 @@ function NoticeDetailBody({ payload, error, reduceMotion }: NoticeDetailBodyProp
             <motion.section className="px-4 pt-5" {...staggeredFadeUpMotion(4, reduceMotion)}>
               <div className="rounded-2xl bg-[var(--primary)]/5 px-4 py-4">
                 <div className="mb-2 flex items-center gap-2 text-sm font-bold text-[var(--primary)]">
-                  <span className="material-symbols-outlined text-[18px]">calendar_month</span>
-                  Scheduled
+                  <span className="material-symbols-outlined text-[18px]" aria-hidden="true">calendar_month</span>
+                  일정 공유
                 </div>
                 {payload.scheduleAtLabel ? (
                   <p className="text-sm text-slate-700">
@@ -153,15 +153,15 @@ export function ClubNoticeDetailClient({
           title="공지 상세"
           subtitle={payload?.clubName}
           icon="campaign"
-          containerClassName="max-w-md"
-          leftSlot={
+          layout="modal"
+          rightSlot={
             <button
               type="button"
               onClick={onRequestClose}
-            className="semo-icon-control justify-start text-slate-900"
+              className="semo-icon-control text-slate-700 transition-colors hover:bg-slate-100"
               aria-label="공지 상세 닫기"
             >
-              <span className="material-symbols-outlined">close</span>
+              <span className="material-symbols-outlined" aria-hidden="true">close</span>
             </button>
           }
         />
@@ -183,11 +183,11 @@ export function ClubNoticeDetailClient({
           containerClassName="max-w-md"
           leftSlot={
             <RouterLink
-              href={basePath ?? `/clubs/${clubId}/more/notices`}
+              href={basePath ?? `/clubs/${clubId}/board`}
               className="flex size-11 items-center justify-start text-slate-900"
               aria-label="공지 목록으로 돌아가기"
             >
-              <span className="material-symbols-outlined">arrow_back</span>
+              <span className="material-symbols-outlined" aria-hidden="true">arrow_back</span>
             </RouterLink>
           }
         />

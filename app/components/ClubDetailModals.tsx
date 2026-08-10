@@ -44,12 +44,12 @@ type ClubBracketDetailModalProps = {
   onReload?: () => void;
 };
 
-function getNoticeBasePath(clubId: string, mode: DetailMode) {
-  return mode === "admin" ? `/clubs/${clubId}/admin/more/notices` : `/clubs/${clubId}/more/notices`;
+function getNoticeBasePath(clubId: string) {
+  return `/clubs/${clubId}/board`;
 }
 
-function getPollBasePath(clubId: string, mode: DetailMode) {
-  return mode === "admin" ? `/clubs/${clubId}/admin/more/polls` : `/clubs/${clubId}/more/polls`;
+function getPollBasePath(clubId: string) {
+  return `/clubs/${clubId}/schedule`;
 }
 
 function getTournamentBasePath(clubId: string, mode: DetailMode) {
@@ -63,16 +63,15 @@ function getBracketBasePath(clubId: string, mode: DetailMode) {
 export function ClubNoticeDetailModal({
   clubId,
   noticeId,
-  mode = "user",
   onRequestClose,
 }: ClubNoticeDetailModalProps) {
   return (
-    <RouteModal onDismiss={onRequestClose}>
+    <RouteModal ariaLabel="공지 상세" onDismiss={onRequestClose}>
       <ClubNoticeDetailClient
         clubId={clubId}
         noticeId={noticeId}
         presentation="modal"
-        basePath={getNoticeBasePath(clubId, mode)}
+        basePath={getNoticeBasePath(clubId)}
         onRequestClose={onRequestClose}
       />
     </RouteModal>
@@ -85,7 +84,7 @@ export function ClubScheduleEventDetailModal({
   onRequestClose,
 }: ClubScheduleEventDetailModalProps) {
   return (
-    <RouteModal onDismiss={onRequestClose}>
+    <RouteModal ariaLabel="일정 상세" onDismiss={onRequestClose}>
       <ClubScheduleDetailClient
         clubId={clubId}
         eventId={eventId}
@@ -99,16 +98,15 @@ export function ClubScheduleEventDetailModal({
 export function ClubPollDetailModal({
   clubId,
   voteId,
-  mode = "user",
   onRequestClose,
 }: ClubPollDetailModalProps) {
   return (
-    <RouteModal onDismiss={onRequestClose}>
+    <RouteModal ariaLabel="투표 상세" onDismiss={onRequestClose}>
       <ClubScheduleVoteDetailClient
         clubId={clubId}
         voteId={voteId}
         presentation="modal"
-        basePath={getPollBasePath(clubId, mode)}
+        basePath={getPollBasePath(clubId)}
         onRequestClose={onRequestClose}
       />
     </RouteModal>
@@ -122,7 +120,7 @@ export function ClubTournamentDetailModal({
   onRequestClose,
 }: ClubTournamentDetailModalProps) {
   return (
-    <RouteModal onDismiss={onRequestClose}>
+    <RouteModal ariaLabel="대회 상세" onDismiss={onRequestClose}>
       <ClubTournamentDetailClient
         clubId={clubId}
         tournamentRecordId={tournamentRecordId}
@@ -143,7 +141,7 @@ export function ClubBracketDetailModal({
   onReload,
 }: ClubBracketDetailModalProps) {
   return (
-    <RouteModal onDismiss={onRequestClose}>
+    <RouteModal ariaLabel="대진표 초안 상세" onDismiss={onRequestClose}>
       <ClubBracketDetailClient
         clubId={clubId}
         bracketRecordId={bracketRecordId}

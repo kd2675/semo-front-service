@@ -160,7 +160,7 @@ export default function CreateClubPage() {
             className="flex size-11 items-center justify-center rounded-full text-slate-900 transition-colors hover:bg-slate-100"
             aria-label="홈으로 돌아가기"
           >
-            <span className="material-symbols-outlined">arrow_back</span>
+            <span className="material-symbols-outlined" aria-hidden="true">arrow_back</span>
           </RouterLink>
           <h2 className="flex-1 pr-10 text-center text-lg font-bold leading-tight tracking-tight">
             클럽 만들기

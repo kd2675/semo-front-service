@@ -119,11 +119,11 @@ export function ClubAdminHomeClient({
                   {metric.value}
                 </h3>
                 <p
-                  className={`mt-1 flex items-center gap-1 text-[10px] ${
+                  className={`mt-1 flex items-center gap-1 text-[11px] ${
                     DETAIL_TONE_CLASS[metric.detailTone ?? "slate"]
                   }`}
                 >
-                  <span className="material-symbols-outlined text-xs">{metric.detailIcon}</span>
+                  <span className="material-symbols-outlined text-xs" aria-hidden="true">{metric.detailIcon}</span>
                   {metric.detail}
                 </p>
               </motion.article>
@@ -132,7 +132,7 @@ export function ClubAdminHomeClient({
 
           <motion.section {...staggeredFadeUpMotion(4, reduceMotion)}>
             <div className="mb-4 flex items-center gap-2">
-              <span className="material-symbols-outlined text-[var(--primary)]">dashboard</span>
+              <span className="material-symbols-outlined text-[var(--primary)]" aria-hidden="true">dashboard</span>
               <h2 className="text-lg font-bold">대시보드 개요</h2>
             </div>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -148,7 +148,7 @@ export function ClubAdminHomeClient({
                       className="group flex gap-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:border-[var(--primary)]/50"
                     >
                       <div className="flex size-12 shrink-0 items-center justify-center rounded-lg bg-[var(--primary)]/10 text-[var(--primary)] transition-colors group-hover:bg-[var(--primary)] group-hover:text-white">
-                        <span className="material-symbols-outlined text-2xl">{action.icon}</span>
+                        <span className="material-symbols-outlined text-2xl" aria-hidden="true">{action.icon}</span>
                       </div>
                       <div className="flex flex-col justify-center gap-1">
                         <h3 className="text-base font-bold leading-tight">{action.title}</h3>
@@ -158,7 +158,7 @@ export function ClubAdminHomeClient({
                   ) : (
                     <div className="group flex cursor-pointer gap-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:border-[var(--primary)]/50">
                       <div className="flex size-12 shrink-0 items-center justify-center rounded-lg bg-[var(--primary)]/10 text-[var(--primary)] transition-colors group-hover:bg-[var(--primary)] group-hover:text-white">
-                        <span className="material-symbols-outlined text-2xl">{action.icon}</span>
+                        <span className="material-symbols-outlined text-2xl" aria-hidden="true">{action.icon}</span>
                       </div>
                       <div className="flex flex-col justify-center gap-1">
                         <h3 className="text-base font-bold leading-tight">{action.title}</h3>
@@ -174,7 +174,7 @@ export function ClubAdminHomeClient({
           <motion.section {...staggeredFadeUpMotion(9, reduceMotion)}>
             <div className="mb-4 flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <span className="material-symbols-outlined text-[var(--primary)]">history</span>
+                <span className="material-symbols-outlined text-[var(--primary)]" aria-hidden="true">history</span>
                 <h2 className="text-lg font-bold">최근 활동</h2>
               </div>
               <RouterLink

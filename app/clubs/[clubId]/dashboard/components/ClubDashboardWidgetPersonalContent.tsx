@@ -62,7 +62,7 @@ export function ClubDashboardWidgetPersonalContent({
     }, 0);
     return Math.round((totalRate / recentAttendanceLogs.length) * 100);
   }, [recentAttendanceLogs]);
-  const statusLabel = todayAttendance ? (todayAttendance.checkedIn ? "Checked In" : "Pending") : "Unavailable";
+  const statusLabel = todayAttendance ? (todayAttendance.checkedIn ? "출석 완료" : "출석 필요") : "정보 없음";
   const statusClassName = todayAttendance
     ? todayAttendance.checkedIn
       ? "bg-emerald-100 text-emerald-600"
@@ -113,7 +113,7 @@ export function ClubDashboardWidgetPersonalContent({
                 transition={{ duration: reduceMotion ? 0 : 0.2, ease: "easeOut" }}
                 className="text-xs font-medium text-slate-500"
               >
-                {todayAttendance.checkedInCount}/{todayAttendance.memberCount} checked-in
+                {todayAttendance.checkedInCount}/{todayAttendance.memberCount}명 출석
               </motion.p>
               <AnimatePresence mode="wait" initial={false}>
                 <motion.span
@@ -294,7 +294,7 @@ export function ClubDashboardWidgetPersonalContent({
           <p className="text-sm text-slate-500">진행 중인 투표를 가져오지 못했습니다.</p>
         ) : latestOngoingPoll ? (
           <RouterLink
-            href={`/clubs/${clubId}/more/polls/${latestOngoingPoll.voteId}`}
+            href={`/clubs/${clubId}/schedule/votes/${latestOngoingPoll.voteId}`}
             className="block rounded-xl border border-amber-100 bg-white p-4 shadow-sm transition-all hover:border-amber-300"
           >
             <p className="text-xs font-semibold text-amber-600">진행 중인 투표</p>

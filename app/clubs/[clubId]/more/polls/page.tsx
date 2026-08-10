@@ -1,4 +1,4 @@
-import { ClubPollFallbackClient } from "./ClubPollFallbackClient";
+import { redirect } from "next/navigation";
 
 type ClubPollPageProps = {
   params: Promise<{
@@ -8,5 +8,5 @@ type ClubPollPageProps = {
 
 export default async function ClubPollPage({ params }: ClubPollPageProps) {
   const { clubId } = await params;
-  return <ClubPollFallbackClient clubId={clubId} />;
+  redirect(`/clubs/${clubId}/schedule`);
 }

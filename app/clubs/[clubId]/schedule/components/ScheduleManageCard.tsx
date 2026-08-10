@@ -55,7 +55,7 @@ export function ScheduleManageCard({
                 aria-label={`${label} 관리 메뉴`}
                 className="rounded-full p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
               >
-                <span className="material-symbols-outlined text-[20px]">more_horiz</span>
+                <span className="material-symbols-outlined text-[20px]" aria-hidden="true">more_horiz</span>
               </button>
             </div>
 
@@ -78,7 +78,7 @@ export function ScheduleManageCard({
                       }}
                       className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm font-semibold text-amber-600 transition hover:bg-amber-50"
                     >
-                      <span className="material-symbols-outlined text-[18px]">edit</span>
+                      <span className="material-symbols-outlined text-[18px]" aria-hidden="true">edit</span>
                       수정
                     </button>
                   ) : null}
@@ -94,7 +94,7 @@ export function ScheduleManageCard({
                         canEdit ? "border-t border-slate-100" : ""
                       }`}
                     >
-                      <span className="material-symbols-outlined text-[18px]">delete</span>
+                      <span className="material-symbols-outlined text-[18px]" aria-hidden="true">delete</span>
                       삭제
                     </button>
                   ) : null}
@@ -162,7 +162,7 @@ export function ScheduleManageCard({
               }
               transition={{ duration: reduceMotion ? 0.1 : 0.22, ease: "easeOut" }}
             >
-              <span className="material-symbols-outlined text-[22px]">close</span>
+              <span className="material-symbols-outlined text-[22px]" aria-hidden="true">close</span>
               닫기
             </motion.button>
 
@@ -188,7 +188,7 @@ export function ScheduleManageCard({
                 delay: open && !reduceMotion ? 0.02 : 0,
               }}
             >
-              <span className="material-symbols-outlined text-[24px]">article</span>
+              <span className="material-symbols-outlined text-[24px]" aria-hidden="true">article</span>
               자세히 보기
             </motion.button>
 
@@ -217,7 +217,7 @@ export function ScheduleManageCard({
                   delay: open && !reduceMotion ? 0.05 : 0,
                 }}
               >
-                <span className="material-symbols-outlined text-[22px]">edit</span>
+                <span className="material-symbols-outlined text-[22px]" aria-hidden="true">edit</span>
                 수정
               </motion.button>
             ) : null}
@@ -245,7 +245,7 @@ export function ScheduleManageCard({
                   delay: open && !reduceMotion ? 0.08 : 0,
                 }}
               >
-                <span className="material-symbols-outlined text-[22px]">delete</span>
+                <span className="material-symbols-outlined text-[22px]" aria-hidden="true">delete</span>
                 삭제
               </motion.button>
             ) : null}

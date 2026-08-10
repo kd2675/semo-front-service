@@ -8,7 +8,7 @@ function getConfirmToneStyles(tone: ConfirmItem["tone"]) {
     case "danger":
       return {
         icon: "delete",
-        eyebrow: "DANGER ACTION",
+        eyebrow: "주의가 필요한 작업",
         shellClassName: "border-rose-200/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(255,241,242,0.96))]",
         iconWrapClassName: "bg-rose-600 text-white shadow-[0_18px_32px_rgba(225,29,72,0.24)]",
         confirmButtonClassName: "bg-rose-600 text-white hover:bg-rose-700",
@@ -17,7 +17,7 @@ function getConfirmToneStyles(tone: ConfirmItem["tone"]) {
     case "warning":
       return {
         icon: "warning",
-        eyebrow: "WARNING ACTION",
+        eyebrow: "확인이 필요한 작업",
         shellClassName: "border-amber-200/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(255,247,237,0.96))]",
         iconWrapClassName: "bg-amber-500 text-white shadow-[0_18px_32px_rgba(217,119,6,0.22)]",
         confirmButtonClassName: "bg-amber-500 text-white hover:bg-amber-600",
@@ -26,7 +26,7 @@ function getConfirmToneStyles(tone: ConfirmItem["tone"]) {
     case "success":
       return {
         icon: "check_circle",
-        eyebrow: "CONFIRM ACTION",
+        eyebrow: "작업 확인",
         shellClassName: "border-emerald-200/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(236,253,245,0.96))]",
         iconWrapClassName: "bg-emerald-500 text-white shadow-[0_18px_32px_rgba(5,150,105,0.22)]",
         confirmButtonClassName: "bg-emerald-600 text-white hover:bg-emerald-700",
@@ -35,7 +35,7 @@ function getConfirmToneStyles(tone: ConfirmItem["tone"]) {
     default:
       return {
         icon: "help",
-        eyebrow: "DECISION REQUIRED",
+        eyebrow: "선택이 필요합니다",
         shellClassName: "border-slate-200/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(248,250,252,0.96))]",
         iconWrapClassName: "bg-[var(--primary)] text-white shadow-[0_18px_32px_rgba(249,115,22,0.22)]",
         confirmButtonClassName: "bg-[var(--primary)] text-white hover:bg-[var(--primary)]/90",
@@ -59,6 +59,7 @@ export function BasicConfirm({
 
   return (
     <RouteModal
+      ariaLabel={confirm.title}
       onDismiss={onCancel}
       dismissOnBackdrop={confirm.dismissOnBackdrop}
       contentClassName="max-w-[22.5rem] rounded-[2rem] border-0 bg-transparent p-0 shadow-none sm:rounded-[2rem]"
@@ -67,20 +68,20 @@ export function BasicConfirm({
         <div className="relative px-5 pb-6 pt-4">
           <div className="absolute inset-x-0 top-0 h-24 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.95),transparent_70%)]" />
           <div className="relative flex items-center justify-between gap-3">
-            <span className="text-[10px] font-black tracking-[0.24em] text-slate-500">{styles.eyebrow}</span>
+            <span className="text-[11px] font-black tracking-[0.24em] text-slate-500">{styles.eyebrow}</span>
             <button
               type="button"
               onClick={onCancel}
               aria-label="확인창 닫기"
               className="semo-icon-control border border-black/5 bg-white/80 text-slate-400 transition-colors hover:text-slate-700"
             >
-              <span className="material-symbols-outlined text-[20px]">close</span>
+              <span className="material-symbols-outlined text-[20px]" aria-hidden="true">close</span>
             </button>
           </div>
 
           <div className="relative mt-4 text-center">
             <div className={`mx-auto flex size-15 items-center justify-center rounded-[1.3rem] ${styles.iconWrapClassName}`}>
-              <span className="material-symbols-outlined text-[30px]">{styles.icon}</span>
+              <span className="material-symbols-outlined text-[30px]" aria-hidden="true">{styles.icon}</span>
             </div>
             <h3 className="mt-4 text-[1.24rem] font-black tracking-tight text-slate-950">{confirm.title}</h3>
             <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-slate-600">{confirm.message}</p>

@@ -43,7 +43,7 @@ export function ClubAttendanceClient({
       return;
     }
     if (!canPersist) {
-      showToast("Mock mode에서는 출석 저장이 되지 않습니다.", "info");
+      showToast("데모 환경에서는 출석을 저장할 수 없습니다.", "info");
       return;
     }
 
@@ -117,7 +117,7 @@ export function ClubAttendanceClient({
               disabled={!todayAttendance?.canCheckIn || isSubmitting}
               className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--primary)] py-4 text-sm font-bold text-white shadow-sm transition hover:bg-[#135bec]/90 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500"
             >
-              <span className="material-symbols-outlined">
+              <span className="material-symbols-outlined" aria-hidden="true">
                 {isSubmitting ? "progress_activity" : "how_to_reg"}
               </span>
               {todayAttendance?.checkedIn

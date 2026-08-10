@@ -5,7 +5,7 @@ import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import { useAppToast } from "@/app/hooks/useAppToast";
 import { useAppAlert } from "@/app/hooks/useAppAlert";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { startTransition, useDeferredValue, useEffect, useMemo, useState } from "react";
+import { startTransition, useDeferredValue, useEffect, useId, useMemo, useState } from "react";
 import { type ClubAdminMember } from "@/app/lib/clubs";
 import { overlayFadeMotion, popInMotion, staggeredFadeUpMotion } from "@/app/lib/motion";
 import { invalidateClubQueries } from "@/app/lib/react-query/common";
@@ -35,7 +35,7 @@ type ClubAdminMembersClientProps = {
 };
 
 function getRoleLabel(roleCode: string) {
-  return ROLE_OPTIONS.find((option) => option.code === roleCode)?.label ?? roleCode;
+  return ROLE_OPTIONS.find((option) => option.code === roleCode)?.label ?? "기타 역할";
 }
 
 function getStatusLabel(membershipStatus: string) {
@@ -43,7 +43,7 @@ function getStatusLabel(membershipStatus: string) {
     {
       ACTIVE: "활동 중",
       DORMANT: "휴면",
-    }[membershipStatus] ?? membershipStatus
+    }[membershipStatus] ?? "상태 확인 필요"
   );
 }
 
@@ -100,6 +100,7 @@ function MemberManageModal({
 }) {
   const prefersReducedMotion = useReducedMotion();
   const reduceMotion = Boolean(prefersReducedMotion);
+  const titleId = useId();
   const [roleCode, setRoleCode] = useState(member.roleCode);
   const [membershipStatus, setMembershipStatus] = useState<"ACTIVE" | "DORMANT">(
     member.membershipStatus === "DORMANT" ? "DORMANT" : "ACTIVE",
@@ -117,12 +118,17 @@ function MemberManageModal({
         className="fixed inset-0 z-50 flex items-center justify-center px-4 py-6"
         {...popInMotion(reduceMotion)}
       >
-        <div className="w-full max-w-md rounded-[28px] bg-white p-5 shadow-[0_24px_60px_rgba(15,23,42,0.18)]">
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby={titleId}
+          className="w-full max-w-md rounded-[28px] bg-white p-5 shadow-[0_24px_60px_rgba(15,23,42,0.18)]"
+        >
           <div className="flex items-start justify-between gap-4">
             <div className="flex items-center gap-3">
               <MemberAvatar member={member} />
               <div>
-                <p className="text-lg font-bold text-slate-900">{member.displayName}</p>
+                <p id={titleId} className="text-lg font-bold text-slate-900">{member.displayName} 회원 관리</p>
                 <p className="mt-1 text-xs text-slate-500">
                   가입일 {member.joinedAtLabel ?? "-"}
                 </p>
@@ -134,7 +140,7 @@ function MemberManageModal({
               className="semo-icon-control bg-slate-100 text-slate-500"
               aria-label="관리 모달 닫기"
             >
-              <span className="material-symbols-outlined">close</span>
+              <span className="material-symbols-outlined" aria-hidden="true">close</span>
             </button>
           </div>
 
@@ -322,8 +328,9 @@ export function ClubAdminMembersClient({
         <section className="border-b border-slate-200 bg-white">
           <div className="semo-page-admin px-4 pb-4">
             <label className="relative flex items-center">
-              <span className="material-symbols-outlined absolute left-3 text-slate-400">search</span>
+              <span className="material-symbols-outlined absolute left-3 text-slate-400" aria-hidden="true">search</span>
               <input
+                aria-label="멤버 검색"
                 type="text"
                 value={query}
                 onChange={(event) => {
@@ -388,7 +395,7 @@ export function ClubAdminMembersClient({
                         <div className="flex items-center gap-2">
                           <p className="truncate text-base font-bold">{member.displayName}</p>
                           <span
-                            className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${getStatusBadgeClassName(member.membershipStatus)}`}
+                            className={`rounded-full px-2 py-0.5 text-[11px] font-bold uppercase ${getStatusBadgeClassName(member.membershipStatus)}`}
                           >
                             {getStatusLabel(member.membershipStatus)}
                           </span>
@@ -411,19 +418,6 @@ export function ClubAdminMembersClient({
                     </div>
 
                     <div className="mt-4 flex flex-wrap gap-2">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          showAlert({
-                            title: "메시지 기능",
-                            message: "메시지 기능은 작업중입니다.",
-                            tone: "warning",
-                          });
-                        }}
-                        className="rounded-lg bg-slate-100 px-3 py-1.5 text-xs font-bold text-slate-600 transition-colors hover:bg-slate-200"
-                      >
-                        메시지
-                      </button>
                       {member.canManage ? (
                         <button
                           type="button"

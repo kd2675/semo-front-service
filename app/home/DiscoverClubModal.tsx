@@ -53,7 +53,7 @@ export function DiscoverClubModal({
             <div className="flex flex-wrap items-center gap-2">
               <h3 className="text-xl font-bold tracking-tight text-slate-900">{club.name}</h3>
               {club.recommendedByTags || club.recommendedByCategory ? (
-                <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold uppercase text-emerald-600">
+                <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-bold uppercase text-emerald-600">
                   추천
                 </span>
               ) : null}

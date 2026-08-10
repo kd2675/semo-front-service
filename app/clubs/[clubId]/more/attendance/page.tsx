@@ -1,4 +1,4 @@
-import { ClubAttendanceFallbackClient } from "./ClubAttendanceFallbackClient";
+import { redirect } from "next/navigation";
 
 type ClubAttendancePageProps = {
   params: Promise<{
@@ -8,5 +8,5 @@ type ClubAttendancePageProps = {
 
 export default async function ClubAttendancePage({ params }: ClubAttendancePageProps) {
   const { clubId } = await params;
-  return <ClubAttendanceFallbackClient clubId={clubId} />;
+  redirect(`/clubs/${clubId}/schedule`);
 }

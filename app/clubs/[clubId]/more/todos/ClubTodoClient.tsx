@@ -1,6 +1,6 @@
 "use client";
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion, useReducedMotion } from "motion/react";
 import { useState } from "react";
 import { ClubModeSwitchFab } from "@/app/components/ClubModeSwitchFab";
@@ -29,11 +29,13 @@ export function ClubTodoClient({ clubId, initialData, isAdmin }: ClubTodoClientP
   const queryClient = useQueryClient();
   const prefersReducedMotion = useReducedMotion();
   const reduceMotion = Boolean(prefersReducedMotion);
+  const [claimableSize, setClaimableSize] = useState(8);
   const todoQuery = useQuery({
-    ...todoQueryOptions(clubId),
-    initialData,
+    ...todoQueryOptions(clubId, claimableSize),
+    initialData: claimableSize === 8 ? initialData : undefined,
+    placeholderData: keepPreviousData,
   });
-  const todoData = todoQuery.data;
+  const todoData = todoQuery.data ?? initialData;
   const [pendingTodoId, setPendingTodoId] = useState<number | null>(null);
   const { showToast, clearToast } = useAppToast();
   const applyTodoMutation = useMutation(applyTodoMutationOptions(clubId));
@@ -110,7 +112,7 @@ export function ClubTodoClient({ clubId, initialData, isAdmin }: ClubTodoClientP
             {...staggeredFadeUpMotion(0, reduceMotion)}
           >
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
-              My Queue
+              내 할 일
             </p>
             <h2 className="mt-3 text-xl font-bold">
               운영자가 선발하는 신청형 업무와 내 배정 업무를 한 번에 확인합니다.
@@ -137,6 +139,16 @@ export function ClubTodoClient({ clubId, initialData, isAdmin }: ClubTodoClientP
             onApply={handleApply}
             onCancelApplication={handleCancelApplication}
             onComplete={handleComplete}
+            footer={todoData.hasMoreClaimable ? (
+              <button
+                type="button"
+                onClick={() => setClaimableSize((current) => Math.min(current + 8, 50))}
+                disabled={todoQuery.isFetching || claimableSize >= 50}
+                className="mt-4 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
+              >
+                {todoQuery.isFetching ? "불러오는 중..." : claimableSize >= 50 ? "최대 50건까지 표시" : "업무 더 보기"}
+              </button>
+            ) : null}
           />
 
           <TodoSection
@@ -185,6 +197,7 @@ function TodoSection({
   onCancelApplication,
   onComplete,
   muted = false,
+  footer,
 }: {
   title: string;
   countLabel: string;
@@ -197,6 +210,7 @@ function TodoSection({
   onCancelApplication: (todoItemId: number) => Promise<void>;
   onComplete: (todoItemId: number) => Promise<void>;
   muted?: boolean;
+  footer?: React.ReactNode;
 }) {
   return (
     <motion.section
@@ -290,6 +304,7 @@ function TodoSection({
           ))
         )}
       </div>
+      {footer}
     </motion.section>
   );
 }

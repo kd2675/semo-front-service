@@ -9,6 +9,7 @@ import type {
   ClubAdminFinanceObligationDetailResponse,
   ClubFinanceMemberOption,
 } from "@/app/lib/clubs";
+import { getClubRoleLabel } from "@/app/lib/roleLabels";
 import { ObligationDetailPanel } from "./financeCardParts";
 
 const TARGET_SCOPE_OPTIONS = [
@@ -44,7 +45,7 @@ export function ObligationDetailModal({
   onUpdateStatus: (paymentId: number, paymentStatus: "PENDING" | "PAID" | "WAIVED") => void;
 }) {
   return (
-    <RouteModal onDismiss={onClose}>
+    <RouteModal ariaLabel={`${obligation.title} 납부 상세`} onDismiss={onClose}>
       <section className="flex min-h-0 flex-1 flex-col">
         <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
           <div className="min-w-0">
@@ -57,7 +58,7 @@ export function ObligationDetailModal({
             onClick={onClose}
             className="semo-icon-control rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
           >
-            <span className="material-symbols-outlined">close</span>
+            <span className="material-symbols-outlined" aria-hidden="true">close</span>
           </button>
         </div>
 
@@ -89,7 +90,7 @@ export function FinanceActionSheetModal({
   onOpenExpense: () => void;
 }) {
   return (
-    <RouteModal onDismiss={onClose} contentClassName="max-w-md rounded-[2rem] sm:rounded-[2rem]">
+    <RouteModal ariaLabel="재정 입력 메뉴" onDismiss={onClose} contentClassName="max-w-md rounded-[2rem] sm:rounded-[2rem]">
       <section className="px-5 py-5">
         <div className="flex items-center justify-between">
           <div>
@@ -102,7 +103,7 @@ export function FinanceActionSheetModal({
             onClick={onClose}
             className="semo-icon-control rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
           >
-            <span className="material-symbols-outlined">close</span>
+            <span className="material-symbols-outlined" aria-hidden="true">close</span>
           </button>
         </div>
 
@@ -113,7 +114,7 @@ export function FinanceActionSheetModal({
             className="flex w-full items-start gap-3 rounded-3xl border border-slate-200 bg-white px-4 py-4 text-left transition hover:border-[#ec5b13]/30 hover:bg-[#fff7f2]"
           >
             <div className="rounded-full bg-[#ec5b13]/10 p-2 text-[#ec5b13]">
-              <span className="material-symbols-outlined text-[20px]">add_card</span>
+              <span className="material-symbols-outlined text-[20px]" aria-hidden="true">add_card</span>
             </div>
             <div className="min-w-0 flex-1">
               <p className="text-sm font-bold text-slate-900">재정 항목 발행</p>
@@ -127,7 +128,7 @@ export function FinanceActionSheetModal({
             className="flex w-full items-start gap-3 rounded-3xl border border-slate-200 bg-white px-4 py-4 text-left transition hover:border-[#ec5b13]/30 hover:bg-[#fff7f2]"
           >
             <div className="rounded-full bg-[#ec5b13]/10 p-2 text-[#ec5b13]">
-              <span className="material-symbols-outlined text-[20px]">receipt_long</span>
+              <span className="material-symbols-outlined text-[20px]" aria-hidden="true">receipt_long</span>
             </div>
             <div className="min-w-0 flex-1">
               <p className="text-sm font-bold text-slate-900">지출 입력</p>
@@ -188,7 +189,7 @@ export function CreateObligationModal({
   onCreate: () => void;
 }) {
   return (
-    <RouteModal onDismiss={onClose} dismissOnBackdrop={false}>
+    <RouteModal ariaLabel="새 재정 항목 발행" onDismiss={onClose} dismissOnBackdrop={false}>
       <section className="flex min-h-0 flex-1 flex-col">
         <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
           <div>
@@ -201,7 +202,7 @@ export function CreateObligationModal({
             onClick={onClose}
             className="semo-icon-control rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
           >
-            <span className="material-symbols-outlined">close</span>
+            <span className="material-symbols-outlined" aria-hidden="true">close</span>
           </button>
         </div>
 
@@ -321,7 +322,7 @@ export function CreateObligationModal({
                             >
                               <div>
                                 <p className="text-sm font-bold text-slate-900">{member.memberDisplayName}</p>
-                                <p className="mt-1 text-xs text-slate-500">{member.memberRoleCode ?? "MEMBER"}</p>
+                                <p className="mt-1 text-xs text-slate-500">{getClubRoleLabel(member.memberRoleCode)}</p>
                               </div>
                               <span className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${selected ? "bg-[#ec5b13] text-white" : "bg-white text-slate-500"}`}>
                                 {selected ? "선택됨" : "추가"}
@@ -393,7 +394,7 @@ export function ExpenseEntryModal({
   onCreate: () => void;
 }) {
   return (
-    <RouteModal onDismiss={onClose} dismissOnBackdrop={false}>
+    <RouteModal ariaLabel="운영 지출 입력" onDismiss={onClose} dismissOnBackdrop={false}>
       <section className="flex min-h-0 flex-1 flex-col">
         <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
           <div>
@@ -406,7 +407,7 @@ export function ExpenseEntryModal({
             onClick={onClose}
             className="semo-icon-control rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
           >
-            <span className="material-symbols-outlined">close</span>
+            <span className="material-symbols-outlined" aria-hidden="true">close</span>
           </button>
         </div>
 

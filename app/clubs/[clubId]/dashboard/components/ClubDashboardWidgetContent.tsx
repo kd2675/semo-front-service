@@ -2,7 +2,12 @@
 
 import { motion } from "motion/react";
 import { RouterLink } from "@/app/components/RouterLink";
-import { isAttendanceWidgetKey, WIDGET_ACCENT_CLASS } from "../utils/dashboardWidgetUtils";
+import {
+  getWidgetDescription,
+  getWidgetTitle,
+  isAttendanceWidgetKey,
+  WIDGET_ACCENT_CLASS,
+} from "../utils/dashboardWidgetUtils";
 import type { ClubDashboardWidgetCardProps } from "../types/dashboardWidgetTypes";
 import { ClubDashboardWidgetFeatureContent } from "./ClubDashboardWidgetFeatureContent";
 import { ClubDashboardWidgetPersonalContent } from "./ClubDashboardWidgetPersonalContent";
@@ -19,10 +24,10 @@ export function ClubDashboardWidgetContent(props: ClubDashboardWidgetCardProps) 
     <>
       <div className={`mb-4 flex items-center gap-3 ${isEditMode ? "pr-12 pl-10" : "pr-12"}`}>
         <div className={`flex size-10 items-center justify-center rounded-lg ${accentClass}`}>
-          <span className="material-symbols-outlined text-xl">{widget.iconName}</span>
+          <span className="material-symbols-outlined text-xl" aria-hidden="true">{widget.iconName}</span>
         </div>
         <div>
-          <h3 className="text-base font-bold">{widget.title}</h3>
+          <h3 className="text-base font-bold">{getWidgetTitle(widget)}</h3>
           {!widget.available ? <p className="text-xs font-semibold text-amber-600">필요한 기능이 비활성화되어 있습니다</p> : null}
         </div>
       </div>
@@ -30,13 +35,13 @@ export function ClubDashboardWidgetContent(props: ClubDashboardWidgetCardProps) 
       <ClubDashboardWidgetPersonalContent {...props} />
       <ClubDashboardWidgetFeatureContent {...props} />
       {!matchesKnownWidget(widget.widgetKey) ? (
-        <p className="text-sm text-slate-500">{widget.description ?? "No widget description yet."}</p>
+        <p className="text-sm text-slate-500">{getWidgetDescription(widget)}</p>
       ) : null}
 
       <div className="mt-auto pt-5">
         {isEditMode ? (
           <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-3 py-1.5 text-xs font-bold text-slate-500">
-            Drag to reorder
+            드래그해서 순서 변경
           </span>
         ) : isAttendanceStatusWidget && todayAttendance?.canCheckIn && !todayAttendance.checkedIn ? (
           <motion.button
@@ -65,8 +70,8 @@ export function ClubDashboardWidgetContent(props: ClubDashboardWidgetCardProps) 
             href={widget.userPath || `/clubs/${clubId}`}
             className="inline-flex items-center gap-1 rounded-full bg-[var(--primary)]/10 px-3 py-1.5 text-xs font-bold text-[var(--primary)] transition-colors hover:bg-[var(--primary)]/20"
           >
-            Open
-            <span className="material-symbols-outlined text-sm">arrow_forward</span>
+            열기
+            <span className="material-symbols-outlined text-sm" aria-hidden="true">arrow_forward</span>
           </RouterLink>
         )}
       </div>

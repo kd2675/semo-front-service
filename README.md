@@ -91,6 +91,9 @@ NEXT_PUBLIC_API_URL=http://localhost:8080
 - More 메뉴는 하드코딩보다 `/api/semo/v1/clubs/{clubId}/features` 응답을 우선합니다.
 - 관리자 메뉴 화면과 관리자 하단 `More` 메뉴는 enabled feature 순서를 저장합니다.
 - 저장 후 `semo:club-features-updated` 이벤트로 네비게이션을 동기화합니다.
+- `NOTICE`는 게시판, `SCHEDULE_MANAGE`·`POLL`·`ATTENDANCE`는 캘린더가 대표 화면입니다.
+- 위 기능의 기존 `/more` URL은 북마크 호환을 위해 대표 화면으로 redirect하며 More 메뉴에는 중복 노출하지 않습니다.
+- More에는 회비·정산, 업무, 대회, 대진표 초안, 회원 디렉터리, 비공개 피드백 등 독립 작업 흐름만 노출합니다.
 
 ### Dashboard / modal route pattern
 - 홈은 위젯 API를 이용해 사용자 대시보드를 렌더링합니다.
@@ -135,15 +138,10 @@ NEXT_PUBLIC_API_URL=http://localhost:8080
   - 앱 프로필 + 클럽 프로필 편집
 
 ### User `/more`
-- `/clubs/[clubId]/more/notices`
-- `/clubs/[clubId]/more/notices/[noticeId]`
-- `/clubs/[clubId]/more/notices/[noticeId]/edit`
-- `/clubs/[clubId]/more/schedules`
-- `/clubs/[clubId]/more/polls`
-- `/clubs/[clubId]/more/polls/[voteId]`
-- `/clubs/[clubId]/more/polls/[voteId]/edit`
+- `/clubs/[clubId]/more/notices`, `/more/schedules`, `/more/polls`, `/more/attendance`
+  - 기존 링크 호환용이며 게시판 또는 캘린더 대표 화면으로 이동
 - `/clubs/[clubId]/more/timeline`
-- `/clubs/[clubId]/more/attendance`
+  - 내 프로필 활동 내역으로 이동
 - `/clubs/[clubId]/more/todos`
 - `/clubs/[clubId]/more/join-requests`
 - `/clubs/[clubId]/more/members`
@@ -160,15 +158,10 @@ NEXT_PUBLIC_API_URL=http://localhost:8080
 - `/clubs/[clubId]/admin/logs`
 
 ### Admin `/more`
-- `/clubs/[clubId]/admin/more/notices`
-- `/clubs/[clubId]/admin/more/notices/[noticeId]`
-- `/clubs/[clubId]/admin/more/notices/[noticeId]/edit`
-- `/clubs/[clubId]/admin/more/schedules`
-- `/clubs/[clubId]/admin/more/polls`
-- `/clubs/[clubId]/admin/more/polls/[voteId]`
-- `/clubs/[clubId]/admin/more/polls/[voteId]/edit`
+- `/clubs/[clubId]/admin/more/notices`, `/admin/more/schedules`, `/admin/more/polls`, `/admin/more/attendance`
+  - 기존 링크 호환용이며 게시판 또는 캘린더 대표 화면으로 이동
 - `/clubs/[clubId]/admin/more/timeline`
-- `/clubs/[clubId]/admin/more/attendance`
+  - 관리자 활동 로그로 이동
 - `/clubs/[clubId]/admin/more/todos`
 - `/clubs/[clubId]/admin/more/join-requests`
 - `/clubs/[clubId]/admin/more/members`
@@ -193,14 +186,20 @@ NEXT_PUBLIC_API_URL=http://localhost:8080
 - 게시판 피드에는 공지, 일정, 투표, 대회가 섞여 노출될 수 있습니다.
 - 게시글 읽음 상태를 별도 API로 조회합니다.
 - 일정과 투표는 게시판/캘린더 공유 상태, 고정 여부, lifecycle 상태를 화면에서 함께 다룹니다.
+- 게시판의 작성 버튼은 활성 기능과 실제 작성 권한에 따라 공지·일정·투표·대회 작성 모달을 제공합니다.
+- 캘린더의 작성 버튼은 활성 기능과 실제 작성 권한에 따라 일정·투표 작성 모달을 제공합니다.
+- 출석은 별도 세션 화면을 새로 늘리지 않고 일정 상세의 참석 응답으로 다룹니다.
 
 ### Tournament / bracket / finance / roles
 - 대회는 사용자 작성 -> 관리자 승인 -> 참가 신청/승인 흐름을 가집니다.
-- 대진표는 직접 작성 또는 대회 참가자 불러오기 후 제출/승인 흐름을 가집니다.
-- 재정관리는 사용자 조회 화면과 관리자 발행/납부 처리 화면이 분리됩니다.
+- 승인된 대회의 핵심 내용이 수정되면 다시 승인 대기 상태로 돌아갑니다.
+- 대진표 초안은 직접 작성 또는 승인된 대회 참가자 불러오기 후 제출/승인 흐름을 가지며 표준 시드 배치를 사용합니다.
+- 회비·정산은 사용자 조회·요청과 관리자 발행·납부·승인 흐름이 분리되며, 승인된 지출/환급 요청은 연결된 지출 장부로 자동 반영됩니다.
 - 신규가입은 사용자 `/more/join-requests`에서 현재 대기열을 보고, 관리자 `/admin/more/join-requests`에서 승인/반려를 처리합니다.
 - 회원 디렉터리는 사용자 `/more/members`에서 다른 회원을 보고, 관리자 `/admin/more/members`에서 직책/한줄소개/최근 활동 노출 여부를 설정합니다.
-- 직책관리는 `ADMIN_ONLY` 기능으로, 직책 생성/수정/삭제와 멤버 할당 화면이 따로 있습니다.
+- 직책관리는 `ADMIN_ONLY` 기능으로, 직책 생성/수정/삭제와 멤버 할당 화면이 따로 있습니다. 직책 변경 이력은 감사 기록이므로 삭제할 수 없습니다.
+- 피드백은 기본 비공개이며 익명 제출자의 신원은 관리자에게도 노출하지 않습니다.
+- 업무 삭제는 이력 보존을 위해 취소 상태 보관으로 처리하며, 신청이 진행 중인 업무는 먼저 신청을 정리해야 합니다.
 
 ## Key Paths
 

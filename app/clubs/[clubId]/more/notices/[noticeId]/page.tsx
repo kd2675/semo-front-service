@@ -1,4 +1,4 @@
-import { ClubNoticeDetailRouteModal } from "../ClubNoticeDetailRouteModal";
+import { redirect } from "next/navigation";
 
 type ClubNoticeDetailPageProps = {
   params: Promise<{
@@ -9,5 +9,5 @@ type ClubNoticeDetailPageProps = {
 
 export default async function ClubNoticeDetailPage({ params }: ClubNoticeDetailPageProps) {
   const { clubId, noticeId } = await params;
-  return <ClubNoticeDetailRouteModal clubId={clubId} noticeId={noticeId} />;
+  redirect(`/clubs/${clubId}/board/${noticeId}`);
 }

@@ -61,7 +61,7 @@ function MemberCard({
           : "bg-[var(--primary)] text-white shadow-sm hover:bg-orange-700"
           }`}
         >
-          <span className="material-symbols-outlined text-[18px]">
+          <span className="material-symbols-outlined text-[18px]" aria-hidden="true">
             {assigned ? "person_remove" : "person_add"}
           </span>
           {busy ? "처리 중" : buttonLabel}
@@ -70,18 +70,18 @@ function MemberCard({
 
       <div className="mt-4 flex flex-wrap gap-2">
         <span className="inline-flex items-center gap-1.5 rounded-full bg-orange-50 px-3 py-1.5 text-xs font-semibold text-orange-800">
-          <span className="material-symbols-outlined text-[16px]">workspace_premium</span>
+          <span className="material-symbols-outlined text-[16px]" aria-hidden="true">workspace_premium</span>
           {assigned ? `${role.displayName} 연결됨` : "직책 미연결"}
         </span>
         {member.joinedAtLabel ? (
           <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-600">
-            <span className="material-symbols-outlined text-[16px]">calendar_month</span>
+            <span className="material-symbols-outlined text-[16px]" aria-hidden="true">calendar_month</span>
             {member.joinedAtLabel}
           </span>
         ) : null}
         {!member.canManage ? (
           <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white">
-            <span className="material-symbols-outlined text-[16px]">lock</span>
+            <span className="material-symbols-outlined text-[16px]" aria-hidden="true">lock</span>
             변경 불가
           </span>
         ) : null}
@@ -255,7 +255,7 @@ export function RoleAssignmentSheet({
                   className="flex size-14 items-center justify-center rounded-[1.25rem] text-white shadow-[0_16px_32px_rgba(144,78,0,0.24)]"
                   style={{ backgroundColor: colorHex }}
                 >
-                  <span className="material-symbols-outlined text-[30px]">{role.iconName ?? "badge"}</span>
+                  <span className="material-symbols-outlined text-[30px]" aria-hidden="true">{role.iconName ?? "badge"}</span>
                 </div>
                 <div>
                   <p className="text-xs font-black tracking-wide text-orange-800">
@@ -276,7 +276,7 @@ export function RoleAssignmentSheet({
                 href={`/clubs/${clubId}/admin/more/roles/${role.clubPositionId}/edit`}
                 className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-[#fff7ef]"
               >
-                <span className="material-symbols-outlined text-[18px]">edit</span>
+                <span className="material-symbols-outlined text-[18px]" aria-hidden="true">edit</span>
                 편집
               </RouterLink>
               <button
@@ -304,7 +304,7 @@ export function RoleAssignmentSheet({
               >
                 <div className="flex items-center justify-between gap-2">
                   <p className="text-xs font-bold text-slate-400">{item.label}</p>
-                  <span className="material-symbols-outlined text-[18px]" style={{ color: colorHex }}>
+                  <span className="material-symbols-outlined text-[18px]" aria-hidden="true" style={{ color: colorHex }}>
                     {item.icon}
                   </span>
                 </div>
@@ -325,13 +325,13 @@ export function RoleAssignmentSheet({
                       className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold"
                       style={{ backgroundColor: `${colorHex}14`, color: colorHex }}
                     >
-                      <span className="material-symbols-outlined text-[15px]">verified_user</span>
+                      <span className="material-symbols-outlined text-[15px]" aria-hidden="true">verified_user</span>
                       {label}
                     </span>
                   ))
                 ) : (
                   <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-500">
-                    <span className="material-symbols-outlined text-[15px]">info</span>
+                    <span className="material-symbols-outlined text-[15px]" aria-hidden="true">info</span>
                     연결된 세부 권한이 없습니다.
                   </span>
                 )}
@@ -375,7 +375,7 @@ export function RoleAssignmentSheet({
                   onClick={() => void handleRetryMembers()}
                   className="mt-5 inline-flex items-center gap-2 rounded-2xl bg-rose-600 px-5 py-3 text-sm font-bold text-white transition hover:bg-rose-700"
                 >
-                  <span className="material-symbols-outlined text-[18px]">refresh</span>
+                  <span className="material-symbols-outlined text-[18px]" aria-hidden="true">refresh</span>
                   다시 시도
                 </button>
               </div>
@@ -455,11 +455,11 @@ export function RoleAssignmentSheet({
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex flex-wrap items-center gap-2 text-sm text-slate-500">
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1.5 font-semibold text-emerald-700">
-                  <span className="material-symbols-outlined text-[16px]">bolt</span>
+                  <span className="material-symbols-outlined text-[16px]" aria-hidden="true">bolt</span>
                   변경 즉시 저장
                 </span>
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1.5 font-semibold text-slate-600">
-                  <span className="material-symbols-outlined text-[16px]">touch_app</span>
+                  <span className="material-symbols-outlined text-[16px]" aria-hidden="true">touch_app</span>
                   버튼 클릭 시 바로 반영됩니다.
                 </span>
               </div>
@@ -469,7 +469,7 @@ export function RoleAssignmentSheet({
                   href={`/clubs/${clubId}/admin/members`}
                   className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
                 >
-                  <span className="material-symbols-outlined text-[18px]">group</span>
+                  <span className="material-symbols-outlined text-[18px]" aria-hidden="true">group</span>
                   멤버 관리
                 </RouterLink>
                 <button
@@ -477,7 +477,7 @@ export function RoleAssignmentSheet({
                   onClick={onClose}
                   className="inline-flex items-center gap-2 rounded-2xl bg-slate-900 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-slate-800"
                 >
-                  <span className="material-symbols-outlined text-[18px]">done</span>
+                  <span className="material-symbols-outlined text-[18px]" aria-hidden="true">done</span>
                   닫기
                 </button>
               </div>

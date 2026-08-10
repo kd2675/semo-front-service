@@ -150,7 +150,7 @@ function VisibilitySettingCard({
             enabled ? "bg-[#fff1e4] text-[#ec5b13]" : "bg-slate-100 text-slate-400"
           }`}
         >
-          <span className="material-symbols-outlined">{item.icon}</span>
+          <span className="material-symbols-outlined" aria-hidden="true">{item.icon}</span>
         </div>
 
         <div className="min-w-0 flex-1">
@@ -210,7 +210,7 @@ function VisibilityInsightCard({
         <SectionEyebrow>공개 범위와 참여</SectionEyebrow>
         <div className="mt-2 flex items-start gap-3">
           <div className="flex size-11 shrink-0 items-center justify-center rounded-[18px] bg-white text-[#ec5b13] shadow-sm">
-            <span className="material-symbols-outlined">visibility</span>
+            <span className="material-symbols-outlined" aria-hidden="true">visibility</span>
           </div>
 
           <div>
@@ -373,9 +373,9 @@ function AdminPreviewCard({
         <div className="mt-4 rounded-[22px] border border-slate-200/80 bg-slate-50/80 px-3.5 py-3">
           <div className="flex items-center justify-between gap-3">
             <p className="text-xs font-bold text-slate-400">
-              Recent Activity
+              최근 활동
             </p>
-            <span className="material-symbols-outlined text-[18px] text-slate-300">history</span>
+            <span className="material-symbols-outlined text-[18px] text-slate-300" aria-hidden="true">history</span>
           </div>
 
           {settings.showRecentActivity && member.recentActivity ? (
@@ -489,7 +489,7 @@ export function ClubAdminMemberDirectoryClient({
                 한 번에 조정합니다.
               </h2>
               <p className="mt-3 text-sm leading-6 text-slate-600">
-                회원용 More 화면에 보이는 프로필 요소를 조정합니다. 현재 활성 회원{" "}
+                회원용 더보기 화면에 보이는 프로필 요소를 조정합니다. 현재 활성 회원{" "}
                 {initialData.totalMemberCount}명에게 같은 규칙이 적용됩니다.
               </p>
 
@@ -566,7 +566,7 @@ export function ClubAdminMemberDirectoryClient({
 
                 <div className="rounded-[20px] border border-slate-200 bg-white px-3 py-2 text-right shadow-sm">
                   <p className="text-xs font-bold text-slate-400">
-                    Preview
+                    미리보기
                   </p>
                   <p className="mt-1 text-2xl font-extrabold tracking-tight text-slate-950">
                     {previewMembers.length}
@@ -595,7 +595,7 @@ export function ClubAdminMemberDirectoryClient({
               disabled={saving || !hasPendingChanges}
               className="flex w-full items-center justify-center gap-2 rounded-[22px] bg-[#ec5b13] px-4 py-4 text-sm font-bold text-white shadow-[0_18px_30px_rgba(236,91,19,0.28)] transition hover:bg-[#d85211] disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none"
             >
-              <span className="material-symbols-outlined text-[18px]">save</span>
+              <span className="material-symbols-outlined text-[18px]" aria-hidden="true">save</span>
               {saving ? "저장 중..." : hasPendingChanges ? "회원 디렉터리 설정 저장" : "변경사항 없음"}
             </button>
           </div>

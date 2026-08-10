@@ -3,7 +3,7 @@ import { getClubAdminTodoApplications, getClubAdminTodos, getClubTodos } from "@
 import { requireApiData } from "@/app/lib/queryUtils";
 
 export const todoQueryKeys = {
-  todos: (clubId: string) => ["semo", "clubs", clubId, "todos"] as const,
+  todos: (clubId: string, claimableSize: number) => ["semo", "clubs", clubId, "todos", claimableSize] as const,
   adminTodos: (
     clubId: string,
     options: {
@@ -18,11 +18,11 @@ export const todoQueryKeys = {
     ["semo", "clubs", clubId, "admin-todo-applications", todoItemId] as const,
 };
 
-export function todoQueryOptions(clubId: string) {
+export function todoQueryOptions(clubId: string, claimableSize = 8) {
   return queryOptions({
-    queryKey: todoQueryKeys.todos(clubId),
+    queryKey: todoQueryKeys.todos(clubId, claimableSize),
     queryFn: async () =>
-      requireApiData(await getClubTodos(clubId), "할 일 정보를 다시 불러오지 못했습니다."),
+      requireApiData(await getClubTodos(clubId, claimableSize), "할 일 정보를 다시 불러오지 못했습니다."),
   });
 }
 

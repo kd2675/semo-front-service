@@ -107,7 +107,7 @@ export function ClubAdminSettingsClient({ clubId, initialClub }: ClubAdminSettin
             className="flex size-11 items-center justify-center rounded-full bg-white text-slate-600 shadow-sm"
             aria-label="관리자 홈으로 돌아가기"
           >
-            <span className="material-symbols-outlined">arrow_back</span>
+            <span className="material-symbols-outlined" aria-hidden="true">arrow_back</span>
           </button>
         )}
       />
@@ -132,7 +132,7 @@ export function ClubAdminSettingsClient({ clubId, initialClub }: ClubAdminSettin
                   </p>
                 </div>
                 <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-white text-[var(--primary)] shadow-sm ring-1 ring-[var(--primary)]/10">
-                  <span className="material-symbols-outlined text-[20px]">interests</span>
+                  <span className="material-symbols-outlined text-[20px]" aria-hidden="true">interests</span>
                 </div>
               </div>
 

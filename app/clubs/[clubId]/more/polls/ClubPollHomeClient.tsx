@@ -48,7 +48,7 @@ function AdminInsightTile({
     <div className="rounded-[24px] border border-orange-100 bg-white/90 p-4 shadow-sm">
       <div className="flex items-center gap-3">
         <div className="flex size-11 items-center justify-center rounded-2xl bg-orange-50 text-orange-600">
-          <span className="material-symbols-outlined text-[22px]">{icon}</span>
+          <span className="material-symbols-outlined text-[22px]" aria-hidden="true">{icon}</span>
         </div>
         <div>
           <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">{label}</p>
@@ -120,24 +120,24 @@ function PollCard({
       >
         <div className="mb-2 flex items-start justify-between gap-3">
           <div className="flex flex-wrap items-center gap-2">
-            <span className={`rounded px-2 py-1 text-[10px] font-bold uppercase tracking-wider ${status.className}`}>
+            <span className={`rounded px-2 py-1 text-[11px] font-bold uppercase tracking-wider ${status.className}`}>
               {status.label}
             </span>
             {poll.pinned ? (
-              <span className="rounded bg-red-50 px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-red-600">
+              <span className="rounded bg-red-50 px-2 py-1 text-[11px] font-bold uppercase tracking-wider text-red-600">
                 고정
               </span>
             ) : null}
             {shareBadges.map((shareBadge) => (
               <span
                 key={shareBadge.label}
-                className={`rounded px-2 py-1 text-[10px] font-bold uppercase tracking-wider ${shareBadge.className}`}
+                className={`rounded px-2 py-1 text-[11px] font-bold uppercase tracking-wider ${shareBadge.className}`}
               >
                 {shareBadge.label}
               </span>
             ))}
           </div>
-          <span className="shrink-0 text-[10px] font-medium text-gray-400">{poll.voteWindowLabel}</span>
+          <span className="shrink-0 text-[11px] font-medium text-gray-400">{poll.voteWindowLabel}</span>
         </div>
 
         <h3 className="mb-2 line-clamp-1 text-base font-bold text-gray-900">{poll.title}</h3>
@@ -173,7 +173,7 @@ function PollCard({
                 }}
                 className="rounded-full p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
               >
-                <span className="material-symbols-outlined text-[20px]">more_horiz</span>
+                <span className="material-symbols-outlined text-[20px]" aria-hidden="true">more_horiz</span>
               </button>
               <AnimatePresence initial={false}>
                 {open ? (
@@ -194,7 +194,7 @@ function PollCard({
                         }}
                         className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm font-semibold text-amber-600 transition hover:bg-amber-50"
                       >
-                        <span className="material-symbols-outlined text-[18px]">edit</span>
+                        <span className="material-symbols-outlined text-[18px]" aria-hidden="true">edit</span>
                         수정
                       </button>
                     ) : null}
@@ -210,7 +210,7 @@ function PollCard({
                           canEdit ? "border-t border-slate-100" : ""
                         }`}
                       >
-                        <span className="material-symbols-outlined text-[18px]">delete</span>
+                        <span className="material-symbols-outlined text-[18px]" aria-hidden="true">delete</span>
                         삭제
                       </button>
                     ) : null}
@@ -320,7 +320,7 @@ export function ClubPollHomeClient({
                   <div className="flex items-start justify-between gap-4">
                     <div className="max-w-[70%]">
                       <p className="text-[11px] font-bold uppercase tracking-[0.26em] text-orange-500">
-                        Poll Control
+                        투표 운영
                       </p>
                       <h2 className="mt-3 text-3xl font-black tracking-tight text-slate-900">투표 운영 현황</h2>
                       <p className="mt-2 text-sm leading-6 text-slate-600">
@@ -328,7 +328,7 @@ export function ClubPollHomeClient({
                       </p>
                     </div>
                     <div className="flex size-14 shrink-0 items-center justify-center rounded-3xl bg-orange-500 text-white shadow-lg shadow-orange-500/20">
-                      <span className="material-symbols-outlined text-[30px]">poll</span>
+                      <span className="material-symbols-outlined text-[30px]" aria-hidden="true">poll</span>
                     </div>
                   </div>
                   <div className="mt-5 rounded-[24px] bg-white/80 p-4">
@@ -382,6 +382,7 @@ export function ClubPollHomeClient({
                 <button
                   key={tab.key}
                   type="button"
+                  aria-pressed={active}
                   onClick={() => {
                     startTransition(() => {
                       setActiveTab(tab.key);
@@ -405,7 +406,7 @@ export function ClubPollHomeClient({
           <section className="p-4" data-purpose="search-section">
             <div className="relative">
               <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
-                <span className="material-symbols-outlined text-[20px]">search</span>
+                <span className="material-symbols-outlined text-[20px]" aria-hidden="true">search</span>
               </span>
               <input
                 aria-label="투표 검색"
@@ -466,7 +467,7 @@ export function ClubPollHomeClient({
           )}
         </main>
 
-        {payload.canCreate && mode !== "admin" ? (
+        {payload.canCreate ? (
           <button
             type="button"
             aria-label="투표 생성"
@@ -474,7 +475,7 @@ export function ClubPollHomeClient({
             className={`fixed ${FAB_RIGHT_OFFSET_CLASS_NAME} ${getActionFabBottomClass(hasModeSwitchFab)} z-40 flex h-14 w-14 items-center justify-center rounded-full bg-[var(--primary)] text-white transition-transform active:scale-95`}
             style={{ boxShadow: "0 4px 14px rgba(19, 91, 236, 0.35)" }}
           >
-            <span className="material-symbols-outlined text-[30px]">add</span>
+            <span className="material-symbols-outlined text-[30px]" aria-hidden="true">add</span>
           </button>
         ) : null}
 
@@ -482,7 +483,7 @@ export function ClubPollHomeClient({
 
         <AnimatePresence>
           {showCreateModal ? (
-            <RouteModal onDismiss={() => setShowCreateModal(false)} dismissOnBackdrop={false}>
+            <RouteModal ariaLabel="투표 생성" onDismiss={() => setShowCreateModal(false)} dismissOnBackdrop={false}>
               <ClubScheduleVoteEditorClient
                 clubId={clubId}
                 clubName={payload.clubName}
@@ -508,7 +509,7 @@ export function ClubPollHomeClient({
           ) : null}
 
           {editingVoteId ? (
-            <RouteModal onDismiss={() => setEditingVoteId(null)} dismissOnBackdrop={false}>
+            <RouteModal ariaLabel="투표 수정" onDismiss={() => setEditingVoteId(null)} dismissOnBackdrop={false}>
               <ClubScheduleVoteEditorClient
                 clubId={clubId}
                 voteId={editingVoteId}

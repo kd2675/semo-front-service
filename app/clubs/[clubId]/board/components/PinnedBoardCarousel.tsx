@@ -134,7 +134,7 @@ export function PinnedBoardCarousel({
         pagination={{ clickable: true }}
         className="[&_.swiper-pagination]:!static [&_.swiper-pagination]:mt-4 [&_.swiper-pagination-bullet]:bg-slate-300 [&_.swiper-pagination-bullet-active]:!bg-[var(--primary)]"
       >
-        {items.map((item) => {
+        {items.map((item, index) => {
           const meta = getBoardItemMeta(item);
           if (!meta) {
             return null;
@@ -157,6 +157,7 @@ export function PinnedBoardCarousel({
                         alt={meta.title}
                         fill
                         sizes="280px"
+                        priority={index === 0}
                         className="object-cover"
                       />
                     </div>
@@ -181,7 +182,7 @@ export function PinnedBoardCarousel({
                         </span>
                       ))}
                     </div>
-                    <span className={`shrink-0 text-[10px] ${surface.metaClassName}`}>{meta.dateLabel}</span>
+                    <span className={`shrink-0 text-[11px] ${surface.metaClassName}`}>{meta.dateLabel}</span>
                   </div>
 
                   {!useImageBackground && meta.imageUrl ? (
@@ -191,6 +192,7 @@ export function PinnedBoardCarousel({
                         alt={meta.title}
                         fill
                         sizes="280px"
+                        priority={index === 0}
                         className="object-cover"
                       />
                     </div>
@@ -217,7 +219,7 @@ export function PinnedBoardCarousel({
                     )}
                     <div className="min-w-0">
                       <p className="truncate text-xs font-semibold">{meta.authorDisplayName}</p>
-                      <p className={`truncate text-[10px] ${surface.metaClassName}`}>{meta.authorRoleCode}</p>
+                      <p className={`truncate text-[11px] ${surface.metaClassName}`}>{meta.authorRoleCode}</p>
                     </div>
                   </div>
                 </div>

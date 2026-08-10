@@ -22,10 +22,10 @@ export function ScheduleActionConfirmModal({
   onConfirm,
 }: ScheduleActionConfirmModalProps) {
   return (
-    <RouteModal onDismiss={onCancel} contentClassName="max-w-[22rem] rounded-[1.75rem] sm:rounded-[1.75rem]">
+    <RouteModal ariaLabel={title} onDismiss={onCancel} contentClassName="max-w-[22rem] rounded-[1.75rem] sm:rounded-[1.75rem]">
       <div className="bg-white px-5 py-5">
         <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-2xl bg-rose-50 text-rose-500">
-          <span className="material-symbols-outlined text-[24px]">delete</span>
+          <span className="material-symbols-outlined text-[24px]" aria-hidden="true">delete</span>
         </div>
         <div className="text-center">
           <h3 className="text-lg font-bold tracking-tight text-slate-900">{title}</h3>

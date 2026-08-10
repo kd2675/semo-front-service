@@ -8,6 +8,10 @@ type RolePermissionToggleCardProps = {
   onToggle: (permissionKey: string) => void;
 };
 
+function getPermissionGroupLabel(displayName: string) {
+  return displayName.replace(/관리$/, " 관리");
+}
+
 export function RolePermissionToggleCard({
   group,
   selectedKeys,
@@ -23,7 +27,7 @@ export function RolePermissionToggleCard({
             <span className="material-symbols-outlined" aria-hidden="true">{group.iconName}</span>
           </div>
           <div>
-            <h3 className="text-lg font-bold text-slate-900">{group.displayName}</h3>
+            <h3 className="text-lg font-bold text-slate-900">{getPermissionGroupLabel(group.displayName)}</h3>
             <p className="mt-1 text-xs leading-5 text-slate-500">
               {group.description ?? `${group.permissions.length}개 세부 권한을 제어합니다.`}
             </p>
@@ -52,6 +56,7 @@ export function RolePermissionToggleCard({
                 type="button"
                 role="switch"
                 aria-checked={selected}
+                aria-label={`${permission.displayName} 권한`}
                 onClick={() => onToggle(permission.permissionKey)}
                 className={`relative inline-flex h-11 w-14 shrink-0 items-center rounded-full transition ${
                   selected ? "bg-[var(--primary)]" : "bg-slate-300"

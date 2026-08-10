@@ -36,7 +36,7 @@ export function ClubModeSwitchFab({ clubId, mode, className }: ClubModeSwitchFab
           isAdminMode ? userAccentClassName : adminAccentClassName
         }`}
       >
-        <span className="material-symbols-outlined text-[26px]">
+        <span className="material-symbols-outlined text-[26px]" aria-hidden="true">
           {isAdminMode ? "exit_to_app" : "admin_panel_settings"}
         </span>
       </RouterLink>

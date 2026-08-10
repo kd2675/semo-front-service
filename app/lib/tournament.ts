@@ -74,7 +74,7 @@ export function getTournamentFormatLabel(matchFormat: TournamentLike["matchForma
 
 export function getTournamentFeeLabel(item: TournamentLike) {
   if (!item.feeRequired) {
-    return "Free";
+    return "무료";
   }
   if (item.feeAmount == null) {
     return "유료";

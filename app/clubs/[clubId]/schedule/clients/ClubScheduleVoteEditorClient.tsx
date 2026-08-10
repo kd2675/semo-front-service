@@ -47,11 +47,12 @@ export function ClubScheduleVoteEditorClient({
   const [postToCalendar, setPostToCalendar] = useState(true);
   const [pinned, setPinned] = useState(false);
   const [canEdit, setCanEdit] = useState(!isEdit);
+  const [responsesStarted, setResponsesStarted] = useState(false);
   const [loading, setLoading] = useState(isEdit);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const saveVoteMutation = useMutation(saveScheduleVoteMutationOptions(clubId, voteId));
-  const resolvedBasePath = basePath ?? `/clubs/${clubId}/more/polls`;
+  const resolvedBasePath = basePath ?? `/clubs/${clubId}/schedule`;
   const backHref = isEdit && voteId ? `${resolvedBasePath}/${voteId}` : resolvedBasePath;
 
   const loadDetail = useEffectEvent(async () => {
@@ -76,6 +77,7 @@ export function ClubScheduleVoteEditorClient({
       setPostToCalendar(payload.postedToCalendar);
       setPinned(payload.pinned);
       setCanEdit(payload.canEdit);
+      setResponsesStarted(payload.totalResponses > 0);
     } catch {
       setLoading(false);
       setError("투표 정보를 불러오지 못했습니다.");
@@ -148,7 +150,7 @@ export function ClubScheduleVoteEditorClient({
   };
 
   const optionCountLabel = `${options.length}/8`;
-  const addOptionDisabled = options.length >= 8;
+  const addOptionDisabled = responsesStarted || options.length >= 8;
   const pageClassName = isModal
     ? "flex min-h-0 flex-1 flex-col font-display text-slate-900"
     : "bg-[var(--background-light)] font-display text-slate-900";
@@ -168,27 +170,31 @@ export function ClubScheduleVoteEditorClient({
           title={isEdit ? "투표 수정" : "투표 생성"}
           subtitle={helperClubName}
           icon={isEdit ? "edit_note" : "ballot"}
-          containerClassName="max-w-md"
+          layout={isModal ? "modal" : "page"}
+          containerClassName={isModal ? undefined : "max-w-md"}
           leftSlot={
-            isModal && onRequestClose ? (
-              <button
-                type="button"
-                onClick={onRequestClose}
-                className="semo-icon-control text-gray-600"
-                aria-label="투표 작성 닫기"
-              >
-                <span className="material-symbols-outlined">arrow_back</span>
-              </button>
-            ) : (
+            !isModal ? (
               <RouterLink
                 href={backHref}
                 replace={isModal}
                 className="p-1 text-gray-600"
                 aria-label="투표로 돌아가기"
               >
-                <span className="material-symbols-outlined">arrow_back</span>
+                <span className="material-symbols-outlined" aria-hidden="true">arrow_back</span>
               </RouterLink>
-            )
+            ) : undefined
+          }
+          rightSlot={
+            isModal && onRequestClose ? (
+              <button
+                type="button"
+                onClick={onRequestClose}
+                className="semo-icon-control text-gray-600 transition-colors hover:bg-gray-100"
+                aria-label="투표 작성 닫기"
+              >
+                <span className="material-symbols-outlined" aria-hidden="true">close</span>
+              </button>
+            ) : undefined
           }
         />
 
@@ -196,8 +202,6 @@ export function ClubScheduleVoteEditorClient({
           className={`bg-white p-4 ${isModal ? "flex-1 overflow-y-auto pb-24" : "semo-nav-bottom-space"}`}
         >
           <form id={formId} className="space-y-8" onSubmit={handleSubmit}>
-            <p className="text-xs font-medium text-gray-400">{helperClubName}</p>
-
             <section>
               <label className="mb-2 block text-sm font-semibold text-gray-700" htmlFor={`${formId}-vote-title`}>
                 1단계. 투표 제목
@@ -262,6 +266,12 @@ export function ClubScheduleVoteEditorClient({
                 <span className="text-xs text-gray-400">{optionCountLabel}</span>
               </div>
 
+              {responsesStarted ? (
+                <div className="mb-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-5 text-amber-800">
+                  응답이 시작되어 선택지는 잠겨 있습니다. 제목과 투표 기간은 계속 수정할 수 있습니다.
+                </div>
+              ) : null}
+
               <div className="space-y-3">
                 {options.map((option, index) => (
                   <div key={`option-${index + 1}`} className="flex items-center gap-2">
@@ -269,6 +279,7 @@ export function ClubScheduleVoteEditorClient({
                       aria-label={`투표 항목 ${index + 1}`}
                       value={option}
                       onChange={(event) => updateOption(index, event.target.value)}
+                      disabled={responsesStarted}
                       className="h-11 flex-1 rounded-lg border border-gray-300 px-4 text-sm shadow-sm outline-none transition focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/20"
                       placeholder="항목 내용을 입력하세요"
                       required={index < 2}
@@ -276,11 +287,11 @@ export function ClubScheduleVoteEditorClient({
                     <button
                       type="button"
                       onClick={() => removeOption(index)}
-                      disabled={options.length <= 2}
+                      disabled={responsesStarted || options.length <= 2}
                       className="p-2 text-gray-400 transition-colors hover:text-rose-500 disabled:cursor-not-allowed disabled:opacity-40"
                       aria-label={`항목 ${index + 1} 삭제`}
                     >
-                      <span className="material-symbols-outlined text-[20px]">close</span>
+                      <span className="material-symbols-outlined text-[20px]" aria-hidden="true">close</span>
                     </button>
                   </div>
                 ))}
@@ -292,7 +303,7 @@ export function ClubScheduleVoteEditorClient({
                 disabled={addOptionDisabled}
                 className="mt-4 flex w-full items-center justify-center gap-1 rounded-lg border-2 border-dashed border-gray-300 py-3 text-sm font-medium text-gray-500 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                <span className="material-symbols-outlined text-[18px]">add</span>
+                <span className="material-symbols-outlined text-[18px]" aria-hidden="true">add</span>
                 항목 추가
               </button>
             </section>
@@ -307,6 +318,7 @@ export function ClubScheduleVoteEditorClient({
                   <label className="relative inline-flex cursor-pointer items-center">
                     <input
                       checked={postToBoard}
+                      aria-label="게시판 공유"
                       className="peer sr-only"
                       type="checkbox"
                       onChange={(event) => setPostToBoard(event.target.checked)}
@@ -323,6 +335,7 @@ export function ClubScheduleVoteEditorClient({
                   <label className="relative inline-flex cursor-pointer items-center">
                     <input
                       checked={postToCalendar}
+                      aria-label="캘린더 공유"
                       className="peer sr-only"
                       type="checkbox"
                       onChange={(event) => setPostToCalendar(event.target.checked)}
@@ -339,6 +352,7 @@ export function ClubScheduleVoteEditorClient({
                   <label className="relative inline-flex cursor-pointer items-center">
                     <input
                       checked={pinned}
+                      aria-label="중요 투표 고정"
                       className="peer sr-only"
                       type="checkbox"
                       onChange={(event) => setPinned(event.target.checked)}

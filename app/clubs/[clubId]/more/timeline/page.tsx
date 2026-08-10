@@ -1,4 +1,4 @@
-import { ClubTimelineFallbackClient } from "./ClubTimelineFallbackClient";
+import { redirect } from "next/navigation";
 
 type ClubTimelinePageProps = {
   params: Promise<{
@@ -8,5 +8,5 @@ type ClubTimelinePageProps = {
 
 export default async function ClubTimelinePage({ params }: ClubTimelinePageProps) {
   const { clubId } = await params;
-  return <ClubTimelineFallbackClient clubId={clubId} />;
+  redirect(`/clubs/${clubId}/profile/activity`);
 }

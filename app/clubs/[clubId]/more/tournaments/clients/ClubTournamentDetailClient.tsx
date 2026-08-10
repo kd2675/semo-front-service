@@ -130,24 +130,26 @@ export function ClubTournamentDetailClient({
           title="대회 상세"
           subtitle={payload.clubName}
           icon="emoji_events"
-          leftSlot={isModal && onRequestClose ? (
+          layout={isModal ? "modal" : "page"}
+          leftSlot={!isModal ? (
+            <RouterLink
+              href={fallbackBasePath}
+              className="rounded-full p-2 transition-colors hover:bg-slate-100"
+              aria-label="대회 목록으로 돌아가기"
+            >
+              <span className="material-symbols-outlined text-[24px]" aria-hidden="true">arrow_back</span>
+            </RouterLink>
+          ) : undefined}
+          rightSlot={isModal && onRequestClose ? (
             <button
               type="button"
               onClick={onRequestClose}
               className="semo-icon-control transition-colors hover:bg-slate-100"
               aria-label="대회 상세 닫기"
             >
-              <span className="material-symbols-outlined text-[24px]">close</span>
+              <span className="material-symbols-outlined text-[24px]" aria-hidden="true">close</span>
             </button>
-          ) : (
-            <RouterLink
-              href={fallbackBasePath}
-              className="rounded-full p-2 transition-colors hover:bg-slate-100"
-              aria-label="대회 목록으로 돌아가기"
-            >
-              <span className="material-symbols-outlined text-[24px]">arrow_back</span>
-            </RouterLink>
-          )}
+          ) : undefined}
         />
 
         <main className={`flex-1 ${isModal ? "overflow-y-auto" : "semo-nav-bottom-space"} px-4 pb-24 pt-5`}>
@@ -164,8 +166,8 @@ export function ClubTournamentDetailClient({
             className="overflow-hidden rounded-[30px] bg-[linear-gradient(135deg,#e9f0ff_0%,#ffffff_55%,#f2f6ff_100%)] p-6 shadow-[0_18px_50px_rgba(0,75,202,0.12)] ring-1 ring-sky-100"
             {...staggeredFadeUpMotion(2, reduceMotion)}
           >
-            <div className="flex items-start justify-between gap-4">
-              <div className="max-w-[72%]">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+              <div className="min-w-0 sm:max-w-[72%]">
                 <div className="mb-3 flex flex-wrap gap-2">
                   <span className="rounded-full bg-[var(--primary)] px-3 py-1 text-xs font-black text-white">대회</span>
                   <span className={`rounded-full px-3 py-1 text-xs font-black ${approvalBadgeClassName}`}>
@@ -188,13 +190,13 @@ export function ClubTournamentDetailClient({
                   ))}
                 </div>
 
-                <h2 className="text-3xl font-black tracking-tight text-slate-900">{payload.title}</h2>
+                <h2 className="text-2xl font-black tracking-tight text-slate-900 sm:text-3xl">{payload.title}</h2>
                 <p className="mt-3 text-sm leading-6 text-slate-600">
                   {payload.summaryText ?? payload.detailText ?? "대회 소개가 아직 등록되지 않았습니다."}
                 </p>
               </div>
 
-              <div className="rounded-[22px] bg-white/80 px-4 py-3 text-right shadow-sm">
+              <div className="w-full rounded-[22px] bg-white/80 px-4 py-3 text-left shadow-sm sm:w-auto sm:text-right">
                 <p className="text-xs font-black text-slate-400">기간</p>
                 <p className="mt-1 text-lg font-black text-slate-900">{payload.tournamentPeriodLabel}</p>
               </div>
