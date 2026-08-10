@@ -266,10 +266,6 @@ export type UpdateClubMemberPositionsRequest = {
   clubPositionIds: number[];
 };
 
-export function getClubJoinRequestInbox(clubId: ClubId) {
-  return getJson<ClubJoinRequestInboxResponse>(`/api/semo/v1/clubs/${clubId}/more/join-requests`);
-}
-
 export function getClubAdminMembers(clubId: ClubId) {
   return getJson<ClubAdminMembersResponse>(`/api/semo/v1/clubs/${clubId}/admin/members`);
 }

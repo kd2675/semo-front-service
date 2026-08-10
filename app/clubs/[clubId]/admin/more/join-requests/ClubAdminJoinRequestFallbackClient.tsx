@@ -54,7 +54,6 @@ export function ClubAdminJoinRequestFallbackClient({
     <ClubJoinRequestInboxClient
       clubId={clubId}
       initialData={joinRequestInbox}
-      mode="admin"
     />
   );
 }

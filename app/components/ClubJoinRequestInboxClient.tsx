@@ -1,11 +1,10 @@
 "use client";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { motion, useReducedMotion } from "motion/react";
 import { startTransition, useDeferredValue, useMemo, useState } from "react";
 import type { CSSProperties } from "react";
 import { RouterLink } from "@/app/components/RouterLink";
-import { ClubModeSwitchFab } from "@/app/components/ClubModeSwitchFab";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import { useAppAlert } from "@/app/hooks/useAppAlert";
 import { useAppToast } from "@/app/hooks/useAppToast";
@@ -20,7 +19,6 @@ import { reviewJoinRequestMutationOptions } from "@/app/lib/react-query/members/
 type ClubJoinRequestInboxClientProps = {
   clubId: string;
   initialData: ClubJoinRequestInboxResponse;
-  mode: "user" | "admin";
 };
 
 function isRequestedToday(value: string | null) {
@@ -152,7 +150,6 @@ function JoinRequestCard({
 export function ClubJoinRequestInboxClient({
   clubId,
   initialData,
-  mode,
 }: ClubJoinRequestInboxClientProps) {
   const queryClient = useQueryClient();
   const prefersReducedMotion = useReducedMotion();
@@ -163,8 +160,6 @@ export function ClubJoinRequestInboxClient({
   const deferredQuery = useDeferredValue(query.trim().toLowerCase());
   const { showToast } = useAppToast();
   const { showAlert } = useAppAlert();
-  const isAdminMode = mode === "admin";
-  const isAdminUser = initialData.admin;
   const reviewJoinRequestMutation = useMutation(reviewJoinRequestMutationOptions(clubId));
 
   const filteredRequests = useMemo(() => {
@@ -189,10 +184,6 @@ export function ClubJoinRequestInboxClient({
     item: ClubJoinRequestInboxItem,
     requestStatus: "APPROVED" | "REJECTED",
   ) => {
-    if (!isAdminMode) {
-      return;
-    }
-
     setReviewingJoinRequestId(item.clubJoinRequestId);
     const result = await reviewJoinRequestMutation.mutateAsync({
       clubJoinRequestId: item.clubJoinRequestId,
@@ -221,13 +212,11 @@ export function ClubJoinRequestInboxClient({
     );
   };
 
-  const primaryColor = isAdminMode ? "#ec5b13" : "#135bec";
-  const secondaryColor = isAdminMode ? "#135bec" : "#0f766e";
-  const outerClassName = isAdminMode ? "bg-[#f8f6f6]" : "bg-[#f6f8ff]";
-  const containerClassName = isAdminMode ? "max-w-5xl" : "max-w-md";
-  const accentClassName = isAdminMode
-    ? "bg-orange-50 text-[#ec5b13]"
-    : "bg-blue-50 text-[#135bec]";
+  const primaryColor = "#ec5b13";
+  const secondaryColor = "#135bec";
+  const outerClassName = "bg-[#f8f6f6]";
+  const containerClassName = "max-w-5xl";
+  const accentClassName = "bg-orange-50 text-[#ec5b13]";
 
   return (
     <div
@@ -236,26 +225,22 @@ export function ClubJoinRequestInboxClient({
         {
           "--primary": primaryColor,
           "--secondary": secondaryColor,
-          "--background-light": isAdminMode ? "#f8f6f6" : "#f6f8ff",
+          "--background-light": "#f8f6f6",
         } as CSSProperties
       }
     >
       <div className={`mx-auto min-h-full ${containerClassName} ${outerClassName}`}>
         <ClubPageHeader
-          title={isAdminMode ? "신규가입 운영" : "신규가입"}
+          title="신규가입 운영"
           subtitle={initialData.clubName}
           icon="group_add"
-          theme={isAdminMode ? "admin" : "user"}
+          theme="admin"
           containerClassName={containerClassName}
         />
 
         <main className="semo-nav-bottom-space space-y-4 px-4 pt-4">
           <motion.section
-            className={`relative overflow-hidden rounded-[32px] border p-5 shadow-[0_24px_60px_rgba(15,23,42,0.12)] ${
-              isAdminMode
-                ? "border-[#ec5b13]/10 bg-[linear-gradient(160deg,rgba(255,255,255,0.96)_0%,rgba(255,246,240,0.96)_54%,rgba(255,235,223,0.9)_100%)]"
-                : "border-[#135bec]/10 bg-[linear-gradient(160deg,rgba(255,255,255,0.96)_0%,rgba(244,248,255,0.96)_54%,rgba(231,240,255,0.92)_100%)]"
-            }`}
+            className="relative overflow-hidden rounded-[32px] border border-[#ec5b13]/10 bg-[linear-gradient(160deg,rgba(255,255,255,0.96)_0%,rgba(255,246,240,0.96)_54%,rgba(255,235,223,0.9)_100%)] p-5 shadow-[0_24px_60px_rgba(15,23,42,0.12)]"
             {...staggeredFadeUpMotion(0, reduceMotion)}
           >
             <div
@@ -267,9 +252,9 @@ export function ClubJoinRequestInboxClient({
                 가입 요청
               </p>
               <h2 className="mt-3 text-[28px] font-black tracking-[-0.04em] text-slate-900">
-                {isAdminMode ? "가입 승인 대기열을 운영하고" : "지금 접수된 신규 가입 대기열을"}
+                가입 승인 대기열을 운영하고
                 <br />
-                {isAdminMode ? "가입 이후 운영 동선까지 이어갑니다." : "한 화면에서 빠르게 확인하세요."}
+                가입 이후 운영 동선까지 이어갑니다.
               </h2>
               <p className="mt-3 text-sm leading-6 text-slate-600">
                 가입 신청은 루트 홈에서 그대로 접수하고, 이 화면에서는 현재 대기열과 운영 상태를
@@ -317,21 +302,12 @@ export function ClubJoinRequestInboxClient({
                     : "현재 비어 있는 대기열입니다."}
                 </p>
               </div>
-              {isAdminMode ? (
-                <RouterLink
-                  href={`/clubs/${clubId}/admin/members`}
-                  className="rounded-full bg-slate-100 px-4 py-2 text-xs font-bold text-slate-600 transition hover:bg-slate-200"
-                >
-                  멤버 관리 보기
-                </RouterLink>
-              ) : isAdminUser ? (
-                <RouterLink
-                  href={`/clubs/${clubId}/admin/more/join-requests`}
-                  className="rounded-full bg-[var(--primary)]/10 px-4 py-2 text-xs font-bold text-[var(--primary)] transition hover:bg-[var(--primary)]/20"
-                >
-                  관리자 처리 화면 열기
-                </RouterLink>
-              ) : null}
+              <RouterLink
+                href={`/clubs/${clubId}/admin/members`}
+                className="rounded-full bg-slate-100 px-4 py-2 text-xs font-bold text-slate-600 transition hover:bg-slate-200"
+              >
+                멤버 관리 보기
+              </RouterLink>
             </div>
 
             <label className="mt-4 flex items-center gap-3 rounded-[22px] border border-slate-200 bg-slate-50/90 px-4 py-3 transition focus-within:border-[var(--primary)]/30 focus-within:bg-white">
@@ -362,9 +338,7 @@ export function ClubJoinRequestInboxClient({
                   : "검색 조건에 맞는 가입 신청이 없습니다."}
               </p>
               <p className="mt-2 text-sm leading-6 text-slate-500">
-                {isAdminMode
-                  ? "새 신청이 들어오면 이 화면에서 승인과 반려를 분리해서 처리할 수 있습니다."
-                  : "가입 신청은 루트 홈에서 계속 접수되고, 운영진 승인 전까지 이 대기열에 표시됩니다."}
+                새 신청이 들어오면 이 화면에서 승인과 반려를 분리해서 처리할 수 있습니다.
               </p>
             </motion.section>
           ) : (
@@ -376,27 +350,19 @@ export function ClubJoinRequestInboxClient({
                 >
                   <JoinRequestCard
                     item={item}
-                    canReview={isAdminMode}
+                    canReview
                     reviewing={reviewingJoinRequestId === item.clubJoinRequestId}
                     accentClassName={accentClassName}
                     accentColor={primaryColor}
-                    onReview={
-                      isAdminMode
-                        ? (requestStatus) => {
-                            void handleReview(item, requestStatus);
-                          }
-                        : undefined
-                    }
+                    onReview={(requestStatus) => {
+                      void handleReview(item, requestStatus);
+                    }}
                   />
                 </motion.div>
               ))}
             </section>
           )}
         </main>
-
-        <AnimatePresence>
-          {!isAdminMode && isAdminUser ? <ClubModeSwitchFab clubId={clubId} mode="user" /> : null}
-        </AnimatePresence>
       </div>
     </div>
   );

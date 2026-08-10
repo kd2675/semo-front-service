@@ -155,6 +155,7 @@ NEXT_PUBLIC_API_URL=http://localhost:8080
   - 기존 링크 호환용이며 내 프로필 활동 내역으로 이동
 - `/clubs/[clubId]/more/todos`
 - `/clubs/[clubId]/more/join-requests`
+  - 기존 링크 호환용이며 클럽 홈으로 이동; 가입 신청 접수·취소 상태는 루트 홈의 클럽 탐색에서 확인
 - `/clubs/[clubId]/more/members`
 - `/clubs/[clubId]/more/finance`
 - `/clubs/[clubId]/more/tournaments`
@@ -192,8 +193,8 @@ NEXT_PUBLIC_API_URL=http://localhost:8080
 ### Home / dashboard
 - 사용자 홈은 위젯 API로 공지, 일정, 투표, 프로필, 출석, 회비, 대회, 대진표 정보를 조합합니다.
 - 관리자 홈은 멤버 수, 승인 대기, 최근 활동, 운영 진입 액션을 보여줍니다.
-- 가입 신청은 루트 홈에서 접수하고, 클럽 내부에서는 `/more/join-requests`와 `/admin/more/join-requests`로 운영/조회 동선을 분리합니다.
-- 레거시 `/admin/join-requests` 경로는 제거했고, 신규가입 관련 내부 동선은 모두 `more/join-requests` 기준으로 통일합니다.
+- 가입 신청 접수·취소와 내 상태 확인은 루트 홈의 클럽 탐색에서 처리합니다. 클럽 내부 대기열은 관리자 canonical 경로인 `/admin/more/join-requests`에서만 운영합니다.
+- 레거시 `/admin/join-requests`와 사용자 대기열 API는 제거했고, `/more/join-requests` 프론트 경로만 기존 링크 호환을 위해 클럽 홈으로 리다이렉트합니다.
 
 ### Board / schedule / poll
 - 게시판 피드에는 공지, 일정, 투표, 대회가 섞여 노출될 수 있습니다.
@@ -210,7 +211,7 @@ NEXT_PUBLIC_API_URL=http://localhost:8080
 - 관리자 기능 설정의 클럽 프리셋은 스포츠·학회·스터디별 기능, 홈 위젯과 위임 직책을 기존 설정에 추가합니다.
 - 같은 화면의 운영 템플릿은 정기 모임, 월 회비, 대회, 신입 모집, 인수인계 업무와 체크리스트를 실제 생성합니다.
 - 회비·정산은 사용자 조회·요청과 관리자 발행·납부·승인 흐름이 분리되며, 승인된 지출/환급 요청은 연결된 지출 장부로 자동 반영됩니다.
-- 신규가입은 사용자 `/more/join-requests`에서 현재 대기열을 보고, 관리자 `/admin/more/join-requests`에서 승인/반려를 처리합니다.
+- 신규가입 신청자는 루트 홈에서 본인 상태를 확인하고, 관리자는 `/admin/more/join-requests`에서 전체 대기열의 승인/반려를 처리합니다.
 - 회원 디렉터리는 사용자 `/more/members`에서 다른 회원을 보고, 관리자 `/admin/more/members`에서 직책/한줄소개/최근 활동 노출 여부를 설정합니다.
 - 직책관리는 `ADMIN_ONLY` 기능으로, 직책 생성/수정/삭제와 멤버 할당 화면이 따로 있습니다. 직책 변경 이력은 감사 기록이므로 삭제할 수 없습니다.
 - 피드백은 기본 비공개이며 익명 제출자의 신원은 관리자에게도 노출하지 않습니다.

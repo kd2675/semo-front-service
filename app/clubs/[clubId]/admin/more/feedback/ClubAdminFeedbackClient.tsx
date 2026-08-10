@@ -368,39 +368,57 @@ export function ClubAdminFeedbackClient({
                     canDelete={selectedDetail.canManage}
                     theme="admin"
                   />
-                  <div className="grid grid-cols-2 gap-3">
-                    <label className="space-y-2">
-                      <span className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <fieldset className="space-y-2">
+                      <legend className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
                         분류
-                      </span>
-                      <select
-                        value={feedbackType}
-                        onChange={(event) => setFeedbackType(event.target.value)}
-                        className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-[#ec5b13] focus:ring-2 focus:ring-[#ec5b13]/10"
-                      >
-                        {FEEDBACK_TYPE_OPTIONS.map((option) => (
-                          <option key={option.value} value={option.value}>
-                            {option.label}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                    <label className="space-y-2">
-                      <span className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
+                      </legend>
+                      <div className="grid grid-cols-3 gap-2" aria-label="피드백 분류">
+                        {FEEDBACK_TYPE_OPTIONS.map((option) => {
+                          const selected = feedbackType === option.value;
+                          return (
+                            <button
+                              key={option.value}
+                              type="button"
+                              aria-pressed={selected}
+                              onClick={() => setFeedbackType(option.value)}
+                              className={`semo-control min-w-0 px-2 text-xs font-bold transition ${
+                                selected
+                                  ? "bg-[#ec5b13] text-white shadow-sm"
+                                  : "border border-slate-200 bg-white text-slate-600 hover:border-[#ec5b13]/40 hover:bg-orange-50"
+                              }`}
+                            >
+                              {option.label}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </fieldset>
+                    <fieldset className="space-y-2">
+                      <legend className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
                         상태
-                      </span>
-                      <select
-                        value={statusCode}
-                        onChange={(event) => setStatusCode(event.target.value)}
-                        className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-[#ec5b13] focus:ring-2 focus:ring-[#ec5b13]/10"
-                      >
-                        {STATUS_OPTIONS.map((option) => (
-                          <option key={option.value} value={option.value}>
-                            {option.label}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
+                      </legend>
+                      <div className="grid grid-cols-2 gap-2" aria-label="피드백 처리 상태">
+                        {STATUS_OPTIONS.map((option) => {
+                          const selected = statusCode === option.value;
+                          return (
+                            <button
+                              key={option.value}
+                              type="button"
+                              aria-pressed={selected}
+                              onClick={() => setStatusCode(option.value)}
+                              className={`semo-control px-3 text-xs font-bold transition ${
+                                selected
+                                  ? "bg-slate-900 text-white shadow-sm"
+                                  : "border border-slate-200 bg-white text-slate-600 hover:border-slate-400 hover:bg-slate-50"
+                              }`}
+                            >
+                              {option.label}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </fieldset>
                   </div>
 
                   <label className="space-y-2">

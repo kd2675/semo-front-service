@@ -1,6 +1,5 @@
 import { queryOptions } from "@tanstack/react-query";
 import {
-  getClubJoinRequestInbox,
   getClubAdminJoinRequestInbox,
   getClubAdminMemberDirectorySettings,
   getClubAdminMembers,
@@ -10,7 +9,6 @@ import { requireApiData } from "@/app/lib/queryUtils";
 
 export const memberQueryKeys = {
   adminMembers: (clubId: string) => ["semo", "clubs", clubId, "admin-members"] as const,
-  joinRequestInbox: (clubId: string) => ["semo", "clubs", clubId, "join-request-inbox"] as const,
   adminJoinRequestInbox: (clubId: string) =>
     ["semo", "clubs", clubId, "admin-join-request-inbox"] as const,
   memberDirectory: (clubId: string) =>
@@ -24,14 +22,6 @@ export function adminMembersQueryOptions(clubId: string) {
     queryKey: memberQueryKeys.adminMembers(clubId),
     queryFn: async () =>
       requireApiData(await getClubAdminMembers(clubId), "멤버 정보를 불러오지 못했습니다."),
-  });
-}
-
-export function joinRequestInboxQueryOptions(clubId: string) {
-  return queryOptions({
-    queryKey: memberQueryKeys.joinRequestInbox(clubId),
-    queryFn: async () =>
-      requireApiData(await getClubJoinRequestInbox(clubId), "가입 신청 정보를 불러오지 못했습니다."),
   });
 }
 
