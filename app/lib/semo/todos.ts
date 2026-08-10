@@ -2,6 +2,11 @@ import { deleteJson, getJson, postJson, putJson } from "@/app/lib/api";
 
 type ClubId = string | number;
 
+export type TodoAssignee = {
+  clubProfileId: number;
+  displayName: string | null;
+};
+
 export type TodoSummary = {
   todoItemId: number;
   title: string;
@@ -12,11 +17,22 @@ export type TodoSummary = {
   assignmentModeLabel: string;
   statusCode: "OPEN" | "IN_PROGRESS" | "COMPLETED" | "CANCELED" | string;
   statusLabel: string;
+  priorityCode: "LOW" | "NORMAL" | "HIGH" | "URGENT" | string;
+  priorityLabel: string;
   dueAt: string | null;
   dueAtLabel: string | null;
+  workStartAt: string | null;
+  workEndAt: string | null;
+  workTimeLabel: string | null;
   overdue: boolean;
   assignedClubProfileId: number | null;
   assignedDisplayName: string | null;
+  assignees: TodoAssignee[];
+  assigneeCount: number;
+  recruitmentCapacity: number;
+  recruitmentFull: boolean;
+  linkedScheduleEventId: number | null;
+  linkedScheduleTitle: string | null;
   createdByDisplayName: string | null;
   completedByDisplayName: string | null;
   completedAt: string | null;
@@ -70,6 +86,7 @@ export type ClubAdminTodoResponse = {
   pendingApplicationCount: number;
   overdueCount: number;
   availableMembers: TodoMemberOption[];
+  scheduleOptions: TodoScheduleOption[];
   items: TodoSummary[];
   nextCursorTodoItemId: number | null;
   hasNext: boolean;
@@ -81,7 +98,13 @@ export type CreateClubTodoRequest = {
   todoType: "VOLUNTEER" | "OPERATIONS" | string;
   assignmentMode: "DIRECT_ASSIGN" | "OPEN_SUPPORT" | string;
   assignedClubProfileId?: number | null;
+  assignedClubProfileIds?: number[] | null;
+  priorityCode?: "LOW" | "NORMAL" | "HIGH" | "URGENT" | string;
+  recruitmentCapacity?: number | null;
   dueAt?: string | null;
+  workStartAt?: string | null;
+  workEndAt?: string | null;
+  linkedScheduleEventId?: number | null;
 };
 
 export type UpdateClubTodoRequest = CreateClubTodoRequest;
@@ -123,10 +146,50 @@ export type TodoItemApplicationsResponse = {
   statusLabel: string;
   assignedClubProfileId: number | null;
   assignedDisplayName: string | null;
+  assignees: TodoAssignee[];
+  recruitmentCapacity: number;
   applicationCount: number;
   pendingApplicationCount: number;
   canReview: boolean;
   applications: TodoItemApplicationSummary[];
+};
+
+export type TodoScheduleOption = {
+  eventId: number;
+  title: string;
+  startAt: string;
+  startAtLabel: string;
+};
+
+export type TodoChecklistItem = {
+  todoChecklistItemId: number;
+  content: string;
+  sortOrder: number;
+  completed: boolean;
+  completedByClubProfileId: number | null;
+  completedByDisplayName: string | null;
+  completedAt: string | null;
+};
+
+export type TodoComment = {
+  todoCommentId: number;
+  authorClubProfileId: number;
+  authorDisplayName: string | null;
+  content: string;
+  createdAt: string;
+  mine: boolean;
+  canDelete: boolean;
+};
+
+export type TodoCollaborationResponse = {
+  todoItemId: number;
+  title: string;
+  canManageChecklist: boolean;
+  canComment: boolean;
+  completedChecklistCount: number;
+  totalChecklistCount: number;
+  checklistItems: TodoChecklistItem[];
+  comments: TodoComment[];
 };
 
 export type TodoActionResponse = {
@@ -160,6 +223,58 @@ export function cancelMyClubTodoApplication(clubId: ClubId, todoItemId: string |
 
 export function completeClubTodo(clubId: ClubId, todoItemId: string | number) {
   return postJson<TodoActionResponse>(`/api/semo/v1/clubs/${clubId}/more/todos/${todoItemId}/complete`, undefined);
+}
+
+export function getTodoCollaboration(clubId: ClubId, todoItemId: string | number) {
+  return getJson<TodoCollaborationResponse>(
+    `/api/semo/v1/clubs/${clubId}/more/todos/${todoItemId}/collaboration`,
+  );
+}
+
+export function addTodoChecklistItem(clubId: ClubId, todoItemId: string | number, content: string) {
+  return postJson<TodoChecklistItem>(
+    `/api/semo/v1/clubs/${clubId}/more/todos/${todoItemId}/checklist`,
+    { content },
+  );
+}
+
+export function updateTodoChecklistItem(
+  clubId: ClubId,
+  todoItemId: string | number,
+  todoChecklistItemId: string | number,
+  request: { content: string; completed: boolean },
+) {
+  return putJson<TodoChecklistItem>(
+    `/api/semo/v1/clubs/${clubId}/more/todos/${todoItemId}/checklist/${todoChecklistItemId}`,
+    request,
+  );
+}
+
+export function deleteTodoChecklistItem(
+  clubId: ClubId,
+  todoItemId: string | number,
+  todoChecklistItemId: string | number,
+) {
+  return deleteJson<void>(
+    `/api/semo/v1/clubs/${clubId}/more/todos/${todoItemId}/checklist/${todoChecklistItemId}`,
+  );
+}
+
+export function addTodoComment(clubId: ClubId, todoItemId: string | number, content: string) {
+  return postJson<TodoComment>(
+    `/api/semo/v1/clubs/${clubId}/more/todos/${todoItemId}/comments`,
+    { content },
+  );
+}
+
+export function deleteTodoComment(
+  clubId: ClubId,
+  todoItemId: string | number,
+  todoCommentId: string | number,
+) {
+  return deleteJson<void>(
+    `/api/semo/v1/clubs/${clubId}/more/todos/${todoItemId}/comments/${todoCommentId}`,
+  );
 }
 
 export function getClubAdminTodos(
