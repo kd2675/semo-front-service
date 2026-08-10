@@ -5,6 +5,8 @@ import {
   getClubAdminFinanceObligationDetail,
   getClubAdminFinanceObligations,
   getClubAdminFinanceRequests,
+  getClubFinanceOperations,
+  getClubFinanceExpenseRevisions,
   getClubFinance,
   getClubFinanceRequests,
 } from "@/app/lib/clubs";
@@ -14,6 +16,8 @@ export const financeQueryKeys = {
   financeHome: (clubId: string) => ["semo", "clubs", clubId, "finance"] as const,
   financeRequests: (clubId: string) => ["semo", "clubs", clubId, "finance-requests"] as const,
   adminFinanceHome: (clubId: string) => ["semo", "clubs", clubId, "admin-finance-home"] as const,
+  adminFinanceOperations: (clubId: string) =>
+    ["semo", "clubs", clubId, "admin-finance-operations"] as const,
   adminFinanceRequests: (clubId: string) =>
     ["semo", "clubs", clubId, "admin-finance-requests"] as const,
   adminFinanceExpenses: (clubId: string) =>
@@ -29,6 +33,8 @@ export const financeQueryKeys = {
   ) => ["semo", "clubs", clubId, "admin-finance-obligations", options] as const,
   adminFinanceObligationDetail: (clubId: string, obligationId: number) =>
     ["semo", "clubs", clubId, "admin-finance-obligation-detail", obligationId] as const,
+  adminFinanceExpenseRevisions: (clubId: string, expenseId: number) =>
+    ["semo", "clubs", clubId, "admin-finance-expense-revisions", expenseId] as const,
 };
 
 export function financeHomeQueryOptions(clubId: string) {
@@ -55,6 +61,17 @@ export function adminFinanceHomeQueryOptions(clubId: string) {
     queryKey: financeQueryKeys.adminFinanceHome(clubId),
     queryFn: async () =>
       requireApiData(await getClubAdminFinance(clubId), "운영 재정을 불러오지 못했습니다."),
+  });
+}
+
+export function adminFinanceOperationsQueryOptions(clubId: string) {
+  return queryOptions({
+    queryKey: financeQueryKeys.adminFinanceOperations(clubId),
+    queryFn: async () =>
+      requireApiData(
+        await getClubFinanceOperations(clubId),
+        "재정 운영 설정을 불러오지 못했습니다.",
+      ),
   });
 }
 
@@ -108,6 +125,17 @@ export function adminFinanceObligationDetailQueryOptions(clubId: string, obligat
       requireApiData(
         await getClubAdminFinanceObligationDetail(clubId, obligationId),
         "재정 상세를 불러오지 못했습니다.",
+      ),
+  });
+}
+
+export function adminFinanceExpenseRevisionsQueryOptions(clubId: string, expenseId: number) {
+  return queryOptions({
+    queryKey: financeQueryKeys.adminFinanceExpenseRevisions(clubId, expenseId),
+    queryFn: async () =>
+      requireApiData(
+        await getClubFinanceExpenseRevisions(clubId, expenseId),
+        "지출 정정 이력을 불러오지 못했습니다.",
       ),
   });
 }

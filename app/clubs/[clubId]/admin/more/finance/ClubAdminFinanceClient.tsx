@@ -21,21 +21,35 @@ import {
   type ClubAdminFinanceObligationFeedResponse,
   type ClubFinanceExpenseFeedResponse,
   type ClubFinanceMemberOption,
+  type ClubFinanceOperationsResponse,
   type ClubFinanceRequestFeedResponse,
+  type CreateFinancePeriodRequest,
+  exportClubFinanceCsv,
+  type FinanceAccount,
+  type FinancePeriod,
+  type UpsertFinanceAccountRequest,
+  type UpsertFinanceBudgetRequest,
 } from "@/app/lib/clubs";
 import { FAB_RIGHT_OFFSET_CLASS_NAME, getActionFabBottomClass } from "@/app/lib/fab";
 import { staggeredFadeUpMotion } from "@/app/lib/motion";
 import { invalidateClubQueries } from "@/app/lib/react-query/common";
 import {
   createAdminFinanceExpenseMutationOptions,
+  closeFinancePeriodMutationOptions,
+  createFinanceAccountMutationOptions,
   createFinanceObligationMutationOptions,
+  createFinancePeriodMutationOptions,
+  deactivateFinanceAccountMutationOptions,
   deleteFinanceObligationMutationOptions,
   reviewFinanceRequestMutationOptions,
+  updateFinanceAccountMutationOptions,
   updateFinancePaymentStatusMutationOptions,
+  upsertFinanceBudgetMutationOptions,
 } from "@/app/lib/react-query/finance/mutations";
 import {
   adminFinanceExpensesQueryOptions,
   adminFinanceHomeQueryOptions,
+  adminFinanceOperationsQueryOptions,
   adminFinanceObligationDetailQueryOptions,
   adminFinanceObligationsQueryOptions,
   adminFinanceRequestsQueryOptions,
@@ -46,7 +60,11 @@ import {
   DashboardTabPanel,
   ExpenseEntryModal,
   ExpensesTabPanel,
+  FinanceAccountEditorModal,
   FinanceActionSheetModal,
+  FinanceBudgetEditorModal,
+  FinanceOperationsPanel,
+  FinancePeriodEditorModal,
   MetricCard,
   ObligationDetailModal,
   PermissionChip,
@@ -56,6 +74,7 @@ import {
 type ClubAdminFinanceClientProps = {
   clubId: string;
   initialData: ClubAdminFinanceHomeResponse;
+  initialOperations: ClubFinanceOperationsResponse;
   initialObligationFeed: ClubAdminFinanceObligationFeedResponse;
   initialRequestFeed: ClubFinanceRequestFeedResponse;
   initialExpenseFeed: ClubFinanceExpenseFeedResponse;
@@ -63,13 +82,14 @@ type ClubAdminFinanceClientProps = {
 
 type ObligationFilter = "ALL" | "OPEN" | "SETTLED";
 type TargetScope = "ALL_ACTIVE_MEMBERS" | "SELECTED_MEMBERS";
-type AdminFinanceTabKey = "DASHBOARD" | "BILLING" | "EXPENSES" | "SETTLEMENTS";
+type AdminFinanceTabKey = "DASHBOARD" | "BILLING" | "EXPENSES" | "SETTLEMENTS" | "OPERATIONS";
 
 const ADMIN_FINANCE_TABS: Array<{ key: AdminFinanceTabKey; label: string }> = [
   { key: "DASHBOARD", label: "재정 대시보드" },
   { key: "BILLING", label: "회비 관리" },
   { key: "EXPENSES", label: "지출 관리" },
   { key: "SETTLEMENTS", label: "정산 관리" },
+  { key: "OPERATIONS", label: "예산·마감" },
 ];
 
 function combineDateTimeValue(dateValue: string, timeValue: string) {
@@ -91,6 +111,7 @@ function mergeObligationSummary(
 export function ClubAdminFinanceClient({
   clubId,
   initialData,
+  initialOperations,
   initialObligationFeed,
   initialRequestFeed,
   initialExpenseFeed,
@@ -99,6 +120,7 @@ export function ClubAdminFinanceClient({
   const prefersReducedMotion = useReducedMotion();
   const reduceMotion = Boolean(prefersReducedMotion);
   const [finance, setFinance] = useState(initialData);
+  const [operations, setOperations] = useState(initialOperations);
   const [obligations, setObligations] = useState(initialObligationFeed.items);
   const [requests, setRequests] = useState(initialRequestFeed.items);
   const [expenses, setExpenses] = useState(initialExpenseFeed.items);
@@ -118,6 +140,10 @@ export function ClubAdminFinanceClient({
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showActionSheet, setShowActionSheet] = useState(false);
   const [showExpenseModal, setShowExpenseModal] = useState(false);
+  const [accountEditor, setAccountEditor] = useState<FinanceAccount | null | undefined>(undefined);
+  const [showPeriodEditor, setShowPeriodEditor] = useState(false);
+  const [budgetPeriod, setBudgetPeriod] = useState<FinancePeriod | null>(null);
+  const [operationsBusyKey, setOperationsBusyKey] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<AdminFinanceTabKey>("DASHBOARD");
   const [title, setTitle] = useState("");
   const [amount, setAmount] = useState("5000");
@@ -150,6 +176,12 @@ export function ClubAdminFinanceClient({
   const updatePaymentStatusMutation = useMutation(updateFinancePaymentStatusMutationOptions(clubId));
   const deleteObligationMutation = useMutation(deleteFinanceObligationMutationOptions(clubId));
   const reviewFinanceRequestMutation = useMutation(reviewFinanceRequestMutationOptions(clubId));
+  const createAccountMutation = useMutation(createFinanceAccountMutationOptions(clubId));
+  const updateAccountMutation = useMutation(updateFinanceAccountMutationOptions(clubId));
+  const deactivateAccountMutation = useMutation(deactivateFinanceAccountMutationOptions(clubId));
+  const createPeriodMutation = useMutation(createFinancePeriodMutationOptions(clubId));
+  const upsertBudgetMutation = useMutation(upsertFinanceBudgetMutationOptions(clubId));
+  const closePeriodMutation = useMutation(closeFinancePeriodMutationOptions(clubId));
   const loadingMoreRef = useRef(false);
   const didMountFilterRef = useRef(false);
 
@@ -210,6 +242,17 @@ export function ClubAdminFinanceClient({
       return data;
     } catch {
       showToast("재정 요청 목록을 다시 불러오지 못했습니다.", "error");
+      return null;
+    }
+  };
+
+  const reloadOperations = async () => {
+    try {
+      const data = await queryClient.fetchQuery(adminFinanceOperationsQueryOptions(clubId));
+      startTransition(() => setOperations(data));
+      return data;
+    } catch {
+      showToast("예산과 재정 기간 정보를 다시 불러오지 못했습니다.", "error");
       return null;
     }
   };
@@ -558,6 +601,107 @@ export function ClubAdminFinanceClient({
     );
   };
 
+  const handleSaveAccount = async (request: UpsertFinanceAccountRequest) => {
+    if (!request.displayName || operationsBusyKey) {
+      showToast("계좌·결제수단 이름을 입력해주세요.", "error");
+      return;
+    }
+    const editingAccount = accountEditor ?? null;
+    setOperationsBusyKey("account:save");
+    const result = editingAccount
+      ? await updateAccountMutation.mutateAsync({ financeAccountId: editingAccount.financeAccountId, request })
+      : await createAccountMutation.mutateAsync(request);
+    setOperationsBusyKey(null);
+    if (!result.ok) {
+      showToast(result.message ?? "계좌·결제수단을 저장하지 못했습니다.", "error");
+      return;
+    }
+    if (!(await reloadOperations())) return;
+    setAccountEditor(undefined);
+    showToast("계좌·결제수단을 저장했습니다.", "success");
+  };
+
+  const handleDeactivateAccount = async (account: FinanceAccount) => {
+    if (operationsBusyKey) return;
+    setOperationsBusyKey(`account:${account.financeAccountId}`);
+    const result = await deactivateAccountMutation.mutateAsync(account.financeAccountId);
+    setOperationsBusyKey(null);
+    if (!result.ok) {
+      showToast(result.message ?? "계좌·결제수단을 비활성화하지 못했습니다.", "error");
+      return;
+    }
+    if (!(await reloadOperations())) return;
+    showToast(`${account.displayName}을 비활성화했습니다.`, "success");
+  };
+
+  const handleCreatePeriod = async (request: CreateFinancePeriodRequest) => {
+    if (!request.title || !request.startDate || !request.endDate || operationsBusyKey) {
+      showToast("기간 이름과 시작일, 종료일을 모두 입력해주세요.", "error");
+      return;
+    }
+    if (request.startDate > request.endDate) {
+      showToast("종료일은 시작일보다 빠를 수 없습니다.", "error");
+      return;
+    }
+    setOperationsBusyKey("period:create");
+    const result = await createPeriodMutation.mutateAsync(request);
+    setOperationsBusyKey(null);
+    if (!result.ok) {
+      showToast(result.message ?? "재정 기간을 만들지 못했습니다.", "error");
+      return;
+    }
+    if (!(await reloadOperations())) return;
+    setShowPeriodEditor(false);
+    showToast("재정 기간을 만들었습니다.", "success");
+  };
+
+  const handleSaveBudget = async (request: UpsertFinanceBudgetRequest) => {
+    if (!budgetPeriod || !Number.isFinite(request.allocatedAmount) || request.allocatedAmount < 0 || operationsBusyKey) {
+      showToast("예산은 0 이상의 숫자로 입력해주세요.", "error");
+      return;
+    }
+    setOperationsBusyKey(`period:${budgetPeriod.financePeriodId}`);
+    const result = await upsertBudgetMutation.mutateAsync({ financePeriodId: budgetPeriod.financePeriodId, request });
+    setOperationsBusyKey(null);
+    if (!result.ok) {
+      showToast(result.message ?? "예산을 저장하지 못했습니다.", "error");
+      return;
+    }
+    if (!(await reloadOperations())) return;
+    setBudgetPeriod(null);
+    showToast("카테고리 예산을 저장했습니다.", "success");
+  };
+
+  const handleClosePeriod = async (period: FinancePeriod) => {
+    if (operationsBusyKey) return;
+    setOperationsBusyKey(`period:${period.financePeriodId}`);
+    const result = await closePeriodMutation.mutateAsync(period.financePeriodId);
+    setOperationsBusyKey(null);
+    if (!result.ok) {
+      showToast(result.message ?? "재정 기간을 마감하지 못했습니다.", "error");
+      return;
+    }
+    if (!(await reloadOperations())) return;
+    showToast(`${period.title} 기간을 마감했습니다.`, "success");
+  };
+
+  const handleExport = async (financePeriodId: number | null) => {
+    if (operationsBusyKey) return;
+    setOperationsBusyKey(`export:${financePeriodId ?? "all"}`);
+    const result = await exportClubFinanceCsv(clubId, financePeriodId);
+    setOperationsBusyKey(null);
+    if (!result.ok || result.data == null) {
+      showToast(result.message ?? "CSV 파일을 만들지 못했습니다.", "error");
+      return;
+    }
+    const blobUrl = URL.createObjectURL(new Blob([result.data], { type: "text/csv;charset=utf-8" }));
+    const anchor = document.createElement("a");
+    anchor.href = blobUrl;
+    anchor.download = `semo-finance-${financePeriodId ?? "all"}.csv`;
+    anchor.click();
+    URL.revokeObjectURL(blobUrl);
+  };
+
   const toggleSelectedMember = (member: ClubFinanceMemberOption) => {
     startTransition(() => {
       setSelectedMemberIds((current) =>
@@ -699,6 +843,21 @@ export function ClubAdminFinanceClient({
             />
           ) : null}
 
+          {activeTab === "OPERATIONS" ? (
+            <FinanceOperationsPanel
+              operations={operations}
+              reduceMotion={reduceMotion}
+              busyKey={operationsBusyKey}
+              onCreateAccount={() => setAccountEditor(null)}
+              onEditAccount={setAccountEditor}
+              onDeactivateAccount={(account) => void handleDeactivateAccount(account)}
+              onCreatePeriod={() => setShowPeriodEditor(true)}
+              onEditBudget={setBudgetPeriod}
+              onClosePeriod={(period) => void handleClosePeriod(period)}
+              onExport={(financePeriodId) => void handleExport(financePeriodId)}
+            />
+          ) : null}
+
         </main>
 
         {finance.canIssue ? (
@@ -791,6 +950,33 @@ export function ClubAdminFinanceClient({
               onRelatedEventNameChange={setExpenseRelatedEventName}
               onNoteChange={setExpenseNote}
               onCreate={() => void handleCreateExpense()}
+            />
+          ) : null}
+
+
+          {accountEditor !== undefined ? (
+            <FinanceAccountEditorModal
+              account={accountEditor}
+              busy={operationsBusyKey === "account:save"}
+              onClose={() => setAccountEditor(undefined)}
+              onSubmit={(request) => void handleSaveAccount(request)}
+            />
+          ) : null}
+
+          {showPeriodEditor ? (
+            <FinancePeriodEditorModal
+              busy={operationsBusyKey === "period:create"}
+              onClose={() => setShowPeriodEditor(false)}
+              onSubmit={(request) => void handleCreatePeriod(request)}
+            />
+          ) : null}
+
+          {budgetPeriod ? (
+            <FinanceBudgetEditorModal
+              period={budgetPeriod}
+              busy={operationsBusyKey === `period:${budgetPeriod.financePeriodId}`}
+              onClose={() => setBudgetPeriod(null)}
+              onSubmit={(request) => void handleSaveBudget(request)}
             />
           ) : null}
         </AnimatePresence>

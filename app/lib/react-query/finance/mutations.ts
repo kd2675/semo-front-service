@@ -1,11 +1,19 @@
 import { mutationOptions } from "@tanstack/react-query";
 import {
   createClubAdminFinanceExpense,
+  createClubFinanceAccount,
+  createClubFinancePeriod,
   createClubFinanceObligation,
   createClubFinanceRequest,
   deleteClubFinanceObligation,
   reviewClubFinanceRequest,
+  correctClubFinanceExpense,
+  deactivateClubFinanceAccount,
+  closeClubFinancePeriod,
+  upsertClubFinanceBudget,
+  updateClubFinanceAccount,
   updateClubFinancePaymentStatus,
+  voidClubFinanceExpense,
 } from "@/app/lib/clubs";
 
 export function createFinanceRequestMutationOptions(clubId: string) {
@@ -31,13 +39,71 @@ export function createAdminFinanceExpenseMutationOptions(clubId: string) {
 
 export function updateFinancePaymentStatusMutationOptions(clubId: string) {
   return mutationOptions({
-    mutationFn: ({
-      paymentId,
-      paymentStatusCode,
-    }: {
+    mutationFn: ({ paymentId, ...request }: {
       paymentId: number;
-      paymentStatusCode: Parameters<typeof updateClubFinancePaymentStatus>[2]["paymentStatusCode"];
-    }) => updateClubFinancePaymentStatus(clubId, paymentId, { paymentStatusCode }),
+    } & Parameters<typeof updateClubFinancePaymentStatus>[2]) =>
+      updateClubFinancePaymentStatus(clubId, paymentId, request),
+  });
+}
+
+export function createFinanceAccountMutationOptions(clubId: string) {
+  return mutationOptions({
+    mutationFn: (request: Parameters<typeof createClubFinanceAccount>[1]) =>
+      createClubFinanceAccount(clubId, request),
+  });
+}
+
+export function updateFinanceAccountMutationOptions(clubId: string) {
+  return mutationOptions({
+    mutationFn: ({ financeAccountId, request }: {
+      financeAccountId: number;
+      request: Parameters<typeof updateClubFinanceAccount>[2];
+    }) => updateClubFinanceAccount(clubId, financeAccountId, request),
+  });
+}
+
+export function deactivateFinanceAccountMutationOptions(clubId: string) {
+  return mutationOptions({
+    mutationFn: (financeAccountId: number) =>
+      deactivateClubFinanceAccount(clubId, financeAccountId),
+  });
+}
+
+export function createFinancePeriodMutationOptions(clubId: string) {
+  return mutationOptions({
+    mutationFn: (request: Parameters<typeof createClubFinancePeriod>[1]) =>
+      createClubFinancePeriod(clubId, request),
+  });
+}
+
+export function upsertFinanceBudgetMutationOptions(clubId: string) {
+  return mutationOptions({
+    mutationFn: ({ financePeriodId, request }: {
+      financePeriodId: number;
+      request: Parameters<typeof upsertClubFinanceBudget>[2];
+    }) => upsertClubFinanceBudget(clubId, financePeriodId, request),
+  });
+}
+
+export function closeFinancePeriodMutationOptions(clubId: string) {
+  return mutationOptions({
+    mutationFn: (financePeriodId: number) => closeClubFinancePeriod(clubId, financePeriodId),
+  });
+}
+
+export function correctFinanceExpenseMutationOptions(clubId: string) {
+  return mutationOptions({
+    mutationFn: ({ expenseId, request }: {
+      expenseId: number;
+      request: Parameters<typeof correctClubFinanceExpense>[2];
+    }) => correctClubFinanceExpense(clubId, expenseId, request),
+  });
+}
+
+export function voidFinanceExpenseMutationOptions(clubId: string) {
+  return mutationOptions({
+    mutationFn: ({ expenseId, reason }: { expenseId: number; reason: string }) =>
+      voidClubFinanceExpense(clubId, expenseId, reason),
   });
 }
 

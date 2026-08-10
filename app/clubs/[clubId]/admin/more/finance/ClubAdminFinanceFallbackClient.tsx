@@ -7,6 +7,7 @@ import { myClubQueryOptions } from "@/app/lib/react-query/club/queries";
 import {
   adminFinanceExpensesQueryOptions,
   adminFinanceHomeQueryOptions,
+  adminFinanceOperationsQueryOptions,
   adminFinanceObligationsQueryOptions,
   adminFinanceRequestsQueryOptions,
 } from "@/app/lib/react-query/finance/queries";
@@ -18,10 +19,11 @@ type ClubAdminFinanceFallbackClientProps = {
 };
 
 export function ClubAdminFinanceFallbackClient({ clubId }: ClubAdminFinanceFallbackClientProps) {
-  const [clubQuery, financeQuery, obligationFeedQuery, requestFeedQuery, expenseFeedQuery] = useQueries({
+  const [clubQuery, financeQuery, operationsQuery, obligationFeedQuery, requestFeedQuery, expenseFeedQuery] = useQueries({
     queries: [
       myClubQueryOptions(clubId),
       adminFinanceHomeQueryOptions(clubId),
+      adminFinanceOperationsQueryOptions(clubId),
       adminFinanceObligationsQueryOptions(clubId, { size: 10 }),
       adminFinanceRequestsQueryOptions(clubId),
       adminFinanceExpensesQueryOptions(clubId),
@@ -29,6 +31,7 @@ export function ClubAdminFinanceFallbackClient({ clubId }: ClubAdminFinanceFallb
   });
   const club = clubQuery.data ?? null;
   const finance = financeQuery.data ?? null;
+  const operations = operationsQuery.data ?? null;
   const obligationFeed = obligationFeedQuery.data ?? null;
   const requestFeed =
     requestFeedQuery.data && finance
@@ -49,16 +52,18 @@ export function ClubAdminFinanceFallbackClient({ clubId }: ClubAdminFinanceFallb
 
   const error = clubQuery.error
     ?? financeQuery.error
+    ?? operationsQuery.error
     ?? obligationFeedQuery.error
     ?? requestFeedQuery.error
     ?? expenseFeedQuery.error;
   if (
     (clubQuery.isError
       || financeQuery.isError
+      || operationsQuery.isError
       || obligationFeedQuery.isError
       || requestFeedQuery.isError
       || expenseFeedQuery.isError)
-    && (!club || !finance || !obligationFeed || !requestFeed || !expenseFeed)
+    && (!club || !finance || !operations || !obligationFeed || !requestFeed || !expenseFeed)
   ) {
     return (
       <ClubRouteErrorState
@@ -69,6 +74,7 @@ export function ClubAdminFinanceFallbackClient({ clubId }: ClubAdminFinanceFallb
         onRetry={() => void Promise.all([
           clubQuery.refetch(),
           financeQuery.refetch(),
+          operationsQuery.refetch(),
           obligationFeedQuery.refetch(),
           requestFeedQuery.refetch(),
           expenseFeedQuery.refetch(),
@@ -77,7 +83,7 @@ export function ClubAdminFinanceFallbackClient({ clubId }: ClubAdminFinanceFallb
     );
   }
 
-  if (!club || !finance || !obligationFeed || !requestFeed || !expenseFeed) {
+  if (!club || !finance || !operations || !obligationFeed || !requestFeed || !expenseFeed) {
     return <AdminFinanceLoadingShell />;
   }
 
@@ -85,6 +91,7 @@ export function ClubAdminFinanceFallbackClient({ clubId }: ClubAdminFinanceFallb
     <ClubAdminFinanceClient
       clubId={clubId}
       initialData={finance}
+      initialOperations={operations}
       initialObligationFeed={obligationFeed}
       initialRequestFeed={requestFeed}
       initialExpenseFeed={expenseFeed}
