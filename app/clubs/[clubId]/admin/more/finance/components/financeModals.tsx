@@ -288,7 +288,7 @@ export function CreateObligationModal({
                 <div className="rounded-2xl border border-slate-200 bg-white p-4">
                   <p className="text-sm font-semibold text-slate-700">반복 발행</p>
                   <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                    <select value={recurrenceFrequency} onChange={(event) => onRecurrenceFrequencyChange(event.target.value)} className="min-h-12 rounded-2xl border border-slate-200 bg-white px-4 text-sm">
+                    <select aria-label="회비 반복 발행 주기" value={recurrenceFrequency} onChange={(event) => onRecurrenceFrequencyChange(event.target.value)} className="min-h-12 rounded-2xl border border-slate-200 bg-white px-4 text-sm">
                       <option value="NONE">반복하지 않음</option>
                       <option value="MONTHLY">매월</option>
                       <option value="YEARLY">매년</option>

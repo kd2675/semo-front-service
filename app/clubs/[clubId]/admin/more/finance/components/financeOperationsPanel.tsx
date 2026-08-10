@@ -232,9 +232,9 @@ function AccountCard({ account, canManage, busy, onEdit, onDeactivate }: {
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <h4 className="font-bold text-slate-900">{account.displayName}</h4>
-            {!account.active ? <span className="rounded-lg bg-slate-100 px-2 py-1 text-[10px] font-bold text-slate-500">비활성</span> : null}
-            {account.defaultCollection ? <span className="rounded-lg bg-sky-50 px-2 py-1 text-[10px] font-bold text-sky-700">기본 수납</span> : null}
-            {account.defaultExpense ? <span className="rounded-lg bg-amber-50 px-2 py-1 text-[10px] font-bold text-amber-700">기본 지출</span> : null}
+            {!account.active ? <span className="rounded-lg bg-slate-100 px-2 py-1 text-[11px] font-bold text-slate-500">비활성</span> : null}
+            {account.defaultCollection ? <span className="rounded-lg bg-sky-50 px-2 py-1 text-[11px] font-bold text-sky-700">기본 수납</span> : null}
+            {account.defaultExpense ? <span className="rounded-lg bg-amber-50 px-2 py-1 text-[11px] font-bold text-amber-700">기본 지출</span> : null}
           </div>
           <p className="mt-1 text-sm text-slate-500">{[account.providerName, account.maskedIdentifier, account.holderName].filter(Boolean).join(" · ") || account.accountTypeLabel}</p>
           <p className="mt-1 text-xs font-semibold text-slate-400">{account.usageScopeLabel}</p>
