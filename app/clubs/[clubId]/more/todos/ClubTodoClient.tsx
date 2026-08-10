@@ -2,9 +2,12 @@
 
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion, useReducedMotion } from "motion/react";
+import RouterLink from "next/link";
 import { useState } from "react";
+
 import { ClubModeSwitchFab } from "@/app/components/ClubModeSwitchFab";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
+import { TodoCollaborationPanel } from "@/app/components/TodoCollaborationPanel";
 import { useAppToast } from "@/app/hooks/useAppToast";
 import {
   type ClubTodoResponse,
@@ -129,6 +132,7 @@ export function ClubTodoClient({ clubId, initialData, isAdmin }: ClubTodoClientP
           </motion.section>
 
           <TodoSection
+            clubId={clubId}
             title="내 할 일"
             countLabel={`${todoData.myTodos.length}건`}
             emptyMessage="현재 배정된 할 일이 없습니다."
@@ -152,6 +156,7 @@ export function ClubTodoClient({ clubId, initialData, isAdmin }: ClubTodoClientP
           />
 
           <TodoSection
+            clubId={clubId}
             title="신청 가능한 업무"
             countLabel={`${todoData.claimableTodos.length}건`}
             emptyMessage="지금 신청 가능한 업무가 없습니다."
@@ -165,6 +170,7 @@ export function ClubTodoClient({ clubId, initialData, isAdmin }: ClubTodoClientP
           />
 
           <TodoSection
+            clubId={clubId}
             title="최근 완료"
             countLabel={`${todoData.recentCompletedTodos.length}건`}
             emptyMessage="최근 완료한 업무가 없습니다."
@@ -186,6 +192,7 @@ export function ClubTodoClient({ clubId, initialData, isAdmin }: ClubTodoClientP
 }
 
 function TodoSection({
+  clubId,
   title,
   countLabel,
   emptyMessage,
@@ -199,6 +206,7 @@ function TodoSection({
   muted = false,
   footer,
 }: {
+  clubId: string;
   title: string;
   countLabel: string;
   emptyMessage: string;
@@ -244,6 +252,12 @@ function TodoSection({
               <div className="flex flex-wrap items-center gap-2">
                 <Badge tone={item.todoType === "VOLUNTEER" ? "sky" : "slate"} label={item.todoTypeLabel} />
                 <Badge tone={item.assignmentMode === "OPEN_SUPPORT" ? "amber" : "blue"} label={item.assignmentModeLabel} />
+                {item.priorityCode !== "NORMAL" ? (
+                  <Badge
+                    tone={item.priorityCode === "URGENT" ? "rose" : item.priorityCode === "HIGH" ? "amber" : "slate"}
+                    label={item.priorityLabel}
+                  />
+                ) : null}
                 <Badge tone={item.statusCode === "COMPLETED" ? "emerald" : item.overdue ? "rose" : "slate"} label={item.overdue ? "지연" : item.statusLabel} />
                 {item.myApplicationStatusLabel ? (
                   <Badge
@@ -257,11 +271,32 @@ function TodoSection({
                 <p className="mt-2 text-sm leading-6 text-slate-600">{item.description}</p>
               ) : null}
               <div className="mt-4 grid grid-cols-2 gap-3 text-xs text-slate-500">
-                <InfoItem label="담당자" value={item.assignedDisplayName ?? "미배정"} />
+                <InfoItem
+                  label={item.assignmentMode === "OPEN_SUPPORT" ? "선정 인원" : "담당자"}
+                  value={item.assignees.length > 0
+                    ? `${item.assignees.map((assignee) => assignee.displayName ?? "멤버").join(", ")} · ${item.assigneeCount}명`
+                    : item.assignedDisplayName ?? "미배정"}
+                />
                 <InfoItem label="마감일" value={item.dueAtLabel ?? "미정"} />
+                <InfoItem label="업무 시간" value={item.workTimeLabel ?? "미정"} />
                 <InfoItem label="등록자" value={item.createdByDisplayName ?? "미정"} />
-                <InfoItem label="완료 시각" value={item.completedAtLabel ?? "없음"} />
+                <InfoItem
+                  label={item.assignmentMode === "OPEN_SUPPORT" ? "모집 현황" : "완료 시각"}
+                  value={item.assignmentMode === "OPEN_SUPPORT"
+                    ? `${item.assigneeCount}/${item.recruitmentCapacity}명${item.recruitmentFull ? " · 마감" : ""}`
+                    : item.completedAtLabel ?? "없음"}
+                />
               </div>
+              {item.linkedScheduleEventId != null ? (
+                <RouterLink
+                  href={`/clubs/${clubId}/schedule/${item.linkedScheduleEventId}`}
+                  className="mt-4 flex min-h-11 items-center gap-2 rounded-xl bg-[var(--primary)]/8 px-3 text-xs font-bold text-[var(--primary)] transition hover:bg-[var(--primary)]/12 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]/25"
+                >
+                  <span className="material-symbols-outlined text-[18px]" aria-hidden="true">event</span>
+                  <span className="min-w-0 flex-1 truncate">{item.linkedScheduleTitle ?? "연결된 일정"}</span>
+                  <span className="material-symbols-outlined text-[18px]" aria-hidden="true">chevron_right</span>
+                </RouterLink>
+              ) : null}
               {item.canApply || item.canCancelApplication || item.canComplete ? (
                 <div className="mt-4 flex gap-2">
                   {item.canApply ? (
@@ -269,7 +304,7 @@ function TodoSection({
                       type="button"
                       onClick={() => void onApply(item.todoItemId)}
                       disabled={pendingTodoId === item.todoItemId}
-                      className="flex-1 rounded-xl bg-amber-500 px-4 py-3 text-sm font-bold text-white transition hover:bg-amber-600 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500"
+                      className="min-h-11 flex-1 rounded-xl bg-[var(--primary)] px-4 py-3 text-sm font-bold text-white transition hover:brightness-95 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500"
                     >
                       {pendingTodoId === item.todoItemId
                         ? "처리 중..."
@@ -283,7 +318,7 @@ function TodoSection({
                       type="button"
                       onClick={() => void onCancelApplication(item.todoItemId)}
                       disabled={pendingTodoId === item.todoItemId}
-                      className="flex-1 rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
+                      className="min-h-11 flex-1 rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
                     >
                       {pendingTodoId === item.todoItemId ? "처리 중..." : "신청 취소"}
                     </button>
@@ -293,13 +328,19 @@ function TodoSection({
                       type="button"
                       onClick={() => void onComplete(item.todoItemId)}
                       disabled={pendingTodoId === item.todoItemId}
-                      className="flex-1 rounded-xl bg-[var(--primary)] px-4 py-3 text-sm font-bold text-white transition hover:bg-[#135bec]/90 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500"
+                      className="min-h-11 flex-1 rounded-xl bg-[var(--primary)] px-4 py-3 text-sm font-bold text-white transition hover:brightness-95 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500"
                     >
                       {pendingTodoId === item.todoItemId ? "처리 중..." : "완료 처리"}
                     </button>
                   ) : null}
                 </div>
               ) : null}
+              <TodoCollaborationPanel
+                clubId={clubId}
+                todoItemId={item.todoItemId}
+                terminal={item.statusCode === "COMPLETED" || item.statusCode === "CANCELED"}
+                theme="user"
+              />
             </motion.article>
           ))
         )}

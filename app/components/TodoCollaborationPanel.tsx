@@ -140,12 +140,12 @@ export function TodoCollaborationPanel({
                     </p>
                   </div>
                   {collaboration.totalChecklistCount > 0 ? (
-                    <span className="text-xs font-black text-indigo-600">{progress}%</span>
+                    <span className="text-xs font-black text-[var(--primary)]">{progress}%</span>
                   ) : null}
                 </div>
                 {collaboration.totalChecklistCount > 0 ? (
                   <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-slate-200">
-                    <div className="h-full rounded-full bg-indigo-500 transition-[width]" style={{ width: `${progress}%` }} />
+                    <div className="h-full rounded-full bg-[var(--primary)] transition-[width]" style={{ width: `${progress}%` }} />
                   </div>
                 ) : null}
                 <div className="mt-3 space-y-2">
@@ -163,7 +163,7 @@ export function TodoCollaborationPanel({
                           await handleResult(result, item.completed ? "체크를 해제했습니다." : "항목을 완료했습니다.");
                         }}
                         aria-label={`${item.content} ${item.completed ? "완료 해제" : "완료 처리"}`}
-                        className={`flex size-11 shrink-0 items-center justify-center rounded-xl ${item.completed ? "bg-indigo-600 text-white" : "bg-slate-100 text-slate-400"}`}
+                        className={`flex size-11 shrink-0 items-center justify-center rounded-xl ${item.completed ? "bg-[var(--primary)] text-white" : "bg-slate-100 text-slate-400"}`}
                       >
                         <span className="material-symbols-outlined text-[19px]" aria-hidden="true">
                           {item.completed ? "check" : "radio_button_unchecked"}
@@ -206,13 +206,13 @@ export function TodoCollaborationPanel({
                       maxLength={300}
                       placeholder="새 체크리스트 항목"
                       aria-label="새 체크리스트 항목"
-                      className="min-h-11 min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+                      className="min-h-11 min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none transition focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/10"
                     />
                     <button
                       type="button"
                       onClick={() => void addChecklist()}
                       disabled={pending || !newChecklistContent.trim()}
-                      className="min-h-11 shrink-0 rounded-xl bg-indigo-600 px-4 text-xs font-bold text-white disabled:bg-slate-200 disabled:text-slate-400"
+                      className="min-h-11 shrink-0 rounded-xl bg-[var(--primary)] px-4 text-xs font-bold text-white disabled:bg-slate-200 disabled:text-slate-400"
                     >
                       추가
                     </button>
@@ -260,13 +260,13 @@ export function TodoCollaborationPanel({
                       maxLength={2000}
                       placeholder="진행 상황이나 필요한 내용을 공유하세요."
                       aria-label="업무 댓글"
-                      className="w-full rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm leading-6 outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+                      className="w-full rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm leading-6 outline-none transition focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/10"
                     />
                     <button
                       type="button"
                       onClick={() => void addComment()}
                       disabled={pending || !newCommentContent.trim()}
-                      className="mt-2 min-h-11 w-full rounded-xl bg-slate-900 px-4 text-xs font-bold text-white disabled:bg-slate-200 disabled:text-slate-400"
+                      className="mt-2 min-h-11 w-full rounded-xl bg-[var(--primary)] px-4 text-xs font-bold text-white disabled:bg-slate-200 disabled:text-slate-400"
                     >
                       댓글 등록
                     </button>

@@ -33,6 +33,12 @@ export type TodoSummary = {
   recruitmentFull: boolean;
   linkedScheduleEventId: number | null;
   linkedScheduleTitle: string | null;
+  linkedDecisionRecordId: number | null;
+  linkedDecisionTitle: string | null;
+  recurrenceFrequency: "NONE" | "WEEKLY" | "MONTHLY" | string;
+  recurrenceInterval: number;
+  recurrenceEndDate: string | null;
+  recurrenceLabel: string;
   createdByDisplayName: string | null;
   completedByDisplayName: string | null;
   completedAt: string | null;
@@ -87,6 +93,7 @@ export type ClubAdminTodoResponse = {
   overdueCount: number;
   availableMembers: TodoMemberOption[];
   scheduleOptions: TodoScheduleOption[];
+  decisionOptions: TodoDecisionOption[];
   items: TodoSummary[];
   nextCursorTodoItemId: number | null;
   hasNext: boolean;
@@ -105,6 +112,10 @@ export type CreateClubTodoRequest = {
   workStartAt?: string | null;
   workEndAt?: string | null;
   linkedScheduleEventId?: number | null;
+  linkedDecisionRecordId?: number | null;
+  recurrenceFrequency?: "NONE" | "WEEKLY" | "MONTHLY" | string;
+  recurrenceInterval?: number | null;
+  recurrenceEndDate?: string | null;
 };
 
 export type UpdateClubTodoRequest = CreateClubTodoRequest;
@@ -159,6 +170,13 @@ export type TodoScheduleOption = {
   title: string;
   startAt: string;
   startAtLabel: string;
+};
+
+export type TodoDecisionOption = {
+  decisionRecordId: number;
+  title: string;
+  statusCode: string;
+  confirmedAtLabel: string | null;
 };
 
 export type TodoChecklistItem = {

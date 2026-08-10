@@ -21,6 +21,10 @@ export function TodoApplicationManagerModal({
   onDismiss,
   onReview,
 }: TodoApplicationManagerModalProps) {
+  const selectedCount = data?.assignees.length ?? 0;
+  const recruitmentCapacity = data?.recruitmentCapacity ?? 1;
+  const recruitmentFull = selectedCount >= recruitmentCapacity;
+
   return (
     <RouteModal ariaLabel="업무 신청 관리" onDismiss={onDismiss} dismissOnBackdrop={false}>
       <section className="flex min-h-0 flex-1 flex-col">
@@ -60,10 +64,22 @@ export function TodoApplicationManagerModal({
                   <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-bold text-amber-700">
                     대기 {data.pendingApplicationCount}건
                   </span>
+                  <span className={`rounded-full px-3 py-1 text-xs font-bold ${
+                    recruitmentFull
+                      ? "bg-emerald-50 text-emerald-700"
+                      : "bg-[var(--primary)]/10 text-[var(--primary)]"
+                  }`}>
+                    선정 {selectedCount}/{recruitmentCapacity}명
+                  </span>
                 </div>
                 <p className="mt-3">
                   현재 상태: {data.statusLabel} / {data.assignmentModeLabel}
                 </p>
+                {data.assignees.length > 0 ? (
+                  <p className="mt-2 text-xs leading-5 text-slate-500">
+                    현재 담당: {data.assignees.map((assignee) => assignee.displayName ?? "멤버").join(", ")}
+                  </p>
+                ) : null}
               </div>
 
               {data.applications.length === 0 ? (
@@ -73,6 +89,7 @@ export function TodoApplicationManagerModal({
               ) : (
                 data.applications.map((application) => {
                   const isBusy = reviewingApplicationId === application.todoItemApplicationId;
+                  const cannotSelect = recruitmentFull && application.applicationStatus !== "SELECTED";
 
                   return (
                     <article
@@ -116,10 +133,10 @@ export function TodoApplicationManagerModal({
                           <button
                             type="button"
                             onClick={() => void onReview(application, "SELECTED")}
-                            disabled={isBusy}
+                            disabled={isBusy || cannotSelect}
                             className="flex-1 rounded-xl bg-emerald-600 px-4 py-3 text-sm font-bold text-white disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500"
                           >
-                            {isBusy ? "처리 중..." : "선정"}
+                            {isBusy ? "처리 중..." : cannotSelect ? "정원 마감" : "선정"}
                           </button>
                           <button
                             type="button"

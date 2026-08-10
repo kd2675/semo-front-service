@@ -5,6 +5,8 @@ export type AssignmentFilter = "ALL" | "ASSIGNED" | "UNASSIGNED" | "OPEN_SUPPORT
 export type ApplicationFilter = "ALL" | "APPLIED" | "SELECTED" | "REJECTED" | "WITHDRAWN";
 export type TodoType = "VOLUNTEER" | "OPERATIONS";
 export type AssignmentMode = "DIRECT_ASSIGN" | "OPEN_SUPPORT";
+export type TodoPriority = "LOW" | "NORMAL" | "HIGH" | "URGENT";
+export type TodoRecurrence = "NONE" | "WEEKLY" | "MONTHLY";
 export type TodoEditorModalState =
   | { mode: "create" }
   | { mode: "edit"; todoItemId: number; original: TodoSummary };
@@ -59,11 +61,73 @@ export const ASSIGNMENT_MODE_OPTIONS = [
   icon: string;
 }>;
 
-export function combineDateTimeValue(dateValue: string, timeValue: string) {
+export const TODO_PRIORITY_OPTIONS = [
+  {
+    value: "LOW",
+    label: "낮음",
+    description: "여유 있게 처리해도 되는 업무",
+    icon: "low_priority",
+  },
+  {
+    value: "NORMAL",
+    label: "보통",
+    description: "일반적인 운영 우선순위",
+    icon: "drag_handle",
+  },
+  {
+    value: "HIGH",
+    label: "높음",
+    description: "먼저 확인해야 하는 중요 업무",
+    icon: "priority_high",
+  },
+  {
+    value: "URGENT",
+    label: "긴급",
+    description: "즉시 대응이 필요한 업무",
+    icon: "notification_important",
+  },
+] as const satisfies ReadonlyArray<{
+  value: TodoPriority;
+  label: string;
+  description: string;
+  icon: string;
+}>;
+
+export const TODO_RECURRENCE_OPTIONS = [
+  {
+    value: "NONE",
+    label: "반복 없음",
+    description: "한 번만 수행",
+    icon: "looks_one",
+  },
+  {
+    value: "WEEKLY",
+    label: "주 단위",
+    description: "완료 후 다음 주기 생성",
+    icon: "date_range",
+  },
+  {
+    value: "MONTHLY",
+    label: "월 단위",
+    description: "완료 후 다음 달 주기 생성",
+    icon: "calendar_month",
+  },
+] as const satisfies ReadonlyArray<{
+  value: TodoRecurrence;
+  label: string;
+  description: string;
+  icon: string;
+}>;
+
+export function combineDateTimeValue(
+  dateValue: string,
+  timeValue: string,
+  defaultTime = "23:59",
+) {
   if (!dateValue) {
     return null;
   }
-  return `${dateValue}T${timeValue || "23:59"}:00`;
+  return `${dateValue}T${timeValue || defaultTime}:00`;
 }
 
 export function splitDateTimeValue(value: string | null) {
@@ -83,6 +147,23 @@ export function normalizeTodoType(todoType: string): TodoType {
 
 export function normalizeAssignmentMode(assignmentMode: string): AssignmentMode {
   return assignmentMode === "OPEN_SUPPORT" ? "OPEN_SUPPORT" : "DIRECT_ASSIGN";
+}
+
+export function normalizeTodoPriority(priorityCode: string): TodoPriority {
+  switch (priorityCode) {
+    case "LOW":
+    case "HIGH":
+    case "URGENT":
+      return priorityCode;
+    default:
+      return "NORMAL";
+  }
+}
+
+export function normalizeTodoRecurrence(recurrenceFrequency: string): TodoRecurrence {
+  return recurrenceFrequency === "WEEKLY" || recurrenceFrequency === "MONTHLY"
+    ? recurrenceFrequency
+    : "NONE";
 }
 
 export function resolveErrorMessage(error: unknown, fallbackMessage: string) {

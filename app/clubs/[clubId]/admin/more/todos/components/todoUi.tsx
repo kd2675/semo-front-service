@@ -1,9 +1,12 @@
 "use client";
 
 import { motion } from "motion/react";
+import RouterLink from "next/link";
+
 import { DatePopoverField } from "@/app/components/DatePopoverField";
 import { RouteModal } from "@/app/components/RouteModal";
 import { TimePopoverField } from "@/app/components/TimePopoverField";
+import { TodoCollaborationPanel } from "@/app/components/TodoCollaborationPanel";
 import type { ClubAdminTodoResponse, TodoSummary } from "@/app/lib/clubs";
 import { staggeredFadeUpMotion } from "@/app/lib/motion";
 import { getClubRoleLabel } from "@/app/lib/roleLabels";
@@ -18,9 +21,13 @@ import {
   getAssignmentFilterLabel,
   getStatusFilterLabel,
   STATUS_OPTIONS,
+  TODO_PRIORITY_OPTIONS,
+  TODO_RECURRENCE_OPTIONS,
   type StatusFilter,
   TODO_TYPE_OPTIONS,
   type TodoEditorModalState,
+  type TodoPriority,
+  type TodoRecurrence,
   type TodoType,
 } from "../utils/todoOptions";
 
@@ -100,6 +107,7 @@ export function TodoFilterSummarySection({
 }
 
 export function TodoListSection({
+  clubId,
   todoData,
   pendingTodoId,
   isLoadingMore,
@@ -110,6 +118,7 @@ export function TodoListSection({
   onUpdateStatus,
   onLoadMore,
 }: {
+  clubId: string;
   todoData: ClubAdminTodoResponse;
   pendingTodoId: number | null;
   isLoadingMore: boolean;
@@ -138,6 +147,7 @@ export function TodoListSection({
           todoData.items.map((item, index) => (
             <TodoListCard
               key={item.todoItemId}
+              clubId={clubId}
               item={item}
               canAssign={todoData.canAssign}
               canDelete={todoData.canDelete}
@@ -175,22 +185,47 @@ export function TodoEditorModal({
   description,
   todoType,
   assignmentMode,
-  assignedClubProfileId,
+  assignedClubProfileIds,
+  priorityCode,
+  recruitmentCapacity,
   dueAtDate,
   dueAtTime,
+  workStartDate,
+  workStartTime,
+  workEndDate,
+  workEndTime,
+  linkedScheduleEventId,
+  linkedDecisionRecordId,
+  recurrenceFrequency,
+  recurrenceInterval,
+  recurrenceEndDate,
   isSubmitting,
   availableMembers,
+  scheduleOptions,
+  decisionOptions,
   assignedMemberLabel,
-  inactiveAssignedOption,
+  inactiveAssignedOptions,
   editingItem,
   onClose,
   onTitleChange,
   onDescriptionChange,
   onTodoTypeChange,
   onAssignmentModeChange,
-  onAssignedClubProfileIdChange,
+  onAssignedClubProfileIdToggle,
+  onClearAssignedClubProfileIds,
+  onPriorityCodeChange,
+  onRecruitmentCapacityChange,
   onDueAtDateChange,
   onDueAtTimeChange,
+  onWorkStartDateChange,
+  onWorkStartTimeChange,
+  onWorkEndDateChange,
+  onWorkEndTimeChange,
+  onLinkedScheduleEventIdChange,
+  onLinkedDecisionRecordIdChange,
+  onRecurrenceFrequencyChange,
+  onRecurrenceIntervalChange,
+  onRecurrenceEndDateChange,
   onSubmit,
 }: {
   editorModal: TodoEditorModalState;
@@ -200,22 +235,47 @@ export function TodoEditorModal({
   description: string;
   todoType: TodoType;
   assignmentMode: AssignmentMode;
-  assignedClubProfileId: string;
+  assignedClubProfileIds: string[];
+  priorityCode: TodoPriority;
+  recruitmentCapacity: string;
   dueAtDate: string;
   dueAtTime: string;
+  workStartDate: string;
+  workStartTime: string;
+  workEndDate: string;
+  workEndTime: string;
+  linkedScheduleEventId: string;
+  linkedDecisionRecordId: string;
+  recurrenceFrequency: TodoRecurrence;
+  recurrenceInterval: string;
+  recurrenceEndDate: string;
   isSubmitting: boolean;
   availableMembers: ClubAdminTodoResponse["availableMembers"];
+  scheduleOptions: ClubAdminTodoResponse["scheduleOptions"];
+  decisionOptions: ClubAdminTodoResponse["decisionOptions"];
   assignedMemberLabel: string;
-  inactiveAssignedOption: { clubProfileId: number; label: string } | null;
+  inactiveAssignedOptions: Array<{ clubProfileId: number; label: string }>;
   editingItem: TodoSummary | null;
   onClose: () => void;
   onTitleChange: (value: string) => void;
   onDescriptionChange: (value: string) => void;
   onTodoTypeChange: (value: TodoType) => void;
   onAssignmentModeChange: (value: AssignmentMode) => void;
-  onAssignedClubProfileIdChange: (value: string) => void;
+  onAssignedClubProfileIdToggle: (value: string) => void;
+  onClearAssignedClubProfileIds: () => void;
+  onPriorityCodeChange: (value: TodoPriority) => void;
+  onRecruitmentCapacityChange: (value: string) => void;
   onDueAtDateChange: (value: string) => void;
   onDueAtTimeChange: (value: string) => void;
+  onWorkStartDateChange: (value: string) => void;
+  onWorkStartTimeChange: (value: string) => void;
+  onWorkEndDateChange: (value: string) => void;
+  onWorkEndTimeChange: (value: string) => void;
+  onLinkedScheduleEventIdChange: (value: string) => void;
+  onLinkedDecisionRecordIdChange: (value: string) => void;
+  onRecurrenceFrequencyChange: (value: TodoRecurrence) => void;
+  onRecurrenceIntervalChange: (value: string) => void;
+  onRecurrenceEndDateChange: (value: string) => void;
   onSubmit: () => void;
 }) {
   return (
@@ -263,7 +323,7 @@ export function TodoEditorModal({
                       value={title}
                       onChange={(event) => onTitleChange(event.target.value)}
                       placeholder="예: 경기장 세팅, 참가자 안내"
-                      className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-[#ec5b13] focus:ring-2 focus:ring-[#ec5b13]/10"
+                      className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/10"
                     />
                   </label>
 
@@ -274,7 +334,7 @@ export function TodoEditorModal({
                       onChange={(event) => onDescriptionChange(event.target.value)}
                       rows={4}
                       placeholder="필요한 맥락이나 체크포인트를 적어주세요."
-                      className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-[#ec5b13] focus:ring-2 focus:ring-[#ec5b13]/10"
+                      className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/10"
                     />
                   </label>
 
@@ -296,61 +356,190 @@ export function TodoEditorModal({
                     </div>
 
                     <div>
-                      <span className="text-sm font-semibold text-slate-700">마감일</span>
-                      <div className="mt-2 rounded-2xl border border-slate-200 bg-white p-3">
-                        <div className="mb-3 flex items-center justify-between rounded-2xl bg-slate-50 px-3 py-2.5">
-                          <div>
-                            <p className="text-xs font-bold text-slate-400">마감</p>
-                            <p className="mt-1 text-sm font-semibold text-slate-700">
-                              {dueAtDate ? `${dueAtDate}${dueAtTime ? ` ${dueAtTime}` : ""}` : "마감일 미정"}
-                            </p>
+                      <span className="text-sm font-semibold text-slate-700">우선순위</span>
+                      <div className="mt-2 grid grid-cols-2 gap-2">
+                        {TODO_PRIORITY_OPTIONS.map((option) => (
+                          <CompactChoiceCard
+                            key={option.value}
+                            selected={priorityCode === option.value}
+                            label={option.label}
+                            description={option.description}
+                            icon={option.icon}
+                            onClick={() => onPriorityCodeChange(option.value)}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  <DateTimePanel
+                    title="마감일"
+                    summaryLabel="마감"
+                    emptyLabel="마감일 미정"
+                    dateValue={dueAtDate}
+                    timeValue={dueAtTime}
+                    onDateChange={onDueAtDateChange}
+                    onTimeChange={onDueAtTimeChange}
+                  />
+
+                  <div>
+                    <div className="mb-2">
+                      <span className="text-sm font-semibold text-slate-700">업무 시간</span>
+                      <p className="mt-1 text-xs leading-5 text-slate-500">
+                        실제 활동 구간을 설정하면 담당자가 마감과 근무 시간을 구분해 확인할 수 있습니다.
+                      </p>
+                    </div>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <DateTimePanel
+                        title="시작"
+                        summaryLabel="업무 시작"
+                        emptyLabel="시작 시간 미정"
+                        dateValue={workStartDate}
+                        timeValue={workStartTime}
+                        onDateChange={onWorkStartDateChange}
+                        onTimeChange={onWorkStartTimeChange}
+                        compact
+                      />
+                      <DateTimePanel
+                        title="종료"
+                        summaryLabel="업무 종료"
+                        emptyLabel="종료 시간 미정"
+                        dateValue={workEndDate}
+                        timeValue={workEndTime}
+                        onDateChange={onWorkEndDateChange}
+                        onTimeChange={onWorkEndTimeChange}
+                        compact
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <span className="text-sm font-semibold text-slate-700">관련 일정</span>
+                    <p className="mt-1 text-xs leading-5 text-slate-500">
+                      업무가 특정 일정 준비나 현장 운영에 속한다면 연결해주세요.
+                    </p>
+                    <div className="mt-2 grid max-h-64 gap-2 overflow-y-auto rounded-2xl border border-slate-200 bg-white p-3">
+                      <ScheduleChoiceCard
+                        selected={!linkedScheduleEventId}
+                        title="연결 안 함"
+                        meta="독립 업무로 등록"
+                        onClick={() => onLinkedScheduleEventIdChange("")}
+                      />
+                      {scheduleOptions.map((schedule) => (
+                        <ScheduleChoiceCard
+                          key={schedule.eventId}
+                          selected={linkedScheduleEventId === String(schedule.eventId)}
+                          title={schedule.title}
+                          meta={schedule.startAtLabel}
+                          onClick={() => onLinkedScheduleEventIdChange(String(schedule.eventId))}
+                        />
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <span className="text-sm font-semibold text-slate-700">반복 업무</span>
+                    <p className="mt-1 text-xs leading-5 text-slate-500">
+                      현재 회차를 완료하면 마감일과 업무 시간을 이동해 다음 회차를 한 번만 자동 생성합니다.
+                    </p>
+                    <div className="mt-2 grid gap-2 sm:grid-cols-3">
+                      {TODO_RECURRENCE_OPTIONS.map((option) => (
+                        <CompactChoiceCard
+                          key={option.value}
+                          selected={recurrenceFrequency === option.value}
+                          label={option.label}
+                          description={option.description}
+                          icon={option.icon}
+                          onClick={() => {
+                            onRecurrenceFrequencyChange(option.value);
+                            if (option.value === "NONE") {
+                              onRecurrenceIntervalChange("1");
+                              onRecurrenceEndDateChange("");
+                            }
+                          }}
+                        />
+                      ))}
+                    </div>
+                    {recurrenceFrequency !== "NONE" ? (
+                      <div className="mt-3 grid gap-3 rounded-2xl border border-slate-200 bg-white p-3 sm:grid-cols-2">
+                        <div>
+                          <span className="text-xs font-bold text-slate-500">반복 간격</span>
+                          <div className="mt-2 flex items-center gap-2">
+                            <button
+                              type="button"
+                              aria-label="반복 간격 줄이기"
+                              onClick={() => onRecurrenceIntervalChange(String(Math.max(1, Number(recurrenceInterval || 1) - 1)))}
+                              className="semo-icon-control shrink-0 rounded-xl border border-slate-200 bg-slate-50 text-slate-600"
+                            >
+                              <span className="material-symbols-outlined text-[18px]" aria-hidden="true">remove</span>
+                            </button>
+                            <label className="min-w-0 flex-1">
+                              <span className="sr-only">반복 간격</span>
+                              <input
+                                value={recurrenceInterval}
+                                onChange={(event) => onRecurrenceIntervalChange(event.target.value.replace(/\D/g, "").slice(0, 2))}
+                                inputMode="numeric"
+                                className="h-11 w-full rounded-xl border border-slate-200 px-3 text-center text-sm font-bold outline-none focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/10"
+                              />
+                            </label>
+                            <button
+                              type="button"
+                              aria-label="반복 간격 늘리기"
+                              onClick={() => onRecurrenceIntervalChange(String(Math.min(12, Number(recurrenceInterval || 0) + 1)))}
+                              className="semo-icon-control shrink-0 rounded-xl border border-slate-200 bg-slate-50 text-slate-600"
+                            >
+                              <span className="material-symbols-outlined text-[18px]" aria-hidden="true">add</span>
+                            </button>
                           </div>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              onDueAtDateChange("");
-                              onDueAtTimeChange("");
-                            }}
-                            disabled={!dueAtDate}
-                            className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:border-slate-300 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
-                          >
-                            초기화
-                          </button>
+                          <p className="mt-2 text-center text-xs text-slate-500">
+                            {recurrenceInterval || 1}{recurrenceFrequency === "WEEKLY" ? "주" : "개월"}마다
+                          </p>
                         </div>
-                        <div className="grid gap-2 sm:grid-cols-2">
-                          <label className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm text-slate-700 transition focus-within:border-[#ec5b13] focus-within:bg-white">
-                            <span className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
-                              <span className="material-symbols-outlined text-[16px]" aria-hidden="true">calendar_month</span>
-                              날짜
-                            </span>
-                            <DatePopoverField
-                              value={dueAtDate}
-                              onChange={onDueAtDateChange}
-                              buttonClassName="w-full border-0 bg-transparent px-0 py-0 text-sm font-semibold text-slate-900 hover:border-transparent focus:border-transparent focus:ring-0"
-                            />
-                          </label>
-                          <label
-                            className={`rounded-2xl border px-3 py-3 text-sm transition ${
-                              dueAtDate
-                                ? "border-slate-200 bg-slate-50 text-slate-700 focus-within:border-[#ec5b13] focus-within:bg-white"
-                                : "border-slate-200 bg-slate-100 text-slate-400"
-                            }`}
-                          >
-                            <span className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
-                              <span className="material-symbols-outlined text-[16px]" aria-hidden="true">schedule</span>
-                              시간
-                            </span>
-                            <TimePopoverField
-                              value={dueAtTime}
-                              onChange={onDueAtTimeChange}
-                              disabled={!dueAtDate}
-                              buttonClassName={`w-full border-0 bg-transparent px-0 py-0 text-sm font-semibold text-slate-900 hover:border-transparent focus:border-transparent focus:ring-0 disabled:cursor-not-allowed ${
-                                dueAtDate ? "" : "text-slate-400"
-                              }`}
-                            />
-                          </label>
+                        <div>
+                          <span className="text-xs font-bold text-slate-500">반복 종료일</span>
+                          <DatePopoverField
+                            value={recurrenceEndDate}
+                            onChange={onRecurrenceEndDateChange}
+                            placeholder="종료일 없음"
+                            buttonClassName="mt-2 h-11 rounded-xl border-slate-200 px-3 text-sm font-semibold"
+                          />
+                          {recurrenceEndDate ? (
+                            <button
+                              type="button"
+                              onClick={() => onRecurrenceEndDateChange("")}
+                              className="mt-2 min-h-9 w-full rounded-xl bg-slate-100 px-3 text-xs font-semibold text-slate-600"
+                            >
+                              종료일 지우기
+                            </button>
+                          ) : null}
                         </div>
                       </div>
+                    ) : null}
+                  </div>
+
+                  <div>
+                    <span className="text-sm font-semibold text-slate-700">관련 결정 기록</span>
+                    <p className="mt-1 text-xs leading-5 text-slate-500">
+                      멤버에게 공개된 확정 결정과 연결해 이 업무를 왜 수행하는지 남깁니다.
+                    </p>
+                    <div className="mt-2 grid max-h-64 gap-2 overflow-y-auto rounded-2xl border border-slate-200 bg-white p-3">
+                      <ScheduleChoiceCard
+                        selected={!linkedDecisionRecordId}
+                        title="연결 안 함"
+                        meta="결정 기록 없이 등록"
+                        icon="link_off"
+                        onClick={() => onLinkedDecisionRecordIdChange("")}
+                      />
+                      {decisionOptions.map((decision) => (
+                        <ScheduleChoiceCard
+                          key={decision.decisionRecordId}
+                          selected={linkedDecisionRecordId === String(decision.decisionRecordId)}
+                          title={decision.title}
+                          meta={decision.confirmedAtLabel ?? "확정 시각 없음"}
+                          icon="gavel"
+                          onClick={() => onLinkedDecisionRecordIdChange(String(decision.decisionRecordId))}
+                        />
+                      ))}
                     </div>
                   </div>
                 </>
@@ -383,7 +572,7 @@ export function TodoEditorModal({
                           onClick={() => {
                             onAssignmentModeChange(option.value);
                             if (option.value === "OPEN_SUPPORT") {
-                              onAssignedClubProfileIdChange("");
+                              onClearAssignedClubProfileIds();
                             }
                           }}
                         />
@@ -392,7 +581,9 @@ export function TodoEditorModal({
                   </div>
 
                   <div>
-                    <span className="text-sm font-semibold text-slate-700">담당자</span>
+                    <span className="text-sm font-semibold text-slate-700">
+                      {assignmentMode === "OPEN_SUPPORT" ? "모집 인원" : "담당자"}
+                    </span>
                     <div
                       className={`mt-2 rounded-2xl border p-3 ${
                         assignmentMode === "OPEN_SUPPORT"
@@ -401,30 +592,62 @@ export function TodoEditorModal({
                       }`}
                     >
                       <div className="mb-3 rounded-2xl bg-slate-50 px-3 py-2.5">
-                        <p className="text-xs font-bold text-slate-400">담당자</p>
+                        <p className="text-xs font-bold text-slate-400">
+                          {assignmentMode === "OPEN_SUPPORT" ? "모집 방식" : "선택된 담당자"}
+                        </p>
                         <p className="mt-1 text-sm font-semibold text-slate-700">{assignedMemberLabel}</p>
                       </div>
                       {assignmentMode === "OPEN_SUPPORT" ? (
-                        <div className="rounded-2xl border border-dashed border-slate-200 bg-white px-4 py-6 text-center text-sm text-slate-500">
-                          지원자 모집 후 운영진이 선정합니다.
+                        <div className="rounded-2xl border border-slate-200 bg-white p-3">
+                          <p className="text-xs leading-5 text-slate-500">
+                            지원자를 여러 명 선정할 수 있습니다. 이미 선정된 인원보다 작게 줄일 수 없습니다.
+                          </p>
+                          <div className="mt-3 flex items-center gap-2">
+                            <button
+                              type="button"
+                              aria-label="모집 인원 줄이기"
+                              onClick={() => onRecruitmentCapacityChange(String(Math.max(1, Number(recruitmentCapacity || 1) - 1)))}
+                              className="semo-icon-control shrink-0 rounded-xl border border-slate-200 bg-slate-50 text-slate-600"
+                            >
+                              <span className="material-symbols-outlined text-[18px]" aria-hidden="true">remove</span>
+                            </button>
+                            <label className="min-w-0 flex-1">
+                              <span className="sr-only">모집 인원</span>
+                              <input
+                                value={recruitmentCapacity}
+                                onChange={(event) => onRecruitmentCapacityChange(event.target.value.replace(/\D/g, "").slice(0, 3))}
+                                inputMode="numeric"
+                                className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-center text-sm font-bold text-slate-900 outline-none focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/10"
+                              />
+                            </label>
+                            <button
+                              type="button"
+                              aria-label="모집 인원 늘리기"
+                              onClick={() => onRecruitmentCapacityChange(String(Math.min(100, Number(recruitmentCapacity || 0) + 1)))}
+                              className="semo-icon-control shrink-0 rounded-xl border border-slate-200 bg-slate-50 text-slate-600"
+                            >
+                              <span className="material-symbols-outlined text-[18px]" aria-hidden="true">add</span>
+                            </button>
+                          </div>
                         </div>
                       ) : (
                         <div className="grid max-h-64 gap-2 overflow-y-auto pr-1">
-                          {inactiveAssignedOption ? (
+                          {inactiveAssignedOptions.map((member) => (
                             <SelectableMemberCard
-                              selected={assignedClubProfileId === String(inactiveAssignedOption.clubProfileId)}
-                              label={inactiveAssignedOption.label}
+                              key={member.clubProfileId}
+                              selected={assignedClubProfileIds.includes(String(member.clubProfileId))}
+                              label={member.label}
                               roleCode="INACTIVE"
-                              onClick={() => onAssignedClubProfileIdChange(String(inactiveAssignedOption.clubProfileId))}
+                              onClick={() => onAssignedClubProfileIdToggle(String(member.clubProfileId))}
                             />
-                          ) : null}
+                          ))}
                           {availableMembers.map((member) => (
                             <SelectableMemberCard
                               key={member.clubProfileId}
-                              selected={assignedClubProfileId === String(member.clubProfileId)}
+                              selected={assignedClubProfileIds.includes(String(member.clubProfileId))}
                               label={member.memberDisplayName}
                               roleCode={member.memberRoleCode}
-                              onClick={() => onAssignedClubProfileIdChange(String(member.clubProfileId))}
+                              onClick={() => onAssignedClubProfileIdToggle(String(member.clubProfileId))}
                             />
                           ))}
                         </div>
@@ -461,7 +684,7 @@ export function TodoEditorModal({
             type="button"
             onClick={onSubmit}
             disabled={isSubmitting}
-            className="w-full rounded-2xl bg-[#ec5b13] px-4 py-3 text-sm font-bold text-white transition hover:bg-[#ec5b13]/90 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500"
+            className="min-h-12 w-full rounded-2xl bg-[var(--primary)] px-4 py-3 text-sm font-bold text-white transition hover:brightness-95 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500"
           >
             {isSubmitting
               ? "저장 중..."
@@ -554,7 +777,7 @@ export function TodoFilterModal({
             <button
               type="button"
               onClick={onApply}
-              className="flex-1 rounded-2xl bg-[#ec5b13] px-4 py-3 text-sm font-bold text-white"
+              className="min-h-12 flex-1 rounded-2xl bg-[var(--primary)] px-4 py-3 text-sm font-bold text-white"
             >
               적용
             </button>
@@ -566,6 +789,7 @@ export function TodoFilterModal({
 }
 
 function TodoListCard({
+  clubId,
   item,
   canAssign,
   canDelete,
@@ -577,6 +801,7 @@ function TodoListCard({
   onDeleteRequest,
   onUpdateStatus,
 }: {
+  clubId: string;
   item: TodoSummary;
   canAssign: boolean;
   canDelete: boolean;
@@ -591,10 +816,10 @@ function TodoListCard({
   const isTerminal = item.statusCode === "COMPLETED" || item.statusCode === "CANCELED";
   const canOpenEditor = item.canEdit && !isTerminal;
   const canOpenAssignEditor = !item.canEdit && canAssign && !isTerminal;
-  const canMarkInProgress = item.statusCode === "OPEN" && item.assignedClubProfileId != null;
+  const canMarkInProgress = item.statusCode === "OPEN" && item.assigneeCount > 0;
   const canMarkCompleted =
     item.statusCode === "IN_PROGRESS" ||
-    (item.statusCode === "OPEN" && item.assignedClubProfileId != null && item.assignmentMode === "DIRECT_ASSIGN");
+    (item.statusCode === "OPEN" && item.assigneeCount > 0 && item.assignmentMode === "DIRECT_ASSIGN");
   const canResetToOpen = item.statusCode === "IN_PROGRESS";
   const canReopen = isTerminal;
   const canCancel = item.statusCode === "OPEN" || item.statusCode === "IN_PROGRESS";
@@ -616,6 +841,15 @@ function TodoListCard({
       <div className="flex flex-wrap items-center gap-2">
         <Badge tone={item.todoType === "VOLUNTEER" ? "sky" : "slate"} label={item.todoTypeLabel} />
         <Badge tone={item.assignmentMode === "OPEN_SUPPORT" ? "amber" : "blue"} label={item.assignmentModeLabel} />
+        {item.priorityCode !== "NORMAL" ? (
+          <Badge
+            tone={item.priorityCode === "URGENT" ? "rose" : item.priorityCode === "HIGH" ? "amber" : "slate"}
+            label={item.priorityLabel}
+          />
+        ) : null}
+        {item.recurrenceFrequency !== "NONE" ? (
+          <Badge tone="blue" label={item.recurrenceLabel} />
+        ) : null}
         <Badge
           tone={item.statusCode === "COMPLETED" ? "emerald" : item.overdue ? "rose" : "slate"}
           label={item.overdue ? "지연" : item.statusLabel}
@@ -624,19 +858,50 @@ function TodoListCard({
       <p className="mt-3 text-base font-bold text-slate-900">{item.title}</p>
       {item.description ? <p className="mt-2 text-sm leading-6 text-slate-600">{item.description}</p> : null}
       <div className="mt-4 grid grid-cols-2 gap-3 text-xs text-slate-500">
-        <InfoItem label="담당자" value={item.assignedDisplayName ?? "미배정"} />
+        <InfoItem
+          label={item.assignmentMode === "OPEN_SUPPORT" ? "선정 인원" : "담당자"}
+          value={item.assigneeCount > 0
+            ? `${item.assignees.map((assignee) => assignee.displayName ?? "멤버").join(", ")} · ${item.assigneeCount}명`
+            : "미배정"}
+        />
         <InfoItem label="마감일" value={item.dueAtLabel ?? "미정"} />
+        <InfoItem label="업무 시간" value={item.workTimeLabel ?? "미정"} />
         <InfoItem label="등록자" value={item.createdByDisplayName ?? "미정"} />
-        <InfoItem label="신청 수" value={`${item.applicationCount}건`} />
+        <InfoItem
+          label={item.assignmentMode === "OPEN_SUPPORT" ? "모집 현황" : "담당 인원"}
+          value={item.assignmentMode === "OPEN_SUPPORT"
+            ? `${item.assigneeCount}/${item.recruitmentCapacity}명 · 신청 ${item.applicationCount}건`
+            : `${item.assigneeCount}명`}
+        />
       </div>
+      {item.linkedScheduleEventId != null ? (
+        <RouterLink
+          href={`/clubs/${clubId}/schedule/${item.linkedScheduleEventId}`}
+          className="mt-4 flex min-h-11 items-center gap-2 rounded-xl bg-[var(--primary)]/8 px-3 text-xs font-bold text-[var(--primary)] transition hover:bg-[var(--primary)]/12 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]/25"
+        >
+          <span className="material-symbols-outlined text-[18px]" aria-hidden="true">event</span>
+          <span className="min-w-0 flex-1 truncate">{item.linkedScheduleTitle ?? "연결된 일정"}</span>
+          <span className="material-symbols-outlined text-[18px]" aria-hidden="true">chevron_right</span>
+        </RouterLink>
+      ) : null}
+      {item.linkedDecisionRecordId != null ? (
+        <RouterLink
+          href={`/clubs/${clubId}/admin/more/decisions`}
+          className="mt-2 flex min-h-11 items-center gap-2 rounded-xl bg-[var(--primary)]/8 px-3 text-xs font-bold text-[var(--primary)] transition hover:bg-[var(--primary)]/12 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]/25"
+        >
+          <span className="material-symbols-outlined text-[18px]" aria-hidden="true">gavel</span>
+          <span className="min-w-0 flex-1 truncate">{item.linkedDecisionTitle ?? "연결된 결정 기록"}</span>
+          <span className="material-symbols-outlined text-[18px]" aria-hidden="true">chevron_right</span>
+        </RouterLink>
+      ) : null}
       <div className="mt-4 flex flex-wrap gap-2">
         {canOpenEditor ? (
-          <button type="button" onClick={onOpenEditor} className="rounded-full bg-slate-900 px-3 py-2 text-xs font-bold text-white">
+          <button type="button" onClick={onOpenEditor} className="min-h-11 rounded-xl bg-slate-900 px-4 text-xs font-bold text-white">
             수정
           </button>
         ) : null}
         {canOpenAssignEditor ? (
-          <button type="button" onClick={onOpenEditor} className="rounded-full bg-slate-900 px-3 py-2 text-xs font-bold text-white">
+          <button type="button" onClick={onOpenEditor} className="min-h-11 rounded-xl bg-slate-900 px-4 text-xs font-bold text-white">
             배정
           </button>
         ) : null}
@@ -644,7 +909,7 @@ function TodoListCard({
           <button
             type="button"
             onClick={onOpenApplications}
-            className="rounded-full bg-amber-50 px-3 py-2 text-xs font-bold text-amber-700 ring-1 ring-amber-200"
+            className="min-h-11 rounded-xl bg-amber-50 px-4 text-xs font-bold text-amber-700 ring-1 ring-amber-200"
           >
             신청 관리 {item.applicationCount}
           </button>
@@ -654,7 +919,7 @@ function TodoListCard({
             type="button"
             onClick={onDeleteRequest}
             disabled={pendingTodoId === item.todoItemId}
-            className="rounded-full bg-rose-50 px-3 py-2 text-xs font-bold text-rose-700 ring-1 ring-rose-200 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500"
+            className="min-h-11 rounded-xl bg-rose-50 px-4 text-xs font-bold text-rose-700 ring-1 ring-rose-200 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500"
           >
             보관
           </button>
@@ -666,7 +931,7 @@ function TodoListCard({
                 type="button"
                 onClick={() => onUpdateStatus(item.todoItemId, "IN_PROGRESS")}
                 disabled={pendingTodoId === item.todoItemId}
-                className="rounded-full bg-amber-500 px-3 py-2 text-xs font-bold text-white disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500"
+                className="min-h-11 rounded-xl bg-amber-500 px-4 text-xs font-bold text-white disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500"
               >
                 진행중
               </button>
@@ -676,7 +941,7 @@ function TodoListCard({
                 type="button"
                 onClick={() => onUpdateStatus(item.todoItemId, "COMPLETED")}
                 disabled={pendingTodoId === item.todoItemId}
-                className="rounded-full bg-emerald-600 px-3 py-2 text-xs font-bold text-white disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500"
+                className="min-h-11 rounded-xl bg-emerald-600 px-4 text-xs font-bold text-white disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500"
               >
                 완료
               </button>
@@ -686,7 +951,7 @@ function TodoListCard({
                 type="button"
                 onClick={() => onUpdateStatus(item.todoItemId, "OPEN")}
                 disabled={pendingTodoId === item.todoItemId}
-                className="rounded-full bg-white px-3 py-2 text-xs font-bold text-slate-700 ring-1 ring-slate-300 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500"
+                className="min-h-11 rounded-xl bg-white px-4 text-xs font-bold text-slate-700 ring-1 ring-slate-300 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500"
               >
                 {resetToOpenLabel}
               </button>
@@ -696,7 +961,7 @@ function TodoListCard({
                 type="button"
                 onClick={() => onUpdateStatus(item.todoItemId, "REOPEN")}
                 disabled={pendingTodoId === item.todoItemId}
-                className="rounded-full bg-white px-3 py-2 text-xs font-bold text-slate-700 ring-1 ring-slate-300 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500"
+                className="min-h-11 rounded-xl bg-white px-4 text-xs font-bold text-slate-700 ring-1 ring-slate-300 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500"
               >
                 다시 열기
               </button>
@@ -706,7 +971,7 @@ function TodoListCard({
                 type="button"
                 onClick={() => onUpdateStatus(item.todoItemId, "CANCELED")}
                 disabled={pendingTodoId === item.todoItemId}
-                className="rounded-full bg-rose-600 px-3 py-2 text-xs font-bold text-white disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500"
+                className="min-h-11 rounded-xl bg-rose-600 px-4 text-xs font-bold text-white disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500"
               >
                 취소
               </button>
@@ -714,6 +979,12 @@ function TodoListCard({
           </>
         ) : null}
       </div>
+      <TodoCollaborationPanel
+        clubId={clubId}
+        todoItemId={item.todoItemId}
+        terminal={isTerminal}
+        theme="admin"
+      />
     </motion.article>
   );
 }
@@ -755,6 +1026,155 @@ function InfoItem({ label, value }: { label: string; value: string }) {
   );
 }
 
+function DateTimePanel({
+  title,
+  summaryLabel,
+  emptyLabel,
+  dateValue,
+  timeValue,
+  onDateChange,
+  onTimeChange,
+  compact = false,
+}: {
+  title: string;
+  summaryLabel: string;
+  emptyLabel: string;
+  dateValue: string;
+  timeValue: string;
+  onDateChange: (value: string) => void;
+  onTimeChange: (value: string) => void;
+  compact?: boolean;
+}) {
+  return (
+    <div>
+      <span className="text-sm font-semibold text-slate-700">{title}</span>
+      <div className={`mt-2 rounded-2xl border border-slate-200 bg-white ${compact ? "p-2.5" : "p-3"}`}>
+        <div className="mb-3 flex min-h-11 items-center justify-between gap-3 rounded-xl bg-slate-50 px-3 py-2">
+          <div className="min-w-0">
+            <p className="text-xs font-bold text-slate-400">{summaryLabel}</p>
+            <p className="mt-1 truncate text-sm font-semibold text-slate-700">
+              {dateValue ? `${dateValue}${timeValue ? ` ${timeValue}` : ""}` : emptyLabel}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              onDateChange("");
+              onTimeChange("");
+            }}
+            disabled={!dateValue}
+            className="min-h-9 shrink-0 rounded-xl border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-600 transition hover:border-slate-300 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
+          >
+            초기화
+          </button>
+        </div>
+        <div className={`grid gap-2 ${compact ? "" : "sm:grid-cols-2"}`}>
+          <label className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm text-slate-700 transition focus-within:border-[var(--primary)] focus-within:bg-white">
+            <span className="mb-2 flex items-center gap-2 text-xs font-semibold text-slate-400">
+              <span className="material-symbols-outlined text-[16px]" aria-hidden="true">calendar_month</span>
+              날짜
+            </span>
+            <DatePopoverField
+              value={dateValue}
+              onChange={onDateChange}
+              buttonClassName="w-full border-0 bg-transparent px-0 py-0 text-sm font-semibold text-slate-900 hover:border-transparent focus:border-transparent focus:ring-0"
+            />
+          </label>
+          <label
+            className={`rounded-xl border px-3 py-3 text-sm transition ${
+              dateValue
+                ? "border-slate-200 bg-slate-50 text-slate-700 focus-within:border-[var(--primary)] focus-within:bg-white"
+                : "border-slate-200 bg-slate-100 text-slate-400"
+            }`}
+          >
+            <span className="mb-2 flex items-center gap-2 text-xs font-semibold text-slate-400">
+              <span className="material-symbols-outlined text-[16px]" aria-hidden="true">schedule</span>
+              시간
+            </span>
+            <TimePopoverField
+              value={timeValue}
+              onChange={onTimeChange}
+              disabled={!dateValue}
+              buttonClassName={`w-full border-0 bg-transparent px-0 py-0 text-sm font-semibold text-slate-900 hover:border-transparent focus:border-transparent focus:ring-0 disabled:cursor-not-allowed ${
+                dateValue ? "" : "text-slate-400"
+              }`}
+            />
+          </label>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function CompactChoiceCard({
+  selected,
+  label,
+  description,
+  icon,
+  onClick,
+}: {
+  selected: boolean;
+  label: string;
+  description: string;
+  icon: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={selected}
+      className={`min-h-20 rounded-2xl border p-3 text-left transition ${
+        selected
+          ? "border-[var(--primary)] bg-[var(--primary)]/8 text-[var(--primary)]"
+          : "border-slate-200 bg-white text-slate-500 hover:border-slate-300"
+      }`}
+    >
+      <span className="material-symbols-outlined text-[19px]" aria-hidden="true">{icon}</span>
+      <span className="mt-1 block text-sm font-bold text-slate-900">{label}</span>
+      <span className="mt-1 block text-[11px] leading-4 text-slate-500">{description}</span>
+    </button>
+  );
+}
+
+function ScheduleChoiceCard({
+  selected,
+  title,
+  meta,
+  icon = "event",
+  onClick,
+}: {
+  selected: boolean;
+  title: string;
+  meta: string;
+  icon?: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={selected}
+      className={`flex min-h-12 items-center gap-3 rounded-xl border px-3 py-2.5 text-left transition ${
+        selected
+          ? "border-[var(--primary)] bg-[var(--primary)]/8"
+          : "border-slate-200 bg-slate-50 hover:border-slate-300 hover:bg-white"
+      }`}
+    >
+      <span className={`material-symbols-outlined text-[20px] ${selected ? "text-[var(--primary)]" : "text-slate-400"}`} aria-hidden="true">
+        {selected ? "check_circle" : icon}
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block truncate text-sm font-bold text-slate-900">{title}</span>
+        <span className="mt-0.5 block truncate text-xs text-slate-500">{meta}</span>
+      </span>
+      <span className={`material-symbols-outlined text-[18px] ${selected ? "text-[var(--primary)]" : "text-slate-300"}`} aria-hidden="true">
+        {selected ? "check_circle" : "radio_button_unchecked"}
+      </span>
+    </button>
+  );
+}
+
 function SelectableCard({
   selected,
   label,
@@ -772,15 +1192,16 @@ function SelectableCard({
     <button
       type="button"
       onClick={onClick}
-      className={`flex items-start gap-3 rounded-2xl border px-4 py-3 text-left transition ${
+      aria-pressed={selected}
+      className={`flex min-h-16 items-start gap-3 rounded-2xl border px-4 py-3 text-left transition ${
         selected
-          ? "border-[#ec5b13] bg-[#fff4ec] shadow-[0_10px_24px_rgba(236,91,19,0.12)]"
+          ? "border-[var(--primary)] bg-[var(--primary)]/8 shadow-sm"
           : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50"
       }`}
     >
       <div
         className={`mt-0.5 flex size-10 shrink-0 items-center justify-center rounded-2xl ${
-          selected ? "bg-[#ec5b13] text-white" : "bg-slate-100 text-slate-500"
+          selected ? "bg-[var(--primary)] text-white" : "bg-slate-100 text-slate-500"
         }`}
       >
         <span className="material-symbols-outlined text-[20px]" aria-hidden="true">{icon}</span>
@@ -789,7 +1210,7 @@ function SelectableCard({
         <div className="flex items-center gap-2">
           <p className="text-sm font-bold text-slate-900">{label}</p>
           {selected ? (
-            <span className="rounded-full bg-[#ec5b13] px-2 py-0.5 text-[11px] font-bold uppercase tracking-[0.14em] text-white">
+            <span className="rounded-full bg-[var(--primary)] px-2 py-0.5 text-[11px] font-bold text-white">
               선택됨
             </span>
           ) : null}
@@ -815,9 +1236,10 @@ function SelectableMemberCard({
     <button
       type="button"
       onClick={onClick}
-      className={`flex items-center justify-between gap-3 rounded-2xl border px-4 py-3 text-left transition ${
+      aria-pressed={selected}
+      className={`flex min-h-12 items-center justify-between gap-3 rounded-2xl border px-4 py-3 text-left transition ${
         selected
-          ? "border-[#ec5b13] bg-[#fff4ec] shadow-[0_10px_24px_rgba(236,91,19,0.12)]"
+          ? "border-[var(--primary)] bg-[var(--primary)]/8 shadow-sm"
           : "border-slate-200 bg-slate-50 hover:border-slate-300 hover:bg-white"
       }`}
     >
@@ -827,11 +1249,11 @@ function SelectableMemberCard({
       </div>
       <div
         className={`flex size-8 shrink-0 items-center justify-center rounded-full ${
-          selected ? "bg-[#ec5b13] text-white" : "bg-white text-slate-300"
+          selected ? "bg-[var(--primary)] text-white" : "bg-white text-slate-300"
         }`}
       >
         <span className="material-symbols-outlined text-[18px]" aria-hidden="true">
-          {selected ? "check" : "radio_button_unchecked"}
+          {selected ? "check" : "add"}
         </span>
       </div>
     </button>
