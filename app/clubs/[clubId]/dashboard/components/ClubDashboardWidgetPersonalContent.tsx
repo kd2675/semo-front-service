@@ -3,7 +3,11 @@
 import { AnimatePresence, motion } from "motion/react";
 import { useMemo } from "react";
 import { RouterLink } from "@/app/components/RouterLink";
-import { type ClubPollSummary } from "@/app/lib/clubs";
+import {
+  type ClubPollSummary,
+  type ScheduleAttendanceEventSummary,
+  type ScheduleAttendanceStatus,
+} from "@/app/lib/clubs";
 import { getFinanceStatusClassName } from "../utils/dashboardWidgetUtils";
 import type { ClubDashboardWidgetCardProps } from "../types/dashboardWidgetTypes";
 
@@ -21,8 +25,36 @@ type PersonalContentProps = Pick<
   | "pollData"
   | "pollLoading"
   | "pollError"
-  | "attendancePulseToken"
 >;
+
+function getAttendanceStatusLabel(status: ScheduleAttendanceStatus) {
+  if (status === "PRESENT") {
+    return "출석";
+  }
+  if (status === "LATE") {
+    return "지각";
+  }
+  if (status === "ABSENT") {
+    return "결석";
+  }
+  return "사유 인정";
+}
+
+function getAttendanceEventStatusLabel(event: ScheduleAttendanceEventSummary | null) {
+  if (!event) {
+    return "정보 없음";
+  }
+  if (event.attendanceStatus) {
+    return getAttendanceStatusLabel(event.attendanceStatus);
+  }
+  if (event.participationStatus === "GOING") {
+    return "참석 예정";
+  }
+  if (event.participationStatus === "NOT_GOING") {
+    return "불참 응답";
+  }
+  return "응답 필요";
+}
 
 export function ClubDashboardWidgetPersonalContent({
   clubId,
@@ -44,30 +76,31 @@ export function ClubDashboardWidgetPersonalContent({
   const isFinanceLedgerWidget = widget.widgetKey === "FINANCE_LEDGER";
   const isPollStatusWidget = widget.widgetKey === "POLL_STATUS";
   const isPollPulseWidget = widget.widgetKey === "POLL_PULSE";
-  const todayAttendance = attendanceData?.todayAttendance;
-  const recentLog = attendanceData?.recentLogs?.[0] ?? null;
-  const recentAttendanceLogs = useMemo(() => attendanceData?.recentLogs.slice(0, 3) ?? [], [attendanceData]);
+  const nextAttendanceEvent = attendanceData?.nextEvent ?? null;
+  const recentAttendanceEvents = useMemo(
+    () => attendanceData?.recentEvents.slice(0, 3) ?? [],
+    [attendanceData],
+  );
   const nextFinanceObligation = financeData?.nextPayableObligation ?? null;
   const recentFinancePayments = financeData?.recentPayments.slice(0, 2) ?? [];
   const recentAttendanceRate = useMemo(() => {
-    if (recentAttendanceLogs.length === 0) {
+    const eventsWithRsvp = recentAttendanceEvents.filter((event) => event.goingCount > 0);
+    if (eventsWithRsvp.length === 0) {
       return null;
     }
 
-    const totalRate = recentAttendanceLogs.reduce((sum, log) => {
-      if (log.memberCount <= 0) {
-        return sum;
-      }
-      return sum + log.checkedInCount / log.memberCount;
+    const totalRate = eventsWithRsvp.reduce((sum, event) => {
+      return sum + event.attendedCount / event.goingCount;
     }, 0);
-    return Math.round((totalRate / recentAttendanceLogs.length) * 100);
-  }, [recentAttendanceLogs]);
-  const statusLabel = todayAttendance ? (todayAttendance.checkedIn ? "출석 완료" : "출석 필요") : "정보 없음";
-  const statusClassName = todayAttendance
-    ? todayAttendance.checkedIn
-      ? "bg-emerald-100 text-emerald-600"
-      : "bg-blue-100 text-blue-600"
-    : "bg-slate-200 text-slate-500";
+    return Math.round((totalRate / eventsWithRsvp.length) * 100);
+  }, [recentAttendanceEvents]);
+  const statusLabel = getAttendanceEventStatusLabel(nextAttendanceEvent);
+  const statusClassName = nextAttendanceEvent?.attendanceStatus === "PRESENT"
+    || nextAttendanceEvent?.attendanceStatus === "LATE"
+    ? "bg-emerald-100 text-emerald-700"
+    : nextAttendanceEvent?.participationStatus === "GOING"
+      ? "bg-blue-100 text-blue-700"
+      : "bg-slate-200 text-slate-600";
   const latestOngoingPoll = useMemo<ClubPollSummary | null>(() => {
     if (!pollData) {
       return null;
@@ -93,27 +126,30 @@ export function ClubDashboardWidgetPersonalContent({
           </>
         ) : attendanceError ? (
           <p className="text-sm text-slate-500">출석 정보를 가져오지 못했습니다.</p>
-        ) : todayAttendance ? (
+        ) : nextAttendanceEvent ? (
           <>
             <motion.p
-              key={`attendance-title-${todayAttendance.attendanceDateLabel}`}
+              key={`attendance-title-${nextAttendanceEvent.eventId}`}
               initial={reduceMotion ? false : { opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: reduceMotion ? 0 : 0.25, ease: "easeOut" }}
               className="text-sm font-semibold text-slate-900"
             >
-              {todayAttendance.checkedIn ? "오늘 출석 완료" : "오늘 출석 필요"}
+              {nextAttendanceEvent.title}
             </motion.p>
-            <p className="text-xs text-slate-500">{todayAttendance.attendanceDateLabel}</p>
+            <p className="text-xs text-slate-500">
+              {nextAttendanceEvent.dateLabel}
+              {nextAttendanceEvent.timeLabel ? ` · ${nextAttendanceEvent.timeLabel}` : ""}
+            </p>
             <div className="flex items-center justify-between rounded-lg bg-slate-50 px-3 py-2">
               <motion.p
-                key={`attendance-count-${todayAttendance.checkedInCount}-${todayAttendance.memberCount}`}
+                key={`attendance-count-${nextAttendanceEvent.attendedCount}-${nextAttendanceEvent.goingCount}`}
                 initial={reduceMotion ? false : { opacity: 0, y: 4 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: reduceMotion ? 0 : 0.2, ease: "easeOut" }}
                 className="text-xs font-medium text-slate-500"
               >
-                {todayAttendance.checkedInCount}/{todayAttendance.memberCount}명 출석
+                {nextAttendanceEvent.attendedCount}/{nextAttendanceEvent.goingCount}명 도착 확인
               </motion.p>
               <AnimatePresence mode="wait" initial={false}>
                 <motion.span
@@ -128,19 +164,12 @@ export function ClubDashboardWidgetPersonalContent({
                 </motion.span>
               </AnimatePresence>
             </div>
-            {todayAttendance.checkedInAtLabel ? (
-              <p className="text-[11px] text-slate-400">체크인 시각: {todayAttendance.checkedInAtLabel}</p>
+            {nextAttendanceEvent.checkedInAtLabel ? (
+              <p className="text-[11px] text-slate-400">확인 시각: {nextAttendanceEvent.checkedInAtLabel}</p>
             ) : null}
           </>
         ) : (
-          <>
-            <p className="text-sm text-slate-500">오늘 출석 정보를 아직 불러오지 못했습니다.</p>
-            {recentLog ? (
-              <p className="text-xs text-slate-400">
-                최근: {recentLog.attendanceDateLabel} · {recentLog.checkedInCount}/{recentLog.memberCount}명 출석
-              </p>
-            ) : null}
-          </>
+          <p className="text-sm text-slate-500">참석 응답을 받을 예정 일정이 없습니다.</p>
         )}
       </div>
     );
@@ -156,7 +185,7 @@ export function ClubDashboardWidgetPersonalContent({
           </>
         ) : attendanceError ? (
           <p className="text-sm text-slate-500">출석 기록을 가져오지 못했습니다.</p>
-        ) : recentAttendanceLogs.length > 0 ? (
+        ) : recentAttendanceEvents.length > 0 ? (
           <>
             <div className="flex items-start justify-between gap-3">
               <div>
@@ -164,21 +193,23 @@ export function ClubDashboardWidgetPersonalContent({
                 <p className="mt-2 text-base font-bold text-slate-900">평균 출석률 {recentAttendanceRate ?? 0}%</p>
               </div>
               <span className="rounded-full bg-violet-50 px-2 py-0.5 text-[11px] font-bold text-violet-700">
-                최근 {recentAttendanceLogs.length}회
+                최근 {recentAttendanceEvents.length}회
               </span>
             </div>
             <div className="space-y-2">
-              {recentAttendanceLogs.map((log) => {
-                const completionRate = log.memberCount > 0 ? Math.round((log.checkedInCount / log.memberCount) * 100) : 0;
+              {recentAttendanceEvents.map((event) => {
+                const completionRate = event.goingCount > 0
+                  ? Math.round((event.attendedCount / event.goingCount) * 100)
+                  : 0;
                 return (
-                  <div key={`${widget.widgetKey}-${log.attendanceDateLabel}`} className="rounded-xl border border-violet-100 bg-violet-50/40 px-3 py-2">
+                  <div key={`${widget.widgetKey}-${event.eventId}`} className="rounded-xl border border-violet-100 bg-violet-50/40 px-3 py-2">
                     <div className="flex items-center justify-between gap-3">
-                      <p className="text-sm font-semibold text-slate-900">{log.attendanceDateLabel}</p>
+                      <p className="truncate text-sm font-semibold text-slate-900">{event.title}</p>
                       <span className="text-[11px] font-bold text-violet-700">{completionRate}%</span>
                     </div>
                     <p className="mt-1 text-xs text-slate-500">
-                      {log.checkedInCount}/{log.memberCount}명 출석
-                      {log.checkedIn ? ` · ${log.checkedInAtLabel ?? "내 출석 완료"}` : ""}
+                      {event.dateLabel} · {event.attendedCount}/{event.goingCount}명 확인
+                      {event.attendanceStatus ? ` · 내 상태 ${getAttendanceStatusLabel(event.attendanceStatus)}` : ""}
                     </p>
                   </div>
                 );

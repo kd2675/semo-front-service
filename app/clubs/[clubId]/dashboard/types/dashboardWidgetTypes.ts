@@ -1,5 +1,5 @@
 import type {
-  ClubAttendanceResponse,
+  ClubScheduleAttendanceSummaryResponse,
   ClubBoardResponse,
   ClubBracketHomeResponse,
   ClubDashboardWidgetSummary,
@@ -18,7 +18,7 @@ export type ClubDashboardWidgetCardProps = {
   isDropTarget: boolean;
   isDisabled: boolean;
   reduceMotion: boolean;
-  attendanceData: ClubAttendanceResponse | null;
+  attendanceData: ClubScheduleAttendanceSummaryResponse | null;
   attendanceLoading: boolean;
   attendanceError: string | null;
   financeData: ClubFinanceHomeResponse | null;
@@ -39,10 +39,7 @@ export type ClubDashboardWidgetCardProps = {
   bracketData: ClubBracketHomeResponse | null;
   bracketLoading: boolean;
   bracketError: string | null;
-  attendancePulseToken: number;
-  isCheckingInAttendance: boolean;
   onRemove: (widgetKey: string) => void;
-  onAttendanceCheckIn: () => void;
   onDragStart: (widgetKey: string) => void;
   onDragOver: (widgetKey: string) => void;
   onDrop: (widgetKey: string) => void;

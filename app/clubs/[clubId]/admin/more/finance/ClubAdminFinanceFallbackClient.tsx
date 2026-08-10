@@ -11,7 +11,7 @@ import {
   adminFinanceRequestsQueryOptions,
 } from "@/app/lib/react-query/finance/queries";
 import { ClubAdminFinanceClient } from "./ClubAdminFinanceClient";
-import { AdminAttendanceLoadingShell } from "../../AdminRouteLoadingShells";
+import { AdminFinanceLoadingShell } from "../../AdminRouteLoadingShells";
 
 type ClubAdminFinanceFallbackClientProps = {
   clubId: string;
@@ -78,7 +78,7 @@ export function ClubAdminFinanceFallbackClient({ clubId }: ClubAdminFinanceFallb
   }
 
   if (!club || !finance || !obligationFeed || !requestFeed || !expenseFeed) {
-    return <AdminAttendanceLoadingShell />;
+    return <AdminFinanceLoadingShell />;
   }
 
   return (

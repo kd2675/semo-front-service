@@ -1,6 +1,5 @@
 "use client";
 
-import { motion } from "motion/react";
 import { RouterLink } from "@/app/components/RouterLink";
 import {
   getWidgetDescription,
@@ -13,12 +12,10 @@ import { ClubDashboardWidgetFeatureContent } from "./ClubDashboardWidgetFeatureC
 import { ClubDashboardWidgetPersonalContent } from "./ClubDashboardWidgetPersonalContent";
 
 export function ClubDashboardWidgetContent(props: ClubDashboardWidgetCardProps) {
-  const { clubId, widget, editMode, isAdmin, reduceMotion, attendanceData, attendanceLoading, isCheckingInAttendance, onAttendanceCheckIn } =
+  const { clubId, widget, editMode, isAdmin } =
     props;
   const accentClass = WIDGET_ACCENT_CLASS[widget.widgetKey] ?? "bg-slate-100 text-slate-600";
   const isEditMode = isAdmin && editMode;
-  const isAttendanceStatusWidget = widget.widgetKey === "ATTENDANCE_STATUS";
-  const todayAttendance = attendanceData?.todayAttendance;
 
   return (
     <>
@@ -43,28 +40,6 @@ export function ClubDashboardWidgetContent(props: ClubDashboardWidgetCardProps) 
           <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-3 py-1.5 text-xs font-bold text-slate-500">
             드래그해서 순서 변경
           </span>
-        ) : isAttendanceStatusWidget && todayAttendance?.canCheckIn && !todayAttendance.checkedIn ? (
-          <motion.button
-            type="button"
-            onClick={onAttendanceCheckIn}
-            disabled={attendanceLoading || isCheckingInAttendance}
-            whileTap={reduceMotion ? undefined : { scale: 0.97 }}
-            whileHover={reduceMotion ? undefined : { y: -1 }}
-            className="inline-flex items-center gap-1 rounded-full bg-[var(--primary)]/10 px-3 py-1.5 text-xs font-bold text-[var(--primary)] transition-colors hover:bg-[var(--primary)]/20 disabled:opacity-60"
-          >
-            {isCheckingInAttendance ? "출석 처리 중..." : "출석하기"}
-            <motion.span
-              className="material-symbols-outlined text-sm"
-              animate={isCheckingInAttendance && !reduceMotion ? { rotate: 360 } : { rotate: 0 }}
-              transition={
-                isCheckingInAttendance && !reduceMotion
-                  ? { repeat: Infinity, duration: 1, ease: "linear" }
-                  : { duration: 0.2 }
-              }
-            >
-              check_circle
-            </motion.span>
-          </motion.button>
         ) : (
           <RouterLink
             href={widget.userPath || `/clubs/${clubId}`}

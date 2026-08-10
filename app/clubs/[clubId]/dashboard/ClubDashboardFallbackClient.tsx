@@ -11,14 +11,14 @@ import { ClubModeSwitchFab } from "@/app/components/ClubModeSwitchFab";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import { useAppToast } from "@/app/hooks/useAppToast";
 import {
-  getClubAttendance,
+  getClubScheduleAttendanceSummary,
   getClubFinance,
   getClubBoard,
   getClubBracketHome,
   getClubScheduleVoteSummary,
   getClubSchedule,
   getClubTournamentHome,
-  type ClubAttendanceResponse,
+  type ClubScheduleAttendanceSummaryResponse,
   type ClubBoardResponse,
   type ClubBracketHomeResponse,
   type ClubFinanceHomeResponse,
@@ -29,9 +29,6 @@ import {
 } from "@/app/lib/clubs";
 import { staggeredFadeUpMotion } from "@/app/lib/motion";
 import { getQueryErrorMessage } from "@/app/lib/queryUtils";
-import {
-  checkInAttendanceMutationOptions,
-} from "@/app/lib/react-query/attendance/mutations";
 import {
   updateDashboardWidgetsMutationOptions,
 } from "@/app/lib/react-query/club/mutations";
@@ -79,7 +76,7 @@ export function ClubDashboardFallbackClient({
   const [editMode, setEditMode] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [activeEditorWidgetKey, setActiveEditorWidgetKey] = useState<string | null>(null);
-  const [attendanceData, setAttendanceData] = useState<ClubAttendanceResponse | null>(null);
+  const [attendanceData, setAttendanceData] = useState<ClubScheduleAttendanceSummaryResponse | null>(null);
   const [attendanceLoading, setAttendanceLoading] = useState(false);
   const [attendanceError, setAttendanceError] = useState<string | null>(null);
   const [financeData, setFinanceData] = useState<ClubFinanceHomeResponse | null>(null);
@@ -100,11 +97,8 @@ export function ClubDashboardFallbackClient({
   const [bracketData, setBracketData] = useState<ClubBracketHomeResponse | null>(null);
   const [bracketLoading, setBracketLoading] = useState(false);
   const [bracketError, setBracketError] = useState<string | null>(null);
-  const [attendancePulseToken, setAttendancePulseToken] = useState(0);
-  const [isCheckingInAttendance, setIsCheckingInAttendance] = useState(false);
   const { showToast, clearToast } = useAppToast();
   const saveWidgetsMutation = useMutation(updateDashboardWidgetsMutationOptions(clubId, "USER_HOME"));
-  const checkInAttendanceMutation = useMutation(checkInAttendanceMutationOptions(clubId));
   const editorQuery = useQuery({
     ...dashboardWidgetEditorQueryOptions(clubId, "USER_HOME"),
     enabled: club?.admin === true,
@@ -241,7 +235,7 @@ export function ClubDashboardFallbackClient({
 
     setAttendanceLoading(true);
     setAttendanceError(null);
-    const result = await getClubAttendance(clubId);
+    const result = await getClubScheduleAttendanceSummary(clubId);
     if (!result.ok || !result.data) {
       setAttendanceData(null);
       setAttendanceError(result.message ?? "출석 정보를 불러오지 못했습니다.");
@@ -552,37 +546,6 @@ export function ClubDashboardFallbackClient({
     };
   }, [hasBracketWidget, loadBracketData]);
 
-  const handleAttendanceCheckIn = useCallback(async () => {
-    const todayAttendance = attendanceData?.todayAttendance;
-    if (!todayAttendance || !todayAttendance.canCheckIn || isCheckingInAttendance) {
-      return;
-    }
-
-    setIsCheckingInAttendance(true);
-    clearToast();
-    const result = await checkInAttendanceMutation.mutateAsync();
-    setIsCheckingInAttendance(false);
-
-    if (!result.ok || !result.data) {
-      showToast(result.message ?? "출석 처리에 실패했습니다.", "error");
-      return;
-    }
-
-    showToast("출석이 완료되었습니다.", "success");
-    setAttendancePulseToken((current) => current + 1);
-    void invalidateClubQueries(queryClient, clubId);
-    await loadAttendanceData();
-  }, [
-    attendanceData?.todayAttendance,
-    checkInAttendanceMutation,
-    clearToast,
-    clubId,
-    isCheckingInAttendance,
-    loadAttendanceData,
-    queryClient,
-    showToast,
-  ]);
-
   if (isLoading && !club && !error) {
     return <ClubDashboardLoadingShell />;
   }
@@ -737,10 +700,7 @@ export function ClubDashboardFallbackClient({
                     bracketData={isBracketWidgetKey(widget.widgetKey) ? bracketData : null}
                     bracketLoading={isBracketWidgetKey(widget.widgetKey) && bracketLoading}
                     bracketError={isBracketWidgetKey(widget.widgetKey) ? bracketError : null}
-                    attendancePulseToken={widget.widgetKey === "ATTENDANCE_STATUS" ? attendancePulseToken : 0}
-                    isCheckingInAttendance={widget.widgetKey === "ATTENDANCE_STATUS" && isCheckingInAttendance}
                     onRemove={() => {}}
-                    onAttendanceCheckIn={handleAttendanceCheckIn}
                     onDragStart={() => {}}
                     onDragOver={() => {}}
                     onDrop={() => {}}

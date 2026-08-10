@@ -1,14 +1,13 @@
 "use client";
 
 import { motion } from "motion/react";
-import { isAttendanceWidgetKey } from "../utils/dashboardWidgetUtils";
 import type { ClubDashboardWidgetCardProps } from "../types/dashboardWidgetTypes";
 import { ClubDashboardWidgetContent } from "./ClubDashboardWidgetContent";
 
 export type { ClubDashboardWidgetCardProps } from "../types/dashboardWidgetTypes";
 
 export function ClubDashboardWidgetCard(props: ClubDashboardWidgetCardProps) {
-  const { widget, editMode, isAdmin, isDragging, isDropTarget, isDisabled, reduceMotion, attendancePulseToken, onDragOver, onDrop, onDragStart, onDragEnd, onTouchDragStart, onRemove } =
+  const { widget, editMode, isAdmin, isDragging, isDropTarget, isDisabled, reduceMotion, onDragOver, onDrop, onDragStart, onDragEnd, onTouchDragStart, onRemove } =
     props;
   const spanClass = [
     widget.columnSpan >= 2 ? "md:col-span-2" : "",
@@ -17,13 +16,11 @@ export function ClubDashboardWidgetCard(props: ClubDashboardWidgetCardProps) {
     .filter(Boolean)
     .join(" ");
   const isEditMode = isAdmin && editMode;
-  const isAttendanceWidget = isAttendanceWidgetKey(widget.widgetKey);
-  const shouldPulseAttendance = isAttendanceWidget && attendancePulseToken > 0 && !reduceMotion;
   const baseBoxShadow = "0 1px 2px rgba(15, 23, 42, 0.06)";
 
   return (
     <motion.article
-      key={isAttendanceWidget ? `${widget.widgetKey}-${attendancePulseToken}` : widget.widgetKey}
+      key={widget.widgetKey}
       data-widget-key={widget.widgetKey}
       onDragOver={(event) => {
         if (!isEditMode) {
@@ -42,19 +39,8 @@ export function ClubDashboardWidgetCard(props: ClubDashboardWidgetCardProps) {
       className={`relative flex min-h-[180px] flex-col rounded-xl border bg-white p-5 shadow-sm transition ${
         isDropTarget ? "border-[var(--primary)] ring-2 ring-[var(--primary)]/20" : "border-slate-200"
       } ${isDragging ? "opacity-60" : ""} ${spanClass}`}
-      animate={
-        shouldPulseAttendance
-          ? {
-              scale: [1, 1.01, 1],
-              boxShadow: [
-                baseBoxShadow,
-                "0 0 0 2px rgba(19, 91, 236, 0.24), 0 14px 28px rgba(19, 91, 236, 0.16)",
-                baseBoxShadow,
-              ],
-            }
-          : { scale: 1, boxShadow: baseBoxShadow }
-      }
-      transition={{ duration: reduceMotion ? 0 : shouldPulseAttendance ? 0.78 : 0.2, ease: "easeOut" }}
+      animate={{ scale: 1, boxShadow: baseBoxShadow }}
+      transition={{ duration: reduceMotion ? 0 : 0.2, ease: "easeOut" }}
     >
       {isEditMode ? (
         <div className="absolute left-3 top-3 z-10">

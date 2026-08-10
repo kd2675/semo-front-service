@@ -289,7 +289,7 @@ export function AdminMembersLoadingShell() {
   );
 }
 
-export function AdminAttendanceLoadingShell() {
+export function AdminFinanceLoadingShell() {
   return (
     <div className="min-h-screen bg-[#f8f6f6] text-slate-900">
       <div className="min-h-screen bg-[#f8f6f6]">
@@ -339,7 +339,7 @@ export function AdminAttendanceLoadingShell() {
             <div className="space-y-3">
               {Array.from({ length: 5 }, (_, index) => (
                 <article
-                  key={`attendance-member-${index}`}
+                  key={`finance-item-${index}`}
                   className="flex items-center justify-between rounded-xl bg-slate-50 px-4 py-4"
                 >
                   <div className="space-y-2">

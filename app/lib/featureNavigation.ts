@@ -142,7 +142,7 @@ export function buildAdminMoreNavigation(features: ClubFeatureSummary[], clubId:
   const schedule = combinedItem(ordered, SCHEDULE_FEATURE_KEYS, {
     key: "SCHEDULE_CONTENT",
     label: "일정·투표·참석",
-    description: "일정 생성부터 참가 응답과 투표까지 대표 캘린더에서 관리합니다.",
+    description: "일정 생성부터 참가 응답, 실제 출석 확인과 투표까지 대표 캘린더에서 관리합니다.",
     iconName: "calendar_month",
     href: `/clubs/${clubId}/schedule`,
     group: "CONTENT",

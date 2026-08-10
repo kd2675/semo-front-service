@@ -7,6 +7,7 @@ import {
   deleteClubScheduleVote,
   submitClubScheduleVoteSelection,
   updateClubScheduleEvent,
+  updateClubScheduleEventAttendance,
   updateClubScheduleEventParticipation,
   updateClubScheduleVote,
 } from "@/app/lib/clubs";
@@ -33,6 +34,18 @@ export function updateScheduleParticipationMutationOptions(clubId: string, event
       participationStatus: Parameters<typeof updateClubScheduleEventParticipation>[2]["participationStatus"],
     ) =>
       updateClubScheduleEventParticipation(clubId, eventId, { participationStatus }),
+  });
+}
+
+export function updateScheduleAttendanceMutationOptions(clubId: string, eventId: string) {
+  return mutationOptions({
+    mutationFn: ({
+      clubProfileId,
+      request,
+    }: {
+      clubProfileId: string | number;
+      request: Parameters<typeof updateClubScheduleEventAttendance>[3];
+    }) => updateClubScheduleEventAttendance(clubId, eventId, clubProfileId, request),
   });
 }
 

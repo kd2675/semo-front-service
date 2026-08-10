@@ -1,4 +1,3 @@
-export * from "./attendance";
 export * from "./board";
 export * from "./club";
 export * from "./competition";

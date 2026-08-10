@@ -4,6 +4,9 @@ import type { TournamentSummary } from "./competition";
 
 type ClubId = string | number;
 
+export type ScheduleParticipationStatus = "GOING" | "NOT_GOING" | "CANCELED";
+export type ScheduleAttendanceStatus = "PRESENT" | "LATE" | "ABSENT" | "EXCUSED";
+
 export type ClubScheduleResponse = {
   clubId: number;
   clubName: string;
@@ -55,7 +58,7 @@ export type ClubScheduleEventSummary = {
   postedToCalendar: boolean;
   pinned: boolean;
   linkedNoticeId: number | null;
-  myParticipationStatus: "GOING" | "NOT_GOING" | null;
+  myParticipationStatus: ScheduleParticipationStatus | null;
   goingCount: number;
   notGoingCount: number;
   canEdit: boolean;
@@ -118,7 +121,7 @@ export type ClubScheduleEventDetailResponse = {
   postedToCalendar: boolean;
   pinned: boolean;
   linkedNoticeId: number | null;
-  myParticipationStatus: "GOING" | "NOT_GOING" | null;
+  myParticipationStatus: ScheduleParticipationStatus | null;
   goingCount: number;
   notGoingCount: number;
   goingParticipants: {
@@ -127,6 +130,15 @@ export type ClubScheduleEventDetailResponse = {
     avatarImageUrl: string | null;
     avatarThumbnailUrl: string | null;
   }[];
+  attendanceEnabled: boolean;
+  canManageAttendance: boolean;
+  myAttendanceStatus: ScheduleAttendanceStatus | null;
+  myCheckedInAtLabel: string | null;
+  presentCount: number;
+  lateCount: number;
+  absentCount: number;
+  excusedCount: number;
+  unmarkedCount: number;
   canEdit: boolean;
   canDelete: boolean;
 };
@@ -190,7 +202,63 @@ export type ClubScheduleVoteDetailResponse = {
 };
 
 export type UpdateScheduleEventParticipationRequest = {
-  participationStatus: "GOING" | "NOT_GOING" | "CANCEL";
+  participationStatus: ScheduleParticipationStatus;
+};
+
+export type ScheduleEventAttendanceSummary = {
+  goingCount: number;
+  presentCount: number;
+  lateCount: number;
+  absentCount: number;
+  excusedCount: number;
+  unmarkedCount: number;
+};
+
+export type ScheduleEventAttendanceMember = {
+  clubProfileId: number;
+  displayName: string;
+  roleCode: string;
+  participationStatus: ScheduleParticipationStatus | null;
+  attendanceStatus: ScheduleAttendanceStatus | null;
+  checkedInAtLabel: string | null;
+  attendanceNote: string | null;
+};
+
+export type ScheduleEventAttendanceResponse = {
+  clubId: number;
+  clubName: string;
+  eventId: number;
+  eventTitle: string;
+  dateLabel: string;
+  timeLabel: string | null;
+  canManage: boolean;
+  summary: ScheduleEventAttendanceSummary;
+  members: ScheduleEventAttendanceMember[];
+};
+
+export type ScheduleAttendanceEventSummary = {
+  eventId: number;
+  title: string;
+  dateLabel: string;
+  timeLabel: string | null;
+  participationStatus: ScheduleParticipationStatus | null;
+  attendanceStatus: ScheduleAttendanceStatus | null;
+  checkedInAtLabel: string | null;
+  goingCount: number;
+  attendedCount: number;
+};
+
+export type ClubScheduleAttendanceSummaryResponse = {
+  clubId: number;
+  clubName: string;
+  enabled: boolean;
+  nextEvent: ScheduleAttendanceEventSummary | null;
+  recentEvents: ScheduleAttendanceEventSummary[];
+};
+
+export type UpdateScheduleEventAttendanceRequest = {
+  attendanceStatus: ScheduleAttendanceStatus | "UNMARKED";
+  note?: string | null;
 };
 
 export type UpsertScheduleVoteRequest = {
@@ -296,6 +364,30 @@ export function updateClubScheduleEventParticipation(
   request: UpdateScheduleEventParticipationRequest,
 ) {
   return putJson<ClubScheduleEventDetailResponse>(`/api/semo/v1/clubs/${clubId}/schedule/events/${eventId}/participation`, request);
+}
+
+export function getClubScheduleAttendanceSummary(clubId: ClubId) {
+  return getJson<ClubScheduleAttendanceSummaryResponse>(
+    `/api/semo/v1/clubs/${clubId}/schedule/attendance/summary`,
+  );
+}
+
+export function getClubScheduleEventAttendance(clubId: ClubId, eventId: string | number) {
+  return getJson<ScheduleEventAttendanceResponse>(
+    `/api/semo/v1/clubs/${clubId}/schedule/events/${eventId}/attendance`,
+  );
+}
+
+export function updateClubScheduleEventAttendance(
+  clubId: ClubId,
+  eventId: string | number,
+  clubProfileId: string | number,
+  request: UpdateScheduleEventAttendanceRequest,
+) {
+  return putJson<ScheduleEventAttendanceResponse>(
+    `/api/semo/v1/clubs/${clubId}/schedule/events/${eventId}/attendance/${clubProfileId}`,
+    request,
+  );
 }
 
 export function getClubScheduleVoteDetail(clubId: ClubId, voteId: string | number) {

@@ -18,6 +18,7 @@ import {
   scheduleQueryKeys,
 } from "@/app/lib/react-query/schedule/queries";
 import { ClubDetailLoadingShell } from "../../ClubRouteLoadingShells";
+import { ScheduleAttendanceModal } from "../modals/ScheduleAttendanceModal";
 
 type ClubScheduleDetailClientProps = {
   clubId: string;
@@ -95,6 +96,22 @@ function buildFeeDescription(payload: ClubScheduleEventDetailResponse) {
   return `총 ${new Intl.NumberFormat("ko-KR").format(payload.feeAmount)}원을 현재 참석 ${payload.goingCount}명 기준으로 나눈 금액입니다.`;
 }
 
+function getAttendanceStatusLabel(status: ClubScheduleEventDetailResponse["myAttendanceStatus"]) {
+  if (status === "PRESENT") {
+    return "출석 확인";
+  }
+  if (status === "LATE") {
+    return "지각 확인";
+  }
+  if (status === "ABSENT") {
+    return "결석";
+  }
+  if (status === "EXCUSED") {
+    return "사유 인정";
+  }
+  return "미확인";
+}
+
 export function ClubScheduleDetailClient({
   clubId,
   eventId,
@@ -111,8 +128,9 @@ export function ClubScheduleDetailClient({
   } = useQuery(scheduleEventDetailQueryOptions(clubId, eventId));
   const [payloadState, setPayload] = useState<ClubScheduleEventDetailResponse | null>(null);
   const [savingParticipation, setSavingParticipation] = useState(false);
-  const [pendingParticipationAction, setPendingParticipationAction] = useState<"GOING" | "NOT_GOING" | "CANCEL" | null>(null);
+  const [pendingParticipationAction, setPendingParticipationAction] = useState<"GOING" | "NOT_GOING" | "CANCELED" | null>(null);
   const [showGoingParticipants, setShowGoingParticipants] = useState(false);
+  const [showAttendanceManager, setShowAttendanceManager] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
   const participationMutation = useMutation(
     updateScheduleParticipationMutationOptions(clubId, eventId),
@@ -122,7 +140,7 @@ export function ClubScheduleDetailClient({
     ? getQueryErrorMessage(queryError, "일정 상세를 불러오지 못했습니다.")
     : null);
 
-  const handleParticipation = async (participationStatus: "GOING" | "NOT_GOING" | "CANCEL") => {
+  const handleParticipation = async (participationStatus: "GOING" | "NOT_GOING" | "CANCELED") => {
     setSavingParticipation(true);
     setPendingParticipationAction(participationStatus);
     setActionError(null);
@@ -294,6 +312,42 @@ export function ClubScheduleDetailClient({
                   </div>
                 </div>
 
+                {payload.attendanceEnabled ? (
+                  <div className="space-y-3">
+                    <div className="flex items-end justify-between gap-3">
+                      <div>
+                        <h3 className="text-sm font-bold tracking-wider text-slate-500">실제 출석</h3>
+                        <p className="mt-1 text-xs text-slate-400">참석 응답과 현장 확인은 별도로 기록됩니다.</p>
+                      </div>
+                      {payload.canManageAttendance ? (
+                        <button
+                          type="button"
+                          onClick={() => setShowAttendanceManager(true)}
+                          className="shrink-0 text-sm font-bold text-[var(--primary)]"
+                        >
+                          출석 관리
+                        </button>
+                      ) : null}
+                    </div>
+                    <div className="rounded-2xl bg-slate-50 p-4">
+                      <div className="flex items-center justify-between gap-4">
+                        <div>
+                          <p className="text-xs font-semibold text-slate-500">내 출석 상태</p>
+                          <p className="mt-1 text-base font-bold text-slate-900">
+                            {getAttendanceStatusLabel(payload.myAttendanceStatus)}
+                          </p>
+                        </div>
+                        <span className="rounded-xl bg-white px-3 py-2 text-xs font-bold text-slate-600 shadow-sm">
+                          확인 {payload.presentCount + payload.lateCount} · 미확인 {payload.unmarkedCount}
+                        </span>
+                      </div>
+                      {payload.myCheckedInAtLabel ? (
+                        <p className="mt-3 text-xs text-slate-500">확인 시각 {payload.myCheckedInAtLabel}</p>
+                      ) : null}
+                    </div>
+                  </div>
+                ) : null}
+
                 <div className="space-y-3">
                   <h3 className="text-sm font-bold uppercase tracking-wider text-slate-500">참가비 및 정산</h3>
                   <div className="flex items-center justify-between rounded-xl border border-[#e7effd] bg-[#e7effd]/40 p-4">
@@ -342,35 +396,46 @@ export function ClubScheduleDetailClient({
               }`}
             >
               {showParticipationActions ? (
-                payload.myParticipationStatus == null ? (
+                <>
                   <div className="grid grid-cols-2 gap-3">
                     <button
                       type="button"
                       onClick={() => handleParticipation("GOING")}
-                      disabled={savingParticipation}
-                      className="rounded-2xl bg-[#135bec] px-4 py-4 font-bold text-white transition-all active:scale-[0.98] disabled:opacity-70"
+                      disabled={savingParticipation || payload.myParticipationStatus === "GOING"}
+                      className={`rounded-2xl px-4 py-4 font-bold transition-all active:scale-[0.98] disabled:opacity-70 ${
+                        payload.myParticipationStatus === "GOING"
+                          ? "bg-[var(--primary)] text-white"
+                          : "border border-[var(--primary)]/20 bg-[var(--primary)]/5 text-[var(--primary)]"
+                      }`}
+                      aria-pressed={payload.myParticipationStatus === "GOING"}
                     >
                       {savingParticipation && pendingParticipationAction === "GOING" ? "처리 중..." : "참석"}
                     </button>
                     <button
                       type="button"
                       onClick={() => handleParticipation("NOT_GOING")}
-                      disabled={savingParticipation}
-                      className="rounded-2xl border-2 border-slate-100 bg-slate-50 px-4 py-4 font-bold text-slate-600 transition-colors disabled:opacity-70"
+                      disabled={savingParticipation || payload.myParticipationStatus === "NOT_GOING"}
+                      className={`rounded-2xl border px-4 py-4 font-bold transition-colors disabled:opacity-70 ${
+                        payload.myParticipationStatus === "NOT_GOING"
+                          ? "border-slate-500 bg-slate-700 text-white"
+                          : "border-slate-200 bg-slate-50 text-slate-600"
+                      }`}
+                      aria-pressed={payload.myParticipationStatus === "NOT_GOING"}
                     >
                       {savingParticipation && pendingParticipationAction === "NOT_GOING" ? "처리 중..." : "불참"}
                     </button>
                   </div>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => handleParticipation("CANCEL")}
-                    disabled={savingParticipation}
-                    className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-4 font-bold text-slate-500 transition-colors disabled:opacity-50"
-                  >
-                    {savingParticipation && pendingParticipationAction === "CANCEL" ? "처리 중..." : "취소"}
-                  </button>
-                )
+                  {payload.myParticipationStatus && payload.myParticipationStatus !== "CANCELED" ? (
+                    <button
+                      type="button"
+                      onClick={() => handleParticipation("CANCELED")}
+                      disabled={savingParticipation}
+                      className="w-full py-1 text-sm font-semibold text-slate-400 transition-colors hover:text-slate-600 disabled:opacity-50"
+                    >
+                      {savingParticipation && pendingParticipationAction === "CANCELED" ? "취소 중..." : "응답 취소"}
+                    </button>
+                  ) : null}
+                </>
               ) : null}
 
             </div>
@@ -433,6 +498,13 @@ export function ClubScheduleDetailClient({
                 </div>
               </div>
             </RouteModal>
+          ) : null}
+          {payload && showAttendanceManager ? (
+            <ScheduleAttendanceModal
+              clubId={clubId}
+              eventId={eventId}
+              onDismiss={() => setShowAttendanceManager(false)}
+            />
           ) : null}
         </AnimatePresence>
 

@@ -1,6 +1,6 @@
 # Semo More Features Implemented
 
-<!-- Updated: 2026-05-21 -->
+<!-- Updated: 2026-08-10 -->
 
 이 문서는 현재 코드 기준으로 구현된 `semo`의 `/more` 기능을 분석하고 설명합니다.
 
@@ -41,7 +41,7 @@
 | --- | --- | --- | --- | --- | --- |
 | `JOIN_REQUEST` | 신규가입 | 유저+관리자 | `/clubs/{clubId}/more/join-requests` | `/clubs/{clubId}/admin/more/join-requests` | 구현됨 |
 | `NOTICE` | 공지관리 | 유저+관리자 | `/clubs/{clubId}/board` | `/clubs/{clubId}/board` | 구현됨 |
-| `ATTENDANCE` | 출석 체크 | 유저+관리자 | `/clubs/{clubId}/more/attendance` | `/clubs/{clubId}/admin/more/attendance` | 구현됨 |
+| `ATTENDANCE` | 일정 출석 | 유저+관리자 | `/clubs/{clubId}/schedule` | `/clubs/{clubId}/schedule` | 구현됨 |
 | `POLL` | 투표 | 유저+관리자 | `/clubs/{clubId}/schedule` | `/clubs/{clubId}/schedule` | 구현됨 |
 | `SCHEDULE_MANAGE` | 일정관리 | 유저+관리자 | `/clubs/{clubId}/schedule` | `/clubs/{clubId}/schedule` | 구현됨 |
 | `TOURNAMENT_RECORD` | 대회기록 | 유저+관리자 | `/clubs/{clubId}/more/tournaments` | `/clubs/{clubId}/admin/more/tournaments` | 구현됨 |
@@ -124,43 +124,44 @@
 - 공지 자체와 게시판/캘린더 노출이 연결되어 있습니다.
 - 공지/게시판/캘린더 공유 라벨 정책은 `AGENTS.md`와 `AGENTS_SEMO_MORE_FEATURE_CHECKLIST.md` 기준으로 중요합니다.
 
-### 3. 출석 체크
+### 3. 일정 출석
 
-출석 기능은 오늘의 출석 가능 상태와 최근 출석 기록, 관리자용 멤버별 출석 상태를 제공합니다.
+출석 기능은 대표 캘린더의 일정 참가 응답과 현장 출석 확인을 하나의 운영 흐름으로 제공합니다. RSVP와 실제 출석은 의미가 다르므로 같은 원장 안에서 별도 상태로 보존합니다.
 
 유저 기능:
 
-- 오늘 출석 상태 조회
-- 출석 체크
-- 최근 출석 로그 확인
+- 일정별 `GOING`, `NOT_GOING`, `CANCELED` 참가 응답
+- 일정 상세와 홈 위젯에서 내 실제 출석 상태 확인
+- 최근 일정별 출석 기록 확인
 
-관리자 기능:
+운영자 기능:
 
-- 오늘 출석 현황 조회
-- 멤버별 출석 상태 확인
-- 세션 기반 출석 현황 확인
+- 일정 상세에서 전체 활성 멤버의 RSVP 상태 확인
+- `PRESENT`, `LATE`, `ABSENT`, `EXCUSED` 실제 출석 기록
+- 확인 시각, 확인자, 운영 메모 저장
+- `ATTENDANCE_MANAGE` 직책 capability를 통한 출석 운영 위임
 
 주요 API:
 
-- `GET /api/semo/v1/clubs/{clubId}/more/attendance`
-- `POST /api/semo/v1/clubs/{clubId}/more/attendance/check-in`
-- `GET /api/semo/v1/clubs/{clubId}/admin/more/attendance`
+- `GET /api/semo/v1/clubs/{clubId}/schedule/attendance/summary`
+- `GET /api/semo/v1/clubs/{clubId}/schedule/events/{eventId}/attendance`
+- `PUT /api/semo/v1/clubs/{clubId}/schedule/events/{eventId}/attendance/{clubProfileId}`
 
 주요 DB:
 
-- `attendance_session`
-- `attendance_checkin`
-- `club_attendance_record`
+- `club_schedule_event`
+- `club_event_participant`
 
 홈 위젯:
 
 - `ATTENDANCE_STATUS`
 - `ATTENDANCE_RECENT`
 
-분석:
+레거시 이관:
 
-- 유저의 즉시 행동인 체크인과 관리자 운영 현황이 분리되어 있습니다.
-- 다만 알림/리마인더 도메인이 없어 출석 시간 알림은 아직 제품 기능으로 보이지 않습니다.
+- event 연결이 있는 `club_attendance_record`는 명시적 migration으로 일정 참가자 원장에 이관합니다.
+- 일정 연결 근거가 없는 `attendance_session`, `attendance_checkin`은 날짜만으로 임의 매칭하지 않고 미매핑 수를 검증한 뒤 수동 이관 또는 폐기합니다.
+- 기존 `/more/attendance` 프론트 경로는 북마크 호환 redirect만 남으며 구형 일일 체크인 API와 클라이언트는 제거했습니다.
 
 ### 핵심 기능: 개인 활동과 관리자 감사 로그
 

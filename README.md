@@ -128,6 +128,7 @@ NEXT_PUBLIC_API_URL=http://localhost:8080
   - 달력/일정 overview
 - `/clubs/[clubId]/schedule/[eventId]`
   - 일정 상세 route modal
+  - RSVP와 실제 출석 상태를 구분해 표시하며 `ATTENDANCE_MANAGE` capability가 있으면 멤버별 출석을 같은 화면에서 관리
 - `/clubs/[clubId]/schedule/[eventId]/edit`
   - 일정 편집 route modal
 - `/clubs/[clubId]/schedule/votes/[voteId]`
