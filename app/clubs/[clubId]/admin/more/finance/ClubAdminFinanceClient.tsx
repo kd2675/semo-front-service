@@ -54,6 +54,7 @@ import {
   adminFinanceObligationDetailQueryOptions,
   adminFinanceObligationsQueryOptions,
   adminFinanceRequestsQueryOptions,
+  financeQueryKeys,
 } from "@/app/lib/react-query/finance/queries";
 import {
   BillingTabPanel,
@@ -234,10 +235,13 @@ export function ClubAdminFinanceClient({
 
   const reloadOverview = async () => {
     try {
-      const data = await queryClient.fetchQuery(adminFinanceHomeQueryOptions(clubId));
-      startTransition(() => {
-        setFinance(data);
+      await queryClient.invalidateQueries({
+        queryKey: financeQueryKeys.adminFinanceHome(clubId),
+        exact: true,
+        refetchType: "none",
       });
+      const data = await queryClient.fetchQuery(adminFinanceHomeQueryOptions(clubId));
+      setFinance(data);
       return data;
     } catch {
       showToast("재정 요약 정보를 다시 불러오지 못했습니다.", "error");
@@ -247,10 +251,13 @@ export function ClubAdminFinanceClient({
 
   const reloadRequestFeed = async () => {
     try {
-      const data = await queryClient.fetchQuery(adminFinanceRequestsQueryOptions(clubId));
-      startTransition(() => {
-        setRequests(data.items);
+      await queryClient.invalidateQueries({
+        queryKey: financeQueryKeys.adminFinanceRequests(clubId),
+        exact: true,
+        refetchType: "none",
       });
+      const data = await queryClient.fetchQuery(adminFinanceRequestsQueryOptions(clubId));
+      setRequests(data.items);
       return data;
     } catch {
       showToast("재정 요청 목록을 다시 불러오지 못했습니다.", "error");
@@ -260,8 +267,13 @@ export function ClubAdminFinanceClient({
 
   const reloadOperations = async () => {
     try {
+      await queryClient.invalidateQueries({
+        queryKey: financeQueryKeys.adminFinanceOperations(clubId),
+        exact: true,
+        refetchType: "none",
+      });
       const data = await queryClient.fetchQuery(adminFinanceOperationsQueryOptions(clubId));
-      startTransition(() => setOperations(data));
+      setOperations(data);
       return data;
     } catch {
       showToast("예산과 재정 기간 정보를 다시 불러오지 못했습니다.", "error");
@@ -271,10 +283,13 @@ export function ClubAdminFinanceClient({
 
   const reloadExpenseFeed = async () => {
     try {
-      const data = await queryClient.fetchQuery(adminFinanceExpensesQueryOptions(clubId));
-      startTransition(() => {
-        setExpenses(data.items);
+      await queryClient.invalidateQueries({
+        queryKey: financeQueryKeys.adminFinanceExpenses(clubId),
+        exact: true,
+        refetchType: "none",
       });
+      const data = await queryClient.fetchQuery(adminFinanceExpensesQueryOptions(clubId));
+      setExpenses(data.items);
       return data;
     } catch {
       showToast("지출 목록을 다시 불러오지 못했습니다.", "error");
