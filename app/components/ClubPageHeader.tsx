@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react";
 
+import { NotificationBellLink } from "@/app/components/NotificationBellLink";
 import { RouterLink } from "@/app/components/RouterLink";
 
 type ClubPageHeaderTheme = "user" | "admin";
@@ -18,6 +19,7 @@ type ClubPageHeaderProps = {
   containerClassName?: string;
   sticky?: boolean;
   layout?: ClubPageHeaderLayout;
+  showNotifications?: boolean;
 };
 
 export function ClubPageHeader({
@@ -31,6 +33,7 @@ export function ClubPageHeader({
   containerClassName,
   sticky = true,
   layout = "page",
+  showNotifications = true,
 }: ClubPageHeaderProps) {
   const headerClassName = `${sticky ? "sticky top-0 z-50" : ""} border-b border-slate-200 backdrop-blur-md ${
     theme === "admin" ? "bg-[#f8f6f6]/85" : "bg-[var(--background-light)]/85"
@@ -69,7 +72,12 @@ export function ClubPageHeader({
             {subtitle ? <p className="truncate text-xs text-slate-500">{subtitle}</p> : null}
           </div>
         </div>
-        {rightSlot ? <div className="shrink-0">{rightSlot}</div> : null}
+        {rightSlot || (showNotifications && layout === "page") ? (
+          <div className="flex shrink-0 items-center gap-1">
+            {rightSlot}
+            {showNotifications && layout === "page" ? <NotificationBellLink /> : null}
+          </div>
+        ) : null}
       </div>
     </header>
   );

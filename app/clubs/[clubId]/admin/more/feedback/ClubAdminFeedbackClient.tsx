@@ -5,6 +5,7 @@ import { motion, useReducedMotion } from "motion/react";
 import { useMemo, useState } from "react";
 import type { CSSProperties } from "react";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
+import { ResourceAttachmentPanel } from "@/app/components/ResourceAttachmentPanel";
 import { useAppToast } from "@/app/hooks/useAppToast";
 import {
   type ClubAdminFeedbackResponse,
@@ -359,6 +360,14 @@ export function ClubAdminFeedbackClient({
                 </div>
 
                 <div className="space-y-3">
+                  <ResourceAttachmentPanel
+                    clubId={clubId}
+                    resourceType="FEEDBACK"
+                    resourceId={selectedDetail.feedbackId}
+                    canUpload={selectedDetail.canManage}
+                    canDelete={selectedDetail.canManage}
+                    theme="admin"
+                  />
                   <div className="grid grid-cols-2 gap-3">
                     <label className="space-y-2">
                       <span className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">

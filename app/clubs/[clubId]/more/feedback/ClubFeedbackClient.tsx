@@ -5,6 +5,7 @@ import { motion, useReducedMotion } from "motion/react";
 import { startTransition, useMemo, useState } from "react";
 import { ClubModeSwitchFab } from "@/app/components/ClubModeSwitchFab";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
+import { ResourceAttachmentPanel } from "@/app/components/ResourceAttachmentPanel";
 import { useAppToast } from "@/app/hooks/useAppToast";
 import {
   type ClubFeedbackDetailResponse,
@@ -428,6 +429,13 @@ export function ClubFeedbackClient({
                     </p>
                   ) : null}
                 </div>
+                <ResourceAttachmentPanel
+                  clubId={clubId}
+                  resourceType="FEEDBACK"
+                  resourceId={selectedDetail.feedbackId}
+                  canUpload={selectedDetail.mine || selectedDetail.canManage}
+                  canDelete={selectedDetail.mine || selectedDetail.canManage}
+                />
               </div>
             )}
           </motion.section>
