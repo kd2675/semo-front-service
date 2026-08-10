@@ -1,6 +1,6 @@
 "use client";
 
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   DndContext,
   DragOverlay,
@@ -23,10 +23,14 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
+import { RouterLink } from "@/app/components/RouterLink";
 import { useAppToast } from "@/app/hooks/useAppToast";
 import { motion, useReducedMotion } from "motion/react";
 import { startTransition, useEffect, useMemo, useState } from "react";
-import { type ClubFeatureSummary } from "@/app/lib/clubs";
+import {
+  type ApplyClubOperationTemplateResponse,
+  type ClubFeatureSummary,
+} from "@/app/lib/clubs";
 import { getFeatureDisplayName } from "@/app/lib/featureLabels";
 import {
   buildAdminMoreNavigation,
@@ -34,7 +38,12 @@ import {
   type MoreNavigationItem,
 } from "@/app/lib/featureNavigation";
 import { staggeredFadeUpMotion } from "@/app/lib/motion";
-import { updateClubFeaturesMutationOptions } from "@/app/lib/react-query/club/mutations";
+import {
+  applyClubOperationTemplateMutationOptions,
+  applyClubPresetMutationOptions,
+  updateClubFeaturesMutationOptions,
+} from "@/app/lib/react-query/club/mutations";
+import { clubOperationsCatalogQueryOptions } from "@/app/lib/react-query/club/queries";
 import { invalidateClubQueries } from "@/app/lib/react-query/common";
 
 function extractEnabledFeatureKeys(features: ClubFeatureSummary[]) {
@@ -191,6 +200,9 @@ export function ClubAdminMenuClient({
     () => extractEnabledFeatureKeys(initialFeatures),
   );
   const [isSaving, setIsSaving] = useState(false);
+  const [applyingPresetKey, setApplyingPresetKey] = useState<string | null>(null);
+  const [applyingTemplateKey, setApplyingTemplateKey] = useState<string | null>(null);
+  const [lastTemplateResult, setLastTemplateResult] = useState<ApplyClubOperationTemplateResponse | null>(null);
   const [activeFeatureKey, setActiveFeatureKey] = useState<string | null>(null);
   const { showToast, clearToast } = useAppToast();
   const sensors = useSensors(
@@ -255,6 +267,12 @@ export function ClubAdminMenuClient({
     [currentEnabledFeatureKeys, savedEnabledFeatureKeys],
   );
   const saveFeaturesMutation = useMutation(updateClubFeaturesMutationOptions(clubId));
+  const applyPresetMutation = useMutation(applyClubPresetMutationOptions(clubId));
+  const applyTemplateMutation = useMutation(applyClubOperationTemplateMutationOptions(clubId));
+  const operationsCatalogQuery = useQuery({
+    ...clubOperationsCatalogQueryOptions(clubId),
+    enabled: canPersist,
+  });
 
   const handleToggle = (featureKey: string) => {
     startTransition(() => {
@@ -340,6 +358,50 @@ export function ClubAdminMenuClient({
     showToast("변경 사항을 되돌렸습니다.", "info");
   };
 
+  const handleApplyPreset = async (presetKey: string) => {
+    if (!canPersist) {
+      showToast("모의 모드에서는 프리셋이 적용되지 않습니다.", "info");
+      return;
+    }
+    setApplyingPresetKey(presetKey);
+    clearToast();
+    const result = await applyPresetMutation.mutateAsync({ presetKey, applyMode: "MERGE" });
+    setApplyingPresetKey(null);
+    if (!result.ok || !result.data) {
+      showToast(result.message ?? "클럽 프리셋 적용에 실패했습니다.", "error");
+      return;
+    }
+    setFeatures(cloneFeatures(result.data.features));
+    setSavedFeatures(cloneFeatures(result.data.features));
+    setSavedEnabledFeatureKeys(extractEnabledFeatureKeys(result.data.features));
+    setLastTemplateResult(null);
+    void operationsCatalogQuery.refetch();
+    void invalidateClubQueries(queryClient, clubId);
+    window.dispatchEvent(new Event("semo:club-features-updated"));
+    const positionMessage = result.data.createdPositionNames.length > 0
+      ? ` · ${result.data.createdPositionNames.join(", ")} 직책 생성`
+      : "";
+    showToast(`${result.data.displayName} 프리셋을 기존 설정에 추가했습니다${positionMessage}.`, "success");
+  };
+
+  const handleApplyTemplate = async (templateKey: string) => {
+    if (!canPersist) {
+      showToast("모의 모드에서는 템플릿이 적용되지 않습니다.", "info");
+      return;
+    }
+    setApplyingTemplateKey(templateKey);
+    clearToast();
+    const result = await applyTemplateMutation.mutateAsync({ templateKey });
+    setApplyingTemplateKey(null);
+    if (!result.ok || !result.data) {
+      showToast(result.message ?? "운영 템플릿 적용에 실패했습니다.", "error");
+      return;
+    }
+    setLastTemplateResult(result.data);
+    void invalidateClubQueries(queryClient, clubId);
+    showToast(`${result.data.displayName} 업무와 체크리스트를 만들었습니다.`, "success");
+  };
+
   return (
     <div className="min-h-screen bg-[var(--background-light)] text-slate-900">
       <div className="relative min-h-screen bg-[#f8f6f6]">
@@ -411,6 +473,138 @@ export function ClubAdminMenuClient({
           </motion.section>
 
           <motion.section className="px-4 py-4" {...staggeredFadeUpMotion(1, reduceMotion)}>
+            <div className="mb-4 flex items-center gap-2">
+              <span className="material-symbols-outlined text-[var(--primary)]" aria-hidden="true">auto_awesome</span>
+              <div>
+                <h2 className="text-lg font-bold">클럽 프리셋</h2>
+                <p className="mt-0.5 text-xs text-slate-500">현재 설정을 지우지 않고 추천 기능·홈 위젯·위임 직책을 추가합니다.</p>
+              </div>
+            </div>
+            {!canPersist ? (
+              <div className="rounded-2xl border border-slate-200 bg-white px-5 py-6 text-center text-sm text-slate-500">
+                실제 서버 연결 모드에서 프리셋과 템플릿을 적용할 수 있습니다.
+              </div>
+            ) : operationsCatalogQuery.isPending ? (
+              <div className="rounded-2xl border border-slate-200 bg-white px-5 py-8 text-center text-sm text-slate-500">
+                운영 프리셋을 불러오는 중입니다.
+              </div>
+            ) : operationsCatalogQuery.error ? (
+              <div className="rounded-2xl border border-rose-200 bg-rose-50 px-5 py-4 text-sm font-medium text-rose-700">
+                운영 프리셋을 불러오지 못했습니다. 기능 설정은 계속 직접 편집할 수 있습니다.
+              </div>
+            ) : (
+              <div className="grid gap-3 lg:grid-cols-3">
+                {operationsCatalogQuery.data?.presets.map((preset) => (
+                  <article key={preset.presetKey} className="flex h-full flex-col rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex size-12 items-center justify-center rounded-xl bg-[var(--primary)]/10 text-[var(--primary)]">
+                        <span className="material-symbols-outlined" aria-hidden="true">{preset.iconName}</span>
+                      </div>
+                      {preset.includedInCurrentConfiguration ? (
+                        <span className="rounded-full bg-emerald-50 px-3 py-1 text-[11px] font-bold text-emerald-700">구성 포함</span>
+                      ) : null}
+                    </div>
+                    <h3 className="mt-4 text-lg font-black text-slate-900">{preset.displayName}</h3>
+                    <p className="mt-2 text-sm leading-6 text-slate-500">{preset.description}</p>
+                    <div className="mt-4 flex flex-wrap gap-1.5">
+                      {preset.featureDisplayNames.slice(0, 6).map((featureName) => (
+                        <span key={featureName} className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-bold text-slate-600">
+                          {featureName}
+                        </span>
+                      ))}
+                      {preset.featureDisplayNames.length > 6 ? (
+                        <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-bold text-slate-500">
+                          +{preset.featureDisplayNames.length - 6}
+                        </span>
+                      ) : null}
+                    </div>
+                    <p className="mt-4 text-xs leading-5 text-slate-500">
+                      위임 직책: {preset.delegatedPositionNames.join(" · ") || "없음"}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => handleApplyPreset(preset.presetKey)}
+                      disabled={applyingPresetKey !== null || isSaving}
+                      className="mt-auto w-full pt-5 disabled:opacity-50"
+                    >
+                      <span className="block w-full rounded-xl bg-slate-900 px-4 py-3 text-sm font-black text-white transition hover:bg-slate-800">
+                        {applyingPresetKey === preset.presetKey ? "적용 중..." : "추천 구성 추가"}
+                      </span>
+                    </button>
+                  </article>
+                ))}
+              </div>
+            )}
+          </motion.section>
+
+          <motion.section className="px-4 py-4" {...staggeredFadeUpMotion(2, reduceMotion)}>
+            <div className="mb-4 flex items-center gap-2">
+              <span className="material-symbols-outlined text-[var(--primary)]" aria-hidden="true">checklist</span>
+              <div>
+                <h2 className="text-lg font-bold">운영 템플릿</h2>
+                <p className="mt-0.5 text-xs text-slate-500">담당 업무와 표준 체크리스트를 즉시 생성합니다.</p>
+              </div>
+            </div>
+            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+              {operationsCatalogQuery.data?.templates.map((template) => {
+                const missingFeatureKeys = template.requiredFeatureKeys.filter(
+                  (featureKey) => !currentEnabledFeatureKeys.includes(featureKey),
+                );
+                return (
+                  <article key={template.templateKey} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex size-11 items-center justify-center rounded-xl bg-orange-50 text-[var(--primary)]">
+                        <span className="material-symbols-outlined" aria-hidden="true">{template.iconName}</span>
+                      </div>
+                      <span className="rounded-full bg-slate-100 px-3 py-1 text-[11px] font-bold text-slate-500">
+                        {template.recurrenceFrequency === "WEEKLY"
+                          ? "매주"
+                          : template.recurrenceFrequency === "MONTHLY"
+                            ? "매월"
+                            : `기본 ${template.defaultDueDays}일`}
+                      </span>
+                    </div>
+                    <h3 className="mt-4 text-base font-black text-slate-900">{template.displayName}</h3>
+                    <p className="mt-2 text-sm leading-6 text-slate-500">{template.description}</p>
+                    <ol className="mt-4 space-y-2">
+                      {template.checklistItems.slice(0, 3).map((item, index) => (
+                        <li key={item} className="flex gap-2 text-xs leading-5 text-slate-600">
+                          <span className="font-black text-[var(--primary)]">{index + 1}</span>
+                          <span>{item}</span>
+                        </li>
+                      ))}
+                    </ol>
+                    {missingFeatureKeys.length > 0 ? (
+                      <p className="mt-4 rounded-xl bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-700">
+                        먼저 활성화: {missingFeatureKeys.join(" · ")}
+                      </p>
+                    ) : null}
+                    <button
+                      type="button"
+                      onClick={() => handleApplyTemplate(template.templateKey)}
+                      disabled={missingFeatureKeys.length > 0 || applyingTemplateKey !== null || isSaving}
+                      className="mt-4 w-full rounded-xl border border-[var(--primary)]/20 bg-[var(--primary)]/10 px-4 py-3 text-sm font-black text-[var(--primary)] transition hover:bg-[var(--primary)]/15 disabled:cursor-not-allowed disabled:opacity-45"
+                    >
+                      {applyingTemplateKey === template.templateKey ? "업무 생성 중..." : "업무로 만들기"}
+                    </button>
+                  </article>
+                );
+              })}
+            </div>
+            {lastTemplateResult ? (
+              <div className="mt-4 flex flex-col gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-sm font-black text-emerald-900">{lastTemplateResult.displayName} 생성 완료</p>
+                  <p className="mt-1 text-xs text-emerald-700">체크리스트 {lastTemplateResult.checklistItemCount}개가 포함되었습니다.</p>
+                </div>
+                <RouterLink href={lastTemplateResult.targetPath} className="semo-control bg-emerald-700 px-4 py-2.5 text-center text-xs font-black text-white">
+                  할 일에서 확인
+                </RouterLink>
+              </div>
+            ) : null}
+          </motion.section>
+
+          <motion.section className="px-4 py-4" {...staggeredFadeUpMotion(3, reduceMotion)}>
             <div className="mb-4 flex items-center gap-2">
               <span className="material-symbols-outlined text-[var(--primary)]" aria-hidden="true">preview</span>
               <h2 className="text-lg font-bold">실제 메뉴 미리보기</h2>

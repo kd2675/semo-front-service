@@ -9,6 +9,7 @@ import { ScheduleActionConfirmModal } from "@/app/clubs/[clubId]/schedule/modals
 import {
   type TournamentApplicationSummary,
   type TournamentDetailResponse,
+  type TournamentScheduleSlot,
 } from "@/app/lib/clubs";
 import {
   getTournamentApprovalBadgeClassName,
@@ -23,9 +24,12 @@ import { getQueryErrorMessage } from "@/app/lib/queryUtils";
 import { invalidateClubQueries } from "@/app/lib/react-query/common";
 import {
   cancelTournamentMutationOptions,
+  deleteTournamentScheduleSlotMutationOptions,
   deleteTournamentMutationOptions,
   reviewTournamentApplicationMutationOptions,
   reviewTournamentMutationOptions,
+  saveTournamentScheduleSlotMutationOptions,
+  updateTournamentApplicationOperationsMutationOptions,
 } from "@/app/lib/react-query/tournaments/mutations";
 import {
   tournamentDetailQueryOptions,
@@ -72,6 +76,12 @@ export function ClubTournamentManageClient({
   const [showDeleteTournament, setShowDeleteTournament] = useState(false);
   const [tournamentReviewStatus, setTournamentReviewStatus] = useState<"APPROVED" | "REJECTED">("APPROVED");
   const [tournamentRejectionReason, setTournamentRejectionReason] = useState("");
+  const [editingScheduleSlotId, setEditingScheduleSlotId] = useState<number | null>(null);
+  const [scheduleTitle, setScheduleTitle] = useState("");
+  const [scheduleCourtLabel, setScheduleCourtLabel] = useState("");
+  const [scheduleStartAt, setScheduleStartAt] = useState("");
+  const [scheduleEndAt, setScheduleEndAt] = useState("");
+  const [scheduleNote, setScheduleNote] = useState("");
   const reviewApplicationMutation = useMutation(
     reviewTournamentApplicationMutationOptions(clubId, tournamentRecordId),
   );
@@ -84,6 +94,15 @@ export function ClubTournamentManageClient({
   const deleteTournamentMutation = useMutation(
     deleteTournamentMutationOptions(clubId, tournamentRecordId),
   );
+  const saveScheduleSlotMutation = useMutation(
+    saveTournamentScheduleSlotMutationOptions(clubId, tournamentRecordId),
+  );
+  const deleteScheduleSlotMutation = useMutation(
+    deleteTournamentScheduleSlotMutationOptions(clubId, tournamentRecordId),
+  );
+  const updateApplicationOperationsMutation = useMutation(
+    updateTournamentApplicationOperationsMutationOptions(clubId, tournamentRecordId),
+  );
   const payload = payloadState ?? queryPayload ?? null;
   const error =
     actionError ?? (queryError
@@ -92,6 +111,33 @@ export function ClubTournamentManageClient({
 
   const isModal = presentation === "modal";
   const fallbackBasePath = basePath ?? `/clubs/${clubId}/more/tournaments`;
+
+  const applyMutationResult = (nextPayload: TournamentDetailResponse) => {
+    queryClient.setQueryData(
+      tournamentQueryKeys.tournamentDetail(clubId, tournamentRecordId),
+      nextPayload,
+    );
+    setPayload(nextPayload);
+    void invalidateClubQueries(queryClient, clubId);
+  };
+
+  const resetScheduleForm = () => {
+    setEditingScheduleSlotId(null);
+    setScheduleTitle("");
+    setScheduleCourtLabel("");
+    setScheduleStartAt("");
+    setScheduleEndAt("");
+    setScheduleNote("");
+  };
+
+  const startEditingScheduleSlot = (slot: TournamentScheduleSlot) => {
+    setEditingScheduleSlotId(slot.tournamentScheduleSlotId);
+    setScheduleTitle(slot.title);
+    setScheduleCourtLabel(slot.courtLabel ?? "");
+    setScheduleStartAt(slot.startAt.slice(0, 16));
+    setScheduleEndAt(slot.endAt.slice(0, 16));
+    setScheduleNote(slot.note ?? "");
+  };
 
   useEffect(() => {
     if (!payload || !initialSection) {
@@ -142,6 +188,66 @@ export function ClubTournamentManageClient({
     );
     setPayload(result.data);
     void invalidateClubQueries(queryClient, clubId);
+  };
+
+  const handleSaveScheduleSlot = async () => {
+    if (!scheduleTitle.trim() || !scheduleStartAt || !scheduleEndAt) {
+      setActionError("일정 제목과 시작·종료 시각을 모두 입력하세요.");
+      return;
+    }
+    setSaving(true);
+    setActionError(null);
+    const result = await saveScheduleSlotMutation.mutateAsync({
+      scheduleSlotId: editingScheduleSlotId,
+      request: {
+        title: scheduleTitle.trim(),
+        courtLabel: scheduleCourtLabel.trim() || null,
+        startAt: scheduleStartAt,
+        endAt: scheduleEndAt,
+        note: scheduleNote.trim() || null,
+      },
+    });
+    setSaving(false);
+    if (!result.ok || !result.data) {
+      setActionError(result.message ?? "대회 일정을 저장하지 못했습니다.");
+      return;
+    }
+    applyMutationResult(result.data);
+    resetScheduleForm();
+  };
+
+  const handleDeleteScheduleSlot = async (scheduleSlotId: number) => {
+    setSaving(true);
+    setActionError(null);
+    const result = await deleteScheduleSlotMutation.mutateAsync(scheduleSlotId);
+    setSaving(false);
+    if (!result.ok || !result.data) {
+      setActionError(result.message ?? "대회 일정을 삭제하지 못했습니다.");
+      return;
+    }
+    applyMutationResult(result.data);
+    if (editingScheduleSlotId === scheduleSlotId) {
+      resetScheduleForm();
+    }
+  };
+
+  const handleUpdateApplicationOperations = async (
+    application: TournamentApplicationSummary,
+    request: { checkedIn: boolean; placement: number | null; resultNote: string | null },
+  ) => {
+    setSaving(true);
+    setActionError(null);
+    const result = await updateApplicationOperationsMutation.mutateAsync({
+      tournamentApplicationId: application.tournamentApplicationId,
+      request,
+    });
+    setSaving(false);
+    if (!result.ok || !result.data) {
+      setActionError(result.message ?? "참가자 체크인·결과를 저장하지 못했습니다.");
+      return false;
+    }
+    applyMutationResult(result.data);
+    return true;
   };
 
   const handleReviewTournament = async () => {
@@ -365,7 +471,7 @@ export function ClubTournamentManageClient({
             </motion.section>
           ) : null}
 
-          {mode !== "admin" && payload.canManageApplications ? (
+          {payload.canManageApplications ? (
             <motion.section
               id="tournament-management-section"
               className="mt-6 rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm"
@@ -391,17 +497,44 @@ export function ClubTournamentManageClient({
                             <p className="mt-2 text-sm text-slate-600">{application.applicationNote}</p>
                           ) : null}
                         </div>
-                        <span className={`rounded-full px-3 py-1 text-[11px] font-black uppercase tracking-[0.18em] ${
+                        <span className={`rounded-full px-3 py-1 text-[11px] font-black tracking-wide ${
                           application.applicationStatus === "APPROVED"
                             ? "bg-emerald-50 text-emerald-700"
                             : application.applicationStatus === "REJECTED"
                               ? "bg-rose-50 text-rose-600"
+                              : application.applicationStatus === "WAITLISTED"
+                                ? "bg-violet-50 text-violet-700"
                               : "bg-amber-50 text-amber-700"
                         }`}>
-                          {application.applicationStatus}
+                          {getApplicationStatusLabel(application)}
                         </span>
                       </div>
-                      {application.applicationStatus === "APPLIED" ? (
+                      {application.teamName ? (
+                        <div className="mt-3 rounded-xl bg-white px-3 py-3 ring-1 ring-slate-200">
+                          <p className="text-xs font-black text-sky-700">{application.teamName}</p>
+                          <p className="mt-1 text-xs leading-5 text-slate-500">
+                            {application.rosterMembers.map((member) => member.displayName).join(" · ")}
+                          </p>
+                        </div>
+                      ) : null}
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        {application.feePaymentStatusLabel ? (
+                          <span className="rounded-full bg-white px-3 py-1 text-[11px] font-bold text-slate-600 ring-1 ring-slate-200">
+                            참가비 {application.feePaymentStatusLabel}
+                          </span>
+                        ) : null}
+                        {application.checkedInAtLabel ? (
+                          <span className="rounded-full bg-sky-50 px-3 py-1 text-[11px] font-bold text-sky-700">
+                            {application.checkedInAtLabel} 체크인
+                          </span>
+                        ) : null}
+                        {application.placement ? (
+                          <span className="rounded-full bg-amber-50 px-3 py-1 text-[11px] font-bold text-amber-700">
+                            {application.placement}위
+                          </span>
+                        ) : null}
+                      </div>
+                      {application.applicationStatus === "APPLIED" || application.applicationStatus === "WAITLISTED" ? (
                         <div className="mt-3 flex gap-2">
                           <button
                             type="button"
@@ -419,9 +552,108 @@ export function ClubTournamentManageClient({
                           </button>
                         </div>
                       ) : null}
+                      {application.applicationStatus === "APPROVED" ? (
+                        <ApplicationOperationsEditor
+                          application={application}
+                          saving={saving}
+                          onSave={(request) => handleUpdateApplicationOperations(application, request)}
+                        />
+                      ) : null}
                     </div>
                   ))
                 )}
+              </div>
+            </motion.section>
+          ) : null}
+
+          {payload.canManageApplications ? (
+            <motion.section
+              className="mt-6 rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm"
+              initial={reduceMotion ? undefined : { opacity: 0, y: 16 }}
+              animate={reduceMotion ? undefined : { opacity: 1, y: 0 }}
+              transition={{ delay: reduceMotion ? 0 : 0.14 }}
+            >
+              <p className="text-xs font-black tracking-wide text-slate-400">코트 · 시간표</p>
+              <h3 className="mt-2 text-xl font-black tracking-tight text-slate-900">대회 일정 운영</h3>
+              <div className="mt-4 space-y-3">
+                {payload.scheduleSlots.length === 0 ? (
+                  <div className="rounded-2xl border border-dashed border-slate-300 px-4 py-7 text-center text-sm text-slate-500">
+                    세부 일정이 없습니다. 코트 배정과 경기 시간을 등록하세요.
+                  </div>
+                ) : payload.scheduleSlots.map((slot) => (
+                  <div key={slot.tournamentScheduleSlotId} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="min-w-0">
+                        <p className="font-bold text-slate-900">{slot.title}</p>
+                        <p className="mt-1 text-xs leading-5 text-slate-500">
+                          {slot.startAtLabel} ~ {slot.endAtLabel}
+                          {slot.courtLabel ? ` · ${slot.courtLabel}` : ""}
+                        </p>
+                        {slot.note ? <p className="mt-2 text-sm text-slate-600">{slot.note}</p> : null}
+                      </div>
+                      <div className="flex shrink-0 gap-1">
+                        <button
+                          type="button"
+                          onClick={() => startEditingScheduleSlot(slot)}
+                          className="semo-icon-control bg-white text-slate-600 ring-1 ring-slate-200"
+                          aria-label={`${slot.title} 수정`}
+                        >
+                          <span className="material-symbols-outlined text-[19px]" aria-hidden="true">edit</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteScheduleSlot(slot.tournamentScheduleSlotId)}
+                          disabled={saving}
+                          className="semo-icon-control bg-white text-rose-600 ring-1 ring-rose-100 disabled:opacity-50"
+                          aria-label={`${slot.title} 삭제`}
+                        >
+                          <span className="material-symbols-outlined text-[19px]" aria-hidden="true">delete</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-5 rounded-2xl bg-slate-50 p-4">
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-sm font-black text-slate-900">
+                    {editingScheduleSlotId ? "일정 수정" : "새 일정 추가"}
+                  </p>
+                  {editingScheduleSlotId ? (
+                    <button type="button" onClick={resetScheduleForm} className="text-xs font-bold text-slate-500">수정 취소</button>
+                  ) : null}
+                </div>
+                <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                  <label className="sm:col-span-2">
+                    <span className="text-xs font-bold text-slate-600">일정 제목</span>
+                    <input value={scheduleTitle} onChange={(event) => setScheduleTitle(event.target.value)} maxLength={150} className="mt-1.5 block w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm" placeholder="예선 1라운드" />
+                  </label>
+                  <label>
+                    <span className="text-xs font-bold text-slate-600">시작</span>
+                    <input type="datetime-local" value={scheduleStartAt} onChange={(event) => setScheduleStartAt(event.target.value)} className="mt-1.5 block w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm" />
+                  </label>
+                  <label>
+                    <span className="text-xs font-bold text-slate-600">종료</span>
+                    <input type="datetime-local" value={scheduleEndAt} onChange={(event) => setScheduleEndAt(event.target.value)} className="mt-1.5 block w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm" />
+                  </label>
+                  <label>
+                    <span className="text-xs font-bold text-slate-600">코트·장소</span>
+                    <input value={scheduleCourtLabel} onChange={(event) => setScheduleCourtLabel(event.target.value)} maxLength={100} className="mt-1.5 block w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm" placeholder="1번 코트" />
+                  </label>
+                  <label>
+                    <span className="text-xs font-bold text-slate-600">운영 메모</span>
+                    <input value={scheduleNote} onChange={(event) => setScheduleNote(event.target.value)} maxLength={500} className="mt-1.5 block w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm" placeholder="집결 안내" />
+                  </label>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleSaveScheduleSlot}
+                  disabled={saving || !scheduleTitle.trim() || !scheduleStartAt || !scheduleEndAt}
+                  className="mt-4 w-full rounded-xl bg-slate-900 px-4 py-3 text-sm font-black text-white disabled:opacity-50"
+                >
+                  {saving ? "저장 중..." : editingScheduleSlotId ? "일정 수정 저장" : "일정 추가"}
+                </button>
               </div>
             </motion.section>
           ) : null}
@@ -507,7 +739,7 @@ export function ClubTournamentManageClient({
         {showDeleteTournament ? (
           <ScheduleActionConfirmModal
             title="대회를 삭제할까요?"
-            description="삭제는 관리자 전용 액션이며, 관련 신청 데이터와 공유 상태도 함께 정리됩니다."
+            description="목록과 공유 화면에서 숨기되 신청·납부·운영 기록은 감사와 정산을 위해 보존합니다."
             confirmLabel="대회 삭제"
             busyLabel="삭제 중..."
             busy={saving}
@@ -520,6 +752,109 @@ export function ClubTournamentManageClient({
           />
         ) : null}
       </div>
+    </div>
+  );
+}
+
+function getApplicationStatusLabel(application: TournamentApplicationSummary) {
+  switch (application.applicationStatus) {
+    case "APPLIED":
+      return "검토 대기";
+    case "WAITLISTED":
+      return application.waitlistPosition ? `대기 ${application.waitlistPosition}번` : "대기 명단";
+    case "APPROVED":
+      return "참가 승인";
+    case "REJECTED":
+      return "반려";
+    case "CANCELLED":
+      return "신청 취소";
+  }
+}
+
+function ApplicationOperationsEditor({
+  application,
+  saving,
+  onSave,
+}: {
+  application: TournamentApplicationSummary;
+  saving: boolean;
+  onSave: (request: {
+    checkedIn: boolean;
+    placement: number | null;
+    resultNote: string | null;
+  }) => Promise<boolean>;
+}) {
+  const [checkedIn, setCheckedIn] = useState(Boolean(application.checkedInAtLabel));
+  const [placement, setPlacement] = useState(application.placement?.toString() ?? "");
+  const [resultNote, setResultNote] = useState(application.resultNote ?? "");
+  const [expanded, setExpanded] = useState(false);
+
+  const handleSave = async () => {
+    const saved = await onSave({
+      checkedIn,
+      placement: placement ? Number(placement) : null,
+      resultNote: resultNote.trim() || null,
+    });
+    if (saved) {
+      setExpanded(false);
+    }
+  };
+
+  return (
+    <div className="mt-3 border-t border-slate-200 pt-3">
+      <button
+        type="button"
+        onClick={() => setExpanded((current) => !current)}
+        className="flex w-full items-center justify-between text-left text-xs font-black text-slate-700"
+        aria-expanded={expanded}
+      >
+        <span>체크인·결과 관리</span>
+        <span className="material-symbols-outlined text-[18px]" aria-hidden="true">
+          {expanded ? "expand_less" : "expand_more"}
+        </span>
+      </button>
+      {expanded ? (
+        <div className="mt-3 space-y-3 rounded-xl bg-white p-3 ring-1 ring-slate-200">
+          <label className="flex items-center justify-between gap-4 text-sm font-semibold text-slate-700">
+            <span>현장 체크인</span>
+            <input
+              type="checkbox"
+              checked={checkedIn}
+              onChange={(event) => setCheckedIn(event.target.checked)}
+              className="size-5 accent-[var(--primary)]"
+            />
+          </label>
+          <label className="block">
+            <span className="text-xs font-bold text-slate-600">최종 순위</span>
+            <input
+              type="number"
+              min={1}
+              value={placement}
+              onChange={(event) => setPlacement(event.target.value)}
+              className="mt-1.5 block w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
+              placeholder="예: 1"
+            />
+          </label>
+          <label className="block">
+            <span className="text-xs font-bold text-slate-600">결과 메모</span>
+            <textarea
+              value={resultNote}
+              onChange={(event) => setResultNote(event.target.value)}
+              maxLength={1000}
+              className="mt-1.5 block min-h-20 w-full resize-y rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
+              placeholder="스코어, 수상 내역, 특이사항"
+            />
+          </label>
+          <button
+            type="button"
+            onClick={handleSave}
+            disabled={saving || (placement !== "" && Number(placement) < 1)}
+            className="w-full rounded-xl bg-[var(--primary)] px-4 py-2.5 text-xs font-black text-white disabled:opacity-50"
+          >
+            {saving ? "저장 중..." : "운영 정보 저장"}
+          </button>
+        </div>
+      ) : null}
     </div>
   );
 }

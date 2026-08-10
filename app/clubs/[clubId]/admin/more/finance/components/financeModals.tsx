@@ -1,5 +1,7 @@
 "use client";
 
+import type { ReactNode } from "react";
+
 import { DatePopoverField } from "@/app/components/DatePopoverField";
 import { RouteModal } from "@/app/components/RouteModal";
 import { TimePopoverField } from "@/app/components/TimePopoverField";
@@ -8,6 +10,8 @@ import type {
   ClubAdminFinanceObligation,
   ClubAdminFinanceObligationDetailResponse,
   ClubFinanceMemberOption,
+  ClubFinanceOperationsResponse,
+  FinanceAccount,
 } from "@/app/lib/clubs";
 import { getClubRoleLabel } from "@/app/lib/roleLabels";
 import { ObligationDetailPanel } from "./financeCardParts";
@@ -30,6 +34,7 @@ export function ObligationDetailModal({
   canMarkWaive,
   canRestoreToPending,
   activePaymentId,
+  collectionAccounts,
   onClose,
   onUpdateStatus,
 }: {
@@ -41,8 +46,9 @@ export function ObligationDetailModal({
   canMarkWaive: boolean;
   canRestoreToPending: boolean;
   activePaymentId: number | null;
+  collectionAccounts: FinanceAccount[];
   onClose: () => void;
-  onUpdateStatus: (paymentId: number, paymentStatus: "PENDING" | "PAID" | "WAIVED") => void;
+  onUpdateStatus: (paymentId: number, paymentStatus: "PENDING" | "PAID" | "WAIVED", financeAccountId?: number | null, paymentMethodCode?: string | null) => void;
 }) {
   return (
     <RouteModal ariaLabel={`${obligation.title} 납부 상세`} onDismiss={onClose}>
@@ -72,6 +78,7 @@ export function ObligationDetailModal({
             canMarkWaive={canMarkWaive}
             canRestoreToPending={canRestoreToPending}
             activePaymentId={activePaymentId}
+            collectionAccounts={collectionAccounts}
             onUpdateStatus={onUpdateStatus}
           />
         </div>
@@ -81,10 +88,14 @@ export function ObligationDetailModal({
 }
 
 export function FinanceActionSheetModal({
+  canCreateObligation,
+  canCreateExpense,
   onClose,
   onOpenCreate,
   onOpenExpense,
 }: {
+  canCreateObligation: boolean;
+  canCreateExpense: boolean;
   onClose: () => void;
   onOpenCreate: () => void;
   onOpenExpense: () => void;
@@ -111,7 +122,8 @@ export function FinanceActionSheetModal({
           <button
             type="button"
             onClick={onOpenCreate}
-            className="flex w-full items-start gap-3 rounded-3xl border border-slate-200 bg-white px-4 py-4 text-left transition hover:border-[#ec5b13]/30 hover:bg-[#fff7f2]"
+            disabled={!canCreateObligation}
+            className="flex w-full items-start gap-3 rounded-3xl border border-slate-200 bg-white px-4 py-4 text-left transition hover:border-[#ec5b13]/30 hover:bg-[#fff7f2] disabled:cursor-not-allowed disabled:opacity-45"
           >
             <div className="rounded-full bg-[#ec5b13]/10 p-2 text-[#ec5b13]">
               <span className="material-symbols-outlined text-[20px]" aria-hidden="true">add_card</span>
@@ -125,7 +137,8 @@ export function FinanceActionSheetModal({
           <button
             type="button"
             onClick={onOpenExpense}
-            className="flex w-full items-start gap-3 rounded-3xl border border-slate-200 bg-white px-4 py-4 text-left transition hover:border-[#ec5b13]/30 hover:bg-[#fff7f2]"
+            disabled={!canCreateExpense}
+            className="flex w-full items-start gap-3 rounded-3xl border border-slate-200 bg-white px-4 py-4 text-left transition hover:border-[#ec5b13]/30 hover:bg-[#fff7f2] disabled:cursor-not-allowed disabled:opacity-45"
           >
             <div className="rounded-full bg-[#ec5b13]/10 p-2 text-[#ec5b13]">
               <span className="material-symbols-outlined text-[20px]" aria-hidden="true">receipt_long</span>
@@ -143,11 +156,18 @@ export function FinanceActionSheetModal({
 
 export function CreateObligationModal({
   finance,
+  operations,
   title,
   amount,
   dueAtDate,
   dueAtTime,
   note,
+  financePeriodId,
+  financeAccountId,
+  linkedScheduleEventId,
+  recurrenceFrequency,
+  recurrenceInterval,
+  recurrenceEndDate,
   targetScope,
   selectedMemberIds,
   memberSearchQuery,
@@ -160,17 +180,30 @@ export function CreateObligationModal({
   onDueAtDateChange,
   onDueAtTimeChange,
   onNoteChange,
+  onFinancePeriodIdChange,
+  onFinanceAccountIdChange,
+  onLinkedScheduleEventIdChange,
+  onRecurrenceFrequencyChange,
+  onRecurrenceIntervalChange,
+  onRecurrenceEndDateChange,
   onTargetScopeChange,
   onMemberSearchQueryChange,
   onToggleSelectedMember,
   onCreate,
 }: {
   finance: ClubAdminFinanceHomeResponse;
+  operations: ClubFinanceOperationsResponse;
   title: string;
   amount: string;
   dueAtDate: string;
   dueAtTime: string;
   note: string;
+  financePeriodId: string;
+  financeAccountId: string;
+  linkedScheduleEventId: string;
+  recurrenceFrequency: string;
+  recurrenceInterval: string;
+  recurrenceEndDate: string;
   targetScope: "ALL_ACTIVE_MEMBERS" | "SELECTED_MEMBERS";
   selectedMemberIds: number[];
   memberSearchQuery: string;
@@ -183,6 +216,12 @@ export function CreateObligationModal({
   onDueAtDateChange: (value: string) => void;
   onDueAtTimeChange: (value: string) => void;
   onNoteChange: (value: string) => void;
+  onFinancePeriodIdChange: (value: string) => void;
+  onFinanceAccountIdChange: (value: string) => void;
+  onLinkedScheduleEventIdChange: (value: string) => void;
+  onRecurrenceFrequencyChange: (value: string) => void;
+  onRecurrenceIntervalChange: (value: string) => void;
+  onRecurrenceEndDateChange: (value: string) => void;
   onTargetScopeChange: (value: "ALL_ACTIVE_MEMBERS" | "SELECTED_MEMBERS") => void;
   onMemberSearchQueryChange: (value: string) => void;
   onToggleSelectedMember: (member: ClubFinanceMemberOption) => void;
@@ -223,6 +262,46 @@ export function CreateObligationModal({
                     className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-[#ec5b13] focus:ring-2 focus:ring-[#ec5b13]/10"
                   />
                 </label>
+
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <FinanceSelect label="재정 기간" value={financePeriodId} onChange={onFinancePeriodIdChange}>
+                    <option value="">날짜 기준 자동 선택</option>
+                    {operations.periods.filter((period) => period.statusCode === "OPEN").map((period) => (
+                      <option key={period.financePeriodId} value={period.financePeriodId}>{period.title}</option>
+                    ))}
+                  </FinanceSelect>
+                  <FinanceSelect label="수납 계좌" value={financeAccountId} onChange={onFinanceAccountIdChange}>
+                    <option value="">기본 수납 계좌</option>
+                    {operations.accounts.filter((account) => account.active && account.usageScopeCode !== "EXPENSE").map((account) => (
+                      <option key={account.financeAccountId} value={account.financeAccountId}>{account.displayName}</option>
+                    ))}
+                  </FinanceSelect>
+                </div>
+
+                <FinanceSelect label="연결 일정" value={linkedScheduleEventId} onChange={onLinkedScheduleEventIdChange}>
+                  <option value="">일정 연결 안 함</option>
+                  {operations.scheduleOptions.map((schedule) => (
+                    <option key={schedule.eventId} value={schedule.eventId}>{schedule.startAtLabel} · {schedule.title}</option>
+                  ))}
+                </FinanceSelect>
+
+                <div className="rounded-2xl border border-slate-200 bg-white p-4">
+                  <p className="text-sm font-semibold text-slate-700">반복 발행</p>
+                  <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                    <select value={recurrenceFrequency} onChange={(event) => onRecurrenceFrequencyChange(event.target.value)} className="min-h-12 rounded-2xl border border-slate-200 bg-white px-4 text-sm">
+                      <option value="NONE">반복하지 않음</option>
+                      <option value="MONTHLY">매월</option>
+                      <option value="YEARLY">매년</option>
+                    </select>
+                    <label className="flex min-h-12 items-center gap-2 rounded-2xl border border-slate-200 px-4 text-sm text-slate-600">
+                      <input value={recurrenceInterval} onChange={(event) => onRecurrenceIntervalChange(event.target.value)} disabled={recurrenceFrequency === "NONE"} inputMode="numeric" className="w-14 bg-transparent text-right font-bold text-slate-900 outline-none disabled:text-slate-300" />
+                      {recurrenceFrequency === "YEARLY" ? "년마다" : "개월마다"}
+                    </label>
+                  </div>
+                  {recurrenceFrequency !== "NONE" ? (
+                    <div className="mt-3"><DatePopoverField value={recurrenceEndDate} onChange={onRecurrenceEndDateChange} placeholder="반복 종료일 선택 (선택)" buttonClassName="min-h-12" /></div>
+                  ) : null}
+                </div>
 
                 <div className="grid gap-4 sm:grid-cols-2">
                   <label className="block">
@@ -344,7 +423,7 @@ export function CreateObligationModal({
         <div className="border-t border-slate-200 px-5 py-4">
           <button
             type="button"
-            disabled={!finance.canIssue || isCreating}
+            disabled={!finance.canManageBilling || isCreating}
             onClick={onCreate}
             className="w-full rounded-2xl bg-[#ec5b13] px-4 py-3 text-sm font-bold text-white transition hover:bg-[#d94f0b] disabled:cursor-not-allowed disabled:bg-slate-300"
           >
@@ -357,6 +436,7 @@ export function CreateObligationModal({
 }
 
 export function ExpenseEntryModal({
+  operations,
   title,
   amount,
   category,
@@ -364,6 +444,9 @@ export function ExpenseEntryModal({
   spentTime,
   relatedEventName,
   note,
+  financePeriodId,
+  financeAccountId,
+  linkedScheduleEventId,
   isCreating,
   onClose,
   onTitleChange,
@@ -373,8 +456,12 @@ export function ExpenseEntryModal({
   onSpentTimeChange,
   onRelatedEventNameChange,
   onNoteChange,
+  onFinancePeriodIdChange,
+  onFinanceAccountIdChange,
+  onLinkedScheduleEventIdChange,
   onCreate,
 }: {
+  operations: ClubFinanceOperationsResponse;
   title: string;
   amount: string;
   category: string;
@@ -382,6 +469,9 @@ export function ExpenseEntryModal({
   spentTime: string;
   relatedEventName: string;
   note: string;
+  financePeriodId: string;
+  financeAccountId: string;
+  linkedScheduleEventId: string;
   isCreating: boolean;
   onClose: () => void;
   onTitleChange: (value: string) => void;
@@ -391,6 +481,9 @@ export function ExpenseEntryModal({
   onSpentTimeChange: (value: string) => void;
   onRelatedEventNameChange: (value: string) => void;
   onNoteChange: (value: string) => void;
+  onFinancePeriodIdChange: (value: string) => void;
+  onFinanceAccountIdChange: (value: string) => void;
+  onLinkedScheduleEventIdChange: (value: string) => void;
   onCreate: () => void;
 }) {
   return (
@@ -454,6 +547,21 @@ export function ExpenseEntryModal({
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
+              <FinanceSelect label="재정 기간" value={financePeriodId} onChange={onFinancePeriodIdChange}>
+                <option value="">지출일 기준 자동 선택</option>
+                {operations.periods.filter((period) => period.statusCode === "OPEN").map((period) => (
+                  <option key={period.financePeriodId} value={period.financePeriodId}>{period.title}</option>
+                ))}
+              </FinanceSelect>
+              <FinanceSelect label="지출 계좌" value={financeAccountId} onChange={onFinanceAccountIdChange}>
+                <option value="">기본 지출 계좌</option>
+                {operations.accounts.filter((account) => account.active && account.usageScopeCode !== "COLLECTION").map((account) => (
+                  <option key={account.financeAccountId} value={account.financeAccountId}>{account.displayName}</option>
+                ))}
+              </FinanceSelect>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
               <label className="block">
                 <span className="text-sm font-semibold text-slate-700">지출 날짜</span>
                 <div className="mt-2">
@@ -468,15 +576,19 @@ export function ExpenseEntryModal({
               </label>
             </div>
 
-            <label className="block">
-              <span className="text-sm font-semibold text-slate-700">관련 행사</span>
-              <input
-                value={relatedEventName}
-                onChange={(event) => onRelatedEventNameChange(event.target.value)}
-                placeholder="예: 봄 시즌 훈련"
-                className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-[#ec5b13] focus:ring-2 focus:ring-[#ec5b13]/10"
-              />
-            </label>
+            <FinanceSelect label="연결 일정" value={linkedScheduleEventId} onChange={onLinkedScheduleEventIdChange}>
+              <option value="">일정 연결 안 함</option>
+              {operations.scheduleOptions.map((schedule) => (
+                <option key={schedule.eventId} value={schedule.eventId}>{schedule.startAtLabel} · {schedule.title}</option>
+              ))}
+            </FinanceSelect>
+
+            {!linkedScheduleEventId ? (
+              <label className="block">
+                <span className="text-sm font-semibold text-slate-700">직접 입력 행사명</span>
+                <input value={relatedEventName} onChange={(event) => onRelatedEventNameChange(event.target.value)} placeholder="일정에 없는 행사만 직접 입력" className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-[#ec5b13] focus:ring-2 focus:ring-[#ec5b13]/10" />
+              </label>
+            ) : null}
 
             <label className="block">
               <span className="text-sm font-semibold text-slate-700">메모</span>
@@ -503,5 +615,21 @@ export function ExpenseEntryModal({
         </div>
       </section>
     </RouteModal>
+  );
+}
+
+function FinanceSelect({ label, value, onChange, children }: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  children: ReactNode;
+}) {
+  return (
+    <label className="block">
+      <span className="text-sm font-semibold text-slate-700">{label}</span>
+      <select value={value} onChange={(event) => onChange(event.target.value)} className="mt-2 min-h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm text-slate-900 outline-none transition focus:border-[#ec5b13] focus:ring-2 focus:ring-[#ec5b13]/10">
+        {children}
+      </select>
+    </label>
   );
 }

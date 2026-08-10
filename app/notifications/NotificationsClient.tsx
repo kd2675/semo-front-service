@@ -29,6 +29,7 @@ const NOTIFICATION_META: Record<string, { icon: string; label: string; tone: str
   JOIN_REQUEST_REVIEW: { icon: "group_add", label: "가입", tone: "bg-violet-50 text-violet-700" },
   TODO_APPLICATION_REVIEW: { icon: "task_alt", label: "업무", tone: "bg-blue-50 text-blue-700" },
   FINANCE_REQUEST_REVIEW: { icon: "receipt_long", label: "재정", tone: "bg-emerald-50 text-emerald-700" },
+  FINANCE_OBLIGATION_CREATED: { icon: "payments", label: "회비", tone: "bg-amber-50 text-amber-700" },
   FEEDBACK_STATUS: { icon: "forum", label: "피드백", tone: "bg-amber-50 text-amber-700" },
   TOURNAMENT_REVIEW: { icon: "emoji_events", label: "대회", tone: "bg-orange-50 text-orange-700" },
   TOURNAMENT_APPLICATION_REVIEW: { icon: "how_to_reg", label: "대회 신청", tone: "bg-orange-50 text-orange-700" },

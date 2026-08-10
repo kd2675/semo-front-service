@@ -5,6 +5,7 @@ import {
   getClubDashboardWidgets,
   getClubFeatures,
   getClubMoreSummary,
+  getClubOperationsCatalog,
   getClubProfile,
   getMyClub,
 } from "@/app/lib/clubs";
@@ -14,6 +15,7 @@ export const clubQueryKeys = {
   myClub: (clubId: string) => ["semo", "clubs", clubId, "my-club"] as const,
   features: (clubId: string) => ["semo", "clubs", clubId, "features"] as const,
   moreSummary: (clubId: string) => ["semo", "clubs", clubId, "more-summary"] as const,
+  operationsCatalog: (clubId: string) => ["semo", "clubs", clubId, "operations-catalog"] as const,
   profile: (clubId: string) => ["semo", "clubs", clubId, "profile"] as const,
   dashboardWidgetEditor: (clubId: string, pageKey: DashboardScope) =>
     ["semo", "clubs", clubId, "dashboard-widget-editor", pageKey] as const,
@@ -44,6 +46,17 @@ export function clubMoreSummaryQueryOptions(clubId: string) {
     queryKey: clubQueryKeys.moreSummary(clubId),
     queryFn: async () =>
       requireApiData(await getClubMoreSummary(clubId), "더보기 운영 정보를 불러오지 못했습니다."),
+  });
+}
+
+export function clubOperationsCatalogQueryOptions(clubId: string) {
+  return queryOptions({
+    queryKey: clubQueryKeys.operationsCatalog(clubId),
+    queryFn: async () =>
+      requireApiData(
+        await getClubOperationsCatalog(clubId),
+        "운영 프리셋과 템플릿을 불러오지 못했습니다.",
+      ),
   });
 }
 

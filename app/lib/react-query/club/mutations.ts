@@ -1,5 +1,7 @@
 import { mutationOptions } from "@tanstack/react-query";
 import {
+  applyClubOperationTemplate,
+  applyClubPreset,
   markClubMoreFeatureUsed,
   updateClubDashboardWidgets,
   updateClubFeatures,
@@ -9,6 +11,25 @@ import {
   type DashboardScope,
   type ClubDashboardWidgetSummary,
 } from "@/app/lib/clubs";
+
+export function applyClubPresetMutationOptions(clubId: string) {
+  return mutationOptions({
+    mutationFn: ({ presetKey, applyMode = "MERGE" }: {
+      presetKey: string;
+      applyMode?: "MERGE" | "REPLACE";
+    }) => applyClubPreset(clubId, presetKey, applyMode),
+  });
+}
+
+export function applyClubOperationTemplateMutationOptions(clubId: string) {
+  return mutationOptions({
+    mutationFn: ({ templateKey, titleOverride, dueAt }: {
+      templateKey: string;
+      titleOverride?: string | null;
+      dueAt?: string | null;
+    }) => applyClubOperationTemplate(clubId, templateKey, { titleOverride, dueAt }),
+  });
+}
 
 export function updateClubMoreFavoriteMutationOptions(clubId: string) {
   return mutationOptions({

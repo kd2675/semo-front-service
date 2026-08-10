@@ -20,6 +20,7 @@ import {
   type ClubAdminFinanceObligationDetailResponse,
   type ClubAdminFinanceObligationFeedResponse,
   type ClubFinanceExpenseFeedResponse,
+  type ClubFinanceExpense,
   type ClubFinanceMemberOption,
   type ClubFinanceOperationsResponse,
   type ClubFinanceRequestFeedResponse,
@@ -63,6 +64,7 @@ import {
   FinanceAccountEditorModal,
   FinanceActionSheetModal,
   FinanceBudgetEditorModal,
+  FinanceExpenseDetailModal,
   FinanceOperationsPanel,
   FinancePeriodEditorModal,
   MetricCard,
@@ -150,6 +152,12 @@ export function ClubAdminFinanceClient({
   const [dueAtDate, setDueAtDate] = useState("");
   const [dueAtTime, setDueAtTime] = useState("");
   const [note, setNote] = useState("");
+  const [obligationPeriodId, setObligationPeriodId] = useState("");
+  const [obligationAccountId, setObligationAccountId] = useState("");
+  const [obligationScheduleId, setObligationScheduleId] = useState("");
+  const [recurrenceFrequency, setRecurrenceFrequency] = useState("NONE");
+  const [recurrenceInterval, setRecurrenceInterval] = useState("1");
+  const [recurrenceEndDate, setRecurrenceEndDate] = useState("");
   const [targetScope, setTargetScope] = useState<TargetScope>("ALL_ACTIVE_MEMBERS");
   const [selectedMemberIds, setSelectedMemberIds] = useState<number[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -165,10 +173,14 @@ export function ClubAdminFinanceClient({
   const [expenseSpentTime, setExpenseSpentTime] = useState("");
   const [expenseRelatedEventName, setExpenseRelatedEventName] = useState("");
   const [expenseNote, setExpenseNote] = useState("");
+  const [expensePeriodId, setExpensePeriodId] = useState("");
+  const [expenseAccountId, setExpenseAccountId] = useState("");
+  const [expenseScheduleId, setExpenseScheduleId] = useState("");
   const [isCreatingExpense, setIsCreatingExpense] = useState(false);
   const [activeObligationId, setActiveObligationId] = useState<number | null>(null);
   const [activePaymentId, setActivePaymentId] = useState<number | null>(null);
   const [activeRequestId, setActiveRequestId] = useState<number | null>(null);
+  const [selectedExpense, setSelectedExpense] = useState<ClubFinanceExpense | null>(null);
   const [pendingDeleteObligation, setPendingDeleteObligation] = useState<ClubAdminFinanceObligation | null>(null);
   const { showToast, clearToast } = useAppToast();
   const createObligationMutation = useMutation(createFinanceObligationMutationOptions(clubId));
@@ -216,7 +228,7 @@ export function ClubAdminFinanceClient({
     [requests],
   );
   const totalExpenseAmountLabel = useMemo(
-    () => `${expenses.reduce((sum, expense) => sum + expense.amount, 0).toLocaleString("ko-KR")}원`,
+    () => `${expenses.filter((expense) => expense.statusCode === "POSTED").reduce((sum, expense) => sum + expense.amount, 0).toLocaleString("ko-KR")}원`,
     [expenses],
   );
 
@@ -400,6 +412,12 @@ export function ClubAdminFinanceClient({
       setDueAtDate("");
       setDueAtTime("");
       setNote("");
+      setObligationPeriodId("");
+      setObligationAccountId("");
+      setObligationScheduleId("");
+      setRecurrenceFrequency("NONE");
+      setRecurrenceInterval("1");
+      setRecurrenceEndDate("");
       setTargetScope("ALL_ACTIVE_MEMBERS");
       setSelectedMemberIds([]);
       setMemberSearchQuery("");
@@ -415,11 +433,14 @@ export function ClubAdminFinanceClient({
       setExpenseSpentTime("");
       setExpenseRelatedEventName("");
       setExpenseNote("");
+      setExpensePeriodId("");
+      setExpenseAccountId("");
+      setExpenseScheduleId("");
     });
   };
 
   const handleCreateObligation = async () => {
-    if (!finance.canIssue || isCreating) {
+    if (!finance.canManageBilling || isCreating) {
       return;
     }
 
@@ -436,6 +457,15 @@ export function ClubAdminFinanceClient({
       showToast("선택 멤버 발행은 대상 멤버를 한 명 이상 골라야 합니다.", "error");
       return;
     }
+    const parsedRecurrenceInterval = Number(recurrenceInterval);
+    if (recurrenceFrequency !== "NONE" && !dueAtDate) {
+      showToast("반복 회비는 첫 납부 마감일이 필요합니다.", "error");
+      return;
+    }
+    if (!Number.isInteger(parsedRecurrenceInterval) || parsedRecurrenceInterval < 1 || parsedRecurrenceInterval > 24) {
+      showToast("반복 간격은 1에서 24 사이의 정수여야 합니다.", "error");
+      return;
+    }
 
     setIsCreating(true);
     clearToast();
@@ -446,6 +476,12 @@ export function ClubAdminFinanceClient({
       note: note || null,
       targetScopeCode: targetScope,
       clubProfileIds: targetScope === "SELECTED_MEMBERS" ? selectedMemberIds : undefined,
+      financePeriodId: obligationPeriodId ? Number(obligationPeriodId) : null,
+      financeAccountId: obligationAccountId ? Number(obligationAccountId) : null,
+      linkedScheduleEventId: obligationScheduleId ? Number(obligationScheduleId) : null,
+      recurrenceFrequency,
+      recurrenceInterval: parsedRecurrenceInterval,
+      recurrenceEndDate: recurrenceFrequency === "NONE" ? null : recurrenceEndDate || null,
     });
     setIsCreating(false);
 
@@ -465,7 +501,7 @@ export function ClubAdminFinanceClient({
   };
 
   const handleCreateExpense = async () => {
-    if (!finance.canIssue || isCreatingExpense) {
+    if (!finance.canCreateExpenses || isCreatingExpense) {
       return;
     }
 
@@ -488,6 +524,9 @@ export function ClubAdminFinanceClient({
       spentAt: combineDateTimeValue(expenseSpentDate, expenseSpentTime),
       relatedEventName: expenseRelatedEventName.trim() || null,
       note: expenseNote.trim() || null,
+      financePeriodId: expensePeriodId ? Number(expensePeriodId) : null,
+      financeAccountId: expenseAccountId ? Number(expenseAccountId) : null,
+      linkedScheduleEventId: expenseScheduleId ? Number(expenseScheduleId) : null,
     });
     setIsCreatingExpense(false);
 
@@ -510,6 +549,8 @@ export function ClubAdminFinanceClient({
     obligationId: number,
     paymentId: number,
     paymentStatus: "PENDING" | "PAID" | "WAIVED",
+    financeAccountId?: number | null,
+    paymentMethodCode?: string | null,
   ) => {
     if (activePaymentId != null) {
       return;
@@ -520,6 +561,8 @@ export function ClubAdminFinanceClient({
     const result = await updatePaymentStatusMutation.mutateAsync({
       paymentId,
       paymentStatusCode: paymentStatus,
+      financeAccountId,
+      paymentMethodCode,
     });
     setActivePaymentId(null);
 
@@ -566,7 +609,7 @@ export function ClubAdminFinanceClient({
     requestId: number,
     statusCode: "APPROVED" | "REJECTED",
   ) => {
-    if (!finance.canIssue) {
+    if (!finance.canReviewRequests) {
       showToast("재정 요청을 검토할 권한이 없습니다.", "error");
       return;
     }
@@ -822,21 +865,24 @@ export function ClubAdminFinanceClient({
 
           {activeTab === "EXPENSES" ? (
             <ExpensesTabPanel
+              clubId={clubId}
               pendingRequestCount={pendingRequestCount}
               totalExpenseAmountLabel={totalExpenseAmountLabel}
               advanceRequestItems={advanceRequestItems}
               expenses={expenses}
-              canReview={finance.canIssue}
+              canReview={finance.canReviewRequests}
               activeRequestId={activeRequestId}
               reduceMotion={reduceMotion}
               onReviewRequest={(requestId, decision) => void handleReviewRequest(requestId, decision)}
+              onOpenExpense={setSelectedExpense}
             />
           ) : null}
 
           {activeTab === "SETTLEMENTS" ? (
             <SettlementsTabPanel
+              clubId={clubId}
               settlementRequestItems={settlementRequestItems}
-              canReview={finance.canIssue}
+              canReview={finance.canReviewRequests}
               activeRequestId={activeRequestId}
               reduceMotion={reduceMotion}
               onReviewRequest={(requestId, decision) => void handleReviewRequest(requestId, decision)}
@@ -860,7 +906,7 @@ export function ClubAdminFinanceClient({
 
         </main>
 
-        {finance.canIssue ? (
+        {finance.canManageBilling || finance.canCreateExpenses ? (
           <button
             type="button"
             aria-label="재정 입력 메뉴"
@@ -883,15 +929,18 @@ export function ClubAdminFinanceClient({
               canMarkWaive={finance.canMarkWaive}
               canRestoreToPending={canRestoreToPending}
               activePaymentId={activePaymentId}
+              collectionAccounts={operations.accounts.filter((account) => account.active && account.usageScopeCode !== "EXPENSE")}
               onClose={() => setDetailObligationId(null)}
-              onUpdateStatus={(paymentId, paymentStatus) =>
-                void handleUpdateStatus(activeObligationSummary.obligationId, paymentId, paymentStatus)
+              onUpdateStatus={(paymentId, paymentStatus, financeAccountId, paymentMethodCode) =>
+                void handleUpdateStatus(activeObligationSummary.obligationId, paymentId, paymentStatus, financeAccountId, paymentMethodCode)
               }
             />
           ) : null}
 
           {showActionSheet ? (
             <FinanceActionSheetModal
+              canCreateObligation={finance.canManageBilling}
+              canCreateExpense={finance.canCreateExpenses}
               onClose={() => setShowActionSheet(false)}
               onOpenCreate={() => {
                 setShowActionSheet(false);
@@ -907,11 +956,18 @@ export function ClubAdminFinanceClient({
           {showCreateModal ? (
             <CreateObligationModal
               finance={finance}
+              operations={operations}
               title={title}
               amount={amount}
               dueAtDate={dueAtDate}
               dueAtTime={dueAtTime}
               note={note}
+              financePeriodId={obligationPeriodId}
+              financeAccountId={obligationAccountId}
+              linkedScheduleEventId={obligationScheduleId}
+              recurrenceFrequency={recurrenceFrequency}
+              recurrenceInterval={recurrenceInterval}
+              recurrenceEndDate={recurrenceEndDate}
               targetScope={targetScope}
               selectedMemberIds={selectedMemberIds}
               memberSearchQuery={memberSearchQuery}
@@ -924,6 +980,12 @@ export function ClubAdminFinanceClient({
               onDueAtDateChange={setDueAtDate}
               onDueAtTimeChange={setDueAtTime}
               onNoteChange={setNote}
+              onFinancePeriodIdChange={setObligationPeriodId}
+              onFinanceAccountIdChange={setObligationAccountId}
+              onLinkedScheduleEventIdChange={setObligationScheduleId}
+              onRecurrenceFrequencyChange={setRecurrenceFrequency}
+              onRecurrenceIntervalChange={setRecurrenceInterval}
+              onRecurrenceEndDateChange={setRecurrenceEndDate}
               onTargetScopeChange={setTargetScope}
               onMemberSearchQueryChange={setMemberSearchQuery}
               onToggleSelectedMember={toggleSelectedMember}
@@ -933,6 +995,7 @@ export function ClubAdminFinanceClient({
 
           {showExpenseModal ? (
             <ExpenseEntryModal
+              operations={operations}
               title={expenseTitle}
               amount={expenseAmount}
               category={expenseCategory}
@@ -940,6 +1003,9 @@ export function ClubAdminFinanceClient({
               spentTime={expenseSpentTime}
               relatedEventName={expenseRelatedEventName}
               note={expenseNote}
+              financePeriodId={expensePeriodId}
+              financeAccountId={expenseAccountId}
+              linkedScheduleEventId={expenseScheduleId}
               isCreating={isCreatingExpense}
               onClose={() => setShowExpenseModal(false)}
               onTitleChange={setExpenseTitle}
@@ -949,6 +1015,9 @@ export function ClubAdminFinanceClient({
               onSpentTimeChange={setExpenseSpentTime}
               onRelatedEventNameChange={setExpenseRelatedEventName}
               onNoteChange={setExpenseNote}
+              onFinancePeriodIdChange={setExpensePeriodId}
+              onFinanceAccountIdChange={setExpenseAccountId}
+              onLinkedScheduleEventIdChange={setExpenseScheduleId}
               onCreate={() => void handleCreateExpense()}
             />
           ) : null}
@@ -977,6 +1046,20 @@ export function ClubAdminFinanceClient({
               busy={operationsBusyKey === `period:${budgetPeriod.financePeriodId}`}
               onClose={() => setBudgetPeriod(null)}
               onSubmit={(request) => void handleSaveBudget(request)}
+            />
+          ) : null}
+
+          {selectedExpense ? (
+            <FinanceExpenseDetailModal
+              clubId={clubId}
+              expense={selectedExpense}
+              operations={operations}
+              onClose={() => setSelectedExpense(null)}
+              onChanged={(updatedExpense) => {
+                setExpenses((current) => current.map((item) => item.expenseId === updatedExpense.expenseId ? updatedExpense : item));
+                setSelectedExpense(updatedExpense);
+                void reloadOperations();
+              }}
             />
           ) : null}
         </AnimatePresence>

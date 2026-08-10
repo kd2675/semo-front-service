@@ -8,8 +8,17 @@ export type TournamentApplicationSummary = {
   applicantDisplayName: string;
   applicantAvatarImageUrl: string | null;
   applicantAvatarThumbnailUrl: string | null;
-  applicationStatus: "APPLIED" | "APPROVED" | "REJECTED" | "CANCELLED";
+  applicationStatus: "APPLIED" | "WAITLISTED" | "APPROVED" | "REJECTED" | "CANCELLED";
   applicationNote: string | null;
+  teamName: string | null;
+  waitlistPosition: number | null;
+  financePaymentId: number | null;
+  feePaymentStatusCode: "PENDING" | "PAID" | "WAIVED" | null;
+  feePaymentStatusLabel: string | null;
+  checkedInAtLabel: string | null;
+  placement: number | null;
+  resultNote: string | null;
+  rosterMembers: TournamentRosterMember[];
   appliedAtLabel: string;
   mine: boolean;
   canReview: boolean;
@@ -22,6 +31,40 @@ export type TournamentParticipantSummary = {
   avatarImageUrl: string | null;
   avatarThumbnailUrl: string | null;
   approvedAtLabel: string | null;
+  teamName: string | null;
+  financePaymentId: number | null;
+  feePaymentStatusCode: "PENDING" | "PAID" | "WAIVED" | null;
+  feePaymentStatusLabel: string | null;
+  checkedInAtLabel: string | null;
+  placement: number | null;
+  resultNote: string | null;
+  rosterMembers: TournamentRosterMember[];
+};
+
+export type TournamentRosterMember = {
+  clubProfileId: number;
+  displayName: string;
+  avatarImageUrl: string | null;
+  avatarThumbnailUrl: string | null;
+  rosterRoleCode: "CAPTAIN" | "MEMBER" | string;
+};
+
+export type TournamentRosterOption = {
+  clubProfileId: number;
+  displayName: string;
+  avatarImageUrl: string | null;
+  avatarThumbnailUrl: string | null;
+};
+
+export type TournamentScheduleSlot = {
+  tournamentScheduleSlotId: number;
+  title: string;
+  courtLabel: string | null;
+  startAt: string;
+  startAtLabel: string;
+  endAt: string;
+  endAtLabel: string;
+  note: string | null;
 };
 
 export type TournamentSummary = {
@@ -88,6 +131,7 @@ export type TournamentDetailResponse = {
   clubId: number;
   clubName: string;
   admin: boolean;
+  viewerClubProfileId: number;
   tournamentRecordId: number;
   title: string;
   summaryText: string | null;
@@ -124,7 +168,7 @@ export type TournamentDetailResponse = {
   applicationOpen: boolean;
   canApply: boolean;
   applied: boolean;
-  myApplicationStatus: "APPLIED" | "APPROVED" | "REJECTED" | "CANCELLED" | null;
+  myApplicationStatus: "APPLIED" | "WAITLISTED" | "APPROVED" | "REJECTED" | "CANCELLED" | null;
   participating: boolean;
   canReviewTournament: boolean;
   canEdit: boolean;
@@ -133,6 +177,8 @@ export type TournamentDetailResponse = {
   canManageApplications: boolean;
   applications: TournamentApplicationSummary[];
   participants: TournamentParticipantSummary[];
+  scheduleSlots: TournamentScheduleSlot[];
+  availableRosterMembers: TournamentRosterOption[];
 };
 
 export type UpsertTournamentRequest = {
@@ -166,6 +212,22 @@ export type TournamentUpsertResponse = {
 
 export type SubmitTournamentApplicationRequest = {
   applicationNote?: string | null;
+  teamName?: string | null;
+  rosterClubProfileIds?: number[];
+};
+
+export type UpsertTournamentScheduleSlotRequest = {
+  title: string;
+  courtLabel?: string | null;
+  startAt: string;
+  endAt: string;
+  note?: string | null;
+};
+
+export type UpdateTournamentApplicationOperationsRequest = {
+  checkedIn?: boolean | null;
+  placement?: number | null;
+  resultNote?: string | null;
 };
 
 export type CancelTournamentRequest = {
@@ -380,6 +442,51 @@ export function reviewClubTournamentApplication(
   return putJson<TournamentDetailResponse>(
     `/api/semo/v1/clubs/${clubId}/more/tournaments/${tournamentRecordId}/applications/${tournamentApplicationId}/review`,
     request,
+  );
+}
+
+export function updateClubTournamentApplicationOperations(
+  clubId: ClubId,
+  tournamentRecordId: string | number,
+  tournamentApplicationId: string | number,
+  request: UpdateTournamentApplicationOperationsRequest,
+) {
+  return putJson<TournamentDetailResponse>(
+    `/api/semo/v1/clubs/${clubId}/more/tournaments/${tournamentRecordId}/applications/${tournamentApplicationId}/operations`,
+    request,
+  );
+}
+
+export function createClubTournamentScheduleSlot(
+  clubId: ClubId,
+  tournamentRecordId: string | number,
+  request: UpsertTournamentScheduleSlotRequest,
+) {
+  return postJson<TournamentDetailResponse>(
+    `/api/semo/v1/clubs/${clubId}/more/tournaments/${tournamentRecordId}/schedule-slots`,
+    request,
+  );
+}
+
+export function updateClubTournamentScheduleSlot(
+  clubId: ClubId,
+  tournamentRecordId: string | number,
+  scheduleSlotId: string | number,
+  request: UpsertTournamentScheduleSlotRequest,
+) {
+  return putJson<TournamentDetailResponse>(
+    `/api/semo/v1/clubs/${clubId}/more/tournaments/${tournamentRecordId}/schedule-slots/${scheduleSlotId}`,
+    request,
+  );
+}
+
+export function deleteClubTournamentScheduleSlot(
+  clubId: ClubId,
+  tournamentRecordId: string | number,
+  scheduleSlotId: string | number,
+) {
+  return deleteJson<TournamentDetailResponse>(
+    `/api/semo/v1/clubs/${clubId}/more/tournaments/${tournamentRecordId}/schedule-slots/${scheduleSlotId}`,
   );
 }
 

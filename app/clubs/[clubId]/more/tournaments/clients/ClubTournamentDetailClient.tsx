@@ -56,6 +56,10 @@ export function ClubTournamentDetailClient({
   const [payloadState, setPayload] = useState<TournamentDetailResponse | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [showApplyForm, setShowApplyForm] = useState(false);
+  const [applicationNote, setApplicationNote] = useState("");
+  const [teamName, setTeamName] = useState("");
+  const [selectedRosterIds, setSelectedRosterIds] = useState<number[]>([]);
   const applyTournamentMutation = useMutation(
     applyTournamentMutationOptions(clubId, tournamentRecordId),
   );
@@ -78,7 +82,11 @@ export function ClubTournamentDetailClient({
   const handleApply = async () => {
     setSaving(true);
     setActionError(null);
-    const result = await applyTournamentMutation.mutateAsync();
+    const result = await applyTournamentMutation.mutateAsync({
+      applicationNote: applicationNote.trim() || null,
+      teamName: payload?.matchFormat === "SINGLE" ? null : teamName.trim() || null,
+      rosterClubProfileIds: selectedRosterIds,
+    });
     setSaving(false);
     if (!result.ok || !result.data) {
       setActionError(result.message ?? "대회 참가 신청에 실패했습니다.");
@@ -89,6 +97,10 @@ export function ClubTournamentDetailClient({
       result.data,
     );
     setPayload(result.data);
+    setShowApplyForm(false);
+    setApplicationNote("");
+    setTeamName("");
+    setSelectedRosterIds([]);
     void invalidateClubQueries(queryClient, clubId);
   };
 
@@ -123,6 +135,19 @@ export function ClubTournamentDetailClient({
 
   const statusBadgeClassName = getTournamentStatusBadgeClassName(payload.tournamentStatus);
   const approvalBadgeClassName = getTournamentApprovalBadgeClassName(payload.approvalStatus);
+  const teammateOptions = payload.availableRosterMembers.filter(
+    (member) => member.clubProfileId !== payload.viewerClubProfileId,
+  );
+  const minimumTeammateCount = payload.matchFormat === "DOUBLE" ? 1 : payload.matchFormat === "TEAM" ? 2 : 0;
+  const maximumTeammateCount = payload.matchFormat === "DOUBLE"
+    ? 1
+    : payload.matchFormat === "TEAM"
+      ? Math.max(2, (payload.teamMemberLimit ?? 3) - 1)
+      : 0;
+  const applicationFormValid = payload.matchFormat === "SINGLE"
+    || (teamName.trim().length > 0
+      && selectedRosterIds.length >= minimumTeammateCount
+      && selectedRosterIds.length <= maximumTeammateCount);
   return (
     <div className={isModal ? "flex min-h-0 flex-1 flex-col bg-white font-display text-slate-900" : "min-h-full bg-white font-display text-slate-900"}>
       <div className={isModal ? "flex min-h-0 flex-1 flex-col bg-white" : "mx-auto flex min-h-full max-w-md flex-col bg-white"}>
@@ -254,11 +279,11 @@ export function ClubTournamentDetailClient({
               {mode !== "admin" && payload.canApply ? (
                 <button
                   type="button"
-                  onClick={handleApply}
+                  onClick={() => setShowApplyForm((current) => !current)}
                   disabled={saving}
                   className="rounded-full bg-[var(--primary)] px-5 py-3 text-sm font-black text-white shadow-[0_12px_28px_rgba(19,91,236,0.2)] transition hover:opacity-95 disabled:opacity-60"
                 >
-                  참가 신청
+                  {payload.myApplicationStatus === "REJECTED" ? "다시 신청" : "참가 신청"}
                 </button>
               ) : null}
               {mode !== "admin" && payload.applied && payload.myApplicationStatus !== "CANCELLED" ? (
@@ -272,11 +297,134 @@ export function ClubTournamentDetailClient({
                 </button>
               ) : null}
             </div>
+
+            {mode !== "admin" && payload.canApply && showApplyForm ? (
+              <div className="rounded-[24px] border border-sky-200 bg-sky-50/60 p-4">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="text-sm font-black text-slate-900">참가 정보</p>
+                    <p className="mt-1 text-xs leading-5 text-slate-500">
+                      정원이 찬 경우 자동으로 대기 명단에 등록됩니다.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowApplyForm(false)}
+                    className="semo-icon-control bg-white text-slate-500"
+                    aria-label="참가 신청 폼 닫기"
+                  >
+                    <span className="material-symbols-outlined text-[20px]" aria-hidden="true">close</span>
+                  </button>
+                </div>
+
+                {payload.matchFormat !== "SINGLE" ? (
+                  <div className="mt-4 space-y-4">
+                    <label className="block">
+                      <span className="text-xs font-bold text-slate-600">팀 이름</span>
+                      <input
+                        value={teamName}
+                        onChange={(event) => setTeamName(event.target.value)}
+                        maxLength={100}
+                        className="mt-2 block w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-[var(--primary)]"
+                        placeholder="팀을 구분할 이름을 입력하세요"
+                      />
+                    </label>
+                    <fieldset>
+                      <legend className="text-xs font-bold text-slate-600">
+                        팀원 선택 · {payload.matchFormat === "DOUBLE" ? "1명" : `최소 2명, 최대 ${maximumTeammateCount}명`}
+                      </legend>
+                      <div className="mt-2 max-h-52 space-y-2 overflow-y-auto rounded-2xl border border-slate-200 bg-white p-2">
+                        {teammateOptions.length === 0 ? (
+                          <p className="px-3 py-5 text-center text-xs text-slate-500">선택할 수 있는 활성 멤버가 없습니다.</p>
+                        ) : teammateOptions.map((member) => {
+                          const selected = selectedRosterIds.includes(member.clubProfileId);
+                          return (
+                            <label
+                              key={member.clubProfileId}
+                              className={`flex cursor-pointer items-center justify-between rounded-xl px-3 py-2.5 text-sm transition ${selected ? "bg-sky-50 text-sky-800" : "hover:bg-slate-50"}`}
+                            >
+                              <span className="font-semibold">{member.displayName}</span>
+                              <input
+                                type="checkbox"
+                                checked={selected}
+                                onChange={() => setSelectedRosterIds((current) => {
+                                  if (selected) {
+                                    return current.filter((id) => id !== member.clubProfileId);
+                                  }
+                                  if (current.length >= maximumTeammateCount) {
+                                    return current;
+                                  }
+                                  return [...current, member.clubProfileId];
+                                })}
+                                className="size-4 accent-[var(--primary)]"
+                              />
+                            </label>
+                          );
+                        })}
+                      </div>
+                    </fieldset>
+                  </div>
+                ) : null}
+
+                <label className="mt-4 block">
+                  <span className="text-xs font-bold text-slate-600">운영진에게 남길 메모 · 선택</span>
+                  <textarea
+                    value={applicationNote}
+                    onChange={(event) => setApplicationNote(event.target.value)}
+                    maxLength={500}
+                    className="mt-2 block min-h-24 w-full resize-y rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-[var(--primary)]"
+                    placeholder="참가 신청과 함께 전달할 내용을 입력하세요"
+                  />
+                </label>
+                <button
+                  type="button"
+                  onClick={handleApply}
+                  disabled={saving || !applicationFormValid}
+                  className="mt-4 w-full rounded-2xl bg-[var(--primary)] px-5 py-3 text-sm font-black text-white disabled:opacity-50"
+                >
+                  {saving ? "신청 중..." : "참가 신청 제출"}
+                </button>
+              </div>
+            ) : null}
           </motion.section>
 
           <motion.section
             className="mt-8 rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm"
             {...staggeredFadeUpMotion(4, reduceMotion)}
+          >
+            <div className="mb-4">
+              <p className="text-xs font-black tracking-wide text-slate-400">코트 · 시간표</p>
+              <h3 className="mt-2 text-xl font-black tracking-tight text-slate-900">대회 일정</h3>
+            </div>
+            {payload.scheduleSlots.length === 0 ? (
+              <div className="rounded-2xl border border-dashed border-slate-300 px-4 py-8 text-center text-sm text-slate-500">
+                아직 등록된 세부 일정이 없습니다.
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {payload.scheduleSlots.map((slot) => (
+                  <div key={slot.tournamentScheduleSlotId} className="rounded-2xl bg-slate-50 px-4 py-4">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="min-w-0">
+                        <p className="font-bold text-slate-900">{slot.title}</p>
+                        <p className="mt-1 text-xs font-medium text-slate-500">{slot.startAtLabel} ~ {slot.endAtLabel}</p>
+                      </div>
+                      {slot.courtLabel ? (
+                        <span className="shrink-0 rounded-full bg-white px-3 py-1 text-xs font-bold text-slate-600 ring-1 ring-slate-200">
+                          {slot.courtLabel}
+                        </span>
+                      ) : null}
+                    </div>
+                    {slot.note ? <p className="mt-3 text-sm leading-6 text-slate-600">{slot.note}</p> : null}
+                  </div>
+                ))}
+              </div>
+            )}
+          </motion.section>
+
+          <motion.section
+            className="mt-8 rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm"
+            {...staggeredFadeUpMotion(5, reduceMotion)}
           >
             <div className="mb-4">
               <p className="text-xs font-black tracking-wide text-slate-400">참가자</p>
@@ -290,11 +438,31 @@ export function ClubTournamentDetailClient({
               ) : (
                 payload.participants.map((participant) => (
                   <div key={participant.clubProfileId} className="flex items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
-                    <div className="min-w-0">
+                    <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-bold text-slate-900">{participant.displayName}</p>
+                      {participant.teamName ? <p className="mt-1 text-xs font-bold text-sky-700">{participant.teamName}</p> : null}
                       {participant.approvedAtLabel ? (
                         <p className="mt-1 text-xs font-medium text-slate-400">{participant.approvedAtLabel} 승인</p>
                       ) : null}
+                      {participant.rosterMembers.length > 1 ? (
+                        <p className="mt-2 text-xs leading-5 text-slate-500">
+                          {participant.rosterMembers.map((member) => member.displayName).join(" · ")}
+                        </p>
+                      ) : null}
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {participant.feePaymentStatusLabel ? (
+                          <span className="rounded-full bg-white px-2.5 py-1 text-[11px] font-bold text-slate-600 ring-1 ring-slate-200">
+                            참가비 {participant.feePaymentStatusLabel}
+                          </span>
+                        ) : null}
+                        {participant.checkedInAtLabel ? (
+                          <span className="rounded-full bg-sky-50 px-2.5 py-1 text-[11px] font-bold text-sky-700">체크인 완료</span>
+                        ) : null}
+                        {participant.placement ? (
+                          <span className="rounded-full bg-amber-50 px-2.5 py-1 text-[11px] font-bold text-amber-700">{participant.placement}위</span>
+                        ) : null}
+                      </div>
+                      {participant.resultNote ? <p className="mt-2 text-xs text-slate-600">{participant.resultNote}</p> : null}
                     </div>
                     <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-black text-emerald-700">
                       참가 확정

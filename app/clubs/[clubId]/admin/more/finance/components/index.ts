@@ -18,6 +18,7 @@ export {
 } from "./financeModals";
 
 export { FinanceOperationsPanel } from "./financeOperationsPanel";
+export { FinanceExpenseDetailModal } from "./financeExpenseDetailModal";
 
 export {
   FinanceAccountEditorModal,

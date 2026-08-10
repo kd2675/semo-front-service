@@ -248,6 +248,56 @@ export type UpdateClubFeaturesRequest = {
   enabledFeatureKeys: string[];
 };
 
+export type ClubPresetSummary = {
+  presetKey: "SPORTS" | "ACADEMIC" | "STUDY" | string;
+  displayName: string;
+  description: string;
+  iconName: string;
+  featureKeys: string[];
+  featureDisplayNames: string[];
+  recommendedWidgetKeys: string[];
+  delegatedPositionNames: string[];
+  includedInCurrentConfiguration: boolean;
+};
+
+export type ClubOperationTemplateSummary = {
+  templateKey: string;
+  displayName: string;
+  description: string;
+  iconName: string;
+  requiredFeatureKeys: string[];
+  checklistItems: string[];
+  defaultDueDays: number;
+  recurrenceFrequency: "NONE" | "WEEKLY" | "MONTHLY" | string;
+  targetPath: string;
+};
+
+export type ClubOperationsCatalogResponse = {
+  clubId: number;
+  clubName: string;
+  presets: ClubPresetSummary[];
+  templates: ClubOperationTemplateSummary[];
+};
+
+export type ApplyClubPresetResponse = {
+  presetKey: string;
+  displayName: string;
+  applyMode: "MERGE" | "REPLACE";
+  appliedFeatureKeys: string[];
+  enabledWidgetKeys: string[];
+  createdPositionNames: string[];
+  features: ClubFeatureSummary[];
+};
+
+export type ApplyClubOperationTemplateResponse = {
+  templateKey: string;
+  displayName: string;
+  todoItemId: number;
+  checklistItemCount: number;
+  dueAt: string;
+  targetPath: string;
+};
+
 export function createClub(request: CreateClubRequest) {
   return postJson<ClubCreateResponse>("/api/semo/v1/clubs", request);
 }
@@ -325,6 +375,34 @@ export function updateClubDashboardWidgets(clubId: ClubId, request: UpdateClubDa
 
 export function updateClubFeatures(clubId: ClubId, request: UpdateClubFeaturesRequest) {
   return putJson<ClubFeatureSummary[]>(`/api/semo/v1/clubs/${clubId}/features`, request);
+}
+
+export function getClubOperationsCatalog(clubId: ClubId) {
+  return getJson<ClubOperationsCatalogResponse>(
+    `/api/semo/v1/clubs/${clubId}/admin/operations-catalog`,
+  );
+}
+
+export function applyClubPreset(
+  clubId: ClubId,
+  presetKey: string,
+  applyMode: "MERGE" | "REPLACE" = "MERGE",
+) {
+  return postJson<ApplyClubPresetResponse>(
+    `/api/semo/v1/clubs/${clubId}/admin/operations-catalog/presets/${presetKey}/apply`,
+    { applyMode },
+  );
+}
+
+export function applyClubOperationTemplate(
+  clubId: ClubId,
+  templateKey: string,
+  request?: { titleOverride?: string | null; dueAt?: string | null },
+) {
+  return postJson<ApplyClubOperationTemplateResponse>(
+    `/api/semo/v1/clubs/${clubId}/admin/operations-catalog/templates/${templateKey}/apply`,
+    request ?? {},
+  );
 }
 
 export function submitClubJoinRequest(clubId: ClubId, request: SubmitClubJoinRequestRequest) {

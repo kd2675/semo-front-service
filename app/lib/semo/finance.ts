@@ -111,6 +111,7 @@ export type ClubFinanceHomeResponse = {
   nextPayableObligation: ClubFinanceUserObligation | null;
   openObligations: ClubFinanceUserObligation[];
   paymentHistory: ClubFinanceUserObligation[];
+  scheduleOptions: FinanceScheduleOption[];
 };
 
 export type ClubFinanceRequest = {
@@ -381,6 +382,12 @@ export type FinanceExpenseRevision = {
   nextCategoryCode: string | null;
   previousSpentAt: string;
   nextSpentAt: string | null;
+  previousFinancePeriodId: number | null;
+  nextFinancePeriodId: number | null;
+  previousFinanceAccountId: number | null;
+  nextFinanceAccountId: number | null;
+  previousScheduleEventId: number | null;
+  nextScheduleEventId: number | null;
   previousStatusCode: string;
   nextStatusCode: string;
   reason: string;

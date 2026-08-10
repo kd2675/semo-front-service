@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "motion/react";
+import { ResourceAttachmentPanel } from "@/app/components/ResourceAttachmentPanel";
 import type {
   ClubAdminFinanceHomeResponse,
   ClubAdminFinanceObligation,
@@ -237,6 +238,7 @@ export function BillingTabPanel({
 }
 
 export function ExpensesTabPanel({
+  clubId,
   pendingRequestCount,
   totalExpenseAmountLabel,
   advanceRequestItems,
@@ -245,7 +247,9 @@ export function ExpensesTabPanel({
   activeRequestId,
   reduceMotion,
   onReviewRequest,
+  onOpenExpense,
 }: {
+  clubId: string;
   pendingRequestCount: number;
   totalExpenseAmountLabel: string;
   advanceRequestItems: ClubFinanceRequest[];
@@ -254,6 +258,7 @@ export function ExpensesTabPanel({
   activeRequestId: number | null;
   reduceMotion: boolean;
   onReviewRequest: (requestId: number, decision: "APPROVED" | "REJECTED") => void;
+  onOpenExpense: (expense: ClubFinanceExpense) => void;
 }) {
   return (
     <motion.section className="space-y-5" {...staggeredFadeUpMotion(2, reduceMotion)}>
@@ -286,14 +291,10 @@ export function ExpensesTabPanel({
               <EmptyAdminState title="검토할 선지출/환불 요청이 없습니다." description="회원이 FAB로 제출한 요청이 생기면 이 탭에서 승인 또는 반려할 수 있습니다." />
             ) : (
               advanceRequestItems.map((request) => (
-                <AdminFinanceRequestCard
-                  key={request.requestId}
-                  request={request}
-                  canReview={canReview}
-                  busy={activeRequestId === request.requestId}
-                  onApprove={() => onReviewRequest(request.requestId, "APPROVED")}
-                  onReject={() => onReviewRequest(request.requestId, "REJECTED")}
-                />
+                <div key={request.requestId} className="space-y-3">
+                  <AdminFinanceRequestCard request={request} canReview={canReview} busy={activeRequestId === request.requestId} onApprove={() => onReviewRequest(request.requestId, "APPROVED")} onReject={() => onReviewRequest(request.requestId, "REJECTED")} />
+                  <ResourceAttachmentPanel clubId={clubId} resourceType="FINANCE_REQUEST" resourceId={request.requestId} canUpload={false} canDelete={false} theme="admin" />
+                </div>
               ))
             )}
           </div>
@@ -311,7 +312,7 @@ export function ExpensesTabPanel({
             {expenses.length === 0 ? (
               <EmptyAdminState title="아직 입력된 지출이 없습니다." description="FAB 버튼에서 지출 입력을 열어 운영비, 식비, 대관비를 바로 기록할 수 있습니다." />
             ) : (
-              expenses.map((expense) => <ExpenseLedgerCard key={expense.expenseId} expense={expense} />)
+              expenses.map((expense) => <ExpenseLedgerCard key={expense.expenseId} expense={expense} onOpen={() => onOpenExpense(expense)} />)
             )}
           </div>
         </div>
@@ -321,12 +322,14 @@ export function ExpensesTabPanel({
 }
 
 export function SettlementsTabPanel({
+  clubId,
   settlementRequestItems,
   canReview,
   activeRequestId,
   reduceMotion,
   onReviewRequest,
 }: {
+  clubId: string;
   settlementRequestItems: ClubFinanceRequest[];
   canReview: boolean;
   activeRequestId: number | null;
@@ -359,14 +362,10 @@ export function SettlementsTabPanel({
             <EmptyAdminState title="현재 정산 요청이 없습니다." description="회원이 FAB에서 정산 요청을 제출하면 이 큐에서 승인 또는 반려할 수 있습니다." />
           ) : (
             settlementRequestItems.map((request) => (
-              <AdminFinanceRequestCard
-                key={request.requestId}
-                request={request}
-                canReview={canReview}
-                busy={activeRequestId === request.requestId}
-                onApprove={() => onReviewRequest(request.requestId, "APPROVED")}
-                onReject={() => onReviewRequest(request.requestId, "REJECTED")}
-              />
+              <div key={request.requestId} className="space-y-3">
+                <AdminFinanceRequestCard request={request} canReview={canReview} busy={activeRequestId === request.requestId} onApprove={() => onReviewRequest(request.requestId, "APPROVED")} onReject={() => onReviewRequest(request.requestId, "REJECTED")} />
+                <ResourceAttachmentPanel clubId={clubId} resourceType="FINANCE_REQUEST" resourceId={request.requestId} canUpload={false} canDelete={false} theme="admin" />
+              </div>
             ))
           )}
         </div>

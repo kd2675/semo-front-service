@@ -5,6 +5,7 @@ import { startTransition, useMemo, useState, type ReactNode } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { ClubModeSwitchFab } from "@/app/components/ClubModeSwitchFab";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
+import { ResourceAttachmentPanel } from "@/app/components/ResourceAttachmentPanel";
 import { RouteModal } from "@/app/components/RouteModal";
 import { useAppToast } from "@/app/hooks/useAppToast";
 import {
@@ -32,6 +33,7 @@ type MemberRequestDraft = {
   title: string;
   amount: string;
   relatedEventName: string;
+  linkedScheduleEventId: string;
   note: string;
 };
 
@@ -90,6 +92,7 @@ function createDraft(action: MemberFabAction): MemberRequestDraft {
       title: "선지출 등록",
       amount: "",
       relatedEventName: "",
+      linkedScheduleEventId: "",
       note: "",
     };
   }
@@ -98,6 +101,7 @@ function createDraft(action: MemberFabAction): MemberRequestDraft {
       title: "환불 요청",
       amount: "",
       relatedEventName: "",
+      linkedScheduleEventId: "",
       note: "",
     };
   }
@@ -105,6 +109,7 @@ function createDraft(action: MemberFabAction): MemberRequestDraft {
     title: "정산 요청",
     amount: "",
     relatedEventName: "",
+    linkedScheduleEventId: "",
     note: "",
   };
 }
@@ -124,6 +129,7 @@ export function ClubFinanceClient({
   const [activeAction, setActiveAction] = useState<MemberFabAction | null>(null);
   const [draft, setDraft] = useState<MemberRequestDraft>(createDraft("ADVANCE"));
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedRequest, setSelectedRequest] = useState<ClubFinanceRequest | null>(null);
   const { showToast, clearToast } = useAppToast();
   const createFinanceRequestMutation = useMutation(createFinanceRequestMutationOptions(clubId));
 
@@ -195,6 +201,7 @@ export function ClubFinanceClient({
       title: draft.title.trim(),
       amount: parsedAmount,
       relatedEventName: draft.relatedEventName.trim() || null,
+      linkedScheduleEventId: draft.linkedScheduleEventId ? Number(draft.linkedScheduleEventId) : null,
       note: draft.note.trim() || null,
     });
     setIsSubmitting(false);
@@ -207,6 +214,7 @@ export function ClubFinanceClient({
     startTransition(() => {
       setCreatedRequests((current) => [result.data!, ...current]);
       setActiveAction(null);
+      setSelectedRequest(result.data!);
     });
     void invalidateClubQueries(queryClient, clubId);
     showToast(`${result.data.requestTypeLabel}이 운영진에게 제출되었습니다.`, "success");
@@ -351,7 +359,7 @@ export function ClubFinanceClient({
                   />
                 ) : (
                   advanceAndRefundRequests.map((request) => (
-                    <FinanceRequestCard key={request.requestId} request={request} />
+                    <FinanceRequestCard key={request.requestId} request={request} onOpen={() => setSelectedRequest(request)} />
                   ))
                 )}
               </div>
@@ -375,7 +383,7 @@ export function ClubFinanceClient({
                   />
                 ) : (
                   settlementRequests.map((request) => (
-                    <FinanceRequestCard key={request.requestId} request={request} />
+                    <FinanceRequestCard key={request.requestId} request={request} onOpen={() => setSelectedRequest(request)} />
                   ))
                 )}
               </div>
@@ -393,7 +401,7 @@ export function ClubFinanceClient({
                   />
                 ) : (
                   requests.map((request) => (
-                    <FinanceRequestCard key={request.requestId} request={request} />
+                    <FinanceRequestCard key={request.requestId} request={request} onOpen={() => setSelectedRequest(request)} />
                   ))
                 )}
               </div>
@@ -469,12 +477,28 @@ export function ClubFinanceClient({
             >
               <FinanceRequestModal
                 action={activeAction}
+                scheduleOptions={finance.scheduleOptions}
                 draft={draft}
                 busy={isSubmitting}
                 onChange={(nextDraft) => setDraft(nextDraft)}
                 onClose={closeRequestModal}
                 onSubmit={() => void handleSubmitRequest()}
               />
+            </RouteModal>
+          ) : null}
+
+          {selectedRequest ? (
+            <RouteModal ariaLabel={`${selectedRequest.title} 요청 상세`} onDismiss={() => setSelectedRequest(null)} contentClassName="max-w-xl">
+              <section className="flex min-h-0 flex-1 flex-col">
+                <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
+                  <div className="min-w-0"><p className="text-xs font-semibold text-slate-400">{selectedRequest.requestTypeLabel}</p><h3 className="mt-1 truncate text-xl font-bold text-slate-900">{selectedRequest.title}</h3></div>
+                  <button type="button" aria-label="재정 요청 상세 닫기" onClick={() => setSelectedRequest(null)} className="semo-icon-control rounded-full text-slate-400 hover:bg-slate-100"><span className="material-symbols-outlined" aria-hidden="true">close</span></button>
+                </div>
+                <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-5 py-5">
+                  <FinanceRequestCard request={selectedRequest} />
+                  <ResourceAttachmentPanel clubId={clubId} resourceType="FINANCE_REQUEST" resourceId={selectedRequest.requestId} canUpload={selectedRequest.statusCode === "SUBMITTED"} />
+                </div>
+              </section>
             </RouteModal>
           ) : null}
         </AnimatePresence>
@@ -601,7 +625,7 @@ function ObligationCard({
   );
 }
 
-function FinanceRequestCard({ request }: { request: ClubFinanceRequest }) {
+function FinanceRequestCard({ request, onOpen }: { request: ClubFinanceRequest; onOpen?: () => void }) {
   return (
     <article className="rounded-3xl border border-slate-200 bg-slate-50 p-4">
       <div className="flex items-start justify-between gap-3">
@@ -624,17 +648,21 @@ function FinanceRequestCard({ request }: { request: ClubFinanceRequest }) {
         </span>
       </div>
       <div className="mt-4 grid grid-cols-2 gap-3 text-xs text-slate-500">
-        <InfoItem label="관련 행사" value={request.relatedEventName ?? "없음"} />
+        <InfoItem label="관련 행사" value={request.linkedScheduleEventTitle ?? request.relatedEventName ?? "없음"} />
         <InfoItem label="검토 시각" value={request.reviewedAtLabel ?? "대기 중"} />
         <InfoItem label="메모" value={request.note ?? "없음"} />
         <InfoItem label="검토 메모" value={request.reviewNote ?? "아직 없음"} />
       </div>
+      {onOpen ? (
+        <button type="button" onClick={onOpen} className="mt-4 min-h-11 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-bold text-[#135bec] transition hover:bg-blue-50">상세 및 증빙 확인</button>
+      ) : null}
     </article>
   );
 }
 
 function FinanceRequestModal({
   action,
+  scheduleOptions,
   draft,
   busy,
   onChange,
@@ -642,6 +670,7 @@ function FinanceRequestModal({
   onSubmit,
 }: {
   action: MemberFabAction;
+  scheduleOptions: ClubFinanceHomeResponse["scheduleOptions"];
   draft: MemberRequestDraft;
   busy: boolean;
   onChange: (nextDraft: MemberRequestDraft) => void;
@@ -691,14 +720,18 @@ function FinanceRequestModal({
             />
           </label>
           <label className="block">
-            <span className="text-sm font-semibold text-slate-700">관련 행사</span>
-            <input
-              value={draft.relatedEventName}
-              onChange={(event) => onChange({ ...draft, relatedEventName: event.target.value })}
-              placeholder="예: 봄 친선전"
-              className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-[#135bec] focus:ring-2 focus:ring-[#135bec]/10"
-            />
+            <span className="text-sm font-semibold text-slate-700">연결 일정</span>
+            <select value={draft.linkedScheduleEventId} onChange={(event) => onChange({ ...draft, linkedScheduleEventId: event.target.value })} className="mt-2 min-h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm text-slate-900 outline-none focus:border-[#135bec] focus:ring-2 focus:ring-[#135bec]/10">
+              <option value="">일정 연결 안 함</option>
+              {scheduleOptions.map((schedule) => <option key={schedule.eventId} value={schedule.eventId}>{schedule.startAtLabel} · {schedule.title}</option>)}
+            </select>
           </label>
+          {!draft.linkedScheduleEventId ? (
+            <label className="block">
+              <span className="text-sm font-semibold text-slate-700">직접 입력 행사명</span>
+              <input value={draft.relatedEventName} onChange={(event) => onChange({ ...draft, relatedEventName: event.target.value })} placeholder="일정에 없는 행사만 직접 입력" className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-[#135bec] focus:ring-2 focus:ring-[#135bec]/10" />
+            </label>
+          ) : null}
           <label className="block">
             <span className="text-sm font-semibold text-slate-700">메모</span>
             <textarea

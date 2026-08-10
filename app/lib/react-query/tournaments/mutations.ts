@@ -3,13 +3,20 @@ import {
   applyClubTournament,
   cancelClubTournament,
   cancelClubTournamentApplication,
+  createClubTournamentScheduleSlot,
   createClubTournament,
+  deleteClubTournamentScheduleSlot,
   deleteClubTournament,
   reviewClubTournament,
   reviewClubTournamentApplication,
+  updateClubTournamentApplicationOperations,
+  updateClubTournamentScheduleSlot,
   updateClubTournament,
 } from "@/app/lib/clubs";
-import type { ReviewTournamentApplicationRequest } from "@/app/lib/clubs";
+import type {
+  ReviewTournamentApplicationRequest,
+  SubmitTournamentApplicationRequest,
+} from "@/app/lib/clubs";
 
 export function saveTournamentMutationOptions(clubId: string, tournamentRecordId?: string | null) {
   return mutationOptions({
@@ -22,7 +29,49 @@ export function saveTournamentMutationOptions(clubId: string, tournamentRecordId
 
 export function applyTournamentMutationOptions(clubId: string, tournamentRecordId: string) {
   return mutationOptions({
-    mutationFn: () => applyClubTournament(clubId, tournamentRecordId, {}),
+    mutationFn: (request: SubmitTournamentApplicationRequest = {}) =>
+      applyClubTournament(clubId, tournamentRecordId, request),
+  });
+}
+
+export function updateTournamentApplicationOperationsMutationOptions(
+  clubId: string,
+  tournamentRecordId: string,
+) {
+  return mutationOptions({
+    mutationFn: ({ tournamentApplicationId, request }: {
+      tournamentApplicationId: number;
+      request: Parameters<typeof updateClubTournamentApplicationOperations>[3];
+    }) => updateClubTournamentApplicationOperations(
+      clubId,
+      tournamentRecordId,
+      tournamentApplicationId,
+      request,
+    ),
+  });
+}
+
+export function saveTournamentScheduleSlotMutationOptions(
+  clubId: string,
+  tournamentRecordId: string,
+) {
+  return mutationOptions({
+    mutationFn: ({ scheduleSlotId, request }: {
+      scheduleSlotId?: number | null;
+      request: Parameters<typeof createClubTournamentScheduleSlot>[2];
+    }) => scheduleSlotId == null
+      ? createClubTournamentScheduleSlot(clubId, tournamentRecordId, request)
+      : updateClubTournamentScheduleSlot(clubId, tournamentRecordId, scheduleSlotId, request),
+  });
+}
+
+export function deleteTournamentScheduleSlotMutationOptions(
+  clubId: string,
+  tournamentRecordId: string,
+) {
+  return mutationOptions({
+    mutationFn: (scheduleSlotId: number) =>
+      deleteClubTournamentScheduleSlot(clubId, tournamentRecordId, scheduleSlotId),
   });
 }
 
