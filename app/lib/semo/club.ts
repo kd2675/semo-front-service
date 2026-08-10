@@ -168,9 +168,19 @@ export type ClubFeatureSummary = {
   description: string | null;
   iconName: string;
   navigationScope: "USER_AND_ADMIN" | "ADMIN_ONLY" | string;
+  sortOrder: number;
   enabled: boolean;
   userPath: string;
   adminPath: string;
+};
+
+export type ClubMoreSummary = {
+  clubId: number;
+  clubName: string;
+  fullAdmin: boolean;
+  grantedPermissionKeys: string[];
+  adminToolFeatureKeys: string[];
+  features: ClubFeatureSummary[];
 };
 
 export type DashboardScope = "USER_HOME" | "ADMIN_HOME";
@@ -250,6 +260,10 @@ export function updateClubProfile(clubId: ClubId, request: UpdateClubProfileRequ
 
 export function getClubFeatures(clubId: ClubId) {
   return getJson<ClubFeatureSummary[]>(`/api/semo/v1/clubs/${clubId}/features`);
+}
+
+export function getClubMoreSummary(clubId: ClubId) {
+  return getJson<ClubMoreSummary>(`/api/semo/v1/clubs/${clubId}/more/summary`);
 }
 
 export function getClubDashboardWidgets(clubId: ClubId, scope: DashboardScope = "USER_HOME") {

@@ -19,19 +19,6 @@ export function ClubAdminRolesFallbackClient({ clubId }: ClubAdminRolesFallbackC
   const club = clubQuery.data ?? null;
   const payload = payloadQuery.data ?? null;
 
-  if (club && !club.admin) {
-    return (
-      <ClubRouteErrorState
-        title="직책 관리"
-        heading="관리자 권한이 필요합니다"
-        message="직책 관리는 클럽 관리자만 사용할 수 있습니다."
-        backHref={`/clubs/${clubId}`}
-        theme="admin"
-        icon="lock"
-      />
-    );
-  }
-
   if ((clubQuery.isError || payloadQuery.isError) && (!club || !payload)) {
     return (
       <ClubRouteErrorState

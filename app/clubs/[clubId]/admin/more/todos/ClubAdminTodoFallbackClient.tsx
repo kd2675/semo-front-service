@@ -25,19 +25,6 @@ export function ClubAdminTodoFallbackClient({ clubId }: ClubAdminTodoFallbackCli
         ? getQueryErrorMessage(todoQuery.error, "할 일 운영 정보를 다시 불러오지 못했습니다.")
         : null;
 
-  if (club && !club.admin) {
-    return (
-      <ClubRouteErrorState
-        title="할 일 관리"
-        heading="관리자 권한이 필요합니다"
-        message="할 일 관리는 클럽 관리자만 사용할 수 있습니다."
-        backHref={`/clubs/${clubId}`}
-        theme="admin"
-        icon="lock"
-      />
-    );
-  }
-
   if (errorMessage) {
     return (
       <ClubRouteErrorState

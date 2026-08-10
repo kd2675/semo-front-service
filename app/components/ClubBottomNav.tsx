@@ -6,9 +6,9 @@ import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { MoreNavigationMenu } from "@/app/components/MoreNavigationMenu";
-import { buildUserMoreNavigation } from "@/app/lib/featureNavigation";
+import { buildDelegatedAdminNavigation, buildUserMoreNavigation } from "@/app/lib/featureNavigation";
 import { overlayFadeMotion, popInMotion } from "@/app/lib/motion";
-import { clubFeaturesQueryOptions, clubQueryKeys } from "@/app/lib/react-query/club/queries";
+import { clubMoreSummaryQueryOptions, clubQueryKeys } from "@/app/lib/react-query/club/queries";
 import { useBottomNavScrollDocking } from "@/app/hooks/useBottomNavScrollDocking";
 import { useDialogFocusManagement } from "@/app/hooks/useDialogFocusManagement";
 
@@ -49,10 +49,18 @@ export function ClubBottomNav({ clubId, isAdmin = false }: ClubBottomNavProps) {
   const isDocked = useBottomNavScrollDocking({ routeKey: pathname });
   const [openMenuPathname, setOpenMenuPathname] = useState<string | null>(null);
   const queryClient = useQueryClient();
-  const { data: featureData } = useQuery(clubFeaturesQueryOptions(clubId));
+  const { data: moreSummary } = useQuery(clubMoreSummaryQueryOptions(clubId));
   const menuItems = useMemo(
-    () => buildUserMoreNavigation(featureData ?? [], clubId),
-    [clubId, featureData],
+    () => {
+      const features = moreSummary?.features ?? [];
+      const userItems = buildUserMoreNavigation(features, clubId);
+      if (!moreSummary || moreSummary.fullAdmin) return userItems;
+      return [
+        ...userItems,
+        ...buildDelegatedAdminNavigation(features, clubId, moreSummary.adminToolFeatureKeys),
+      ];
+    },
+    [clubId, moreSummary],
   );
   const isMoreOpen = openMenuPathname === pathname;
   const isFeatureRouteActive = menuItems.some((feature) => {
@@ -67,7 +75,7 @@ export function ClubBottomNav({ clubId, isAdmin = false }: ClubBottomNavProps) {
   useEffect(() => {
     const onFeatureUpdate = () => {
       void queryClient.invalidateQueries({
-        queryKey: clubQueryKeys.features(clubId),
+        queryKey: clubQueryKeys.moreSummary(clubId),
       });
     };
 

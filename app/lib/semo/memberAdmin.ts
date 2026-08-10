@@ -204,6 +204,10 @@ export type ClubAdminRoleManagementResponse = {
   clubName: string;
   admin: boolean;
   roleManagementEnabled: boolean;
+  canCreate: boolean;
+  canUpdate: boolean;
+  canDelete: boolean;
+  canAssign: boolean;
   positions: ClubPositionSummary[];
   permissionGroups: ClubPermissionGroup[];
 };
@@ -213,6 +217,9 @@ export type ClubPositionDetailResponse = {
   clubName: string;
   admin: boolean;
   roleManagementEnabled: boolean;
+  canUpdate: boolean;
+  canDelete: boolean;
+  canAssign: boolean;
   position: ClubPositionSummary;
   permissionGroups: ClubPermissionGroup[];
 };

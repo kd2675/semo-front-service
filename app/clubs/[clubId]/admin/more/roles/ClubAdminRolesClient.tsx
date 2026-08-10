@@ -631,14 +631,16 @@ export function ClubAdminRolesClient({ clubId, initialData }: ClubAdminRolesClie
           ) : null}
         </main>
 
-        <RouterLink
-          href={`/clubs/${clubId}/admin/more/roles/new`}
-          aria-label="직책 만들기"
-          className={`fixed ${FAB_RIGHT_OFFSET_CLASS_NAME} ${getActionFabBottomClass(true)} z-40 flex h-14 w-14 items-center justify-center rounded-full bg-[#ec5b13] text-white transition-transform active:scale-95`}
-          style={{ boxShadow: "0 6px 16px rgba(236, 91, 19, 0.32)" }}
-        >
-          <span className="material-symbols-outlined text-[28px]" aria-hidden="true">add</span>
-        </RouterLink>
+        {roleManagement.canCreate ? (
+          <RouterLink
+            href={`/clubs/${clubId}/admin/more/roles/new`}
+            aria-label="직책 만들기"
+            className={`fixed ${FAB_RIGHT_OFFSET_CLASS_NAME} ${getActionFabBottomClass(true)} z-40 flex h-14 w-14 items-center justify-center rounded-full bg-[#ec5b13] text-white transition-transform active:scale-95`}
+            style={{ boxShadow: "0 6px 16px rgba(236, 91, 19, 0.32)" }}
+          >
+            <span className="material-symbols-outlined text-[28px]" aria-hidden="true">add</span>
+          </RouterLink>
+        ) : null}
 
         <AnimatePresence>
           {selectedEditRole ? (
@@ -647,6 +649,9 @@ export function ClubAdminRolesClient({ clubId, initialData }: ClubAdminRolesClie
               clubId={clubId}
               role={selectedEditRole}
               initialTab={selectedEditTab}
+              canUpdate={roleManagement.canUpdate}
+              canDelete={roleManagement.canDelete}
+              canAssign={roleManagement.canAssign}
               onClose={handleCloseRoleSheet}
               onRolesChanged={refreshRoleManagement}
             />

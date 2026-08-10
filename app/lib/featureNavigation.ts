@@ -1,6 +1,6 @@
 import type { ClubFeatureSummary } from "@/app/lib/clubs";
 
-export type MoreNavigationGroup = "CONTENT" | "OPERATIONS" | "PEOPLE" | "COMPETITION";
+export type MoreNavigationGroup = "CONTENT" | "OPERATIONS" | "PEOPLE" | "COMPETITION" | "DELEGATED";
 
 export type MoreNavigationItem = {
   key: string;
@@ -10,6 +10,7 @@ export type MoreNavigationItem = {
   href: string;
   group: MoreNavigationGroup;
   featureKeys: string[];
+  sortOrder: number;
 };
 
 const GROUP_LABELS: Record<MoreNavigationGroup, string> = {
@@ -17,6 +18,7 @@ const GROUP_LABELS: Record<MoreNavigationGroup, string> = {
   OPERATIONS: "운영 도구",
   PEOPLE: "멤버와 소통",
   COMPETITION: "대회 운영",
+  DELEGATED: "위임받은 운영 도구",
 };
 
 const FEATURE_DESCRIPTIONS: Record<string, string> = {
@@ -29,16 +31,17 @@ const FEATURE_DESCRIPTIONS: Record<string, string> = {
   TIMELINE: "운영 작업의 감사 기록을 시간순으로 확인합니다.",
 };
 
+const SCHEDULE_FEATURE_KEYS = new Set(["SCHEDULE_MANAGE", "POLL", "ATTENDANCE"]);
+const COMPETITION_FEATURE_KEYS = new Set(["TOURNAMENT_RECORD", "BRACKET"]);
+
 export function getMoreNavigationGroupLabel(group: MoreNavigationGroup) {
   return GROUP_LABELS[group];
 }
 
-function enabledFeatureMap(features: ClubFeatureSummary[]) {
-  return new Map(
-    features
-      .filter((feature) => feature.enabled)
-      .map((feature) => [feature.featureKey, feature]),
-  );
+function orderedEnabledFeatures(features: ClubFeatureSummary[]) {
+  return features
+    .filter((feature) => feature.enabled)
+    .toSorted((left, right) => left.sortOrder - right.sortOrder || left.featureKey.localeCompare(right.featureKey));
 }
 
 function featureItem(
@@ -54,31 +57,34 @@ function featureItem(
     href: overrides?.href ?? feature.userPath,
     group,
     featureKeys: [feature.featureKey],
+    sortOrder: feature.sortOrder,
+  };
+}
+
+function combinedItem(
+  orderedFeatures: ClubFeatureSummary[],
+  featureKeys: Set<string>,
+  item: Omit<MoreNavigationItem, "featureKeys" | "sortOrder">,
+): MoreNavigationItem | null {
+  const matched = orderedFeatures.filter((feature) => featureKeys.has(feature.featureKey));
+  if (matched.length === 0) return null;
+  return {
+    ...item,
+    featureKeys: matched.map((feature) => feature.featureKey),
+    sortOrder: matched[0].sortOrder,
   };
 }
 
 function competitionItem(
-  featureByKey: Map<string, ClubFeatureSummary>,
+  orderedFeatures: ClubFeatureSummary[],
   clubId: string,
   admin: boolean,
 ): MoreNavigationItem | null {
-  const tournament = featureByKey.get("TOURNAMENT_RECORD");
-  const bracket = featureByKey.get("BRACKET");
-  if (!tournament && !bracket) {
-    return null;
-  }
-  const featureKeys = [tournament?.featureKey, bracket?.featureKey].filter(
-    (featureKey): featureKey is string => Boolean(featureKey),
-  );
-  const href = tournament
-    ? admin
-      ? `/clubs/${clubId}/admin/more/tournaments`
-      : `/clubs/${clubId}/more/tournaments`
-    : admin
-      ? `/clubs/${clubId}/admin/more/brackets`
-      : `/clubs/${clubId}/more/brackets`;
-
-  return {
+  const tournament = orderedFeatures.find((feature) => feature.featureKey === "TOURNAMENT_RECORD");
+  const bracket = orderedFeatures.find((feature) => feature.featureKey === "BRACKET");
+  if (!tournament && !bracket) return null;
+  const source = tournament ?? bracket!;
+  return combinedItem(orderedFeatures, COMPETITION_FEATURE_KEYS, {
     key: "COMPETITION_CENTER",
     label: tournament && bracket ? "대회·대진표" : tournament ? "대회" : "대진표 초안",
     description: tournament && bracket
@@ -87,88 +93,118 @@ function competitionItem(
         ? "대회 등록, 참가 신청과 승인 상태를 관리합니다."
         : "대회 참가자용 대진표 초안을 만들고 검토합니다.",
     iconName: "emoji_events",
-    href,
+    href: admin ? source.adminPath : source.userPath,
     group: "COMPETITION",
-    featureKeys,
-  };
+  });
 }
 
-export function buildUserMoreNavigation(
-  features: ClubFeatureSummary[],
-  clubId: string,
-): MoreNavigationItem[] {
-  const featureByKey = enabledFeatureMap(
-    features.filter((feature) => feature.navigationScope !== "ADMIN_ONLY"),
-  );
+function pushOnceAtFeature(
+  items: MoreNavigationItem[],
+  emittedKeys: Set<string>,
+  currentFeatureKey: string,
+  item: MoreNavigationItem | null,
+) {
+  if (!item || !item.featureKeys.includes(currentFeatureKey) || emittedKeys.has(item.key)) return;
+  emittedKeys.add(item.key);
+  items.push(item);
+}
+
+export function buildUserMoreNavigation(features: ClubFeatureSummary[], clubId: string): MoreNavigationItem[] {
+  const ordered = orderedEnabledFeatures(features).filter((feature) => feature.navigationScope !== "ADMIN_ONLY");
+  const competition = competitionItem(ordered, clubId, false);
   const items: MoreNavigationItem[] = [];
+  const emittedKeys = new Set<string>();
 
-  const todo = featureByKey.get("TODO");
-  const finance = featureByKey.get("FINANCE");
-  const members = featureByKey.get("MEMBER_DIRECTORY");
-  const feedback = featureByKey.get("FEEDBACK");
-
-  if (todo) items.push(featureItem(todo, "OPERATIONS", { label: "내 할 일", href: `/clubs/${clubId}/more/todos` }));
-  if (finance) items.push(featureItem(finance, "OPERATIONS", { label: "회비·정산", href: `/clubs/${clubId}/more/finance` }));
-  if (members) items.push(featureItem(members, "PEOPLE", { label: "멤버·조직", href: `/clubs/${clubId}/more/members` }));
-  if (feedback) items.push(featureItem(feedback, "PEOPLE", { href: `/clubs/${clubId}/more/feedback` }));
-
-  const competition = competitionItem(featureByKey, clubId, false);
-  if (competition) items.push(competition);
+  for (const feature of ordered) {
+    switch (feature.featureKey) {
+      case "TODO":
+        items.push(featureItem(feature, "OPERATIONS", { label: "내 할 일", href: `/clubs/${clubId}/more/todos` }));
+        break;
+      case "FINANCE":
+        items.push(featureItem(feature, "OPERATIONS", { label: "회비·정산", href: `/clubs/${clubId}/more/finance` }));
+        break;
+      case "MEMBER_DIRECTORY":
+        items.push(featureItem(feature, "PEOPLE", { label: "멤버·조직", href: `/clubs/${clubId}/more/members` }));
+        break;
+      case "FEEDBACK":
+        items.push(featureItem(feature, "PEOPLE", { href: `/clubs/${clubId}/more/feedback` }));
+        break;
+      case "TOURNAMENT_RECORD":
+      case "BRACKET":
+        pushOnceAtFeature(items, emittedKeys, feature.featureKey, competition);
+        break;
+    }
+  }
   return items;
 }
 
-export function buildAdminMoreNavigation(
+export function buildAdminMoreNavigation(features: ClubFeatureSummary[], clubId: string): MoreNavigationItem[] {
+  const ordered = orderedEnabledFeatures(features);
+  const schedule = combinedItem(ordered, SCHEDULE_FEATURE_KEYS, {
+    key: "SCHEDULE_CONTENT",
+    label: "일정·투표·참석",
+    description: "일정 생성부터 참가 응답과 투표까지 대표 캘린더에서 관리합니다.",
+    iconName: "calendar_month",
+    href: `/clubs/${clubId}/schedule`,
+    group: "CONTENT",
+  });
+  const competition = competitionItem(ordered, clubId, true);
+  const items: MoreNavigationItem[] = [];
+  const emittedKeys = new Set<string>();
+
+  for (const feature of ordered) {
+    switch (feature.featureKey) {
+      case "NOTICE":
+        items.push(featureItem(feature, "CONTENT", {
+          label: "게시 콘텐츠",
+          description: "공지와 게시판 공유 콘텐츠를 대표 게시판에서 관리합니다.",
+          iconName: "forum",
+          href: `/clubs/${clubId}/board`,
+        }));
+        break;
+      case "SCHEDULE_MANAGE":
+      case "POLL":
+      case "ATTENDANCE":
+        pushOnceAtFeature(items, emittedKeys, feature.featureKey, schedule);
+        break;
+      case "JOIN_REQUEST":
+        items.push(featureItem(feature, "PEOPLE", { label: "가입 신청", href: `/clubs/${clubId}/admin/more/join-requests` }));
+        break;
+      case "MEMBER_DIRECTORY":
+        items.push(featureItem(feature, "PEOPLE", { label: "멤버 공개 설정", href: `/clubs/${clubId}/admin/more/members` }));
+        break;
+      case "FEEDBACK":
+        items.push(featureItem(feature, "PEOPLE", { label: "피드백 검토", href: `/clubs/${clubId}/admin/more/feedback` }));
+        break;
+      case "ROLE_MANAGEMENT":
+        items.push(featureItem(feature, "OPERATIONS", { label: "조직·권한", href: `/clubs/${clubId}/admin/more/roles` }));
+        break;
+      case "TODO":
+        items.push(featureItem(feature, "OPERATIONS", { label: "업무 운영", href: `/clubs/${clubId}/admin/more/todos` }));
+        break;
+      case "FINANCE":
+        items.push(featureItem(feature, "OPERATIONS", { label: "재정 운영", href: `/clubs/${clubId}/admin/more/finance` }));
+        break;
+      case "TIMELINE":
+        items.push(featureItem(feature, "OPERATIONS", { label: "운영 기록", href: `/clubs/${clubId}/admin/logs` }));
+        break;
+      case "TOURNAMENT_RECORD":
+      case "BRACKET":
+        pushOnceAtFeature(items, emittedKeys, feature.featureKey, competition);
+        break;
+    }
+  }
+  return items;
+}
+
+export function buildDelegatedAdminNavigation(
   features: ClubFeatureSummary[],
   clubId: string,
+  adminToolFeatureKeys: string[],
 ): MoreNavigationItem[] {
-  const featureByKey = enabledFeatureMap(features);
-  const items: MoreNavigationItem[] = [];
-  const notice = featureByKey.get("NOTICE");
-  const schedule = featureByKey.get("SCHEDULE_MANAGE");
-  const poll = featureByKey.get("POLL");
-  const attendance = featureByKey.get("ATTENDANCE");
-
-  if (notice) {
-    items.push(featureItem(notice, "CONTENT", {
-      label: "게시 콘텐츠",
-      description: "공지와 게시판 공유 콘텐츠를 대표 게시판에서 관리합니다.",
-      iconName: "forum",
-      href: `/clubs/${clubId}/board`,
-    }));
-  }
-  if (schedule || poll || attendance) {
-    const source = schedule ?? poll ?? attendance!;
-    items.push({
-      ...featureItem(source, "CONTENT", {
-        label: "일정·투표·참석",
-        description: "일정 생성부터 참가 응답과 투표까지 대표 캘린더에서 관리합니다.",
-        iconName: "calendar_month",
-        href: `/clubs/${clubId}/schedule`,
-      }),
-      key: "SCHEDULE_CONTENT",
-      featureKeys: [schedule?.featureKey, poll?.featureKey, attendance?.featureKey].filter(
-        (featureKey): featureKey is string => Boolean(featureKey),
-      ),
-    });
-  }
-
-  const joinRequest = featureByKey.get("JOIN_REQUEST");
-  const members = featureByKey.get("MEMBER_DIRECTORY");
-  const feedback = featureByKey.get("FEEDBACK");
-  if (joinRequest) items.push(featureItem(joinRequest, "PEOPLE", { label: "가입 신청", href: `/clubs/${clubId}/admin/more/join-requests` }));
-  if (members) items.push(featureItem(members, "PEOPLE", { label: "멤버 공개 설정", href: `/clubs/${clubId}/admin/more/members` }));
-  if (feedback) items.push(featureItem(feedback, "PEOPLE", { label: "피드백 검토", href: `/clubs/${clubId}/admin/more/feedback` }));
-
-  const roles = featureByKey.get("ROLE_MANAGEMENT");
-  const todo = featureByKey.get("TODO");
-  const finance = featureByKey.get("FINANCE");
-  const timeline = featureByKey.get("TIMELINE");
-  if (roles) items.push(featureItem(roles, "OPERATIONS", { label: "조직·권한", href: `/clubs/${clubId}/admin/more/roles` }));
-  if (todo) items.push(featureItem(todo, "OPERATIONS", { label: "업무 운영", href: `/clubs/${clubId}/admin/more/todos` }));
-  if (finance) items.push(featureItem(finance, "OPERATIONS", { label: "재정 운영", href: `/clubs/${clubId}/admin/more/finance` }));
-  if (timeline) items.push(featureItem(timeline, "OPERATIONS", { label: "운영 기록", href: `/clubs/${clubId}/admin/logs` }));
-
-  const competition = competitionItem(featureByKey, clubId, true);
-  if (competition) items.push(competition);
-  return items;
+  const allowedFeatureKeys = new Set(adminToolFeatureKeys);
+  return buildAdminMoreNavigation(features, clubId)
+    .filter((item) => item.group !== "CONTENT")
+    .filter((item) => item.featureKeys.some((featureKey) => allowedFeatureKeys.has(featureKey)))
+    .map((item) => ({ ...item, key: `DELEGATED_${item.key}`, group: "DELEGATED" }));
 }

@@ -47,19 +47,6 @@ export function ClubAdminFinanceFallbackClient({ clubId }: ClubAdminFinanceFallb
         }
       : null;
 
-  if (club && !club.admin) {
-    return (
-      <ClubRouteErrorState
-        title="재정 관리"
-        heading="관리자 권한이 필요합니다"
-        message="재정 관리는 클럽 관리자만 사용할 수 있습니다."
-        backHref={`/clubs/${clubId}`}
-        theme="admin"
-        icon="lock"
-      />
-    );
-  }
-
   const error = clubQuery.error
     ?? financeQuery.error
     ?? obligationFeedQuery.error

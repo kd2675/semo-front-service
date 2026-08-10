@@ -6,6 +6,7 @@ type RolePermissionToggleCardProps = {
   group: ClubPermissionGroup;
   selectedKeys: string[];
   onToggle: (permissionKey: string) => void;
+  disabled?: boolean;
 };
 
 function getPermissionGroupLabel(displayName: string) {
@@ -16,6 +17,7 @@ export function RolePermissionToggleCard({
   group,
   selectedKeys,
   onToggle,
+  disabled = false,
 }: RolePermissionToggleCardProps) {
   const activeCount = group.permissions.filter((permission) => selectedKeys.includes(permission.permissionKey)).length;
 
@@ -58,7 +60,8 @@ export function RolePermissionToggleCard({
                 aria-checked={selected}
                 aria-label={`${permission.displayName} 권한`}
                 onClick={() => onToggle(permission.permissionKey)}
-                className={`relative inline-flex h-11 w-14 shrink-0 items-center rounded-full transition ${
+                disabled={disabled}
+                className={`relative inline-flex h-11 w-14 shrink-0 items-center rounded-full transition disabled:cursor-not-allowed disabled:opacity-60 ${
                   selected ? "bg-[var(--primary)]" : "bg-slate-300"
                 }`}
               >

@@ -1,17 +1,11 @@
 import { RouterLink } from "@/app/components/RouterLink";
-import {
-  getMoreNavigationGroupLabel,
-  type MoreNavigationGroup,
-  type MoreNavigationItem,
-} from "@/app/lib/featureNavigation";
+import { getMoreNavigationGroupLabel, type MoreNavigationItem } from "@/app/lib/featureNavigation";
 
 type MoreNavigationMenuProps = {
   items: MoreNavigationItem[];
   mode: "user" | "admin";
   onNavigate: () => void;
 };
-
-const GROUP_ORDER: MoreNavigationGroup[] = ["CONTENT", "OPERATIONS", "PEOPLE", "COMPETITION"];
 
 export function MoreNavigationMenu({ items, mode, onNavigate }: MoreNavigationMenuProps) {
   const accentClassName = mode === "admin" ? "text-[var(--color-admin-primary)]" : "text-[var(--primary)]";
@@ -31,35 +25,29 @@ export function MoreNavigationMenu({ items, mode, onNavigate }: MoreNavigationMe
 
   return (
     <div className="space-y-5">
-      {GROUP_ORDER.map((group) => {
-        const groupItems = items.filter((item) => item.group === group);
-        if (groupItems.length === 0) return null;
+      {items.map((item, index) => {
+        const showGroupLabel = index === 0 || items[index - 1]?.group !== item.group;
         return (
-          <section key={group} aria-labelledby={`more-group-${mode}-${group}`}>
-            <h2
-              id={`more-group-${mode}-${group}`}
-              className="mb-2 px-1 text-xs font-bold tracking-wide text-slate-400"
+          <section key={item.key} aria-labelledby={`more-item-${mode}-${item.key}`}>
+            {showGroupLabel ? (
+              <h2 className="mb-2 px-1 text-xs font-bold tracking-wide text-slate-400">
+                {getMoreNavigationGroupLabel(item.group)}
+              </h2>
+            ) : null}
+            <RouterLink
+              id={`more-item-${mode}-${item.key}`}
+              href={item.href}
+              onClick={onNavigate}
+              className={`group flex min-h-18 items-center gap-3 rounded-[var(--radius-card)] border border-slate-200 bg-white p-3 text-left transition hover:border-slate-300 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 ${focusClassName}`}
             >
-              {getMoreNavigationGroupLabel(group)}
-            </h2>
-            <div className="grid grid-cols-1 gap-2">
-              {groupItems.map((item) => (
-                <RouterLink
-                  key={item.key}
-                  href={item.href}
-                  onClick={onNavigate}
-                  className={`group flex min-h-18 items-center gap-3 rounded-[var(--radius-card)] border border-slate-200 bg-white p-3 text-left transition hover:border-slate-300 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 ${focusClassName}`}
-                >
-                  <span className={`flex size-10 shrink-0 items-center justify-center rounded-[var(--radius-control)] ${iconSurfaceClassName} ${accentClassName}`}>
-                    <span className="material-symbols-outlined text-[22px]" aria-hidden="true">{item.iconName}</span>
-                  </span>
-                  <span className="min-w-0">
-                    <span className="block text-sm font-bold text-slate-800">{item.label}</span>
-                    <span className="mt-0.5 line-clamp-2 block text-xs leading-5 text-slate-500">{item.description}</span>
-                  </span>
-                </RouterLink>
-              ))}
-            </div>
+              <span className={`flex size-10 shrink-0 items-center justify-center rounded-[var(--radius-control)] ${iconSurfaceClassName} ${accentClassName}`}>
+                <span className="material-symbols-outlined text-[22px]" aria-hidden="true">{item.iconName}</span>
+              </span>
+              <span className="min-w-0">
+                <span className="block text-sm font-bold text-slate-800">{item.label}</span>
+                <span className="mt-0.5 line-clamp-2 block text-xs leading-5 text-slate-500">{item.description}</span>
+              </span>
+            </RouterLink>
           </section>
         );
       })}

@@ -26,12 +26,12 @@ export function ClubAdminRoleCreateFallbackClient({
   const payload = payloadQuery.data ?? null;
   const createRoleMutation = useMutation(createRoleMutationOptions(clubId));
 
-  if (club && !club.admin) {
+  if (payload && !payload.canCreate) {
     return (
       <ClubRouteErrorState
         title="직책 생성"
-        heading="관리자 권한이 필요합니다"
-        message="직책은 클럽 관리자만 만들 수 있습니다."
+        heading="직책 생성 권한이 필요합니다"
+        message="이 클럽에서 직책을 생성할 권한이 없습니다."
         backHref={`/clubs/${clubId}`}
         theme="admin"
         icon="lock"

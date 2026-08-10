@@ -37,6 +37,9 @@ type RoleEditSheetProps = {
   clubId: string;
   role: ClubPositionSummary;
   initialTab: RoleSheetTab;
+  canUpdate: boolean;
+  canDelete: boolean;
+  canAssign: boolean;
   onClose: () => void;
   onRolesChanged: () => Promise<boolean> | boolean;
 };
@@ -46,12 +49,14 @@ function MemberAssignmentCard({
   role,
   assigned,
   busy,
+  canAssign,
   onToggle,
 }: {
   member: ClubAdminMember;
   role: ClubPositionSummary;
   assigned: boolean;
   busy: boolean;
+  canAssign: boolean;
   onToggle: (member: ClubAdminMember, shouldAssign: boolean) => void;
 }) {
   return (
@@ -62,7 +67,7 @@ function MemberAssignmentCard({
         <button
           type="button"
           onClick={() => onToggle(member, !assigned)}
-          disabled={busy || !member.canManage}
+          disabled={busy || !canAssign || !member.canManage}
           className={`inline-flex shrink-0 items-center gap-1.5 rounded-2xl px-4 py-2.5 text-xs font-bold transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40 ${
             assigned
               ? "bg-rose-50 text-rose-600 hover:bg-rose-100"
@@ -98,6 +103,9 @@ export function RoleEditSheet({
   clubId,
   role,
   initialTab,
+  canUpdate,
+  canDelete,
+  canAssign,
   onClose,
   onRolesChanged,
 }: RoleEditSheetProps) {
@@ -209,6 +217,7 @@ export function RoleEditSheet({
   };
 
   const handleSave = async () => {
+    if (!canUpdate) return;
     if (!canSubmit) {
       showToast("직책 이름을 입력해주세요.", "error");
       return;
@@ -240,6 +249,7 @@ export function RoleEditSheet({
   };
 
   const handleDelete = async () => {
+    if (!canDelete) return;
     setSubmitting(true);
     const result = await deleteClubAdminRole(clubId, role.clubPositionId);
     setSubmitting(false);
@@ -254,6 +264,7 @@ export function RoleEditSheet({
   };
 
   const handleAssignToggle = async (member: ClubAdminMember, shouldAssign: boolean) => {
+    if (!canAssign) return;
     const currentIds = member.positions.map((position) => position.clubPositionId);
     const nextIds = shouldAssign
       ? [...new Set([...currentIds, role.clubPositionId])]
@@ -305,7 +316,7 @@ export function RoleEditSheet({
         role="dialog"
         aria-modal="true"
         tabIndex={-1}
-        aria-label={`${role.displayName} 직책 편집`}
+        aria-label={`${role.displayName} 직책 ${canUpdate ? "편집" : "상세"}`}
         className="semo-admin-theme fixed inset-x-0 bottom-0 z-[71] mx-auto flex max-h-[92dvh] w-full max-w-7xl flex-col overflow-hidden rounded-t-[var(--radius-modal)] border border-white/70 bg-[var(--color-bg)] shadow-[var(--shadow-modal)]"
         {...bottomSheetMotion(reduceMotion)}
       >
@@ -325,7 +336,7 @@ export function RoleEditSheet({
                 </div>
                 <div>
                   <p className="text-[11px] font-black uppercase tracking-[0.28em] text-[#8b4b00]">
-                    직책 편집
+                    {canUpdate ? "직책 편집" : "직책 상세"}
                   </p>
                   <h2 className="mt-1 text-2xl font-black tracking-tight text-slate-900 sm:text-3xl">
                     {form.displayName || role.displayName}
@@ -397,6 +408,7 @@ export function RoleEditSheet({
                             <span className="mb-2 block text-xs font-bold text-slate-500">직책 이름</span>
                             <input
                               value={form.displayName}
+                              disabled={!canUpdate}
                               onChange={(event) => setForm((current) => ({ ...current, displayName: event.target.value }))}
                               className="w-full rounded-xl bg-[#f7fafc] px-4 py-3 text-sm outline-none ring-1 ring-slate-200 transition focus:ring-2 focus:ring-[rgba(144,78,0,0.22)]"
                               placeholder="직책 이름"
@@ -416,6 +428,7 @@ export function RoleEditSheet({
                           <span className="mb-2 block text-xs font-bold text-slate-500">설명</span>
                           <textarea
                             value={form.description}
+                            disabled={!canUpdate}
                             onChange={(event) => setForm((current) => ({ ...current, description: event.target.value }))}
                             className="min-h-[120px] w-full rounded-xl bg-[#f7fafc] px-4 py-3 text-sm leading-6 outline-none ring-1 ring-slate-200 transition focus:ring-2 focus:ring-[rgba(144,78,0,0.22)]"
                             placeholder="이 직책의 역할과 책임을 정리해주세요."
@@ -434,6 +447,7 @@ export function RoleEditSheet({
                             role="switch"
                             aria-checked={form.active}
                             aria-label="직책 활성 상태"
+                            disabled={!canUpdate}
                             onClick={() => setForm((current) => ({ ...current, active: !current.active }))}
                             className={`relative inline-flex h-11 w-16 items-center rounded-full transition ${
                               form.active ? "bg-[var(--primary)]" : "bg-slate-300"
@@ -459,6 +473,7 @@ export function RoleEditSheet({
                               <button
                                 key={iconName}
                                 type="button"
+                                disabled={!canUpdate}
                                 onClick={() => setForm((current) => ({ ...current, iconName }))}
                                 aria-label={`대표 아이콘 ${ROLE_ICON_LABELS[iconName]}`}
                                 aria-pressed={selected}
@@ -484,6 +499,7 @@ export function RoleEditSheet({
                               <button
                                 key={optionColor}
                                 type="button"
+                                disabled={!canUpdate}
                                 onClick={() => setForm((current) => ({ ...current, colorHex: optionColor }))}
                                 className={`size-11 rounded-full ${selected ? "ring-2 ring-slate-900/15 ring-offset-2" : ""}`}
                                 style={{ backgroundColor: optionColor }}
@@ -529,6 +545,7 @@ export function RoleEditSheet({
                           group={group}
                           selectedKeys={form.permissionKeys}
                           onToggle={togglePermission}
+                          disabled={!canUpdate}
                         />
                       ))}
                     </div>
@@ -605,6 +622,7 @@ export function RoleEditSheet({
                                 role={role}
                                 assigned
                                 busy={pendingMemberId === member.clubMemberId}
+                                canAssign={canAssign}
                                 onToggle={handleAssignToggle}
                               />
                             ))
@@ -636,6 +654,7 @@ export function RoleEditSheet({
                                 role={role}
                                 assigned={false}
                                 busy={pendingMemberId === member.clubMemberId}
+                                canAssign={canAssign}
                                 onToggle={handleAssignToggle}
                               />
                             ))
@@ -656,24 +675,33 @@ export function RoleEditSheet({
           <div className="border-t border-[#eadfd2] bg-white/80 px-5 py-4 sm:px-7">
             <div className="flex justify-end">
               <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setShowDeleteConfirm(true)}
-                  disabled={loading || submitting}
-                  className="inline-flex items-center gap-2 rounded-2xl border border-rose-200 bg-white px-4 py-2.5 text-sm font-semibold text-rose-600 transition hover:bg-rose-50 disabled:opacity-60"
-                >
-                  <span className="material-symbols-outlined text-[18px]" aria-hidden="true">delete</span>
-                  삭제
-                </button>
-                <button
-                  type="button"
-                  onClick={() => void handleSave()}
-                  disabled={loading || submitting}
-                  className="semo-control inline-flex items-center gap-2 bg-[var(--primary)] px-5 text-sm font-bold text-white transition hover:bg-orange-700 disabled:opacity-60"
-                >
-                  <span className="material-symbols-outlined text-[18px]" aria-hidden="true">done</span>
-                  {submitting ? "저장 중..." : "변경사항 저장"}
-                </button>
+                {canDelete ? (
+                  <button
+                    type="button"
+                    onClick={() => setShowDeleteConfirm(true)}
+                    disabled={loading || submitting}
+                    className="inline-flex items-center gap-2 rounded-2xl border border-rose-200 bg-white px-4 py-2.5 text-sm font-semibold text-rose-600 transition hover:bg-rose-50 disabled:opacity-60"
+                  >
+                    <span className="material-symbols-outlined text-[18px]" aria-hidden="true">delete</span>
+                    삭제
+                  </button>
+                ) : null}
+                {canUpdate ? (
+                  <button
+                    type="button"
+                    onClick={() => void handleSave()}
+                    disabled={loading || submitting}
+                    className="semo-control inline-flex items-center gap-2 bg-[var(--primary)] px-5 text-sm font-bold text-white transition hover:bg-orange-700 disabled:opacity-60"
+                  >
+                    <span className="material-symbols-outlined text-[18px]" aria-hidden="true">done</span>
+                    {submitting ? "저장 중..." : "변경사항 저장"}
+                  </button>
+                ) : null}
+                {!canDelete && !canUpdate ? (
+                  <button type="button" onClick={onClose} className="semo-control bg-slate-900 px-5 text-sm font-bold text-white">
+                    닫기
+                  </button>
+                ) : null}
               </div>
             </div>
           </div>

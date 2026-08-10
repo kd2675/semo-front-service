@@ -28,6 +28,11 @@ import { motion, useReducedMotion } from "motion/react";
 import { startTransition, useEffect, useMemo, useState } from "react";
 import { type ClubFeatureSummary } from "@/app/lib/clubs";
 import { getFeatureDisplayName } from "@/app/lib/featureLabels";
+import {
+  buildAdminMoreNavigation,
+  buildUserMoreNavigation,
+  type MoreNavigationItem,
+} from "@/app/lib/featureNavigation";
 import { staggeredFadeUpMotion } from "@/app/lib/motion";
 import { updateClubFeaturesMutationOptions } from "@/app/lib/react-query/club/mutations";
 import { invalidateClubQueries } from "@/app/lib/react-query/common";
@@ -138,6 +143,39 @@ function EnabledFeatureOverlayCard({ feature }: { feature: ClubFeatureSummary })
   );
 }
 
+function NavigationPreview({
+  title,
+  emptyLabel,
+  items,
+}: {
+  title: string;
+  emptyLabel: string;
+  items: MoreNavigationItem[];
+}) {
+  return (
+    <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+      <p className="text-xs font-bold text-slate-500">{title}</p>
+      {items.length === 0 ? (
+        <p className="mt-3 text-sm text-slate-400">{emptyLabel}</p>
+      ) : (
+        <ol className="mt-3 space-y-2">
+          {items.map((item, index) => (
+            <li key={item.key} className="flex items-center gap-3 text-sm text-slate-700">
+              <span className="flex size-6 shrink-0 items-center justify-center rounded-md bg-slate-100 text-xs font-bold text-slate-500">
+                {index + 1}
+              </span>
+              <span className="material-symbols-outlined text-[18px] text-[var(--primary)]" aria-hidden="true">
+                {item.iconName}
+              </span>
+              <span className="font-semibold">{item.label}</span>
+            </li>
+          ))}
+        </ol>
+      )}
+    </div>
+  );
+}
+
 export function ClubAdminMenuClient({
   clubId,
   clubName,
@@ -185,6 +223,22 @@ export function ClubAdminMenuClient({
   const disabledFeatures = useMemo(
     () => features.filter((feature) => !feature.enabled),
     [features],
+  );
+  const userMoreItems = useMemo(
+    () => buildUserMoreNavigation(features, clubId),
+    [clubId, features],
+  );
+  const adminNavigationItems = useMemo(
+    () => buildAdminMoreNavigation(features, clubId),
+    [clubId, features],
+  );
+  const representativeItems = useMemo(
+    () => adminNavigationItems.filter((item) => item.group === "CONTENT"),
+    [adminNavigationItems],
+  );
+  const adminMoreItems = useMemo(
+    () => adminNavigationItems.filter((item) => item.group !== "CONTENT"),
+    [adminNavigationItems],
   );
   const currentEnabledFeatureKeys = useMemo(
     () => enabledFeatures.map((feature) => feature.featureKey),
@@ -325,21 +379,29 @@ export function ClubAdminMenuClient({
                       활성화된 기능은 유저 더보기 메뉴에서 사용되고, 관리자 더보기 메뉴에서는 설정 화면으로 연결됩니다.
                     </p>
                   </div>
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-3 gap-3">
                     <div className="rounded-xl bg-orange-50 p-4">
                       <p className="text-xs font-semibold uppercase tracking-[0.18em] text-orange-400">
                         유저 더보기
                       </p>
                       <p className="mt-2 text-xl font-bold text-[var(--primary)]">
-                        {enabledFeatures.length}
+                        {userMoreItems.length}
+                      </p>
+                    </div>
+                    <div className="rounded-xl bg-blue-50 p-4">
+                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-500">
+                        대표 화면
+                      </p>
+                      <p className="mt-2 text-xl font-bold text-blue-700">
+                        {representativeItems.length}
                       </p>
                     </div>
                     <div className="rounded-xl bg-slate-100 p-4">
                       <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
-                        비활성
+                        관리자 도구
                       </p>
                       <p className="mt-2 text-xl font-bold text-slate-900">
-                        {disabledFeatures.length}
+                        {adminMoreItems.length}
                       </p>
                     </div>
                   </div>
@@ -349,6 +411,25 @@ export function ClubAdminMenuClient({
           </motion.section>
 
           <motion.section className="px-4 py-4" {...staggeredFadeUpMotion(1, reduceMotion)}>
+            <div className="mb-4 flex items-center gap-2">
+              <span className="material-symbols-outlined text-[var(--primary)]" aria-hidden="true">preview</span>
+              <h2 className="text-lg font-bold">실제 메뉴 미리보기</h2>
+            </div>
+            <div className="grid gap-3 md:grid-cols-2">
+              <NavigationPreview title="사용자 더보기" emptyLabel="사용자에게 표시할 독립 기능이 없습니다." items={userMoreItems} />
+              <NavigationPreview title="관리자 운영 도구" emptyLabel="관리자 운영 도구가 없습니다." items={adminMoreItems} />
+            </div>
+            {representativeItems.length > 0 ? (
+              <div className="mt-3 rounded-xl border border-blue-100 bg-blue-50/70 px-4 py-3">
+                <p className="text-xs font-bold text-blue-700">대표 화면</p>
+                <p className="mt-1 text-sm text-blue-900">
+                  {representativeItems.map((item) => item.label).join(" · ")}
+                </p>
+              </div>
+            ) : null}
+          </motion.section>
+
+          <motion.section className="px-4 py-4" {...staggeredFadeUpMotion(2, reduceMotion)}>
             <div className="mb-4 flex items-center gap-2">
               <span className="material-symbols-outlined text-[var(--primary)]" aria-hidden="true">view_quilt</span>
               <h2 className="text-lg font-bold">활성화된 기능</h2>
