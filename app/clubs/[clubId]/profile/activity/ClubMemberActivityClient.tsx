@@ -3,8 +3,8 @@
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { ClubModeSwitchFab } from "@/app/components/ClubModeSwitchFab";
 import {
-  type ClubTimelineEntry,
-  type ClubTimelineResponse,
+  type ClubMemberActivityEntry,
+  type ClubMemberActivityResponse,
 } from "@/app/lib/clubs";
 import { motion, useReducedMotion } from "motion/react";
 import {
@@ -14,17 +14,17 @@ import {
 } from "react";
 import { staggeredFadeUpMotion } from "@/app/lib/motion";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
-import { timelineInfiniteQueryOptions } from "@/app/lib/react-query/activities/queries";
+import { memberActivityInfiniteQueryOptions } from "@/app/lib/react-query/activities/queries";
 
-type ClubTimelineClientProps = {
+type ClubMemberActivityClientProps = {
   clubId: string;
-  initialData: ClubTimelineResponse;
+  initialData: ClubMemberActivityResponse;
   isAdmin: boolean;
 };
 
-type TimelineListItem =
+type ActivityListItem =
   | { type: "separator"; key: string; label: string }
-  | { type: "entry"; key: string; entry: ClubTimelineEntry };
+  | { type: "entry"; key: string; entry: ClubMemberActivityEntry };
 
 const SUBJECT_META: Record<
   string,
@@ -136,31 +136,31 @@ function getSubjectMeta(subject: string) {
   };
 }
 
-export function ClubTimelineClient({
+export function ClubMemberActivityClient({
   clubId,
   initialData,
   isAdmin,
-}: ClubTimelineClientProps) {
+}: ClubMemberActivityClientProps) {
   const prefersReducedMotion = useReducedMotion();
   const reduceMotion = Boolean(prefersReducedMotion);
   const [sentinelNode, setSentinelNode] = useState<HTMLDivElement | null>(null);
-  const timelineQuery = useInfiniteQuery(timelineInfiniteQueryOptions(clubId, initialData));
-  const timeline = useMemo<ClubTimelineResponse>(() => {
-    const pages = timelineQuery.data?.pages;
+  const activityQuery = useInfiniteQuery(memberActivityInfiniteQueryOptions(clubId, initialData));
+  const activity = useMemo<ClubMemberActivityResponse>(() => {
+    const pages = activityQuery.data?.pages;
     if (!pages || pages.length === 0) {
       return initialData;
     }
     const lastPage = pages[pages.length - 1] ?? initialData;
     return {
       ...lastPage,
-      entries: pages.flatMap((page: ClubTimelineResponse) => page.entries),
+      entries: pages.flatMap((page: ClubMemberActivityResponse) => page.entries),
     };
-  }, [initialData, timelineQuery.data]);
-  const loading = timelineQuery.isFetchingNextPage;
-  const feedback = timelineQuery.isFetchNextPageError ? "타임라인을 불러오지 못했습니다." : null;
+  }, [activityQuery.data, initialData]);
+  const loading = activityQuery.isFetchingNextPage;
+  const feedback = activityQuery.isFetchNextPageError ? "활동 기록을 불러오지 못했습니다." : null;
 
   useEffect(() => {
-    if (!sentinelNode || !timelineQuery.hasNextPage || loading) {
+    if (!sentinelNode || !activityQuery.hasNextPage || loading) {
       return;
     }
 
@@ -169,7 +169,7 @@ export function ClubTimelineClient({
         if (!entries[0]?.isIntersecting) {
           return;
         }
-        void timelineQuery.fetchNextPage();
+        void activityQuery.fetchNextPage();
       },
       { rootMargin: "220px 0px" },
     );
@@ -178,13 +178,13 @@ export function ClubTimelineClient({
     return () => {
       observer.disconnect();
     };
-  }, [loading, sentinelNode, timelineQuery]);
+  }, [activityQuery, loading, sentinelNode]);
 
-  const renderedItems = useMemo<TimelineListItem[]>(() => {
-    const items: TimelineListItem[] = [];
+  const renderedItems = useMemo<ActivityListItem[]>(() => {
+    const items: ActivityListItem[] = [];
     let previousLabel: string | null = null;
 
-    timeline.entries.forEach((entry) => {
+    activity.entries.forEach((entry) => {
       const label = getGroupLabel(entry.createdAt ?? new Date().toISOString());
       if (label !== previousLabel) {
         items.push({ type: "separator", key: `separator-${label}-${entry.activityId}`, label });
@@ -194,7 +194,7 @@ export function ClubTimelineClient({
     });
 
     return items;
-  }, [timeline.entries]);
+  }, [activity.entries]);
 
   return (
     <div className="min-h-full bg-[var(--background-light)] text-slate-900">
@@ -299,12 +299,12 @@ export function ClubTimelineClient({
             </div>
           </div>
 
-          {!loading && timeline.entries.length === 0 ? (
+          {!loading && activity.entries.length === 0 ? (
             <motion.div
               className="rounded-2xl border border-dashed border-slate-300 bg-white px-5 py-10 text-center text-sm text-slate-500"
               {...staggeredFadeUpMotion(2, reduceMotion)}
             >
-              아직 내가 남긴 타임라인 기록이 없습니다.
+              아직 내가 남긴 활동 기록이 없습니다.
             </motion.div>
           ) : null}
 
@@ -317,7 +317,7 @@ export function ClubTimelineClient({
             </motion.div>
           ) : null}
 
-          {loading && timeline.entries.length > 0 ? (
+          {loading && activity.entries.length > 0 ? (
             <div className="py-2 text-center text-sm text-slate-400">활동을 더 불러오는 중...</div>
           ) : null}
 

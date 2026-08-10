@@ -8,7 +8,7 @@ import {
   feedbackDetailQueryOptions,
   feedbackHomeQueryOptions,
 } from "@/app/lib/react-query/feedback/queries";
-import { ClubTimelineLoadingShell } from "../../ClubRouteLoadingShells";
+import { ClubFeedLoadingShell } from "../../ClubRouteLoadingShells";
 import { ClubFeedbackClient } from "./ClubFeedbackClient";
 
 type ClubFeedbackFallbackClientProps = {
@@ -55,7 +55,7 @@ export function ClubFeedbackFallbackClient({
   }
 
   if (!club || !feedbackHome || (firstFeedbackId != null && !initialDetail)) {
-    return <ClubTimelineLoadingShell />;
+    return <ClubFeedLoadingShell />;
   }
 
   return (

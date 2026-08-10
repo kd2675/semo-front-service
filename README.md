@@ -136,12 +136,14 @@ NEXT_PUBLIC_API_URL=http://localhost:8080
   - 투표 편집 route modal
 - `/clubs/[clubId]/profile`
   - 앱 프로필 + 클럽 프로필 편집
+- `/clubs/[clubId]/profile/activity`
+  - 기능 토글과 무관하게 본인이 수행한 활동만 조회
 
 ### User `/more`
 - `/clubs/[clubId]/more/notices`, `/more/schedules`, `/more/polls`, `/more/attendance`
   - 기존 링크 호환용이며 게시판 또는 캘린더 대표 화면으로 이동
 - `/clubs/[clubId]/more/timeline`
-  - 내 프로필 활동 내역으로 이동
+  - 기존 링크 호환용이며 내 프로필 활동 내역으로 이동
 - `/clubs/[clubId]/more/todos`
 - `/clubs/[clubId]/more/join-requests`
 - `/clubs/[clubId]/more/members`
@@ -161,7 +163,7 @@ NEXT_PUBLIC_API_URL=http://localhost:8080
 - `/clubs/[clubId]/admin/more/notices`, `/admin/more/schedules`, `/admin/more/polls`, `/admin/more/attendance`
   - 기존 링크 호환용이며 게시판 또는 캘린더 대표 화면으로 이동
 - `/clubs/[clubId]/admin/more/timeline`
-  - 관리자 활동 로그로 이동
+  - 기존 링크 호환용이며 항상 활성화된 관리자 감사 로그로 이동
 - `/clubs/[clubId]/admin/more/todos`
 - `/clubs/[clubId]/admin/more/join-requests`
 - `/clubs/[clubId]/admin/more/members`

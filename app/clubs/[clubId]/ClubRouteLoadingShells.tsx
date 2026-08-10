@@ -396,7 +396,7 @@ export function ClubPollHomeLoadingShell({
   );
 }
 
-export function ClubTimelineLoadingShell() {
+export function ClubFeedLoadingShell() {
   return (
     <MobilePageShell titleWidthClassName="w-28">
       <section className="px-4 pt-4">
@@ -404,7 +404,7 @@ export function ClubTimelineLoadingShell() {
           <div className="absolute left-[19px] top-4 bottom-4 w-0.5 bg-[#135bec]/10" />
           <div className="space-y-6">
             {Array.from({ length: 4 }, (_, index) => (
-              <div key={`timeline-shell-group-${index}`}>
+              <div key={`activity-shell-group-${index}`}>
                 <div className="relative flex justify-center py-2">
                   <div className="z-10 h-4 w-20 rounded-full bg-slate-200" />
                   <div className="absolute inset-x-0 top-1/2 h-px bg-[#135bec]/5" />

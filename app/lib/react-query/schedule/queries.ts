@@ -2,7 +2,6 @@ import { queryOptions } from "@tanstack/react-query";
 import {
   getClubSchedule,
   getClubScheduleEventDetail,
-  getClubScheduleHome,
   getClubScheduleVoteDetail,
 } from "@/app/lib/clubs";
 import { requireApiData } from "@/app/lib/queryUtils";
@@ -10,7 +9,6 @@ import { requireApiData } from "@/app/lib/queryUtils";
 export const scheduleQueryKeys = {
   schedule: (clubId: string, year: number, month: number) =>
     ["semo", "clubs", clubId, "schedule", year, month] as const,
-  scheduleHome: (clubId: string) => ["semo", "clubs", clubId, "schedule-home"] as const,
   scheduleEventDetail: (clubId: string, eventId: string | number) =>
     ["semo", "clubs", clubId, "schedule-event-detail", eventId] as const,
   scheduleVoteDetail: (clubId: string, voteId: string | number) =>
@@ -30,17 +28,6 @@ export function clubScheduleQueryOptions(
         "일정 정보를 불러오지 못했습니다.",
       ),
     placeholderData: (previousData) => previousData,
-  });
-}
-
-export function scheduleHomeQueryOptions(clubId: string) {
-  return queryOptions({
-    queryKey: scheduleQueryKeys.scheduleHome(clubId),
-    queryFn: async () =>
-      requireApiData(
-        await getClubScheduleHome(clubId),
-        "일정 정보를 불러오지 못했습니다.",
-      ),
   });
 }
 

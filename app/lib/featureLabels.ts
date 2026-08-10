@@ -3,7 +3,6 @@ import type { ClubFeatureSummary } from "@/app/lib/clubs";
 const FEATURE_LABELS: Record<string, string> = {
   JOIN_REQUEST: "가입 신청",
   ATTENDANCE: "일정 참석",
-  TIMELINE: "내 활동",
   NOTICE: "게시판 공지",
   POLL: "투표",
   SCHEDULE_MANAGE: "일정",

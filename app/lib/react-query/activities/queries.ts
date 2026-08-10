@@ -1,10 +1,9 @@
 import { infiniteQueryOptions, queryOptions } from "@tanstack/react-query";
 import {
   type ClubAdminActivityFeedResponse,
-  type ClubTimelineResponse,
+  type ClubMemberActivityResponse,
   getClubAdminActivities,
-  getClubAdminTimeline,
-  getClubTimeline,
+  getClubMemberActivity,
 } from "@/app/lib/clubs";
 import { requireApiData } from "@/app/lib/queryUtils";
 
@@ -13,10 +12,9 @@ export const activityQueryKeys = {
     ["semo", "clubs", clubId, "admin-activities", { size, positionId }] as const,
   adminActivitiesInfinite: (clubId: string, size: number, positionId: number | null = null) =>
     ["semo", "clubs", clubId, "admin-activities-infinite", { size, positionId }] as const,
-  timeline: (clubId: string) => ["semo", "clubs", clubId, "timeline"] as const,
-  timelineInfinite: (clubId: string, size: number) =>
-    ["semo", "clubs", clubId, "timeline", { size }] as const,
-  adminTimeline: (clubId: string) => ["semo", "clubs", clubId, "admin-timeline"] as const,
+  memberActivity: (clubId: string) => ["semo", "clubs", clubId, "member-activity"] as const,
+  memberActivityInfinite: (clubId: string, size: number) =>
+    ["semo", "clubs", clubId, "member-activity", { size }] as const,
 };
 
 export function adminActivitiesQueryOptions(clubId: string, size: number, positionId: number | null = null) {
@@ -81,28 +79,28 @@ export function adminActivitiesInfiniteQueryOptions(
     : options;
 }
 
-export function timelineQueryOptions(clubId: string) {
+export function memberActivityQueryOptions(clubId: string) {
   return queryOptions({
-    queryKey: activityQueryKeys.timeline(clubId),
+    queryKey: activityQueryKeys.memberActivity(clubId),
     queryFn: async () =>
-      requireApiData(await getClubTimeline(clubId), "타임라인을 불러오지 못했습니다."),
+      requireApiData(await getClubMemberActivity(clubId), "활동 기록을 불러오지 못했습니다."),
   });
 }
 
-export function timelineInfiniteQueryOptions(
+export function memberActivityInfiniteQueryOptions(
   clubId: string,
-  initialData: ClubTimelineResponse,
+  initialData: ClubMemberActivityResponse,
 ) {
   return infiniteQueryOptions({
-    queryKey: activityQueryKeys.timelineInfinite(clubId, 12),
+    queryKey: activityQueryKeys.memberActivityInfinite(clubId, 12),
     queryFn: async ({ pageParam }) =>
       requireApiData(
-        await getClubTimeline(clubId, {
+        await getClubMemberActivity(clubId, {
           cursorCreatedAt: pageParam.createdAt,
           cursorActivityId: pageParam.activityId,
           size: 12,
         }),
-        "타임라인을 불러오지 못했습니다.",
+        "활동 기록을 불러오지 못했습니다.",
       ),
     initialPageParam: {
       createdAt: null as string | null,
@@ -119,16 +117,5 @@ export function timelineInfiniteQueryOptions(
       pages: [initialData],
       pageParams: [{ createdAt: null, activityId: null }],
     },
-  });
-}
-
-export function adminTimelineQueryOptions(clubId: string) {
-  return queryOptions({
-    queryKey: activityQueryKeys.adminTimeline(clubId),
-    queryFn: async () =>
-      requireApiData(
-        await getClubAdminTimeline(clubId),
-        "관리자 타임라인을 불러오지 못했습니다.",
-      ),
   });
 }

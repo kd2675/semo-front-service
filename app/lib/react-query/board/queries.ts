@@ -4,8 +4,6 @@ import {
   getClubBoardItemReadStatus,
   getClubNoticeDetail,
   getClubNoticeFeed,
-  getClubNoticeHome,
-  getClubPollHome,
 } from "@/app/lib/clubs";
 import { requireApiData } from "@/app/lib/queryUtils";
 
@@ -20,10 +18,8 @@ export const boardQueryKeys = {
       size?: number;
     } = {},
   ) => ["semo", "clubs", clubId, "notice-feed", options] as const,
-  noticeHome: (clubId: string) => ["semo", "clubs", clubId, "notice-home"] as const,
   noticeDetail: (clubId: string, noticeId: string | number) =>
     ["semo", "clubs", clubId, "notice-detail", noticeId] as const,
-  pollHome: (clubId: string) => ["semo", "clubs", clubId, "poll-home"] as const,
   boardReadStatus: (clubId: string, boardItemId: string | number) =>
     ["semo", "clubs", clubId, "board-read-status", boardItemId] as const,
 };
@@ -57,14 +53,6 @@ export function noticeFeedQueryOptions(
   });
 }
 
-export function noticeHomeQueryOptions(clubId: string) {
-  return queryOptions({
-    queryKey: boardQueryKeys.noticeHome(clubId),
-    queryFn: async () =>
-      requireApiData(await getClubNoticeHome(clubId), "공지 정보를 불러오지 못했습니다."),
-  });
-}
-
 export function noticeDetailQueryOptions(clubId: string, noticeId: string | number) {
   return queryOptions({
     queryKey: boardQueryKeys.noticeDetail(clubId, noticeId),
@@ -73,14 +61,6 @@ export function noticeDetailQueryOptions(clubId: string, noticeId: string | numb
         await getClubNoticeDetail(clubId, noticeId),
         "공지 상세를 불러오지 못했습니다.",
       ),
-  });
-}
-
-export function pollHomeQueryOptions(clubId: string) {
-  return queryOptions({
-    queryKey: boardQueryKeys.pollHome(clubId),
-    queryFn: async () =>
-      requireApiData(await getClubPollHome(clubId), "투표 정보를 불러오지 못했습니다."),
   });
 }
 

@@ -4,7 +4,7 @@ import type {
   ClubBracketHomeResponse,
   ClubDashboardWidgetSummary,
   ClubFinanceHomeResponse,
-  ClubPollHomeResponse,
+  ClubScheduleVoteSummaryResponse,
   ClubScheduleResponse,
   ClubTournamentHomeResponse,
 } from "@/app/lib/clubs";
@@ -30,7 +30,7 @@ export type ClubDashboardWidgetCardProps = {
   scheduleData: ClubScheduleResponse | null;
   scheduleLoading: boolean;
   scheduleError: string | null;
-  pollData: ClubPollHomeResponse | null;
+  pollData: ClubScheduleVoteSummaryResponse | null;
   pollLoading: boolean;
   pollError: string | null;
   tournamentData: ClubTournamentHomeResponse | null;

@@ -128,21 +128,6 @@ export type ClubNoticeUpsertResponse = {
   locationLabel: string | null;
 };
 
-export type ClubNoticeHomeResponse = {
-  clubId: number;
-  clubName: string;
-  admin: boolean;
-  canCreate: boolean;
-  totalNoticeCount: number;
-  pinnedNoticeCount: number;
-  scheduledNoticeCount: number;
-  publishedTodayCount: number;
-  manageableNoticeCount: number;
-  notices: ClubNoticeListItem[];
-  sharedEvents: ClubScheduleEventSummary[];
-  sharedVotes: ClubScheduleVoteSummary[];
-};
-
 export type ItemReadMember = {
   clubProfileId: number;
   displayName: string;
@@ -198,28 +183,19 @@ export function getClubNoticeFeed(
 }
 
 export function getClubNoticeDetail(clubId: ClubId, noticeId: string | number) {
-  return getJson<ClubNoticeDetailResponse>(`/api/semo/v1/clubs/${clubId}/more/notices/${noticeId}`);
-}
-
-export function getClubNoticeHome(clubId: ClubId, options: { pinnedOnly?: boolean } = {}) {
-  const params = new URLSearchParams();
-  if (options.pinnedOnly) {
-    params.set("pinnedOnly", "true");
-  }
-  const queryString = params.toString();
-  return getJson<ClubNoticeHomeResponse>(`/api/semo/v1/clubs/${clubId}/more/notices${queryString ? `?${queryString}` : ""}`);
+  return getJson<ClubNoticeDetailResponse>(`/api/semo/v1/clubs/${clubId}/board/notices/${noticeId}`);
 }
 
 export function createClubNotice(clubId: ClubId, request: UpsertClubNoticeRequest) {
-  return postJson<ClubNoticeUpsertResponse>(`/api/semo/v1/clubs/${clubId}/more/notices`, request);
+  return postJson<ClubNoticeUpsertResponse>(`/api/semo/v1/clubs/${clubId}/board/notices`, request);
 }
 
 export function updateClubNotice(clubId: ClubId, noticeId: string | number, request: UpsertClubNoticeRequest) {
-  return putJson<ClubNoticeUpsertResponse>(`/api/semo/v1/clubs/${clubId}/more/notices/${noticeId}`, request);
+  return putJson<ClubNoticeUpsertResponse>(`/api/semo/v1/clubs/${clubId}/board/notices/${noticeId}`, request);
 }
 
 export function deleteClubNotice(clubId: ClubId, noticeId: string | number) {
-  return deleteJson<void>(`/api/semo/v1/clubs/${clubId}/more/notices/${noticeId}`);
+  return deleteJson<void>(`/api/semo/v1/clubs/${clubId}/board/notices/${noticeId}`);
 }
 
 export function recordClubBoardItemRead(clubId: ClubId, boardItemId: string | number) {

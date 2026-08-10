@@ -33,19 +33,6 @@ export type ClubCalendarFeedItem = {
   tournament: TournamentSummary | null;
 };
 
-export type ClubScheduleHomeResponse = {
-  clubId: number;
-  clubName: string;
-  admin: boolean;
-  canCreate: boolean;
-  totalEventCount: number;
-  upcomingEventCount: number;
-  manageableItemCount: number;
-  events: ClubScheduleEventSummary[];
-  sharedNotices: ClubNoticeListItem[];
-  sharedVotes: ClubScheduleVoteSummary[];
-};
-
 export type ClubScheduleEventSummary = {
   eventId: number;
   title: string;
@@ -264,7 +251,7 @@ export type ClubPollSummary = {
   options: ClubScheduleVoteOptionSummary[];
 };
 
-export type ClubPollHomeResponse = {
+export type ClubScheduleVoteSummaryResponse = {
   clubId: number;
   clubName: string;
   admin: boolean;
@@ -285,10 +272,6 @@ export function getClubSchedule(clubId: ClubId, params?: { year?: number; month?
   }
   const queryString = searchParams.toString();
   return getJson<ClubScheduleResponse>(`/api/semo/v1/clubs/${clubId}/schedule${queryString ? `?${queryString}` : ""}`);
-}
-
-export function getClubScheduleHome(clubId: ClubId) {
-  return getJson<ClubScheduleHomeResponse>(`/api/semo/v1/clubs/${clubId}/more/schedules`);
 }
 
 export function getClubScheduleEventDetail(clubId: ClubId, eventId: string | number) {
@@ -316,19 +299,19 @@ export function updateClubScheduleEventParticipation(
 }
 
 export function getClubScheduleVoteDetail(clubId: ClubId, voteId: string | number) {
-  return getJson<ClubScheduleVoteDetailResponse>(`/api/semo/v1/clubs/${clubId}/more/polls/${voteId}`);
+  return getJson<ClubScheduleVoteDetailResponse>(`/api/semo/v1/clubs/${clubId}/schedule/votes/${voteId}`);
 }
 
 export function createClubScheduleVote(clubId: ClubId, request: UpsertScheduleVoteRequest) {
-  return postJson<ScheduleVoteUpsertResponse>(`/api/semo/v1/clubs/${clubId}/more/polls`, request);
+  return postJson<ScheduleVoteUpsertResponse>(`/api/semo/v1/clubs/${clubId}/schedule/votes`, request);
 }
 
 export function updateClubScheduleVote(clubId: ClubId, voteId: string | number, request: UpsertScheduleVoteRequest) {
-  return putJson<ScheduleVoteUpsertResponse>(`/api/semo/v1/clubs/${clubId}/more/polls/${voteId}`, request);
+  return putJson<ScheduleVoteUpsertResponse>(`/api/semo/v1/clubs/${clubId}/schedule/votes/${voteId}`, request);
 }
 
 export function deleteClubScheduleVote(clubId: ClubId, voteId: string | number) {
-  return deleteJson<void>(`/api/semo/v1/clubs/${clubId}/more/polls/${voteId}`);
+  return deleteJson<void>(`/api/semo/v1/clubs/${clubId}/schedule/votes/${voteId}`);
 }
 
 export function submitClubScheduleVoteSelection(
@@ -336,18 +319,18 @@ export function submitClubScheduleVoteSelection(
   voteId: string | number,
   request: SubmitScheduleVoteSelectionRequest,
 ) {
-  return putJson<ClubScheduleVoteDetailResponse>(`/api/semo/v1/clubs/${clubId}/more/polls/${voteId}/selection`, request);
+  return putJson<ClubScheduleVoteDetailResponse>(`/api/semo/v1/clubs/${clubId}/schedule/votes/${voteId}/selection`, request);
 }
 
 export function closeClubScheduleVote(clubId: ClubId, voteId: string | number) {
-  return putJson<ClubScheduleVoteDetailResponse>(`/api/semo/v1/clubs/${clubId}/more/polls/${voteId}/close`, undefined);
+  return putJson<ClubScheduleVoteDetailResponse>(`/api/semo/v1/clubs/${clubId}/schedule/votes/${voteId}/close`, undefined);
 }
 
-export function getClubPollHome(clubId: ClubId, options: { query?: string } = {}) {
+export function getClubScheduleVoteSummary(clubId: ClubId, options: { query?: string } = {}) {
   const params = new URLSearchParams();
   if (options.query?.trim()) {
     params.set("query", options.query.trim());
   }
   const queryString = params.toString();
-  return getJson<ClubPollHomeResponse>(`/api/semo/v1/clubs/${clubId}/more/polls${queryString ? `?${queryString}` : ""}`);
+  return getJson<ClubScheduleVoteSummaryResponse>(`/api/semo/v1/clubs/${clubId}/schedule/votes/summary${queryString ? `?${queryString}` : ""}`);
 }

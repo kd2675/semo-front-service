@@ -15,14 +15,14 @@ import {
   getClubFinance,
   getClubBoard,
   getClubBracketHome,
-  getClubPollHome,
+  getClubScheduleVoteSummary,
   getClubSchedule,
   getClubTournamentHome,
   type ClubAttendanceResponse,
   type ClubBoardResponse,
   type ClubBracketHomeResponse,
   type ClubFinanceHomeResponse,
-  type ClubPollHomeResponse,
+  type ClubScheduleVoteSummaryResponse,
   type ClubTournamentHomeResponse,
   type ClubDashboardWidgetSummary,
   type ClubScheduleResponse,
@@ -91,7 +91,7 @@ export function ClubDashboardFallbackClient({
   const [scheduleData, setScheduleData] = useState<ClubScheduleResponse | null>(null);
   const [scheduleLoading, setScheduleLoading] = useState(false);
   const [scheduleError, setScheduleError] = useState<string | null>(null);
-  const [pollData, setPollData] = useState<ClubPollHomeResponse | null>(null);
+  const [pollData, setPollData] = useState<ClubScheduleVoteSummaryResponse | null>(null);
   const [pollLoading, setPollLoading] = useState(false);
   const [pollError, setPollError] = useState<string | null>(null);
   const [tournamentData, setTournamentData] = useState<ClubTournamentHomeResponse | null>(null);
@@ -321,7 +321,7 @@ export function ClubDashboardFallbackClient({
 
     setPollLoading(true);
     setPollError(null);
-    const result = await getClubPollHome(clubId);
+    const result = await getClubScheduleVoteSummary(clubId);
     if (!result.ok || !result.data) {
       setPollData(null);
       setPollError(result.message ?? "투표 정보를 불러오지 못했습니다.");

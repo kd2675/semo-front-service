@@ -123,7 +123,7 @@ export type ReviewClubJoinRequestRequest = {
   requestStatus: "APPROVED" | "REJECTED" | string;
 };
 
-export type ClubTimelineEntry = {
+export type ClubMemberActivityEntry = {
   activityId: number;
   actorDisplayName: string;
   actorAvatarLabel: string;
@@ -134,19 +134,14 @@ export type ClubTimelineEntry = {
   createdAtLabel: string | null;
 };
 
-export type ClubTimelineResponse = {
+export type ClubMemberActivityResponse = {
   clubId: number;
   clubName: string;
   admin: boolean;
-  entries: ClubTimelineEntry[];
+  entries: ClubMemberActivityEntry[];
   nextCursorCreatedAt: string | null;
   nextCursorActivityId: number | null;
   hasNext: boolean;
-};
-
-export type ClubAdminTimelineResponse = {
-  clubId: number;
-  clubName: string;
 };
 
 export type ClubMemberDirectorySettings = {
@@ -343,7 +338,7 @@ export function getClubMemberDirectory(clubId: ClubId) {
   return getJson<ClubMemberDirectoryResponse>(`/api/semo/v1/clubs/${clubId}/more/members`);
 }
 
-export function getClubTimeline(
+export function getClubMemberActivity(
   clubId: ClubId,
   options: { cursorCreatedAt?: string | null; cursorActivityId?: number | null; size?: number } = {},
 ) {
@@ -358,11 +353,7 @@ export function getClubTimeline(
     params.set("size", String(options.size));
   }
   const queryString = params.toString();
-  return getJson<ClubTimelineResponse>(`/api/semo/v1/clubs/${clubId}/more/timeline${queryString ? `?${queryString}` : ""}`);
-}
-
-export function getClubAdminTimeline(clubId: ClubId) {
-  return getJson<ClubAdminTimelineResponse>(`/api/semo/v1/clubs/${clubId}/admin/more/timeline`);
+  return getJson<ClubMemberActivityResponse>(`/api/semo/v1/clubs/${clubId}/profile/activity${queryString ? `?${queryString}` : ""}`);
 }
 
 export function getClubAdminMemberDirectorySettings(clubId: ClubId) {

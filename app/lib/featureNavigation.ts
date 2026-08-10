@@ -28,7 +28,6 @@ const FEATURE_DESCRIPTIONS: Record<string, string> = {
   FEEDBACK: "운영진에게 비공개 피드백을 보내고 답변을 확인합니다.",
   JOIN_REQUEST: "가입 신청 대기열을 검토하고 승인 또는 반려합니다.",
   ROLE_MANAGEMENT: "직책별 책임과 세부 권한을 구성하고 멤버에게 배정합니다.",
-  TIMELINE: "운영 작업의 감사 기록을 시간순으로 확인합니다.",
 };
 
 const SCHEDULE_FEATURE_KEYS = new Set(["SCHEDULE_MANAGE", "POLL", "ATTENDANCE"]);
@@ -184,9 +183,6 @@ export function buildAdminMoreNavigation(features: ClubFeatureSummary[], clubId:
         break;
       case "FINANCE":
         items.push(featureItem(feature, "OPERATIONS", { label: "재정 운영", href: `/clubs/${clubId}/admin/more/finance` }));
-        break;
-      case "TIMELINE":
-        items.push(featureItem(feature, "OPERATIONS", { label: "운영 기록", href: `/clubs/${clubId}/admin/logs` }));
         break;
       case "TOURNAMENT_RECORD":
       case "BRACKET":

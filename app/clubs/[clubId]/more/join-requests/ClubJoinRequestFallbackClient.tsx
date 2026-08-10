@@ -6,7 +6,7 @@ import { ClubRouteErrorState } from "@/app/components/ClubRouteState";
 import { getQueryErrorMessage } from "@/app/lib/queryUtils";
 import { myClubQueryOptions } from "@/app/lib/react-query/club/queries";
 import { joinRequestInboxQueryOptions } from "@/app/lib/react-query/members/queries";
-import { ClubTimelineLoadingShell } from "../../ClubRouteLoadingShells";
+import { ClubFeedLoadingShell } from "../../ClubRouteLoadingShells";
 
 type ClubJoinRequestFallbackClientProps = {
   clubId: string;
@@ -35,7 +35,7 @@ export function ClubJoinRequestFallbackClient({
   }
 
   if (!club || !joinRequestInbox) {
-    return <ClubTimelineLoadingShell />;
+    return <ClubFeedLoadingShell />;
   }
 
   return (

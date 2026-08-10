@@ -5,7 +5,7 @@ import { ClubRouteErrorState } from "@/app/components/ClubRouteState";
 import { getQueryErrorMessage } from "@/app/lib/queryUtils";
 import { myClubQueryOptions } from "@/app/lib/react-query/club/queries";
 import { memberDirectoryQueryOptions } from "@/app/lib/react-query/members/queries";
-import { ClubTimelineLoadingShell } from "../../ClubRouteLoadingShells";
+import { ClubFeedLoadingShell } from "../../ClubRouteLoadingShells";
 import { ClubMemberDirectoryClient } from "./ClubMemberDirectoryClient";
 
 type ClubMemberDirectoryFallbackClientProps = {
@@ -35,7 +35,7 @@ export function ClubMemberDirectoryFallbackClient({
   }
 
   if (!club || !directory) {
-    return <ClubTimelineLoadingShell />;
+    return <ClubFeedLoadingShell />;
   }
 
   return (

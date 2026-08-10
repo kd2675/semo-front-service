@@ -75,6 +75,8 @@ export type ClubAdminTournamentHomeResponse = {
   clubId: number;
   clubName: string;
   admin: boolean;
+  canReview: boolean;
+  canDelete: boolean;
   totalTournamentCount: number;
   pendingTournamentCount: number;
   approvedTournamentCount: number;
@@ -258,6 +260,8 @@ export type ClubAdminBracketHomeResponse = {
   clubId: number;
   clubName: string;
   admin: boolean;
+  canReview: boolean;
+  canDelete: boolean;
   totalBracketCount: number;
   draftBracketCount: number;
   pendingBracketCount: number;

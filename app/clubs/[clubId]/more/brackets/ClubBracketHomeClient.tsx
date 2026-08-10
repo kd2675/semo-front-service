@@ -385,10 +385,16 @@ export function ClubBracketHomeClient({
             <article className="rounded-3xl border border-white/70 bg-white p-6 shadow-sm">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
-                  {isAdminMode ? "승인 워크플로우" : "직접 작성 + 대회 불러오기"}
+                  {isAdminMode
+                    ? adminPayload?.canReview ? "승인 워크플로우" : "대진표 운영"
+                    : "직접 작성 + 대회 불러오기"}
                 </p>
                 <h2 className="mt-3 text-2xl font-bold text-slate-900">
-                  {isAdminMode ? "제출된 대진표를 검토합니다." : "대진표 초안을 만들고 승인 요청합니다."}
+                  {isAdminMode
+                    ? adminPayload?.canReview
+                      ? "제출된 대진표를 검토합니다."
+                      : "대진표 상태와 삭제 가능한 항목을 관리합니다."
+                    : "대진표 초안을 만들고 승인 요청합니다."}
                 </h2>
                 <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-500">
                   직접 입력한 참가자 명단으로 바로 대진표를 만들 수도 있고, 승인된 대회 참가자를 불러와 수정한 뒤 제출할 수도 있습니다.
@@ -526,10 +532,10 @@ export function ClubBracketHomeClient({
                     onOpen={() => setDetailBracketId(String(bracket.bracketRecordId))}
                     onEdit={null}
                     onSubmit={null}
-                    onApprove={bracket.approvalStatus === "PENDING"
+                    onApprove={adminPayload?.canReview && bracket.approvalStatus === "PENDING"
                       ? () => void handleReview(bracket.bracketRecordId, "APPROVED")
                       : null}
-                    onReject={bracket.approvalStatus === "PENDING"
+                    onReject={adminPayload?.canReview && bracket.approvalStatus === "PENDING"
                       ? () => {
                           setPendingRejectBracketId(bracket.bracketRecordId);
                           setRejectionReason("");

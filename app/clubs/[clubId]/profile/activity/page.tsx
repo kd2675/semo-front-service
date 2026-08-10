@@ -1,4 +1,4 @@
-import { ClubTimelineFallbackClient } from "../../more/timeline/ClubTimelineFallbackClient";
+import { ClubMemberActivityFallbackClient } from "./ClubMemberActivityFallbackClient";
 
 type ClubProfileActivityPageProps = {
   params: Promise<{
@@ -8,5 +8,5 @@ type ClubProfileActivityPageProps = {
 
 export default async function ClubProfileActivityPage({ params }: ClubProfileActivityPageProps) {
   const { clubId } = await params;
-  return <ClubTimelineFallbackClient clubId={clubId} />;
+  return <ClubMemberActivityFallbackClient clubId={clubId} />;
 }

@@ -35,16 +35,15 @@
 
 ## Implemented Feature Catalog
 
-현재 seed 기준 구현된 `/more` 기능은 13개입니다.
+현재 seed 기준 구현된 `/more` 기능은 12개입니다. 개인 활동과 관리자 감사 로그는 기능 토글과 분리된 핵심 기능입니다.
 
 | Feature Key | 이름 | 범위 | 유저 경로 | 관리자 경로 | 상태 |
 | --- | --- | --- | --- | --- | --- |
 | `JOIN_REQUEST` | 신규가입 | 유저+관리자 | `/clubs/{clubId}/more/join-requests` | `/clubs/{clubId}/admin/more/join-requests` | 구현됨 |
-| `NOTICE` | 공지관리 | 유저+관리자 | `/clubs/{clubId}/more/notices` | `/clubs/{clubId}/admin/more/notices` | 구현됨 |
+| `NOTICE` | 공지관리 | 유저+관리자 | `/clubs/{clubId}/board` | `/clubs/{clubId}/board` | 구현됨 |
 | `ATTENDANCE` | 출석 체크 | 유저+관리자 | `/clubs/{clubId}/more/attendance` | `/clubs/{clubId}/admin/more/attendance` | 구현됨 |
-| `TIMELINE` | 타임라인 | 유저+관리자 | `/clubs/{clubId}/more/timeline` | `/clubs/{clubId}/admin/more/timeline` | 구현됨 |
-| `POLL` | 투표 | 유저+관리자 | `/clubs/{clubId}/more/polls` | `/clubs/{clubId}/admin/more/polls` | 구현됨 |
-| `SCHEDULE_MANAGE` | 일정관리 | 유저+관리자 | `/clubs/{clubId}/more/schedules` | `/clubs/{clubId}/admin/more/schedules` | 구현됨 |
+| `POLL` | 투표 | 유저+관리자 | `/clubs/{clubId}/schedule` | `/clubs/{clubId}/schedule` | 구현됨 |
+| `SCHEDULE_MANAGE` | 일정관리 | 유저+관리자 | `/clubs/{clubId}/schedule` | `/clubs/{clubId}/schedule` | 구현됨 |
 | `TOURNAMENT_RECORD` | 대회기록 | 유저+관리자 | `/clubs/{clubId}/more/tournaments` | `/clubs/{clubId}/admin/more/tournaments` | 구현됨 |
 | `BRACKET` | 대진표 | 유저+관리자 | `/clubs/{clubId}/more/brackets` | `/clubs/{clubId}/admin/more/brackets` | 구현됨 |
 | `FINANCE` | 재정관리 | 유저+관리자 | `/clubs/{clubId}/more/finance` | `/clubs/{clubId}/admin/more/finance` | 구현됨 |
@@ -93,7 +92,7 @@
 
 ### 2. 공지관리
 
-공지관리는 `/more/notices`에서 공지를 작성하고, 게시판과 캘린더 공유 정책까지 함께 다루는 기능입니다.
+공지관리는 대표 게시판에서 공지를 작성하고, 게시판과 캘린더 공유 정책까지 함께 다루는 기능입니다.
 
 유저/관리자 기능:
 
@@ -106,11 +105,11 @@
 
 주요 API:
 
-- `GET /api/semo/v1/clubs/{clubId}/more/notices`
-- `GET /api/semo/v1/clubs/{clubId}/more/notices/{noticeId}`
-- `POST /api/semo/v1/clubs/{clubId}/more/notices`
-- `PUT /api/semo/v1/clubs/{clubId}/more/notices/{noticeId}`
-- `DELETE /api/semo/v1/clubs/{clubId}/more/notices/{noticeId}`
+- `GET /api/semo/v1/clubs/{clubId}/board/notices`
+- `GET /api/semo/v1/clubs/{clubId}/board/notices/{noticeId}`
+- `POST /api/semo/v1/clubs/{clubId}/board/notices`
+- `PUT /api/semo/v1/clubs/{clubId}/board/notices/{noticeId}`
+- `DELETE /api/semo/v1/clubs/{clubId}/board/notices/{noticeId}`
 - `POST /api/semo/v1/clubs/{clubId}/board/items/{boardItemId}/read`
 
 주요 DB:
@@ -163,25 +162,24 @@
 - 유저의 즉시 행동인 체크인과 관리자 운영 현황이 분리되어 있습니다.
 - 다만 알림/리마인더 도메인이 없어 출석 시간 알림은 아직 제품 기능으로 보이지 않습니다.
 
-### 4. 타임라인
+### 핵심 기능: 개인 활동과 관리자 감사 로그
 
-타임라인은 클럽 활동을 시간순으로 묶어 보여주는 기능입니다.
+활동 기록은 `/more` 카탈로그가 아니라 항상 동작하는 핵심 기능입니다.
 
 유저 기능:
 
-- 전체 활동 타임라인 조회
+- 본인이 수행한 활동만 조회
 - 커서 기반 목록 조회
 
 관리자 기능:
 
-- 관리자 타임라인 조회
-- 타임라인 노출/설정 갱신
+- 전체 관리자 감사 로그 조회
+- 직책 재임 기간 기준 필터
 
 주요 API:
 
-- `GET /api/semo/v1/clubs/{clubId}/more/timeline`
-- `GET /api/semo/v1/clubs/{clubId}/admin/more/timeline`
-- `PUT /api/semo/v1/clubs/{clubId}/admin/more/timeline`
+- `GET /api/semo/v1/clubs/{clubId}/profile/activity`
+- `GET /api/semo/v1/clubs/{clubId}/admin/activity`
 
 주요 연계:
 
@@ -190,12 +188,13 @@
 
 분석:
 
-- 활동 모음 화면으로는 구현되어 있습니다.
+- 개인 활동과 관리자 감사 로그는 기능 활성화와 무관하게 기록·조회됩니다.
+- 기존 `/more/timeline` 프론트 경로는 북마크 호환용 리다이렉트만 유지합니다.
 - “왜 이런 결정을 했는가”를 담는 결정 로그나 회의록 도메인은 아직 별도 구현이 아닙니다.
 
 ### 5. 투표
 
-투표 기능은 `/more/polls`에서 클럽 투표를 만들고, 참여하고, 마감하는 흐름을 담당합니다.
+투표 기능은 대표 캘린더에서 클럽 투표를 만들고, 참여하고, 마감하는 흐름을 담당합니다.
 
 유저/관리자 기능:
 
@@ -208,13 +207,13 @@
 
 주요 API:
 
-- `GET /api/semo/v1/clubs/{clubId}/more/polls`
-- `GET /api/semo/v1/clubs/{clubId}/more/polls/{voteId}`
-- `POST /api/semo/v1/clubs/{clubId}/more/polls`
-- `PUT /api/semo/v1/clubs/{clubId}/more/polls/{voteId}`
-- `DELETE /api/semo/v1/clubs/{clubId}/more/polls/{voteId}`
-- `PUT /api/semo/v1/clubs/{clubId}/more/polls/{voteId}/selection`
-- `PUT /api/semo/v1/clubs/{clubId}/more/polls/{voteId}/close`
+- `GET /api/semo/v1/clubs/{clubId}/schedule/votes/summary`
+- `GET /api/semo/v1/clubs/{clubId}/schedule/votes/{voteId}`
+- `POST /api/semo/v1/clubs/{clubId}/schedule/votes`
+- `PUT /api/semo/v1/clubs/{clubId}/schedule/votes/{voteId}`
+- `DELETE /api/semo/v1/clubs/{clubId}/schedule/votes/{voteId}`
+- `PUT /api/semo/v1/clubs/{clubId}/schedule/votes/{voteId}/selection`
+- `PUT /api/semo/v1/clubs/{clubId}/schedule/votes/{voteId}/close`
 
 주요 DB:
 
@@ -236,7 +235,7 @@
 
 ### 6. 일정관리
 
-일정관리는 `/more/schedules`에 기능 홈이 있지만, 핵심 CRUD는 `/schedule` 도메인 API와 화면을 공유합니다.
+일정관리는 별도 More 홈 없이 대표 캘린더의 API와 화면에서 동작합니다.
 
 유저/관리자 기능:
 
@@ -250,7 +249,6 @@
 
 주요 API:
 
-- `GET /api/semo/v1/clubs/{clubId}/more/schedules`
 - `GET /api/semo/v1/clubs/{clubId}/schedule`
 - `GET /api/semo/v1/clubs/{clubId}/schedule/events/{eventId}`
 - `POST /api/semo/v1/clubs/{clubId}/schedule/events`
@@ -281,8 +279,8 @@
 
 분석:
 
-- 일정은 기본 탭에도 있는 핵심 기능이지만, `/more/schedules`는 일정 운영 기능 홈 역할을 합니다.
-- 생성/수정 액션은 schedule 도메인과 공유되므로 `/more` 전용 기능으로만 보면 안 됩니다.
+- 일정·투표·RSVP는 대표 캘린더의 단일 화면과 API 계약을 사용합니다.
+- 기존 `/more/schedules`, `/more/polls` 프론트 경로는 북마크 호환용 리다이렉트만 유지합니다.
 
 ### 7. 대회기록
 
@@ -691,7 +689,6 @@ DB:
 - 대회: `TOURNAMENT_RECORD_CREATE`, `TOURNAMENT_RECORD_UPDATE_SELF`, `TOURNAMENT_RECORD_PIN`, `TOURNAMENT_RECORD_REVIEW`, `TOURNAMENT_RECORD_DELETE_ANY`
 - 대진표: `BRACKET_CREATE`, `BRACKET_UPDATE_SELF`, `BRACKET_REVIEW`, `BRACKET_DELETE_ANY`
 - 재정: `FINANCE_VIEW`, `FINANCE_ISSUE`, `FINANCE_MARK_PAID`, `FINANCE_MARK_WAIVED`
-- 타임라인: `TIMELINE_VIEW`
 - 할 일: `TODO_VIEW`, `TODO_CREATE`, `TODO_ASSIGN`, `TODO_MANAGE_STATUS`, `TODO_DELETE_ANY`
 
 ## Current Product Reading
@@ -719,7 +716,7 @@ DB:
 현재 구현 상태 기준으로 `/more` 기능 자체는 넓지만, 다음 항목은 아직 제품 레벨에서 남아 있습니다.
 
 1. 인수인계 센터
-   - `roles + todos + finance + timeline + activity`를 한 화면에 묶는 운영 상태판이 없습니다.
+   - `roles + todos + finance + activity`를 한 화면에 묶는 운영 상태판이 없습니다.
 
 2. 결정 로그
    - 회의록, 정책 변경 이유, 회비 변경 사유, 대회 기준 변경 사유를 기능과 연결하는 도메인이 없습니다.
@@ -746,4 +743,3 @@ DB:
 - `SEMO_MORE_API_MATRIX.md`: 기능별 API, request/response, 권한, 화면 매핑
 - `SEMO_MORE_DB_MATRIX.md`: 기능별 테이블, 관계, 인덱스, soft delete 여부
 - `SEMO_MORE_GAP_ROADMAP.md`: 인수인계 센터, 결정 로그, term/season, 알림, 액션 큐 구현 순서
-
