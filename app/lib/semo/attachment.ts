@@ -28,6 +28,7 @@ export type TempAttachmentUpload = {
   contentType: string;
   sizeBytes: number;
   downloadUrl: string;
+  uploadToken: string;
   temporary: boolean;
 };
 
@@ -56,6 +57,7 @@ export function createResourceAttachment(
     resourceType: ResourceAttachmentType;
     resourceId: number;
     tempFileName: string;
+    uploadToken: string;
     originalFileName: string;
   },
 ) {
@@ -84,11 +86,17 @@ export async function uploadTempAttachment(
   }
   const formData = new FormData();
   formData.append("file", file);
+  const { ensureAccessToken } = await import("@/app/lib/auth");
+  const token = await ensureAccessToken();
+  if (!token) {
+    throw new Error("로그인이 필요합니다.");
+  }
   const response = await axios.post<TempAttachmentUpload>(
     `${IMAGE_BASE}/upload/temp-file`,
     formData,
     {
       validateStatus: () => true,
+      headers: { Authorization: `Bearer ${token}` },
       onUploadProgress: (event) => {
         if (!event.total) return;
         onProgress?.(Math.min(100, Math.round((event.loaded / event.total) * 100)));

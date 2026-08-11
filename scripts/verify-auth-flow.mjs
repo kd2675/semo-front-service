@@ -37,6 +37,7 @@ assert.match(authSource, /postAuthJson/);
 assert.match(apiSource, /NEXT_PUBLIC_API_MODE \?\? "direct"/);
 assert.match(apiSource, /NEXT_PUBLIC_SEMO_API_URL/);
 assert.match(apiSource, /NEXT_PUBLIC_AUTH_API_URL/);
+assert.match(apiSource, /headers\.Authorization/);
 assert.match(apiSource, /headers\["X-User-Name"\]/);
 assert.match(apiSource, /headers\["X-User-Key"\]/);
 assert.match(apiSource, /headers\["X-User-Role"\]/);

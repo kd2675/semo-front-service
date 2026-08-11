@@ -237,8 +237,13 @@ const tinyTextCount = files.reduce((count, filePath) => {
   const source = fs.readFileSync(filePath, "utf8");
   return count + (source.match(/text-\[11px\]/g)?.length ?? 0);
 }, 0);
+const maxTinyTextCount = 222;
 
-console.log(`SEMO UI 계약 검사: ${routeCount}개 라우트, ${files.length}개 TSX, 11px 보조 텍스트 ${tinyTextCount}건`);
+if (tinyTextCount > maxTinyTextCount) {
+  failures.push(`11px 보조 텍스트가 기준 ${maxTinyTextCount}건을 초과했습니다: ${tinyTextCount}건`);
+}
+
+console.log(`SEMO UI 계약 검사: ${routeCount}개 라우트, ${files.length}개 TSX, 11px 보조 텍스트 ${tinyTextCount}/${maxTinyTextCount}건`);
 
 if (failures.length > 0) {
   console.error(failures.join("\n"));

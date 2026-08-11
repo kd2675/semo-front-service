@@ -11,6 +11,7 @@ import {
   useState,
 } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { useSearchParams } from "next/navigation";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import { useAppToast } from "@/app/hooks/useAppToast";
 import { ScheduleActionConfirmModal } from "@/app/clubs/[clubId]/schedule/modals/ScheduleActionConfirmModal";
@@ -95,6 +96,13 @@ const ADMIN_FINANCE_TABS: Array<{ key: AdminFinanceTabKey; label: string }> = [
   { key: "OPERATIONS", label: "예산·마감" },
 ];
 
+function resolveInitialFinanceTab(value: string | null): AdminFinanceTabKey {
+  const normalized = value?.trim().toUpperCase();
+  return ADMIN_FINANCE_TABS.some((tab) => tab.key === normalized)
+    ? normalized as AdminFinanceTabKey
+    : "DASHBOARD";
+}
+
 function combineDateTimeValue(dateValue: string, timeValue: string) {
   if (!dateValue) {
     return null;
@@ -120,6 +128,7 @@ export function ClubAdminFinanceClient({
   initialExpenseFeed,
 }: ClubAdminFinanceClientProps) {
   const queryClient = useQueryClient();
+  const searchParams = useSearchParams();
   const prefersReducedMotion = useReducedMotion();
   const reduceMotion = Boolean(prefersReducedMotion);
   const [finance, setFinance] = useState(initialData);
@@ -147,7 +156,9 @@ export function ClubAdminFinanceClient({
   const [showPeriodEditor, setShowPeriodEditor] = useState(false);
   const [budgetPeriod, setBudgetPeriod] = useState<FinancePeriod | null>(null);
   const [operationsBusyKey, setOperationsBusyKey] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<AdminFinanceTabKey>("DASHBOARD");
+  const [activeTab, setActiveTab] = useState<AdminFinanceTabKey>(() =>
+    resolveInitialFinanceTab(searchParams.get("tab")),
+  );
   const [title, setTitle] = useState("");
   const [amount, setAmount] = useState("5000");
   const [dueAtDate, setDueAtDate] = useState("");

@@ -85,6 +85,7 @@ export function ResourceAttachmentPanel({
         resourceType,
         resourceId,
         tempFileName: temporary.fileName,
+        uploadToken: temporary.uploadToken,
         originalFileName: file.name,
       });
       await refresh();

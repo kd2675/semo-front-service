@@ -7,6 +7,6 @@ type ClubJoinRequestPageProps = {
 };
 
 export default async function ClubJoinRequestPage({ params }: ClubJoinRequestPageProps) {
-  const { clubId } = await params;
-  redirect(`/clubs/${clubId}`);
+  await params;
+  redirect("/");
 }

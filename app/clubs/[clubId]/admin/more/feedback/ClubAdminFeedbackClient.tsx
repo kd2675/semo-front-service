@@ -2,7 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion, useReducedMotion } from "motion/react";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import type { CSSProperties } from "react";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import { ResourceAttachmentPanel } from "@/app/components/ResourceAttachmentPanel";
@@ -106,6 +106,7 @@ export function ClubAdminFeedbackClient({
   const [adminAnswer, setAdminAnswer] = useState(initialDetail?.adminAnswer ?? "");
   const { showToast, clearToast } = useAppToast();
   const updateFeedbackMutation = useMutation(updateFeedbackMutationOptions(clubId, selectedFeedbackId ?? 0));
+  const detailRequestSequence = useRef(0);
 
   const filteredItems = useMemo(
     () =>
@@ -116,20 +117,25 @@ export function ClubAdminFeedbackClient({
   );
 
   const loadDetail = async (feedbackId: number) => {
+    const requestSequence = ++detailRequestSequence.current;
+    setSelectedFeedbackId(feedbackId);
     setIsDetailLoading(true);
     try {
       const detail = await queryClient.fetchQuery({
         ...adminFeedbackDetailQueryOptions(clubId, feedbackId),
       });
-      setSelectedFeedbackId(feedbackId);
+      if (requestSequence !== detailRequestSequence.current) return;
       setSelectedDetail(detail);
       setFeedbackType(detail.feedbackType);
       setStatusCode(detail.statusCode);
       setAdminAnswer(detail.adminAnswer ?? "");
     } catch {
+      if (requestSequence !== detailRequestSequence.current) return;
       showToast("피드백 상세를 불러오지 못했습니다.", "error");
     } finally {
-      setIsDetailLoading(false);
+      if (requestSequence === detailRequestSequence.current) {
+        setIsDetailLoading(false);
+      }
     }
   };
 
@@ -257,6 +263,7 @@ export function ClubAdminFeedbackClient({
                 <button
                   key={option.value}
                   type="button"
+                  disabled={isSaving}
                   onClick={() => setStatusFilter(option.value as StatusFilter)}
                   className={`rounded-full px-3.5 py-2 text-xs font-bold transition ${
                     statusFilter === option.value
@@ -279,6 +286,7 @@ export function ClubAdminFeedbackClient({
                   <motion.button
                     key={item.feedbackId}
                     type="button"
+                    disabled={isSaving}
                     onClick={() => void loadDetail(item.feedbackId)}
                     className={`w-full rounded-[24px] border px-4 py-4 text-left transition ${
                       selectedFeedbackId === item.feedbackId
@@ -373,23 +381,29 @@ export function ClubAdminFeedbackClient({
                       <legend className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
                         분류
                       </legend>
-                      <div className="grid grid-cols-3 gap-2" aria-label="피드백 분류">
+                      <div className="grid grid-cols-3 gap-2" role="radiogroup" aria-label="피드백 분류">
                         {FEEDBACK_TYPE_OPTIONS.map((option) => {
                           const selected = feedbackType === option.value;
                           return (
-                            <button
+                            <label
                               key={option.value}
-                              type="button"
-                              aria-pressed={selected}
-                              onClick={() => setFeedbackType(option.value)}
                               className={`semo-control min-w-0 px-2 text-xs font-bold transition ${
                                 selected
                                   ? "bg-[#ec5b13] text-white shadow-sm"
                                   : "border border-slate-200 bg-white text-slate-600 hover:border-[#ec5b13]/40 hover:bg-orange-50"
                               }`}
                             >
+                              <input
+                                type="radio"
+                                name="feedback-type"
+                                value={option.value}
+                                checked={selected}
+                                disabled={isSaving || isDetailLoading}
+                                onChange={() => setFeedbackType(option.value)}
+                                className="sr-only"
+                              />
                               {option.label}
-                            </button>
+                            </label>
                           );
                         })}
                       </div>
@@ -398,23 +412,29 @@ export function ClubAdminFeedbackClient({
                       <legend className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
                         상태
                       </legend>
-                      <div className="grid grid-cols-2 gap-2" aria-label="피드백 처리 상태">
+                      <div className="grid grid-cols-2 gap-2" role="radiogroup" aria-label="피드백 처리 상태">
                         {STATUS_OPTIONS.map((option) => {
                           const selected = statusCode === option.value;
                           return (
-                            <button
+                            <label
                               key={option.value}
-                              type="button"
-                              aria-pressed={selected}
-                              onClick={() => setStatusCode(option.value)}
                               className={`semo-control px-3 text-xs font-bold transition ${
                                 selected
                                   ? "bg-slate-900 text-white shadow-sm"
                                   : "border border-slate-200 bg-white text-slate-600 hover:border-slate-400 hover:bg-slate-50"
                               }`}
                             >
+                              <input
+                                type="radio"
+                                name="feedback-status"
+                                value={option.value}
+                                checked={selected}
+                                disabled={isSaving || isDetailLoading}
+                                onChange={() => setStatusCode(option.value)}
+                                className="sr-only"
+                              />
                               {option.label}
-                            </button>
+                            </label>
                           );
                         })}
                       </div>
@@ -427,6 +447,7 @@ export function ClubAdminFeedbackClient({
                     </span>
                     <textarea
                       value={adminAnswer}
+                      disabled={isSaving || isDetailLoading}
                       onChange={(event) => setAdminAnswer(event.target.value)}
                       rows={5}
                       placeholder="답변이 없으면 빈 상태로 저장할 수 있습니다."

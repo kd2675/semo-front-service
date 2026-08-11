@@ -13,6 +13,7 @@ export function createResourceAttachmentMutationOptions(clubId: string) {
       resourceType: ResourceAttachmentType;
       resourceId: number;
       tempFileName: string;
+      uploadToken: string;
       originalFileName: string;
     }) => requireApiData(
       await createResourceAttachment(clubId, request),
