@@ -387,7 +387,7 @@ export function ClubBracketHomeClient({
                 <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
                   {isAdminMode
                     ? adminPayload?.canReview ? "승인 워크플로우" : "대진표 운영"
-                    : "직접 작성 + 대회 불러오기"}
+                    : userPayload?.tournamentIntegrationEnabled ? "직접 작성 + 대회 불러오기" : "직접 작성"}
                 </p>
                 <h2 className="mt-3 text-2xl font-bold text-slate-900">
                   {isAdminMode
@@ -397,7 +397,9 @@ export function ClubBracketHomeClient({
                     : "대진표 초안을 만들고 승인 요청합니다."}
                 </h2>
                 <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-500">
-                  직접 입력한 참가자 명단으로 바로 대진표를 만들 수도 있고, 승인된 대회 참가자를 불러와 수정한 뒤 제출할 수도 있습니다.
+                  {userPayload?.tournamentIntegrationEnabled
+                    ? "직접 입력한 참가자 명단으로 만들거나 승인된 대회 참가자를 불러와 제출할 수 있습니다."
+                    : "다른 기능 없이 참가자 이름을 직접 입력해 대진표를 만들고 검토받을 수 있습니다."}
                 </p>
               </div>
             </article>
@@ -636,8 +638,8 @@ export function ClubBracketHomeClient({
                     </label>
                     <div className="space-y-2 md:col-span-2">
                       <span className="text-sm font-semibold text-slate-700">생성 방식</span>
-                      <div className="grid grid-cols-2 gap-2 rounded-2xl bg-slate-100 p-1">
-                        {(["DIRECT", "TOURNAMENT"] as const).map((sourceType) => {
+                      <div className={`grid gap-2 rounded-2xl bg-slate-100 p-1 ${userPayload?.tournamentIntegrationEnabled ? "grid-cols-2" : "grid-cols-1"}`}>
+                        {(["DIRECT", ...(userPayload?.tournamentIntegrationEnabled ? ["TOURNAMENT" as const] : [])] as const).map((sourceType) => {
                           const active = form.sourceType === sourceType;
                           return (
                             <button
@@ -655,6 +657,9 @@ export function ClubBracketHomeClient({
                           );
                         })}
                       </div>
+                      {!userPayload?.tournamentIntegrationEnabled ? (
+                        <p className="text-xs leading-5 text-slate-500">대회 기능을 함께 켜면 승인된 참가자를 불러올 수 있습니다.</p>
+                      ) : null}
                     </div>
                     {form.sourceType === "TOURNAMENT" ? (
                       <div className="space-y-3 md:col-span-2">

@@ -1,0 +1,680 @@
+<!-- Updated: 2026-08-12 -->
+
+# SEMO More 기능 통합 가이드
+
+이 문서는 SEMO의 기능 모듈을 판단하고 설계하고 구현하고 검증하는 단일 기준 문서입니다.
+
+적용 범위:
+
+- 신규 기능 제안과 제품 적합성 판단
+- 기존 기능의 대규모 재구성
+- `feature_catalog`와 `feature_activation` 변경
+- 유저·관리자 More 허브와 대표 화면 연결
+- 기능 간 필수 의존성, 정책 의존성, 선택 연동 변경
+- 기능 전용 API, DB, 권한, 활동 로그, 알림, 첨부 구현
+- 홈 위젯, 운영 큐, 즐겨찾기, 최근 사용을 포함한 프론트 연결
+
+문서와 코드가 다르면 현재 코드, DDL, seed, 테스트 결과가 우선입니다. 코드 계약을 변경했다면 같은 작업에서 이 문서를 갱신합니다.
+
+## 1. 제품 기준
+
+SEMO는 동호회 운영 도구와 운영 기록을 한곳에 모아 임원 교체 후에도 운영 맥락이 이어지게 하는 동호회 운영 플랫폼입니다.
+
+기능을 추가할 때는 다음 원칙을 지킵니다.
+
+1. 운영 문제를 해결하지 않는 기능은 추가하지 않습니다.
+2. 기능 수보다 실제 작업 완료 흐름을 우선합니다.
+3. 기능 카탈로그와 화면 카탈로그를 일대일로 만들지 않습니다.
+4. 사용자가 이미 기억하는 대표 공간은 유지합니다.
+5. 별도 상태, 승인, 권한, 운영 큐가 있는 도구만 독립 More 화면을 가집니다.
+6. 결과뿐 아니라 행위자, 이유, 상태 전이와 다음 담당자가 필요한 맥락을 기록합니다.
+7. 클럽마다 필요한 기능 조합이 다르다는 전제에서 활성화 정책을 설계합니다.
+8. 기능을 켜지 않은 클럽도 불완전하거나 오류가 난 제품처럼 보이지 않아야 합니다.
+
+SEMO가 지향하지 않는 형태:
+
+- 기능 수만 많은 도구 모음
+- 일반 SNS 피드 중심 앱
+- 설정만 있고 운영 기록이 남지 않는 관리자 화면
+- 같은 데이터를 여러 경로에서 서로 다르게 수정하는 구조
+
+## 2. 정보 구조와 화면 배치
+
+대표 공간:
+
+- 게시판: `/clubs/{clubId}/board`
+  - 공지와 게시판 공유 콘텐츠의 canonical 화면
+- 캘린더: `/clubs/{clubId}/schedule`
+  - 일정, 투표, RSVP와 실제 출석의 canonical 화면
+- 유저 More: `/clubs/{clubId}/more`
+  - 별도 사용·신청·조회 흐름이 있는 부가 기능 허브
+- 관리자 More: `/clubs/{clubId}/admin/more`
+  - 별도 운영 상태, 승인, 권한, 큐가 있는 기능 허브
+
+화면 배치 판단 순서:
+
+1. 기존 대표 공간에서 사용자가 자연스럽게 작업을 완료할 수 있는가?
+2. 별도 lifecycle이나 승인 큐가 있는가?
+3. 유저와 관리자의 목적과 데이터 범위가 실제로 다른가?
+4. URL 복구가 필요한 상세·편집 상태인가?
+5. 독립 화면이 아니라 위젯이나 모달로 충분한가?
+
+공지·일정·투표·출석의 레거시 `/more` URL은 canonical 화면으로 이동하는 호환 경로입니다. 같은 기능 client를 복제하지 않습니다.
+
+## 3. 현재 기능 카탈로그
+
+현재 코드와 seed 기준 기능은 14개입니다.
+
+| Feature key | 이름 | 화면 범위 | Canonical 유저 경로 | Canonical 관리자 경로 | 독립성 |
+|---|---|---|---|---|---|
+| `JOIN_REQUEST` | 가입 신청 | 관리자 | `/clubs/{clubId}` | `/clubs/{clubId}/admin/more/join-requests` | 가입 정책 종속 |
+| `NOTICE` | 게시판 공지 | 유저+관리자 | `/clubs/{clubId}/board` | `/clubs/{clubId}/board` | 독립 |
+| `SCHEDULE_MANAGE` | 일정 | 유저+관리자 | `/clubs/{clubId}/schedule` | `/clubs/{clubId}/schedule` | 독립 |
+| `POLL` | 투표 | 유저+관리자 | `/clubs/{clubId}/schedule` | `/clubs/{clubId}/schedule` | 독립 |
+| `ATTENDANCE` | 일정 참석 | 유저+관리자 | `/clubs/{clubId}/schedule` | `/clubs/{clubId}/schedule` | 일정 필수 |
+| `TOURNAMENT_RECORD` | 대회 운영 | 유저+관리자 | `/clubs/{clubId}/more/tournaments` | `/clubs/{clubId}/admin/more/tournaments` | 독립 |
+| `BRACKET` | 대진표 초안 | 유저+관리자 | `/clubs/{clubId}/more/brackets` | `/clubs/{clubId}/admin/more/brackets` | 독립 |
+| `FINANCE` | 회비·정산 | 유저+관리자 | `/clubs/{clubId}/more/finance` | `/clubs/{clubId}/admin/more/finance` | 독립 |
+| `TODO` | 할 일 | 유저+관리자 | `/clubs/{clubId}/more/todos` | `/clubs/{clubId}/admin/more/todos` | 독립 |
+| `MEMBER_DIRECTORY` | 멤버·조직 | 유저+관리자 | `/clubs/{clubId}/more/members` | `/clubs/{clubId}/admin/more/members` | 독립 |
+| `FEEDBACK` | 피드백 | 유저+관리자 | `/clubs/{clubId}/more/feedback` | `/clubs/{clubId}/admin/more/feedback` | 독립 |
+| `ROLE_MANAGEMENT` | 직책·권한 | 관리자 | 관리자 경로로 이동 | `/clubs/{clubId}/admin/more/roles` | 핵심·상시 |
+| `HANDOVER` | 인수인계 센터 | 관리자 | 관리자 경로로 이동 | `/clubs/{clubId}/admin/more/handover` | 직책·권한 필수 |
+| `DECISION_LOG` | 회의록·결정 | 유저+관리자 | `/clubs/{clubId}/more/decisions` | `/clubs/{clubId}/admin/more/decisions` | 독립 |
+
+개인 활동과 관리자 감사 로그는 기능 토글이 아니라 상시 동작하는 핵심 기록입니다. 별도 feature key를 만들지 않습니다.
+
+## 4. 기능 의존성 계약
+
+모든 기능 관계는 다음 네 종류 중 하나로 명시합니다.
+
+### 4.1 독립 기능
+
+다른 기능을 켜지 않아도 핵심 흐름을 완료할 수 있어야 합니다.
+
+현재 독립 기능:
+
+- `NOTICE`
+- `SCHEDULE_MANAGE`
+- `POLL`
+- `TOURNAMENT_RECORD`
+- `BRACKET`
+- `FINANCE`
+- `TODO`
+- `MEMBER_DIRECTORY`
+- `FEEDBACK`
+- `DECISION_LOG`
+
+독립 기능의 완료 기준:
+
+- OWNER·ADMIN 또는 기능의 기본 운영 주체가 생성·조회·수정 등 핵심 작업을 완료할 수 있습니다.
+- 다른 기능의 테이블이나 활성 상태가 없어도 조회가 실패하지 않습니다.
+- 선택 연동 항목은 숨기거나 빈 선택지로 표시합니다.
+- 연결 대상 없이 저장 가능한 계약을 가집니다.
+- 빈 상태 문구가 다른 기능 활성화를 오류 해결책처럼 강요하지 않습니다.
+
+`ROLE_MANAGEMENT`는 위임 권한의 해석 자체를 끄는 토글로 사용하지 않습니다. 클럽마다 직책이 생긴 뒤 기능 토글을 꺼서 인가가 사라지는 예측 불가능한 상태를 막기 위해 핵심·상시 기능으로 취급합니다. 일반 멤버에게 직책을 배정하지 않으면 추가 위임 권한은 생기지 않습니다.
+
+### 4.2 필수 의존성
+
+종속 기능의 핵심 모델이 선행 기능의 원장 없이는 성립하지 않을 때만 사용합니다.
+
+현재 필수 의존성:
+
+- `ATTENDANCE` -> `SCHEDULE_MANAGE`
+- `HANDOVER` -> `ROLE_MANAGEMENT`
+
+동작 계약:
+
+- 종속 기능을 켜면 서버와 UI가 선행 기능을 먼저 켭니다.
+- 선행 기능을 끄면 종속 기능도 함께 끕니다.
+- API 직접 호출로 모순된 상태가 저장되지 않게 서버가 정규화합니다.
+- 과거 DB에 모순된 row가 있더라도 조회 시 종속 기능을 비활성으로 판정합니다.
+- 설정 화면은 함께 켜지거나 꺼지는 기능과 이유를 작업 전에 설명합니다.
+
+### 4.3 정책 의존성
+
+클럽 설정이나 운영 정책이 기능의 존재 자체를 결정할 때 사용합니다.
+
+현재 정책 의존성:
+
+- `JOIN_REQUEST`
+  - `membership_policy = APPROVAL`: 필수이며 끌 수 없습니다.
+  - `membership_policy = OPEN`: 사용할 수 없으며 가입 즉시 멤버십을 생성합니다.
+
+정책 의존 기능은 일반 토글처럼 보이게 만들지 않습니다. 응답에는 최소한 `mandatory`, `mandatoryReason`, `available`, `unavailableReason`을 제공합니다.
+
+### 4.4 선택 연동
+
+연동이 있으면 편리하지만 없어도 양쪽 기능이 독립적으로 완결되는 관계입니다.
+
+현재 선택 연동:
+
+- 대회 + 재정
+  - 재정 ON: 참가비 obligation/payment를 연결합니다.
+  - 재정 OFF: 대회는 정상 운영하고 외부 납부 안내를 표시합니다.
+- 대진표 + 대회
+  - 대회 ON: 승인된 참가자를 불러올 수 있습니다.
+  - 대회 OFF: 참가자를 직접 입력합니다.
+- 할 일 + 일정/결정
+  - 연동 ON: 일정 또는 결정 기록을 선택적으로 연결합니다.
+  - 연동 OFF: 연결 선택지와 과거 연결 표시를 숨기고 할 일 자체는 유지합니다.
+- 재정 + 일정
+  - 연동 ON: 재정 항목에 일정을 선택적으로 연결합니다.
+  - 연동 OFF: 일정 없이 저장합니다.
+- 결정 기록 + 일정/할 일/재정/대회
+  - 활성 기능의 리소스만 연결 후보로 제공합니다.
+  - 비활성 기능의 신규 연결을 서버에서도 거부합니다.
+- 인수인계 + 할 일/재정/일정/피드백/가입 신청/결정 기록
+  - 활성 기능의 운영 큐만 요약합니다.
+  - 선택 기능이 없어도 임기, 집행부, 메모 흐름은 동작합니다.
+
+선택 연동을 필수 의존성으로 승격하려면 단독 사용 시 핵심 목적을 달성할 수 없다는 도메인 근거가 필요합니다.
+
+### 4.5 비활성화와 기존 데이터
+
+기본 정책:
+
+- 기능 비활성화는 데이터를 삭제하지 않습니다.
+- 기능 전용 API 진입은 차단합니다.
+- More 메뉴, 홈 위젯, 직책 권한 그룹에서 숨깁니다.
+- 다른 기능의 연결 후보에서 제외합니다.
+- 기존 연결은 DB 무결성을 위해 보존하되 화면에서 비활성 기능 데이터를 새로 노출하지 않습니다.
+- 재활성화하면 보존 데이터에 다시 접근할 수 있습니다.
+- 법적·회계적 보존이 필요한 데이터는 기능 비활성화와 무관하게 유지합니다.
+
+삭제나 익명화가 필요하면 기능 토글과 분리된 명시적 운영 정책과 API로 구현합니다.
+
+## 5. 신규 기능 판단 절차
+
+코드를 작성하기 전에 아래 내용을 짧은 기능 계약으로 확정합니다.
+
+### 5.1 문제와 사용자
+
+- 해결할 운영 문제 한 문장
+- 직접 사용하는 사용자
+- 최종 책임자
+- 사용 빈도와 시점
+- 성공한 상태와 실패한 상태
+- 기존 기능으로 해결할 수 없는 이유
+
+### 5.2 기능 경계
+
+- feature key: 대문자 스네이크 케이스
+- 화면 이름과 URL slug
+- 유저, 관리자, 둘 다 중 어느 범위인지
+- 대표 화면 통합인지 독립 More 화면인지
+- 독립, 필수 의존, 정책 의존, 선택 연동 중 어느 관계인지
+- 기능이 꺼졌을 때 메뉴, API, 데이터, 위젯의 동작
+
+### 5.3 상태와 행위
+
+- lifecycle 상태와 허용 전이
+- 생성, 수정, 승인, 반려, 취소, 종료, 삭제 주체
+- 반복 요청의 idempotency
+- 동시 승인·취소·수정 충돌 처리
+- 취소·반려 사유와 사용자 통지
+- 감사가 필요한 활동
+
+상태 이름만 정하지 말고 `현재 상태 + 액션 -> 다음 상태` 표를 먼저 작성합니다. 화면 분기와 서버 분기가 같은 표를 사용해야 합니다.
+
+### 5.4 최소 기능성
+
+새 기능은 다른 선택 기능을 모두 끈 상태에서 핵심 시나리오를 완료할 수 있어야 합니다. 불가능하다면 필수 의존성으로 선언하고 활성화·비활성화 전파를 함께 구현합니다.
+
+### 5.5 기능 계약 템플릿
+
+구현 전 아래 양식을 PR 설명이나 기능 문서에 채웁니다.
+
+```text
+기능명 / feature key:
+해결할 운영 문제:
+주 사용자 / 최종 책임자:
+canonical user path / admin path:
+대표 화면 통합 또는 독립 More 화면 판단:
+독립성: 독립 | 필수 의존 | 정책 의존 | 선택 연동
+필수 기능과 이유:
+선택 연동 기능과 OFF일 때 대체 흐름:
+기능 OFF일 때 메뉴 / API / 기존 데이터 / 위젯 정책:
+핵심 lifecycle과 금지 전이:
+OWNER / ADMIN / MEMBER / SELF / ANY 권한:
+활동 로그 / 알림 / 첨부 / 딥링크:
+주요 DB 테이블 / unique / FK / index:
+단독 사용 인수 조건:
+조합 사용 인수 조건:
+운영 DB 적용 / backfill / rollback:
+검증 명령과 브라우저 시나리오:
+```
+
+## 6. 백엔드 구현 기준
+
+### 6.1 카탈로그와 활성화
+
+- `feature_catalog` seed에 기능을 등록합니다.
+- `feature_activation` 저장·조회 대상에 포함합니다.
+- `ClubFeatureService`에 user/admin canonical path를 등록합니다.
+- navigation scope를 `USER_AND_ADMIN` 또는 `ADMIN_ONLY`로 명시합니다.
+- 필수·정책 의존성 메타데이터를 기능 응답에 포함합니다.
+- 기능 업데이트 후 대시보드 위젯을 동기화합니다.
+- 기능 on/off 검사는 컨트롤러가 아니라 서비스 진입부에서도 수행합니다.
+
+주요 기준 파일:
+
+- `semo-back-service/src/main/java/semo/back/service/feature/clubfeature/biz/ClubFeatureService.java`
+- `semo-back-service/src/main/java/semo/back/service/feature/clubfeature/vo/ClubFeatureResponse.java`
+- `semo-back-service/src/main/resources/db/seed/semo_seed_all.sql`
+
+### 6.2 패키지와 책임
+
+기능 패키지는 `feature/<name>` 경계를 사용합니다.
+
+기본 구성:
+
+- `act/`: HTTP 입출력과 공통 응답 래핑
+- `biz/`: 도메인 규칙과 트랜잭션
+- `biz/policy/`: 권한과 capability 판단
+- `biz/support/`: 순수 변환과 공통 계산
+- `vo/`: request/response record
+- `database/pub/entity`, `repository`: 영속 모델과 쿼리
+
+컨트롤러는 얇게 유지하고 상태 전이, 기능 활성화, 권한, 소유권 검사는 서비스에 둡니다. DTO와 엔티티를 섞지 않습니다.
+
+### 6.3 식별자와 권한
+
+식별자 책임:
+
+- `profile_user.profile_id`: 앱 사용자
+- `club_member.club_member_id`: 클럽 소속
+- `club_profile.club_profile_id`: 클럽 내 표시 프로필과 운영 행위자
+
+권한 순서:
+
+1. 인증된 사용자 확인
+2. 활성 클럽 멤버 확인
+3. 기능 활성화 확인
+4. OWNER/ADMIN 고정 운영 권한 확인
+5. 필요한 경우 직책 capability 확인
+6. SELF/ANY 소유권 확인
+
+`feature_catalog`는 기능 단위, `feature_permission_catalog`는 백엔드가 인가와 감사에 사용하는 실제 액션 단위입니다. 권한 키는 `CREATE`, `VIEW`, `UPDATE_SELF`, `DELETE_ANY`, `REVIEW`, `ASSIGN`처럼 행위가 드러나야 합니다.
+
+직책 편집 화면에는 액션 권한을 그대로 나열하지 않습니다. `ClubPositionAccessPolicy`에서 기능별 운영 수준만 선언하고, 화면은 `featureGrants` 의도를 서버에 보냅니다. 서버가 이를 실제 액션 권한으로 투영합니다.
+
+- 공통 수준 키는 `NONE`, `VIEWER`, `OPERATOR`, `MANAGER`를 사용하되 의미 없는 수준은 해당 기능에서 생략합니다.
+- 각 기능의 수준은 낮은 수준의 권한을 포함하는 단조 증가 구조여야 합니다.
+- 재정 검토, 수납 상태 변경, 내보내기, 기간 마감과 다른 멤버의 기록 강제 삭제처럼 업무 분리나 복구 판단이 필요한 액션은 운영 수준에 자동 포함하지 않고 추가 승인 권한으로 둡니다.
+- `UPDATE_SELF`는 모든 회원의 기본 권리가 아니라 작성 업무를 위임받은 멤버의 후속 처리 권한일 수 있으므로 기능 정책 확인 없이 일반 회원 권한으로 옮기지 않습니다.
+- 본인 요청 승인 금지처럼 행위자와 대상의 관계에 따른 규칙은 권한 키가 아니라 서비스의 도메인 불변식으로 검사합니다.
+- 정책에 등록되지 않은 신규 액션 권한은 직책 편집 화면에 자동 노출하지 않습니다. 기능 구현자가 운영 수준 또는 추가 승인 권한으로 명시해야 위임할 수 있습니다.
+- `club_position_feature_grant`는 기능별 운영 수준과 적용한 정책 버전을, `club_position_sensitive_grant`는 별도 승인한 민감 권한과 승인 행위자를 저장합니다.
+- 기존 `club_position_permission`에는 확장된 액션 권한을 투영하여 런타임 인가와 감사 호환에 사용합니다. 프론트가 이 배열을 다시 쓰거나 운영 수준을 역추론하지 않습니다.
+- 정책 버전이 바뀌어도 기존 투영을 자동 변경하지 않습니다. `POLICY_UPDATE_AVAILABLE` 상태를 보여주고 관리자가 명시적으로 적용한 경우에만 재투영합니다.
+- 기존 비표준 조합은 자동 확대·축소하지 않고 맞춤 설정 상태로 보존하며, 관리자가 운영 수준을 다시 선택할 때만 표준 조합으로 전환합니다.
+- 생성·수정 API도 화면과 같은 운영 수준 규칙을 검증합니다. 신규 직책은 일부 액션만 빠진 비표준 조합을 만들 수 없고, 기존 맞춤 조합은 변경하지 않는 경우에만 그대로 저장할 수 있습니다.
+- 직책 빠른 시작 템플릿은 활성 기능과 `ClubPositionAccessPolicy`를 기준으로 서버가 계산합니다. 신규 기능을 기존 템플릿에 자동 편입하지 않으며 추가 승인 권한도 자동 부여하지 않습니다.
+- 기능이 늘어나는 것을 전제로 직책 편집 UI는 전체 기능 카드 나열 대신 검색, 맡긴 기능 필터, 기능별 단일 운영 수준 선택을 제공합니다.
+- 직책 목록의 배정 멤버 수는 여러 직책을 가진 같은 멤버를 중복 집계하지 않습니다. 멤버와 이력 데이터는 해당 탭에 진입할 때 지연 조회합니다.
+
+직책 관련 모델은 아래 세 책임을 섞지 않습니다.
+
+1. `club_member.role_code`는 클럽 접근 등급입니다.
+   - `OWNER`: 소유자. 일반 회원 관리 API로 지정하거나 해제하지 않습니다.
+   - `ADMIN`: 클럽 설정과 직책·권한을 관리하는 관리자입니다.
+   - `MEMBER`: 기본 회원이며 필요한 기능 권한만 직책으로 위임받습니다.
+2. `club_position` + `club_member_position`은 현재 업무 직책과 기능 권한입니다.
+   - 직책 생성·수정·사용 종료·배정은 OWNER/ADMIN만 수행합니다.
+   - `ROLE_MANAGEMENT_*` 같은 거버넌스 권한을 직책으로 다시 위임하지 않습니다.
+   - 사용 종료 시 현재 배정과 열린 보유 이력을 종료하되 직책, 권한 구성, 과거 이력은 보존합니다.
+3. `club_term_executive_assignment`는 임기별 집행부 스냅샷입니다.
+   - 임기 시작 시 현재 직책 배정을 초기값으로 복사할 수 있습니다.
+   - 이 명단 자체는 현재 기능 권한을 부여하거나 회수하지 않습니다.
+
+회원 접근 등급 변경, 현재 직책 배정, 임기 집행부 편성은 서로 다른 작업입니다. 한 API나 한 토글로 함께 변경하지 않습니다. OWNER 이전이 필요해지면 기존 `/role` 변경 API에 끼워 넣지 않고, 기존 OWNER와 신규 OWNER를 함께 잠그는 전용 원자적 흐름으로 구현합니다.
+
+직책 변경에는 `club_position.version`을 포함하고 낙관적 잠금 충돌 시 최신 상세를 다시 불러오게 합니다. 기능 수준을 바꾸지 않은 이름·설명 수정은 `featureGrants`를 생략하여 정책 업데이트를 암묵적으로 적용하지 않습니다.
+
+### 6.4 API와 오류 계약
+
+- 경로는 현재 `/api/semo/v1/clubs/{clubId}` 중첩 리소스 규칙을 따릅니다.
+- 성공은 `ResponseDataDTO`, 오류는 `ResponseErrorDTO`를 사용합니다.
+- `{ success, code, message }` 공통 계약을 벗어난 전용 오류 바디를 만들지 않습니다.
+- validation, forbidden, not found, conflict를 도메인 의미에 맞게 구분합니다.
+- 존재하는 경로의 잘못된 HTTP method는 공통 405 응답이어야 합니다.
+- 생성 응답 상태는 주변 API 계약과 일치시킵니다.
+- 사용자가 해결할 메시지와 내부 진단 로그를 분리합니다.
+
+### 6.5 상태 전이와 동시성
+
+- 상태 전이는 한 서비스 메서드에서 검증하고 저장합니다.
+- 승인, 취소, 순번 승급, 마감처럼 경합 가능한 행위는 pessimistic lock이나 동등한 원자성 전략을 사용합니다.
+- 이미 처리된 요청은 성공으로 재해석할지 `409 Conflict`로 거부할지 명시합니다.
+- 승인된 데이터를 실질적으로 수정하면 재승인이 필요한지 필드 단위로 정합니다.
+- 취소·반려는 사유, 관련 미처리 항목 정리, 영향받는 사용자 알림을 함께 처리합니다.
+- 외부 연동과 DB 쓰기의 실패 경계를 명확히 하고 재시도 시 중복 생성되지 않게 합니다.
+
+### 6.6 DB 설계
+
+- 기능 전용 테이블은 도메인 이름으로 시작합니다.
+- 기존 도메인 네이밍이 굳어졌다면 기존 계열을 유지합니다.
+- 메인 엔터티, 하위 상태·이력, 연결 테이블을 구분합니다.
+- soft delete와 물리 삭제 기준을 정합니다.
+- 중복 방지 unique key와 주요 조회 index를 설계합니다.
+- 클럽 소유권과 연결 리소스의 FK를 확인합니다.
+- 기간 조회가 있으면 기간 컬럼 조건을 DB 쿼리에 포함합니다.
+- 페이지 화면에서 전체 조회 후 Java 필터링하지 않습니다.
+- 파일 다운로드는 전체 `byte[]` 적재보다 streaming을 우선 검토합니다.
+
+기준 파일:
+
+- `semo-back-service/src/main/resources/db/ddl/semo_ddl_all.sql`
+- `semo-back-service/src/main/resources/db/seed/semo_seed_all.sql`
+
+운영 DB에는 `all` 파일을 직접 실행하지 않습니다. 구조 변경은 별도 apply SQL, seed 변경은 별도 seed SQL로 적용하고 검증 후 운영 보조 SQL을 정리합니다. 기존 데이터가 있으면 백업, backfill, 검증, rollback 순서를 문서화합니다.
+
+### 6.7 조회와 성능
+
+- 목록은 DB pagination을 기본값으로 사용합니다.
+- 옵션 조회는 DB에서 limit합니다.
+- 집계는 count/sum projection을 사용합니다.
+- 필요한 ID만 batch 조회하고 N+1을 피합니다.
+- 허브와 인수인계처럼 여러 기능을 합치는 조회는 활성 기능만 호출합니다.
+- 응답 한 번에 모든 이력을 반환하지 않습니다.
+- 검색, 정렬, 기간 필터에 맞는 index를 확인합니다.
+
+### 6.8 활동 로그, 알림, 첨부
+
+활동 로그가 필요한 쓰기 작업은 `RecordClubActivity`와 `ClubActivityContextHolder`를 사용합니다.
+
+최소 기록:
+
+- 행위자
+- 기능과 대상
+- 사람이 이해할 성공 내역
+- 실패 내역
+- 필요하면 변경 전후 상태
+
+사용자가 영향을 받는 승인, 반려, 취소, 담당자 배정은 알림 대상·중복 키·딥링크를 함께 설계합니다. 딥링크는 실제 Next.js canonical route와 일치하는지 테스트합니다.
+
+비공개 첨부는 인증된 SEMO 다운로드 API를 통하고 이미지 서버 공개 URL을 최종 다운로드 경로로 사용하지 않습니다. 업로드 소유권, 최종화, DB 커밋, 고아 파일 정리를 하나의 lifecycle로 봅니다.
+
+## 7. 프론트엔드 구현 기준
+
+### 7.1 데이터와 상태 소유권
+
+- Redux: 인증 세션과 전역 presenter 성격의 client-only 상태
+- React Query: 캐시 가치가 있는 서버 상태
+- local state: 입력 draft, modal open 상태, route-local 상호작용
+
+API는 `app/lib/api.ts`와 도메인별 `app/lib/semo/*`, `app/lib/react-query/*`를 사용합니다. 컴포넌트에서 fetch 계약을 새로 만들지 않습니다.
+
+기능 활성화 저장 후 `semo:club-features-updated` 이벤트로 네비게이션을 재동기화합니다. More 메뉴는 하드코딩보다 서버 기능 응답과 `/more/summary`를 기준으로 렌더링합니다.
+
+### 7.2 라우트와 화면
+
+- App Router의 `params: Promise<...>` 계약을 유지합니다.
+- 유저 화면은 실제 사용, 조회, 신청, 제출을 우선합니다.
+- 관리자 화면은 미처리 큐, 상태 요약, 생성·검토·종료를 우선합니다.
+- 유저와 관리자가 같은 데이터를 같은 목적으로 본다면 화면을 복제하지 않습니다.
+- 레거시 URL은 canonical route redirect만 유지합니다.
+- 신규 More 기능은 홈 위젯을 기본적으로 함께 설계합니다.
+- 홈 위젯 가치가 없으면 기능 계약에 예외 이유를 남깁니다.
+
+각 화면은 다음 상태를 가져야 합니다.
+
+- loading 또는 skeleton
+- 데이터 없음
+- 기능 비활성
+- 권한 없음
+- 네트워크·서버 오류와 재시도
+- 성공 toast
+- 처리 중 중복 제출 방지
+
+### 7.3 More 허브와 결합 카드
+
+대표 화면을 공유하는 기능은 결합 카드로 표시할 수 있습니다.
+
+결합 카드 규칙:
+
+- 활성화된 기능 이름만 카드 제목과 설명에 사용합니다.
+- pending/overdue는 포함 기능의 합계입니다.
+- favorite는 포함 기능 중 하나라도 즐겨찾기면 활성으로 표시합니다.
+- 즐겨찾기 변경은 포함 기능 전체에 반영합니다.
+- 최근 사용은 포함 기능 중 가장 최근 시각을 사용합니다.
+- 카드 진입 기록은 포함 기능 전체에 반영하되 실패가 화면 이동을 막지 않습니다.
+- 선택 연동 기능이 꺼져 있으면 존재하지 않는 액션이나 탭을 노출하지 않습니다.
+
+### 7.4 UI 톤과 구성
+
+- 유저 화면은 기존 user theme token을 재사용합니다.
+- 관리자 화면은 기존 admin theme token을 재사용합니다.
+- 기능 고유색은 badge, accent border, 보조 CTA에만 제한합니다.
+- 카드, 토글, 버튼, badge의 radius와 spacing을 기존 제품 문법에 맞춥니다.
+- 같은 정보 구조를 화면마다 다른 카드 문법으로 만들지 않습니다.
+- 11px 이하 보조 텍스트 추가를 피하고 UI 계약 검사 기준을 악화시키지 않습니다.
+- 주요 터치 대상은 최소 44px를 확보합니다.
+- 아이콘만 있는 버튼은 accessible name을 제공합니다.
+- 헤더, 닫기 버튼, 좌우 여백은 데스크톱과 모바일에서 기준선이 맞아야 합니다.
+
+카드 정보 순서:
+
+1. 타입·상태 badge
+2. 날짜·시간·상태 meta
+3. 제목
+4. 설명 또는 요약
+5. 작성자·보조 meta
+6. 액션
+
+### 7.5 공유, 핀, 상태 라벨
+
+- `postedToBoard = true`: 게시판 피드에 실제 노출합니다.
+- `postedToCalendar = true`: 캘린더에 실제 노출합니다.
+- `pinned = true`: 중요 고정 영역 우선 노출 의미입니다.
+- 공유 대상 화면에서도 `게시판`, `캘린더` badge를 숨기지 않습니다.
+- badge 순서는 `타입 -> 고정/중요 -> 공유 대상`입니다.
+- 투표 상태는 참여 여부와 섞지 않고 `마감 / 대기 / 진행 중` lifecycle로 표시합니다.
+- 상태 계산과 badge는 공통 util을 사용합니다.
+
+### 7.6 입력과 선택
+
+- 날짜는 공용 `DatePopoverField`를 우선합니다.
+- 시간은 공용 `TimePopoverField`를 우선합니다.
+- 핵심 선택은 화면 톤에 맞는 segment, radio group, 선택 카드를 사용합니다.
+- 단일 선택을 여러 `aria-pressed` 버튼으로 흉내 내지 않습니다.
+- 저장 중에는 충돌 가능한 대상 선택과 상태 변경을 잠급니다.
+- 비동기 상세 선택은 request cancellation 또는 sequence guard로 늦은 응답 역전을 막습니다.
+- 필수 입력, 글자 수, 오류 위치를 제출 전에 이해할 수 있게 표시합니다.
+
+### 7.7 모달과 오버레이 결정
+
+모달은 목적에 따라 한 가지 계층을 선택합니다.
+
+1. 전역 alert/confirm/toast
+   - `GlobalModalViewport`와 공용 hook
+2. URL로 복구되어야 하는 상세·편집
+   - `RouteModal`
+3. 기능 내부의 국소 작업
+   - feature-local modal 또는 sheet
+
+브라우저 `window.confirm`을 신규 코드에 사용하지 않습니다.
+
+모달 완료 기준:
+
+- 의미 있는 제목과 설명
+- 닫기 버튼의 일관된 위치와 accessible name
+- ESC와 바깥 클릭 정책
+- 최초 포커스와 닫은 후 트리거 포커스 복귀
+- 배경 스크롤 잠금
+- 모바일 높이와 내부 스크롤
+- 저장 중 닫기·중복 제출 방지
+- destructive/primary tone 구분
+- `useReducedMotion` 또는 공용 motion 정책
+
+### 7.8 접근성과 반응형
+
+- 데스크톱과 390px 모바일을 최소 기준으로 확인합니다.
+- 가로 overflow, 잘린 메뉴, 겹친 fixed 요소를 확인합니다.
+- Tab 순서가 시각 순서와 일치해야 합니다.
+- radio group은 방향키 이동을 지원합니다.
+- 날짜·시간 popover는 Tab, 화살표, Home/End, Enter/Space, Esc를 확인합니다.
+- loading, error, empty 상태가 스크린리더에 모호하지 않아야 합니다.
+- Motion 컴포넌트는 reduced motion 경로를 유지합니다.
+
+## 8. 기능 구현 순서
+
+1. 제품 문제와 핵심 시나리오 정의
+2. 대표 화면 또는 독립 More 화면 결정
+3. 독립·필수·정책·선택 의존성 계약 작성
+4. lifecycle과 권한 행렬 작성
+5. DB 모델, unique/FK/index, 보존 정책 설계
+6. 전체 DDL과 seed 갱신
+7. 운영 반영 SQL과 데이터 이관 계획 작성
+8. 백엔드 서비스와 API 구현
+9. 활동 로그, 알림, 첨부, 딥링크 연결
+10. 유저·관리자 API 타입과 React Query 연결
+11. 유저 화면, 관리자 화면, 홈 위젯 구현
+12. More 허브·하단 네비게이션·직책 권한 연결
+13. 단독·조합·비활성·권한·상태 전이 테스트
+14. lint, build, 전체 백엔드 테스트, 브라우저 검증
+15. README와 이 가이드의 코드 사실 갱신
+
+프론트부터 mock으로 완성한 뒤 백엔드 계약을 맞추는 방식은 피합니다. 카탈로그, 활성화, 도메인 API, 화면을 한 기능 단위로 함께 완료합니다.
+
+## 9. 테스트 매트릭스
+
+### 9.1 백엔드 필수
+
+- 기능 OFF: 메뉴·API·연결 후보 차단
+- 기능 단독 ON: 핵심 생성·조회·수정 흐름 성공
+- 필수 의존 기능 ON/OFF 정규화
+- 정책 의존 기능의 정책별 mandatory/available 응답
+- 선택 연동 상대 기능 OFF/ON 두 시나리오
+- OWNER/ADMIN 허용
+- MEMBER + 직책 배정 없음
+- MEMBER + 직책 배정 + 기능 운영 수준
+- MEMBER + 민감 권한 별도 승인/미승인
+- 정책 버전 상승 전후 기존 투영 유지와 명시적 업데이트
+- SELF/ANY 소유권
+- 정상 상태 전이와 금지된 상태 전이
+- 동시 승인·취소·중복 요청
+- 400/401/403/404/405/409/500 공통 오류 envelope
+- 딥링크와 알림 중복 키
+- pagination, query count 또는 bounded query
+
+최소 실행:
+
+```bash
+./gradlew :semo-back-service:compileJava
+./gradlew :semo-back-service:test
+```
+
+### 9.2 프론트 필수
+
+- 유저·관리자 canonical route
+- 기능 OFF와 권한 없음 상태
+- 독립 기능 단독 메뉴와 empty state
+- 필수 기능 자동 활성화·종속 비활성화 안내
+- 정책상 필수·사용 불가 토글
+- 선택 연동 UI 숨김과 설명
+- loading/error/retry/success
+- 중복 제출과 비동기 응답 역전 방지
+- keyboard와 focus
+- desktop/mobile overflow
+- console error와 4xx/5xx 네트워크 오류
+- 결합 카드 pending/favorite/recent usage
+
+최소 실행:
+
+```bash
+cd semo-front-service
+npm run lint
+npm run verify:auth
+npm run verify:ui
+npm run build
+```
+
+UI를 변경했으면 가능할 때 실제 브라우저에서 모든 신규 액션을 클릭합니다. 브라우저 검증을 하지 못했다면 자동 검증과 구분해 보고합니다.
+
+### 9.3 DB와 운영 검증
+
+- 신규 테이블과 컬럼 존재
+- FK, unique key, index
+- 기존 데이터 backfill 건수
+- orphan 또는 중복 데이터
+- master/slave datasource health
+- apply 후 seed와 코드 카탈로그 일치
+- rollback 가능 여부
+
+## 10. 문서와 코드 사실 유지
+
+문서 책임:
+
+- 이 문서: More 기능 판단, 의존성, 구현, UIUX, 검증의 단일 가이드
+- `semo-front-service/AGENTS.md`: 프론트 서비스 실행·스택·파일 규칙
+- `semo-back-service/AGENTS.md`: 백엔드 서비스 실행·스택·공통 계약
+- 각 README: 현재 실행 방법, route/API와 통합 의존성
+- DDL/seed: 실제 설치 가능한 DB 기준
+
+기능 수, 상태, 경로, 의존성은 이 문서와 코드가 항상 일치해야 합니다. 완료된 기능을 로드맵의 미래 항목으로 남기거나 제거된 API를 구현 현황에 보존하지 않습니다.
+
+문서 갱신 대상:
+
+- 이 문서의 기능 카탈로그와 의존성 표
+- `semo-front-service/README.md`
+- `semo-back-service/README.md`
+- `semo-front-service/AGENTS.md`
+- `semo-back-service/AGENTS.md`
+- 루트 `AGENTS_DOCUMENTATION_INDEX.md`
+
+## 11. Definition of Done
+
+### 제품과 계약
+
+- [ ] 해결할 운영 문제와 핵심 사용자가 명확합니다.
+- [ ] 대표 화면과 독립 More 화면 판단 근거가 있습니다.
+- [ ] 독립·필수·정책·선택 의존성이 명시되었습니다.
+- [ ] 기능 단독 상태에서 핵심 흐름이 완결됩니다.
+- [ ] lifecycle과 허용·금지 상태 전이가 정의되었습니다.
+
+### 카탈로그와 권한
+
+- [ ] `feature_catalog`와 `feature_activation`이 연결되었습니다.
+- [ ] user/admin canonical path와 navigation scope가 정확합니다.
+- [ ] required/mandatory/available 메타데이터가 정확합니다.
+- [ ] OWNER/ADMIN/MEMBER와 SELF/ANY 권한이 검증되었습니다.
+- [ ] 직책 권한 seed와 실제 evaluator가 연결되었습니다.
+- [ ] 위임할 액션만 `ClubPositionAccessPolicy`의 운영 수준 또는 추가 승인 권한에 명시했습니다.
+- [ ] 신규 민감 액션이 기존 직책에 자동 상속되지 않으며, 관계 기반 제한은 서비스 불변식으로 검증했습니다.
+- [ ] 프론트 쓰기 모델이 원자 권한 배열이 아닌 기능별 운영 수준이며 정책 버전 충돌과 업데이트 흐름이 검증되었습니다.
+
+### 데이터와 백엔드
+
+- [ ] 엔터티, 이력, 연결 테이블 경계가 명확합니다.
+- [ ] FK, unique key, index와 보존 정책이 있습니다.
+- [ ] 전체 DDL/seed와 운영 반영 SQL이 준비되었습니다.
+- [ ] 서비스 진입부가 기능 OFF를 방어합니다.
+- [ ] 비활성 선택 기능의 데이터가 연결 후보에 노출되지 않습니다.
+- [ ] 상태 전이, 동시성, idempotency가 검증되었습니다.
+- [ ] 공통 성공·오류 envelope과 HTTP method 계약을 지킵니다.
+- [ ] 활동 로그, 알림, 딥링크, 첨부 lifecycle이 검증되었습니다.
+- [ ] 페이지·집계·옵션 조회가 bounded query입니다.
+
+### 프론트와 UIUX
+
+- [ ] 유저·관리자 화면과 홈 위젯 또는 예외 근거가 있습니다.
+- [ ] More 허브와 하단 네비게이션이 서버 응답에 맞게 갱신됩니다.
+- [ ] loading, empty, disabled, forbidden, error, success 상태가 있습니다.
+- [ ] 선택 연동이 없을 때 불가능한 액션을 숨깁니다.
+- [ ] 모달, 포커스, 키보드, reduced motion을 검증했습니다.
+- [ ] 모바일과 데스크톱에서 overflow와 배치를 확인했습니다.
+- [ ] 공유·핀·상태 badge 문법이 대표 화면과 일치합니다.
+
+### 검증과 문서
+
+- [ ] 백엔드 기능·권한·HTTP 통합 테스트가 통과합니다.
+- [ ] 프론트 lint, auth, UI contract, build가 통과합니다.
+- [ ] 가능한 경우 실제 브라우저 액션을 검증했습니다.
+- [ ] DB 적용 결과와 데이터 정합성을 확인했습니다.
+- [ ] README, 서비스 AGENTS, 문서 인덱스가 현재 코드와 일치합니다.
+- [ ] 적용이 끝난 임시 운영 SQL을 정리했습니다.
+
+모든 항목을 기계적으로 채우는 것이 목적은 아닙니다. 적용하지 않는 항목은 기능 특성상 불필요한 이유를 남겨야 완료로 판단합니다.

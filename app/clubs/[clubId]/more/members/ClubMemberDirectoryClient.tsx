@@ -69,7 +69,7 @@ function getMemberSearchText(
 }
 
 function isLeaderMember(member: ClubMemberDirectoryMember) {
-  return member.roleLabel === "오너" || member.roleLabel === "어드민";
+  return member.roleCode === "OWNER" || member.roleCode === "ADMIN";
 }
 
 function matchesFilter(member: ClubMemberDirectoryMember, filter: MemberFilterKey) {
@@ -89,7 +89,7 @@ function getMemberTone(
   member: ClubMemberDirectoryMember,
   settings: ClubMemberDirectorySettings,
 ) {
-  if (settings.showPositions && member.roleLabel === "오너") {
+  if (settings.showPositions && member.roleCode === "OWNER") {
     return {
       rail: "from-slate-900 via-slate-700 to-[#135bec]",
       glow: "from-[#135bec]/18 via-blue-100/80 to-transparent",
@@ -98,7 +98,7 @@ function getMemberTone(
       label: "핵심 운영",
     };
   }
-  if (settings.showPositions && member.roleLabel === "어드민") {
+  if (settings.showPositions && member.roleCode === "ADMIN") {
     return {
       rail: "from-[#135bec] via-blue-500 to-sky-400",
       glow: "from-[#135bec]/16 via-blue-100/75 to-transparent",
@@ -354,7 +354,7 @@ export function ClubMemberDirectoryClient({
                   value={settings.showPositions ? `${leaderCount}` : "비공개"}
                   detail={
                     settings.showPositions
-                      ? "오너와 어드민 멤버를 바로 구분합니다."
+                      ? "소유자와 관리자 멤버를 바로 구분합니다."
                       : "운영 설정에서 직책 공개가 꺼져 있습니다."
                   }
                 />

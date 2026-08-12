@@ -15,10 +15,12 @@ import {
 } from "@/app/lib/react-query/members/mutations";
 
 const ROLE_OPTIONS = [
-  { code: "OWNER", label: "오너" },
-  { code: "ADMIN", label: "어드민" },
-  { code: "MEMBER", label: "회원" },
+  { code: "OWNER", label: "소유자" },
+  { code: "ADMIN", label: "관리자" },
+  { code: "MEMBER", label: "일반 회원" },
 ] as const;
+
+const EDITABLE_ROLE_OPTIONS = ROLE_OPTIONS.filter((option) => option.code !== "OWNER");
 
 const STATUS_FILTERS = ["전체", "활동 중", "휴면"] as const;
 const STATUS_OPTIONS = [
@@ -146,9 +148,12 @@ function MemberManageModal({
 
           <div className="mt-6 space-y-5">
             <section>
-              <p className="mb-2 text-sm font-bold text-slate-900">권한</p>
-              <div className="grid grid-cols-3 gap-2">
-                {ROLE_OPTIONS.map((option) => (
+              <p className="mb-2 text-sm font-bold text-slate-900">클럽 접근 등급</p>
+              <p className="mb-3 text-xs leading-5 text-slate-500">
+                관리자는 클럽 전체 설정을 관리합니다. 세부 업무만 맡길 때는 일반 회원으로 두고 직책·권한에서 위임하세요.
+              </p>
+              <div className="grid grid-cols-2 gap-2">
+                {EDITABLE_ROLE_OPTIONS.map((option) => (
                   <button
                     key={option.code}
                     type="button"
@@ -318,7 +323,7 @@ export function ClubAdminMembersClient({
     <div className="min-h-screen bg-[var(--background-light)] text-slate-900">
       <div className="min-h-screen bg-[var(--background-light)]">
         <ClubPageHeader
-          title="회원 관리"
+          title="회원·접근 관리"
           subtitle={clubName}
           icon="groups"
           theme="admin"
@@ -337,7 +342,7 @@ export function ClubAdminMembersClient({
                   const nextValue = event.target.value;
                   startTransition(() => setQuery(nextValue));
                 }}
-                placeholder="멤버 이름, 역할 검색"
+                placeholder="멤버 이름, 접근 등급 검색"
                 className="h-11 w-full rounded-xl border-none bg-slate-100 pl-10 pr-4 text-sm placeholder:text-slate-500 focus:ring-2 focus:ring-[var(--primary)]/50"
               />
             </label>

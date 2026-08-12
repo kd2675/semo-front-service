@@ -31,7 +31,7 @@ const FEATURE_DESCRIPTIONS: Record<string, string> = {
   MEMBER_DIRECTORY: "멤버가 공개한 프로필과 직책을 확인합니다.",
   FEEDBACK: "운영진에게 비공개 피드백을 보내고 답변을 확인합니다.",
   JOIN_REQUEST: "가입 신청 대기열을 검토하고 승인 또는 반려합니다.",
-  ROLE_MANAGEMENT: "직책별 책임과 세부 권한을 구성하고 멤버에게 배정합니다.",
+  ROLE_MANAGEMENT: "OWNER와 ADMIN이 직책별 책임과 기능 권한을 구성해 일반 회원에게 위임합니다.",
   HANDOVER: "운영 임기, 집행부, 미완료 업무와 다음 담당자 메모를 한곳에서 관리합니다.",
   DECISION_LOG: "회의의 배경과 결정 이유, 참여자, 관련 운영 항목과 후속 업무를 확인합니다.",
 };
@@ -103,6 +103,33 @@ function competitionItem(
   });
 }
 
+function scheduleItem(
+  orderedFeatures: ClubFeatureSummary[],
+  clubId: string,
+): MoreNavigationItem | null {
+  const schedule = orderedFeatures.some((feature) => feature.featureKey === "SCHEDULE_MANAGE");
+  const poll = orderedFeatures.some((feature) => feature.featureKey === "POLL");
+  const attendance = orderedFeatures.some((feature) => feature.featureKey === "ATTENDANCE");
+  if (!schedule && !poll && !attendance) return null;
+
+  const labels = [schedule ? "일정" : null, poll ? "투표" : null, attendance ? "참석" : null]
+    .filter((label): label is string => Boolean(label));
+  const description = schedule && poll && attendance
+    ? "일정 생성, 참가 응답, 실제 출석 확인과 투표를 대표 캘린더에서 관리합니다."
+    : attendance
+      ? `${labels.join("·")} 기능을 대표 캘린더에서 함께 관리합니다.`
+      : `${labels.join("·")} 기능을 대표 캘린더에서 관리합니다.`;
+
+  return combinedItem(orderedFeatures, SCHEDULE_FEATURE_KEYS, {
+    key: "SCHEDULE_CONTENT",
+    label: labels.join("·"),
+    description,
+    iconName: "calendar_month",
+    href: `/clubs/${clubId}/schedule`,
+    group: "CONTENT",
+  });
+}
+
 function pushOnceAtFeature(
   items: MoreNavigationItem[],
   emittedKeys: Set<string>,
@@ -148,14 +175,7 @@ export function buildUserMoreNavigation(features: ClubFeatureSummary[], clubId: 
 
 export function buildAdminMoreNavigation(features: ClubFeatureSummary[], clubId: string): MoreNavigationItem[] {
   const ordered = orderedEnabledFeatures(features);
-  const schedule = combinedItem(ordered, SCHEDULE_FEATURE_KEYS, {
-    key: "SCHEDULE_CONTENT",
-    label: "일정·투표·참석",
-    description: "일정 생성부터 참가 응답, 실제 출석 확인과 투표까지 대표 캘린더에서 관리합니다.",
-    iconName: "calendar_month",
-    href: `/clubs/${clubId}/schedule`,
-    group: "CONTENT",
-  });
+  const schedule = scheduleItem(ordered, clubId);
   const competition = competitionItem(ordered, clubId, true);
   const items: MoreNavigationItem[] = [];
   const emittedKeys = new Set<string>();
@@ -231,7 +251,11 @@ export function decorateMoreNavigationItems(
     const itemStatuses = item.featureKeys
       .map((featureKey) => statusByFeatureKey.get(featureKey))
       .filter((status): status is ClubMoreFeatureStatus => Boolean(status));
-    const primaryStatus = statusByFeatureKey.get(item.featureKeys[0] ?? "");
+    const lastUsedAt = itemStatuses
+      .map((status) => status.lastUsedAt)
+      .filter((value): value is string => Boolean(value))
+      .toSorted()
+      .at(-1) ?? null;
 
     return {
       ...item,
@@ -243,8 +267,8 @@ export function decorateMoreNavigationItems(
         (total, status) => total + (mode === "admin" ? status.adminOverdueCount : status.userOverdueCount),
         0,
       ),
-      favorite: primaryStatus?.favorite ?? false,
-      lastUsedAt: primaryStatus?.lastUsedAt ?? null,
+      favorite: itemStatuses.some((status) => status.favorite),
+      lastUsedAt,
     };
   });
 }

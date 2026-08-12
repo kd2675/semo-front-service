@@ -108,7 +108,7 @@ export function reviewTournamentMutationOptions(clubId: string, tournamentRecord
 
 export function cancelTournamentMutationOptions(clubId: string, tournamentRecordId: string) {
   return mutationOptions({
-    mutationFn: () => cancelClubTournament(clubId, tournamentRecordId, { cancelReason: "작성자가 조기 취소" }),
+    mutationFn: (cancelReason: string) => cancelClubTournament(clubId, tournamentRecordId, { cancelReason }),
   });
 }
 

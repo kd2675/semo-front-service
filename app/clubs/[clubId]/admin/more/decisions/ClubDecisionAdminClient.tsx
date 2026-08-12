@@ -6,6 +6,7 @@ import { useMemo, useState, type FormEvent } from "react";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import { ClubRouteErrorState, ClubRouteLoadingState } from "@/app/components/ClubRouteState";
 import { DecisionRecordCard } from "@/app/components/DecisionRecordCard";
+import { ScheduleActionConfirmModal } from "@/app/clubs/[clubId]/schedule/modals/ScheduleActionConfirmModal";
 import { useAppToast } from "@/app/hooks/useAppToast";
 import { clubQueryKeys } from "@/app/lib/react-query/club/queries";
 import {
@@ -21,6 +22,14 @@ import type { DecisionRecord, UpsertDecisionRecordRequest } from "@/app/lib/semo
 import { DecisionRecordEditor, type DecisionEditorDraft } from "./DecisionRecordEditor";
 
 type StatusFilter = "ACTIVE" | "DRAFT" | "CONFIRMED" | "HISTORY";
+type DecisionConfirmation = {
+  title: string;
+  description: string;
+  confirmLabel: string;
+  tone: "danger" | "primary";
+  iconName: string;
+  run: () => Promise<void>;
+};
 
 const EMPTY_DRAFT: DecisionEditorDraft = {
   recordType: "DECISION",
@@ -75,6 +84,7 @@ export function ClubDecisionAdminClient({ clubId }: { clubId: string }) {
   const [editorOpen, setEditorOpen] = useState(false);
   const [editingRecordId, setEditingRecordId] = useState<number | null>(null);
   const [draft, setDraft] = useState<DecisionEditorDraft>(EMPTY_DRAFT);
+  const [confirmation, setConfirmation] = useState<DecisionConfirmation | null>(null);
   const centerQuery = useQuery(adminDecisionCenterQueryOptions(clubId));
   const center = centerQuery.data ?? null;
   const createMutation = useMutation(createDecisionRecordMutationOptions(clubId));
@@ -196,25 +206,63 @@ export function ClubDecisionAdminClient({ clubId }: { clubId: string }) {
             canManage={center.canManage}
             pending={pending}
             onEdit={startEdit}
-            onConfirm={async (target) => {
-              const replacementText = target.supersedesDecisionTitle ? `\n이전 결정: ${target.supersedesDecisionTitle}` : "";
-              if (!window.confirm(`기록을 확정하면 내용을 수정할 수 없습니다.\n\n대상 기록: ${target.title}${replacementText}\n\n계속할까요?`)) return;
-              const result = await confirmMutation.mutateAsync(target.decisionRecordId);
-              await reportResult(result, "회의록·결정을 확정했습니다.");
+            onConfirm={(target) => {
+              setConfirmation({
+                title: "기록을 확정할까요?",
+                description: `확정 후에는 내용을 직접 수정할 수 없습니다. 대상 기록: ${target.title}${target.supersedesDecisionTitle ? ` · 이전 결정: ${target.supersedesDecisionTitle}` : ""}`,
+                confirmLabel: "기록 확정",
+                tone: "primary",
+                iconName: "verified",
+                run: async () => {
+                  const result = await confirmMutation.mutateAsync(target.decisionRecordId);
+                  await reportResult(result, "회의록·결정을 확정했습니다.");
+                },
+              });
             }}
-            onArchive={async (target) => {
-              if (!window.confirm(`기록을 보관할까요?\n\n대상 기록: ${target.title}`)) return;
-              const result = await archiveMutation.mutateAsync(target.decisionRecordId);
-              await reportResult(result, "회의록·결정을 보관했습니다.");
+            onArchive={(target) => {
+              setConfirmation({
+                title: "기록을 보관할까요?",
+                description: `활성 기록 목록에서 이력으로 이동합니다. 대상 기록: ${target.title}`,
+                confirmLabel: "기록 보관",
+                tone: "danger",
+                iconName: "archive",
+                run: async () => {
+                  const result = await archiveMutation.mutateAsync(target.decisionRecordId);
+                  await reportResult(result, "회의록·결정을 보관했습니다.");
+                },
+              });
             }}
-            onDelete={async (target) => {
-              if (!window.confirm(`초안을 삭제할까요?\n\n대상 기록: ${target.title}`)) return;
-              const result = await deleteMutation.mutateAsync(target.decisionRecordId);
-              await reportResult(result, "회의록·결정 초안을 삭제했습니다.");
+            onDelete={(target) => {
+              setConfirmation({
+                title: "초안을 삭제할까요?",
+                description: `저장한 초안이 삭제됩니다. 대상 기록: ${target.title}`,
+                confirmLabel: "초안 삭제",
+                tone: "danger",
+                iconName: "delete",
+                run: async () => {
+                  const result = await deleteMutation.mutateAsync(target.decisionRecordId);
+                  await reportResult(result, "회의록·결정 초안을 삭제했습니다.");
+                },
+              });
             }}
           />) : <div className="rounded-[26px] border border-dashed border-slate-300 bg-white px-5 py-10 text-center"><span className="material-symbols-outlined text-[34px] text-slate-300" aria-hidden="true">history_edu</span><p className="mt-3 text-sm font-black text-slate-700">조건에 맞는 기록이 없습니다.</p><p className="mt-1 text-xs leading-5 text-slate-400">새 기록에서 회의 배경과 결정 내용을 초안으로 남겨보세요.</p></div>}
         </section>
       </main>
+      {confirmation ? (
+        <ScheduleActionConfirmModal
+          title={confirmation.title}
+          description={confirmation.description}
+          confirmLabel={confirmation.confirmLabel}
+          busyLabel="처리 중..."
+          busy={pending}
+          iconName={confirmation.iconName}
+          tone={confirmation.tone}
+          onCancel={() => { if (!pending) setConfirmation(null); }}
+          onConfirm={() => {
+            void confirmation.run().finally(() => setConfirmation(null));
+          }}
+        />
+      ) : null}
     </div>
   );
 }

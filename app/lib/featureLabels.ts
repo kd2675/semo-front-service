@@ -12,7 +12,7 @@ const FEATURE_LABELS: Record<string, string> = {
   FEEDBACK: "피드백",
   MEMBER_DIRECTORY: "멤버·조직",
   TODO: "할 일",
-  ROLE_MANAGEMENT: "직책 관리",
+  ROLE_MANAGEMENT: "직책·권한",
   HANDOVER: "인수인계 센터",
   DECISION_LOG: "회의록·결정",
 };

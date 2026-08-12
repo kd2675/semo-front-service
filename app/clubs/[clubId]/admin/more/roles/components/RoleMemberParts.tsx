@@ -19,12 +19,12 @@ export function RoleMemberIdentity({
     <div className="flex min-w-0 items-center gap-3">
       {member.avatarImageUrl ? (
         <div
-          className={`${avatarSizeClass} shrink-0 rounded-2xl bg-cover bg-center shadow-sm`}
+          className={`${avatarSizeClass} shrink-0 rounded-[var(--radius-card)] bg-cover bg-center shadow-sm`}
           style={{ backgroundImage: `url('${member.avatarImageUrl}')` }}
         />
       ) : (
         <div
-          className={`flex ${avatarSizeClass} shrink-0 items-center justify-center rounded-2xl bg-[#efe6d8] text-sm font-black text-[#8b4b00] shadow-sm`}
+          className={`flex ${avatarSizeClass} shrink-0 items-center justify-center rounded-[var(--radius-card)] bg-orange-50 text-sm font-black text-orange-800 shadow-sm`}
         >
           {makeInitials(member.displayName)}
         </div>

@@ -172,6 +172,11 @@ export type ClubFeatureSummary = {
   enabled: boolean;
   userPath: string;
   adminPath: string;
+  requiredFeatureKeys: string[];
+  mandatory: boolean;
+  mandatoryReason: string | null;
+  available: boolean;
+  unavailableReason: string | null;
 };
 
 export type ClubMoreSummary = {

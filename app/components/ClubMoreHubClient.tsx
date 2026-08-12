@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import { ClubRouteErrorState, ClubRouteLoadingState } from "@/app/components/ClubRouteState";
@@ -38,10 +38,6 @@ function formatRecentUsage(value: string | null | undefined) {
   }).format(date);
 }
 
-function primaryFeatureKey(item: MoreNavigationItem) {
-  return item.featureKeys[0] ?? null;
-}
-
 export function ClubMoreHubClient({ clubId, mode }: ClubMoreHubClientProps) {
   const isAdmin = mode === "admin";
   const queryClient = useQueryClient();
@@ -49,6 +45,7 @@ export function ClubMoreHubClient({ clubId, mode }: ClubMoreHubClientProps) {
   const summaryQuery = useQuery(clubMoreSummaryQueryOptions(clubId));
   const favoriteMutation = useMutation(updateClubMoreFavoriteMutationOptions(clubId));
   const usageMutation = useMutation(markClubMoreFeatureUsedMutationOptions(clubId));
+  const [favoritePendingItemKey, setFavoritePendingItemKey] = useState<string | null>(null);
   const summary = summaryQuery.data ?? null;
 
   const items = useMemo(() => {
@@ -89,28 +86,33 @@ export function ClubMoreHubClient({ clubId, mode }: ClubMoreHubClientProps) {
   const theme = isAdmin ? "admin" : "user";
 
   const handleNavigate = (item: MoreNavigationItem) => {
-    const featureKey = primaryFeatureKey(item);
-    if (!featureKey) return;
-    usageMutation.mutate(featureKey, {
-      onSuccess: () => {
+    if (item.featureKeys.length === 0) return;
+    void Promise.allSettled(item.featureKeys.map((featureKey) => usageMutation.mutateAsync(featureKey)))
+      .then(() => {
         void queryClient.invalidateQueries({ queryKey: clubQueryKeys.moreSummary(clubId) });
-      },
-    });
+      });
   };
 
   const handleFavorite = async (item: MoreNavigationItem) => {
-    const featureKey = primaryFeatureKey(item);
-    if (!featureKey) return;
-    const result = await favoriteMutation.mutateAsync({
-      featureKey,
-      favorite: !item.favorite,
-    });
-    if (!result.ok) {
-      showToast(result.message ?? "즐겨찾기를 저장하지 못했습니다.", "error");
-      return;
+    if (item.featureKeys.length === 0) return;
+    setFavoritePendingItemKey(item.key);
+    try {
+      const results = await Promise.all(item.featureKeys.map((featureKey) => favoriteMutation.mutateAsync({
+        featureKey,
+        favorite: !item.favorite,
+      })));
+      const failedResult = results.find((result) => !result.ok);
+      if (failedResult) {
+        showToast(failedResult.message ?? "즐겨찾기를 저장하지 못했습니다.", "error");
+        return;
+      }
+      showToast(item.favorite ? "즐겨찾기에서 해제했습니다." : "즐겨찾기에 추가했습니다.", "success");
+    } catch {
+      showToast("즐겨찾기를 저장하지 못했습니다. 잠시 후 다시 시도해 주세요.", "error");
+    } finally {
+      setFavoritePendingItemKey(null);
+      void queryClient.invalidateQueries({ queryKey: clubQueryKeys.moreSummary(clubId) });
     }
-    await queryClient.invalidateQueries({ queryKey: clubQueryKeys.moreSummary(clubId) });
-    showToast(item.favorite ? "즐겨찾기에서 해제했습니다." : "즐겨찾기에 추가했습니다.", "success");
   };
 
   if (summaryQuery.isError && !summary) {
@@ -170,7 +172,7 @@ export function ClubMoreHubClient({ clubId, mode }: ClubMoreHubClientProps) {
                   mode={mode}
                   onNavigate={handleNavigate}
                   onFavorite={handleFavorite}
-                  favoritePending={favoriteMutation.isPending && favoriteMutation.variables?.featureKey === primaryFeatureKey(item)}
+                  favoritePending={favoritePendingItemKey === item.key}
                 />
               ))}
             </div>
@@ -187,7 +189,7 @@ export function ClubMoreHubClient({ clubId, mode }: ClubMoreHubClientProps) {
                   mode={mode}
                   onNavigate={handleNavigate}
                   onFavorite={handleFavorite}
-                  favoritePending={favoriteMutation.isPending && favoriteMutation.variables?.featureKey === primaryFeatureKey(item)}
+                  favoritePending={favoritePendingItemKey === item.key}
                 />
               ))}
             </div>
@@ -229,7 +231,7 @@ export function ClubMoreHubClient({ clubId, mode }: ClubMoreHubClientProps) {
                         mode={mode}
                         onNavigate={handleNavigate}
                         onFavorite={handleFavorite}
-                        favoritePending={favoriteMutation.isPending && favoriteMutation.variables?.featureKey === primaryFeatureKey(item)}
+                        favoritePending={favoritePendingItemKey === item.key}
                       />
                     ))}
                   </div>

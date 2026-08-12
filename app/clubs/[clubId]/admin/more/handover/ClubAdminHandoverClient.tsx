@@ -5,6 +5,7 @@ import { useMemo, useState, type FormEvent } from "react";
 
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import { ClubRouteErrorState, ClubRouteLoadingState } from "@/app/components/ClubRouteState";
+import { ScheduleActionConfirmModal } from "@/app/clubs/[clubId]/schedule/modals/ScheduleActionConfirmModal";
 import { ResourceAttachmentPanel } from "@/app/components/ResourceAttachmentPanel";
 import { RouterLink } from "@/app/components/RouterLink";
 import { useAppToast } from "@/app/hooks/useAppToast";
@@ -35,6 +36,14 @@ import type {
 } from "@/app/lib/semo/handover";
 
 type HandoverTab = "OVERVIEW" | "TERMS" | "EXECUTIVES" | "NOTES";
+type HandoverConfirmation = {
+  title: string;
+  description: string;
+  confirmLabel: string;
+  iconName: string;
+  tone: "danger" | "primary";
+  run: () => Promise<void>;
+};
 
 const TABS: Array<{ key: HandoverTab; label: string; icon: string }> = [
   { key: "OVERVIEW", label: "운영 현황", icon: "space_dashboard" },
@@ -122,6 +131,7 @@ export function ClubAdminHandoverClient({ clubId }: { clubId: string }) {
     dueAt: "",
     ready: true,
   });
+  const [confirmation, setConfirmation] = useState<HandoverConfirmation | null>(null);
 
   const centerQuery = useQuery(handoverCenterQueryOptions(clubId, selectedTermId));
   const center = centerQuery.data ?? null;
@@ -194,18 +204,33 @@ export function ClubAdminHandoverClient({ clubId }: { clubId: string }) {
 
   const activateTerm = async (term: ClubOperatingTerm) => {
     const currentName = center?.activeTerm?.termName;
-    const message = currentName && center?.activeTerm?.clubOperatingTermId !== term.clubOperatingTermId
-      ? `새 임기를 시작하면 현재 운영 임기가 종료되고 미완료 항목이 이관됩니다.\n\n새 임기: ${term.termName}\n현재 임기: ${currentName}\n\n계속할까요?`
-      : `현재 운영 임기로 시작할까요?\n\n대상 임기: ${term.termName}`;
-    if (!window.confirm(message)) return;
-    const result = await activateTermMutation.mutateAsync(term.clubOperatingTermId);
-    if (await reportResult(result, "새 운영 임기를 시작했습니다.")) setSelectedTermId(term.clubOperatingTermId);
+    setConfirmation({
+      title: "새 운영 임기를 시작할까요?",
+      description: currentName && center?.activeTerm?.clubOperatingTermId !== term.clubOperatingTermId
+        ? `현재 임기 '${currentName}'를 종료하고 미완료 항목을 '${term.termName}' 임기로 이관합니다.`
+        : `'${term.termName}' 임기를 현재 운영 임기로 시작합니다.`,
+      confirmLabel: "임기 시작",
+      iconName: "play_arrow",
+      tone: "primary",
+      run: async () => {
+        const result = await activateTermMutation.mutateAsync(term.clubOperatingTermId);
+        if (await reportResult(result, "새 운영 임기를 시작했습니다.")) setSelectedTermId(term.clubOperatingTermId);
+      },
+    });
   };
 
   const closeTerm = async (term: ClubOperatingTerm) => {
-    if (!window.confirm(`운영 임기를 종료할까요?\n\n대상 임기: ${term.termName}\n종료된 임기와 집행부 스냅샷은 수정할 수 없습니다.`)) return;
-    const result = await closeTermMutation.mutateAsync(term.clubOperatingTermId);
-    await reportResult(result, "운영 임기를 종료했습니다.");
+    setConfirmation({
+      title: "운영 임기를 종료할까요?",
+      description: `'${term.termName}' 임기와 집행부 스냅샷은 종료 후 수정할 수 없습니다.`,
+      confirmLabel: "임기 종료",
+      iconName: "stop_circle",
+      tone: "danger",
+      run: async () => {
+        const result = await closeTermMutation.mutateAsync(term.clubOperatingTermId);
+        await reportResult(result, "운영 임기를 종료했습니다.");
+      },
+    });
   };
 
   const submitExecutive = async (event: FormEvent<HTMLFormElement>) => {
@@ -394,9 +419,17 @@ export function ClubAdminHandoverClient({ clubId }: { clubId: string }) {
             onFormChange={setExecutiveForm}
             onSubmit={submitExecutive}
             onDelete={async (assignmentId) => {
-              if (!window.confirm("이 집행부 배정을 제거할까요?")) return;
-              const result = await deleteExecutiveMutation.mutateAsync(assignmentId);
-              await reportResult(result, "집행부 배정을 제거했습니다.");
+              setConfirmation({
+                title: "집행부 배정을 제거할까요?",
+                description: "선택한 임기의 집행부 구성에서 이 배정을 제거합니다.",
+                confirmLabel: "배정 제거",
+                iconName: "person_remove",
+                tone: "danger",
+                run: async () => {
+                  const result = await deleteExecutiveMutation.mutateAsync(assignmentId);
+                  await reportResult(result, "집행부 배정을 제거했습니다.");
+                },
+              });
             }}
             pending={executiveMutation.isPending || deleteExecutiveMutation.isPending}
           />
@@ -418,14 +451,41 @@ export function ClubAdminHandoverClient({ clubId }: { clubId: string }) {
               await reportResult(result, "인수인계 메모를 확인했습니다.");
             }}
             onDelete={async (note) => {
-              if (!window.confirm(`인수인계 메모를 삭제할까요?\n\n대상 메모: ${note.title}`)) return;
-              const result = await deleteNoteMutation.mutateAsync(note.clubHandoverNoteId);
-              await reportResult(result, "인수인계 메모를 삭제했습니다.");
+              setConfirmation({
+                title: "인수인계 메모를 삭제할까요?",
+                description: `삭제할 메모: ${note.title}`,
+                confirmLabel: "메모 삭제",
+                iconName: "delete",
+                tone: "danger",
+                run: async () => {
+                  const result = await deleteNoteMutation.mutateAsync(note.clubHandoverNoteId);
+                  await reportResult(result, "인수인계 메모를 삭제했습니다.");
+                },
+              });
             }}
             pending={createNoteMutation.isPending || updateNoteMutation.isPending || acknowledgeMutation.isPending || deleteNoteMutation.isPending}
           />
         ) : null}
       </main>
+      {confirmation ? (
+        <ScheduleActionConfirmModal
+          title={confirmation.title}
+          description={confirmation.description}
+          confirmLabel={confirmation.confirmLabel}
+          busyLabel="처리 중..."
+          busy={activateTermMutation.isPending || closeTermMutation.isPending || deleteExecutiveMutation.isPending || deleteNoteMutation.isPending}
+          iconName={confirmation.iconName}
+          tone={confirmation.tone}
+          onCancel={() => {
+            if (!activateTermMutation.isPending && !closeTermMutation.isPending && !deleteExecutiveMutation.isPending && !deleteNoteMutation.isPending) {
+              setConfirmation(null);
+            }
+          }}
+          onConfirm={() => {
+            void confirmation.run().finally(() => setConfirmation(null));
+          }}
+        />
+      ) : null}
     </div>
   );
 }

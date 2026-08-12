@@ -22,7 +22,7 @@ export function ClubAdminRolesFallbackClient({ clubId }: ClubAdminRolesFallbackC
   if ((clubQuery.isError || payloadQuery.isError) && (!club || !payload)) {
     return (
       <ClubRouteErrorState
-        title="직책 관리"
+        title="직책·권한"
         message={getQueryErrorMessage(clubQuery.error ?? payloadQuery.error, "직책 정보를 불러오지 못했습니다.")}
         backHref={`/clubs/${clubId}/admin`}
         theme="admin"

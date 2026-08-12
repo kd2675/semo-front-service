@@ -237,7 +237,7 @@ function getPreviewTone(
   member: ClubMemberDirectoryMember,
   settings: ClubMemberDirectorySettings,
 ): PreviewTone {
-  if (settings.showPositions && member.roleLabel === "오너") {
+  if (settings.showPositions && member.roleCode === "OWNER") {
     return {
       railClassName: "from-slate-950 via-slate-700 to-[#135bec]",
       avatarClassName: "from-slate-900 to-[#135bec]",
@@ -246,7 +246,7 @@ function getPreviewTone(
     };
   }
 
-  if (settings.showPositions && member.roleLabel === "어드민") {
+  if (settings.showPositions && member.roleCode === "ADMIN") {
     return {
       railClassName: "from-[#135bec] via-blue-500 to-sky-400",
       avatarClassName: "from-[#135bec] to-sky-500",

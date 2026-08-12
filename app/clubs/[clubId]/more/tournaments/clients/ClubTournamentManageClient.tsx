@@ -73,6 +73,7 @@ export function ClubTournamentManageClient({
   const [saving, setSaving] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showCancelTournament, setShowCancelTournament] = useState(false);
+  const [cancelReason, setCancelReason] = useState("");
   const [showDeleteTournament, setShowDeleteTournament] = useState(false);
   const [tournamentReviewStatus, setTournamentReviewStatus] = useState<"APPROVED" | "REJECTED">("APPROVED");
   const [tournamentRejectionReason, setTournamentRejectionReason] = useState("");
@@ -277,9 +278,14 @@ export function ClubTournamentManageClient({
   };
 
   const handleCancelTournament = async () => {
+    const normalizedReason = cancelReason.trim();
+    if (!normalizedReason) {
+      setActionError("대회 취소 사유를 입력해 주세요.");
+      return;
+    }
     setSaving(true);
     setActionError(null);
-    const result = await cancelTournamentMutation.mutateAsync();
+    const result = await cancelTournamentMutation.mutateAsync(normalizedReason);
     setSaving(false);
     setShowCancelTournament(false);
     if (!result.ok || !result.data) {
@@ -291,6 +297,7 @@ export function ClubTournamentManageClient({
       result.data,
     );
     setPayload(result.data);
+    setCancelReason("");
     void invalidateClubQueries(queryClient, clubId);
   };
 
@@ -381,6 +388,11 @@ export function ClubTournamentManageClient({
                 <p className="mt-2 text-sm leading-6 text-slate-500">
                   작성자 {payload.authorDisplayName} · {payload.tournamentPeriodLabel}
                 </p>
+                {payload.feeRequired && !payload.financeIntegrationEnabled ? (
+                  <p className="mt-2 text-xs font-semibold leading-5 text-amber-700">
+                    재정 연동이 꺼져 있어 참가비 납부는 운영진이 별도로 안내해야 합니다.
+                  </p>
+                ) : null}
               </div>
               <div className="w-full rounded-[20px] bg-slate-100 px-4 py-3 text-left sm:w-auto sm:text-right">
                 <p className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">신청/승인</p>
@@ -420,7 +432,7 @@ export function ClubTournamentManageClient({
             ) : null}
           </motion.section>
 
-          {mode === "admin" && payload.canReviewTournament && payload.approvalStatus !== "APPROVED" ? (
+          {mode === "admin" && payload.canReviewTournament && payload.approvalStatus === "PENDING" ? (
             <motion.section
               id="tournament-review-section"
               className="mt-6 rounded-[28px] border border-amber-200 bg-white p-5 shadow-sm"
@@ -728,13 +740,29 @@ export function ClubTournamentManageClient({
             confirmLabel="대회 취소"
             busyLabel="취소 중..."
             busy={saving}
+            confirmDisabled={!cancelReason.trim()}
             onCancel={() => {
               if (!saving) {
                 setShowCancelTournament(false);
+                setCancelReason("");
               }
             }}
             onConfirm={handleCancelTournament}
-          />
+          >
+            <label className="block text-left">
+              <span className="text-xs font-bold text-slate-600">취소 사유</span>
+              <textarea
+                value={cancelReason}
+                onChange={(event) => setCancelReason(event.target.value)}
+                maxLength={500}
+                rows={3}
+                disabled={saving}
+                className="mt-2 block w-full resize-none rounded-2xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm leading-6 text-slate-900 outline-none transition focus:border-rose-300 focus:bg-white focus:ring-4 focus:ring-rose-100 disabled:opacity-60"
+                placeholder="참가자에게 안내할 취소 사유를 입력해 주세요."
+              />
+              <span className="mt-1.5 block text-right text-xs text-slate-400">{cancelReason.length}/500</span>
+            </label>
+          </ScheduleActionConfirmModal>
         ) : null}
         {showDeleteTournament ? (
           <ScheduleActionConfirmModal

@@ -11,9 +11,26 @@ export type ClubPositionSummary = {
   iconName: string | null;
   colorHex: string | null;
   active: boolean;
+  version: number;
   permissionCount: number;
   memberCount: number;
+  featureGrants: ClubPositionFeatureGrant[];
+  /** Effective backend projection. Display-only; clients must submit featureGrants. */
   permissionKeys: string[];
+};
+
+export type ClubPositionFeatureGrantInput = {
+  featureKey: string;
+  accessLevel: string;
+  policyVersion?: number;
+  sensitivePermissionKeys: string[];
+};
+
+export type ClubPositionFeatureGrant = ClubPositionFeatureGrantInput & {
+  policyVersion: number;
+  currentPolicyVersion: number;
+  status: "CURRENT" | "POLICY_UPDATE_AVAILABLE" | "LEGACY_DERIVED" | "LEGACY_CUSTOM" | string;
+  effectivePermissionCount: number;
 };
 
 export type ClubPermissionItem = {
@@ -21,6 +38,15 @@ export type ClubPermissionItem = {
   displayName: string;
   description: string | null;
   ownershipScope: string;
+  sensitive: boolean;
+};
+
+export type ClubFeatureAccessLevel = {
+  accessLevel: "NONE" | "VIEWER" | "OPERATOR" | "MANAGER" | string;
+  displayName: string;
+  description: string;
+  policyVersion: number;
+  permissionKeys: string[];
 };
 
 export type ClubPermissionGroup = {
@@ -28,7 +54,26 @@ export type ClubPermissionGroup = {
   displayName: string;
   description: string | null;
   iconName: string;
+  policyVersion: number;
+  accessLevels: ClubFeatureAccessLevel[];
   permissions: ClubPermissionItem[];
+};
+
+export type ClubPositionTemplate = {
+  templateKey: string;
+  displayName: string;
+  description: string;
+  iconName: string;
+  colorHex: string;
+  featureGrants: ClubPositionTemplateGrant[];
+  /** Effective preview for older consumers; editing uses featureGrants. */
+  permissionKeys: string[];
+  featureCount: number;
+};
+
+export type ClubPositionTemplateGrant = {
+  featureKey: string;
+  accessLevel: string;
 };
 
 export type ClubAdminMember = {
@@ -43,6 +88,7 @@ export type ClubAdminMember = {
   roleCode: "OWNER" | "ADMIN" | "MEMBER" | string;
   membershipStatus: "ACTIVE" | "DORMANT" | "PENDING" | string;
   canManage: boolean;
+  canAssignPositions: boolean;
   canApprove: boolean;
   self: boolean;
   positions: ClubPositionSummary[];
@@ -162,6 +208,7 @@ export type ClubMemberDirectoryMember = {
   clubProfileId: number;
   displayName: string;
   avatarImageUrl: string | null;
+  roleCode: "OWNER" | "ADMIN" | "MEMBER" | string | null;
   roleLabel: string | null;
   tagline: string | null;
   positions: ClubPositionSummary[];
@@ -203,8 +250,10 @@ export type ClubAdminRoleManagementResponse = {
   canUpdate: boolean;
   canDelete: boolean;
   canAssign: boolean;
+  assignedMemberCount: number;
   positions: ClubPositionSummary[];
   permissionGroups: ClubPermissionGroup[];
+  positionTemplates: ClubPositionTemplate[];
 };
 
 export type ClubPositionDetailResponse = {
@@ -217,6 +266,7 @@ export type ClubPositionDetailResponse = {
   canAssign: boolean;
   position: ClubPositionSummary;
   permissionGroups: ClubPermissionGroup[];
+  positionTemplates: ClubPositionTemplate[];
 };
 
 export type ClubPositionHistoryItem = {
@@ -249,7 +299,7 @@ export type CreateClubPositionRequest = {
   description?: string | null;
   iconName?: string | null;
   colorHex?: string | null;
-  permissionKeys: string[];
+  featureGrants: ClubPositionFeatureGrantInput[];
 };
 
 export type UpdateClubPositionRequest = {
@@ -258,8 +308,9 @@ export type UpdateClubPositionRequest = {
   description?: string | null;
   iconName?: string | null;
   colorHex?: string | null;
+  version: number;
   active?: boolean;
-  permissionKeys: string[];
+  featureGrants?: ClubPositionFeatureGrantInput[];
 };
 
 export type UpdateClubMemberPositionsRequest = {
@@ -383,6 +434,6 @@ export function updateClubAdminRole(clubId: ClubId, clubPositionId: string | num
   return putJson<ClubPositionDetailResponse>(`/api/semo/v1/clubs/${clubId}/admin/more/roles/${clubPositionId}`, request);
 }
 
-export function deleteClubAdminRole(clubId: ClubId, clubPositionId: string | number) {
-  return deleteJson<boolean>(`/api/semo/v1/clubs/${clubId}/admin/more/roles/${clubPositionId}`);
+export function deleteClubAdminRole(clubId: ClubId, clubPositionId: string | number, version: number) {
+  return deleteJson<boolean>(`/api/semo/v1/clubs/${clubId}/admin/more/roles/${clubPositionId}?version=${version}`);
 }

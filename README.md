@@ -187,6 +187,7 @@ NEXT_PUBLIC_API_URL=http://localhost:8080
 - `/clubs/[clubId]/admin/more/roles/new`
 - `/clubs/[clubId]/admin/more/roles/[positionId]/edit`
 - `/clubs/[clubId]/admin/more/roles/assignments`
+  - 기존 링크 호환용이며 직책·권한 대표 화면의 멤버 탭으로 이동
 
 ## Feature Notes
 
@@ -213,7 +214,7 @@ NEXT_PUBLIC_API_URL=http://localhost:8080
 - 회비·정산은 사용자 조회·요청과 관리자 발행·납부·승인 흐름이 분리되며, 승인된 지출/환급 요청은 연결된 지출 장부로 자동 반영됩니다.
 - 신규가입 신청자는 루트 홈에서 본인 상태를 확인하고, 관리자는 `/admin/more/join-requests`에서 전체 대기열의 승인/반려를 처리합니다.
 - 회원 디렉터리는 사용자 `/more/members`에서 다른 회원을 보고, 관리자 `/admin/more/members`에서 직책/한줄소개/최근 활동 노출 여부를 설정합니다.
-- 직책관리는 `ADMIN_ONLY` 기능으로, 직책 생성/수정/삭제와 멤버 할당 화면이 따로 있습니다. 직책 변경 이력은 감사 기록이므로 삭제할 수 없습니다.
+- 직책·권한은 끌 수 없는 `ADMIN_ONLY` 핵심 운영 기능입니다. `OWNER`/`ADMIN` 접근 등급은 거버넌스를 담당하고, 업무 직책은 기능 운영 책임과 표시·이력을 담당합니다. 생성·편집 화면은 원자 권한 체크박스 대신 검색 가능한 기능별 운영 수준을 서버에 저장하며, 재정 검토·수납·내보내기·마감 같은 민감 행위만 추가 승인으로 분리합니다. 정책 변경은 기존 직책에 자동 적용하지 않고 화면의 명시적 최신 정책 적용으로만 반영합니다. 기존 맞춤 권한 조합은 표준 수준을 선택하기 전까지 보존하고, 동시 수정은 직책 버전 충돌로 막습니다. 직책 사용 종료 시 현재 배정은 닫되 과거 보유 이력과 인수인계 참조는 보존합니다.
 - 피드백은 기본 비공개이며 익명 제출자의 신원은 관리자에게도 노출하지 않습니다.
 - 업무 삭제는 이력 보존을 위해 취소 상태 보관으로 처리하며, 신청이 진행 중인 업무는 먼저 신청을 정리해야 합니다.
 - 업무·재정·피드백·인수인계·결정 기록의 첨부는 공개 범위 라벨을 표시하며, 다운로드 시에도 목록 조회와 동일한 권한 검사를 다시 거칩니다.
@@ -267,16 +268,14 @@ npm run start
 ## Related Docs
 
 - `AGENTS.md`
-- `AGENTS_SEMO_MORE_FEATURE_CHECKLIST.md`
-- `AGENTS_SEMO_PRODUCT_DIRECTION.md`
-- `modal-analysis.md`
+- `SEMO_MORE_FEATURE_GUIDE.md`
 
 ## Verification Snapshot
 
-- 2026-08-07 확인
+- 2026-08-12 확인
   - `npm run lint` 성공
   - `npm run verify:auth` 성공
-  - `npm run verify:ui` 성공 (57개 라우트 UI 계약 검사)
+  - `npm run verify:ui` 성공 (65개 라우트, 199개 TSX UI 계약 검사)
   - `npm run build` 성공
 
 ## Source Notes

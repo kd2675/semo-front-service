@@ -3,7 +3,7 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useDeferredValue, useMemo, useState } from "react";
 
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import { RouterLink } from "@/app/components/RouterLink";
@@ -21,7 +21,12 @@ import {
   roleQueryKeys,
 } from "@/app/lib/react-query/roles/queries";
 import { RoleEditSheet } from "./components/RoleEditSheet";
-import { DEFAULT_ROLE_COLOR, makeInitials } from "./utils/roleUtils";
+import {
+  DEFAULT_ROLE_COLOR,
+  getFeatureAccessSelection,
+  getPositionFeatureAccessLabels,
+  makeInitials,
+} from "./utils/roleUtils";
 
 type ClubAdminRolesClientProps = {
   clubId: string;
@@ -31,6 +36,7 @@ type ClubAdminRolesClientProps = {
 type RoleSheetTab = "overview" | "permissions" | "members";
 
 type RolePageTab = "ROLES" | "PERMISSIONS" | "HISTORY";
+type RoleStatusFilter = "ACTIVE" | "INACTIVE" | "ALL";
 
 const ROLE_PAGE_TABS: { key: RolePageTab; label: string; icon: string }[] = [
   { key: "ROLES", label: "직책", icon: "badge" },
@@ -68,7 +74,7 @@ function RoleAvatar({ role }: { role: ClubPositionSummary }) {
 
   return (
     <div
-      className="flex size-12 shrink-0 items-center justify-center rounded-2xl text-white shadow-sm"
+      className="flex size-12 shrink-0 items-center justify-center rounded-[var(--radius-card)] text-white shadow-sm"
       style={{ backgroundColor: colorHex }}
     >
       <span className="material-symbols-outlined text-[26px]" aria-hidden="true">{role.iconName ?? "badge"}</span>
@@ -86,7 +92,7 @@ function RoleMetricChip({
   value: string | number;
 }) {
   return (
-    <div className="rounded-2xl bg-slate-50 px-4 py-3">
+    <div className="rounded-[var(--radius-card)] bg-slate-50 px-4 py-3">
       <div className="flex items-center gap-2 text-xs font-semibold text-slate-500">
         <span className="material-symbols-outlined text-[17px] text-[var(--primary)]" aria-hidden="true">{icon}</span>
         {label}
@@ -97,34 +103,32 @@ function RoleMetricChip({
 }
 
 function RoleOverviewCard({
-  clubName,
   stats,
   featureFilter,
   clubId,
   reduceMotion,
 }: {
-  clubName: string;
   stats: {
     totalRoles: number;
     activeRoles: number;
     assignedMembers: number;
-    historyCount: number;
+    unassignedRoles: number;
   };
   featureFilter: string;
   clubId: string;
   reduceMotion: boolean;
 }) {
   return (
-    <motion.section className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm" {...staggeredFadeUpMotion(0, reduceMotion)}>
+    <motion.section className="rounded-[var(--radius-card)] border border-slate-200 bg-white p-5 shadow-sm" {...staggeredFadeUpMotion(0, reduceMotion)}>
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
-          <p className="text-xs font-semibold tracking-wide text-slate-400">직책 운영</p>
-          <h2 className="mt-2 text-2xl font-bold tracking-tight text-slate-900">직책, 권한, 보유 이력을 한 흐름으로 관리합니다.</h2>
+          <p className="text-xs font-semibold tracking-wide text-slate-400">업무 위임</p>
+          <h2 className="mt-2 text-2xl font-bold tracking-tight text-slate-900">직책과 기능 권한을 함께 관리합니다.</h2>
           <p className="mt-2 text-sm leading-6 text-slate-500">
-            {clubName} 운영진의 현재 직책과 과거 보유 기간을 함께 확인합니다.
+            OWNER·ADMIN은 항상 전체 운영 권한을 갖습니다. 일반 회원에게 필요한 업무만 직책으로 위임하고 보유 이력을 남깁니다.
           </p>
         </div>
-        <div className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-orange-50 text-[var(--primary)]">
+        <div className="flex size-12 shrink-0 items-center justify-center rounded-[var(--radius-card)] bg-orange-50 text-[var(--primary)]">
           <span className="material-symbols-outlined text-[26px]" aria-hidden="true">admin_panel_settings</span>
         </div>
       </div>
@@ -132,18 +136,11 @@ function RoleOverviewCard({
       <div className="mt-5 grid grid-cols-2 gap-3">
         <RoleMetricChip icon="badge" label="직책" value={stats.totalRoles} />
         <RoleMetricChip icon="verified_user" label="활성" value={stats.activeRoles} />
-        <RoleMetricChip icon="group" label="배정" value={stats.assignedMembers} />
-        <RoleMetricChip icon="history" label="이력" value={stats.historyCount} />
+        <RoleMetricChip icon="group" label="배정 멤버" value={stats.assignedMembers} />
+        <RoleMetricChip icon="person_off" label="미배정 직책" value={stats.unassignedRoles} />
       </div>
 
       <div className="mt-5 flex flex-wrap gap-2">
-        <RouterLink
-          href={`/clubs/${clubId}/admin/more/roles/assignments`}
-          className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-2 text-xs font-bold text-slate-700"
-        >
-          <span className="material-symbols-outlined text-[16px]" aria-hidden="true">manage_accounts</span>
-          멤버별 배정
-        </RouterLink>
         {featureFilter ? (
           <RouterLink
             href={`/clubs/${clubId}/admin/more/roles`}
@@ -168,17 +165,18 @@ function RoleTabBar({
   reduceMotion: boolean;
 }) {
   return (
-    <motion.section className="rounded-[24px] border border-slate-200 bg-white p-2 shadow-sm" {...staggeredFadeUpMotion(1, reduceMotion)}>
-      <div className="grid grid-cols-3 gap-2">
+    <motion.section className="rounded-[var(--radius-card)] border border-slate-200 bg-white p-2 shadow-sm" {...staggeredFadeUpMotion(1, reduceMotion)}>
+      <div role="tablist" aria-label="직책 관리 보기" className="grid grid-cols-3 gap-2">
         {ROLE_PAGE_TABS.map((tab) => (
           <button
             key={tab.key}
             type="button"
-            aria-pressed={activeTab === tab.key}
+            role="tab"
+            aria-selected={activeTab === tab.key}
             onClick={() => onChange(tab.key)}
-            className={`flex min-h-11 items-center justify-center gap-1.5 rounded-[18px] px-2 text-sm font-bold transition ${
+            className={`flex min-h-11 items-center justify-center gap-1.5 rounded-[var(--radius-control)] px-2 text-sm font-bold transition ${
               activeTab === tab.key
-                ? "bg-[#ec5b13] text-white shadow-sm"
+                ? "bg-[var(--primary)] text-white shadow-sm"
                 : "bg-slate-50 text-slate-600 hover:bg-slate-100"
             }`}
           >
@@ -193,24 +191,24 @@ function RoleTabBar({
 
 function RoleCard({
   role,
-  permissionLabels,
+  accessLabels,
   index,
   onOpenSheet,
   reduceMotion,
 }: {
   role: ClubPositionSummary;
-  permissionLabels: string[];
+  accessLabels: string[];
   index: number;
   onOpenSheet: (role: ClubPositionSummary, tab: RoleSheetTab) => void;
   reduceMotion: boolean;
 }) {
   const colorHex = getRoleColor(role);
-  const previewLabels = permissionLabels.slice(0, 3);
-  const remainingPermissionCount = Math.max(0, permissionLabels.length - previewLabels.length);
+  const previewLabels = accessLabels.slice(0, 3);
+  const remainingAccessCount = Math.max(0, accessLabels.length - previewLabels.length);
 
   return (
     <motion.article
-      className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm"
+      className="rounded-[var(--radius-card)] border border-slate-200 bg-white p-5 shadow-sm"
       {...staggeredFadeUpMotion(index + 2, reduceMotion)}
     >
       <div className="flex items-start gap-4">
@@ -237,13 +235,13 @@ function RoleCard({
       </div>
 
       <div className="mt-4 grid grid-cols-2 gap-3">
-        <div className="rounded-2xl bg-slate-50 px-4 py-3">
+        <div className="rounded-[var(--radius-card)] bg-slate-50 px-4 py-3">
           <p className="text-xs font-semibold text-slate-500">배정 멤버</p>
           <p className="mt-1 text-lg font-extrabold">{role.memberCount}명</p>
         </div>
-        <div className="rounded-2xl bg-slate-50 px-4 py-3">
-          <p className="text-xs font-semibold text-slate-500">권한</p>
-          <p className="mt-1 text-lg font-extrabold">{role.permissionCount}개</p>
+        <div className="rounded-[var(--radius-card)] bg-slate-50 px-4 py-3">
+          <p className="text-xs font-semibold text-slate-500">운영 기능</p>
+          <p className="mt-1 text-lg font-extrabold">{accessLabels.length}개</p>
         </div>
       </div>
 
@@ -255,11 +253,11 @@ function RoleCard({
             </span>
           ))
         ) : (
-          <span className="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-bold text-slate-500">권한 없음</span>
+          <span className="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-bold text-slate-500">위임 업무 없음</span>
         )}
-        {remainingPermissionCount > 0 ? (
+        {remainingAccessCount > 0 ? (
           <span className="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-bold text-slate-500">
-            +{remainingPermissionCount}
+            +{remainingAccessCount}
           </span>
         ) : null}
       </div>
@@ -268,7 +266,7 @@ function RoleCard({
         <button
           type="button"
           onClick={() => onOpenSheet(role, "overview")}
-          className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[#ec5b13] px-4 py-3 text-sm font-bold text-white transition active:scale-[0.98]"
+          className="inline-flex items-center justify-center gap-2 rounded-[var(--radius-control)] bg-[var(--primary)] px-4 py-3 text-sm font-bold text-white transition active:scale-[0.98]"
         >
           <span className="material-symbols-outlined text-[18px]" aria-hidden="true">edit</span>
           설정
@@ -276,7 +274,7 @@ function RoleCard({
         <button
           type="button"
           onClick={() => onOpenSheet(role, "members")}
-          className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-700 transition active:scale-[0.98]"
+          className="inline-flex items-center justify-center gap-2 rounded-[var(--radius-control)] border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-700 transition active:scale-[0.98]"
         >
           <span className="material-symbols-outlined text-[18px]" aria-hidden="true">person_add</span>
           배정
@@ -288,15 +286,15 @@ function RoleCard({
 
 function EmptyRoleState({ clubId, reduceMotion }: { clubId: string; reduceMotion: boolean }) {
   return (
-    <motion.section className="rounded-[28px] border border-dashed border-slate-300 bg-white p-6 text-center shadow-sm" {...staggeredFadeUpMotion(2, reduceMotion)}>
-      <div className="mx-auto flex size-14 items-center justify-center rounded-2xl bg-orange-50 text-[var(--primary)]">
+    <motion.section className="rounded-[var(--radius-card)] border border-dashed border-slate-300 bg-white p-6 text-center shadow-sm" {...staggeredFadeUpMotion(2, reduceMotion)}>
+      <div className="mx-auto flex size-14 items-center justify-center rounded-[var(--radius-card)] bg-orange-50 text-[var(--primary)]">
         <span className="material-symbols-outlined text-[30px]" aria-hidden="true">add_moderator</span>
       </div>
       <h3 className="mt-4 text-lg font-bold">아직 만든 직책이 없습니다.</h3>
       <p className="mt-2 text-sm leading-6 text-slate-500">회장, 총무, 경기운영 같은 운영 직책을 먼저 등록하세요.</p>
       <RouterLink
         href={`/clubs/${clubId}/admin/more/roles/new`}
-        className="mt-5 inline-flex items-center justify-center gap-2 rounded-2xl bg-[#ec5b13] px-5 py-3 text-sm font-bold text-white"
+        className="mt-5 inline-flex items-center justify-center gap-2 rounded-[var(--radius-control)] bg-[var(--primary)] px-5 py-3 text-sm font-bold text-white"
       >
         <span className="material-symbols-outlined text-[18px]" aria-hidden="true">add</span>
         직책 만들기
@@ -316,8 +314,12 @@ function PermissionGroupCard({
   index: number;
   reduceMotion: boolean;
 }) {
+  const standardLevels = group.accessLevels.filter((level) => level.accessLevel !== "NONE");
+  const customRoles = roles.filter((role) => getFeatureAccessSelection(group, role.featureGrants).custom);
+  const sensitivePermissions = group.permissions.filter((permission) => permission.sensitive);
+
   return (
-    <motion.article className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm" {...staggeredFadeUpMotion(index + 2, reduceMotion)}>
+    <motion.article className="rounded-[var(--radius-card)] border border-slate-200 bg-white p-5 shadow-sm" {...staggeredFadeUpMotion(index + 2, reduceMotion)}>
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">{group.featureKey}</p>
@@ -325,20 +327,20 @@ function PermissionGroupCard({
           {group.description ? <p className="mt-1 text-sm leading-6 text-slate-500">{group.description}</p> : null}
         </div>
         <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-500">
-          {group.permissions.length}개
+          {standardLevels.length}개 수준
         </span>
       </div>
       <div className="mt-4 space-y-3">
-        {group.permissions.map((permission) => {
-          const assignedRoles = roles.filter((role) => role.permissionKeys.includes(permission.permissionKey));
+        {standardLevels.map((level) => {
+          const assignedRoles = roles.filter(
+            (role) => getFeatureAccessSelection(group, role.featureGrants).accessLevel?.accessLevel === level.accessLevel,
+          );
           return (
-            <div key={permission.permissionKey} className="rounded-2xl bg-slate-50 px-4 py-3">
+            <div key={level.accessLevel} className="rounded-[var(--radius-card)] bg-slate-50 px-4 py-3">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <p className="text-sm font-bold text-slate-900">{permission.displayName}</p>
-                  <p className="mt-1 break-all text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-400">
-                    {permission.permissionKey}
-                  </p>
+                  <p className="text-sm font-bold text-slate-900">{level.displayName}</p>
+                  <p className="mt-1 text-xs leading-5 text-slate-500">{level.description}</p>
                 </div>
                 <span className="shrink-0 rounded-full bg-orange-50 px-2.5 py-1 text-[11px] font-bold text-[var(--primary)]">
                   {assignedRoles.length}
@@ -347,7 +349,7 @@ function PermissionGroupCard({
               {assignedRoles.length > 0 ? (
                 <div className="mt-3 flex flex-wrap gap-2">
                   {assignedRoles.slice(0, 4).map((role) => (
-                    <span key={`${permission.permissionKey}-${role.clubPositionId}`} className="rounded-full bg-white px-2.5 py-1 text-[11px] font-bold text-slate-600">
+                    <span key={`${level.accessLevel}-${role.clubPositionId}`} className="rounded-full bg-white px-2.5 py-1 text-xs font-bold text-slate-600">
                       {role.displayName}
                     </span>
                   ))}
@@ -361,6 +363,65 @@ function PermissionGroupCard({
             </div>
           );
         })}
+        {customRoles.length > 0 ? (
+          <div className="rounded-[var(--radius-card)] bg-amber-50 px-4 py-3">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-sm font-bold text-amber-900">기존 맞춤 설정</p>
+                <p className="mt-1 text-xs leading-5 text-amber-700">
+                  세부 권한 방식으로 저장된 직책입니다. 편집 시 표준 운영 수준으로 전환할 수 있습니다.
+                </p>
+              </div>
+              <span className="shrink-0 rounded-full bg-white px-2.5 py-1 text-xs font-bold text-amber-700">
+                {customRoles.length}
+              </span>
+            </div>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {customRoles.map((role) => (
+                <span key={`custom-${group.featureKey}-${role.clubPositionId}`} className="rounded-full bg-white px-2.5 py-1 text-xs font-bold text-slate-600">
+                  {role.displayName}
+                </span>
+              ))}
+            </div>
+          </div>
+        ) : null}
+        {sensitivePermissions.length > 0 ? (
+          <div className="border-t border-slate-200 pt-4">
+            <p className="mb-3 text-xs font-bold text-slate-500">추가 승인 권한</p>
+            <div className="space-y-3">
+              {sensitivePermissions.map((permission) => {
+                const assignedRoles = roles.filter((role) =>
+                  role.featureGrants.some((grant) =>
+                    grant.featureKey === group.featureKey
+                    && grant.sensitivePermissionKeys.includes(permission.permissionKey),
+                  ),
+                );
+                return (
+                  <div key={permission.permissionKey} className="rounded-[var(--radius-card)] bg-amber-50 px-4 py-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="text-sm font-bold text-slate-900">{permission.displayName}</p>
+                        <p className="mt-1 text-xs leading-5 text-slate-500">{permission.description}</p>
+                      </div>
+                      <span className="shrink-0 rounded-full bg-white px-2.5 py-1 text-xs font-bold text-amber-700">
+                        {assignedRoles.length}
+                      </span>
+                    </div>
+                    {assignedRoles.length > 0 ? (
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        {assignedRoles.map((role) => (
+                          <span key={`${permission.permissionKey}-${role.clubPositionId}`} className="rounded-full bg-white px-2.5 py-1 text-xs font-bold text-slate-600">
+                            {role.displayName}
+                          </span>
+                        ))}
+                      </div>
+                    ) : null}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        ) : null}
       </div>
     </motion.article>
   );
@@ -376,7 +437,7 @@ function RoleHistoryCard({
   reduceMotion: boolean;
 }) {
   return (
-    <motion.article className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm" {...staggeredFadeUpMotion(index + 2, reduceMotion)}>
+    <motion.article className="rounded-[var(--radius-card)] border border-slate-200 bg-white p-5 shadow-sm" {...staggeredFadeUpMotion(index + 2, reduceMotion)}>
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="text-sm font-extrabold text-slate-900">{history.memberDisplayName}</p>
@@ -416,13 +477,19 @@ export function ClubAdminRolesClient({ clubId, initialData }: ClubAdminRolesClie
   const featureFilter = searchParams.get("feature")?.trim().toUpperCase() ?? "";
   const requestedEditPositionId = Number(searchParams.get("editPositionId") ?? "");
   const requestedEditTab = normalizeRoleSheetTab(searchParams.get("tab"));
+  const [activeTab, setActiveTab] = useState<RolePageTab>("ROLES");
+  const [roleQuery, setRoleQuery] = useState("");
+  const [roleStatusFilter, setRoleStatusFilter] = useState<RoleStatusFilter>("ACTIVE");
+  const deferredRoleQuery = useDeferredValue(roleQuery.trim().toLowerCase());
   const roleManagementQuery = useQuery({
     ...adminRoleManagementQueryOptions(clubId),
     initialData,
   });
-  const roleHistoryQuery = useQuery(adminRoleHistoryQueryOptions(clubId));
+  const roleHistoryQuery = useQuery({
+    ...adminRoleHistoryQueryOptions(clubId),
+    enabled: activeTab === "HISTORY",
+  });
   const [roleManagementState, setRoleManagement] = useState<ClubAdminRoleManagementResponse | null>(null);
-  const [activeTab, setActiveTab] = useState<RolePageTab>("ROLES");
   const [selectedSheetState, setSelectedSheetState] = useState<{
     positionId: number;
     tab: RoleSheetTab;
@@ -430,52 +497,29 @@ export function ClubAdminRolesClient({ clubId, initialData }: ClubAdminRolesClie
   const roleManagement = roleManagementState ?? roleManagementQuery.data;
   const histories = roleHistoryQuery.data?.histories ?? [];
 
-  const permissionLabelMap = useMemo(
-    () =>
-      new Map(
-        roleManagement.permissionGroups.flatMap((group) =>
-          group.permissions.map((permission) => [permission.permissionKey, permission.displayName] as const),
-        ),
-      ),
-    [roleManagement.permissionGroups],
-  );
-
-  const permissionKeysByFeature = useMemo(
-    () =>
-      new Map(
-        roleManagement.permissionGroups.map((group) => [
-          group.featureKey,
-          new Set(group.permissions.map((permission) => permission.permissionKey)),
-        ]),
-      ),
-    [roleManagement.permissionGroups],
-  );
-
   const stats = useMemo(
     () => ({
       totalRoles: roleManagement.positions.length,
       activeRoles: roleManagement.positions.filter((role) => role.active).length,
-      assignedMembers: roleManagement.positions.reduce((sum, role) => sum + role.memberCount, 0),
-      historyCount: histories.length,
+      assignedMembers: roleManagement.assignedMemberCount
+        ?? roleManagement.positions.reduce((sum, role) => sum + role.memberCount, 0),
+      unassignedRoles: roleManagement.positions.filter((role) => role.active && role.memberCount === 0).length,
     }),
-    [histories.length, roleManagement.positions],
+    [roleManagement.assignedMemberCount, roleManagement.positions],
   );
 
   const sortedRoles = useMemo(() => {
-    const roles = [...roleManagement.positions];
-    if (featureFilter) {
-      const targetPermissionKeys = permissionKeysByFeature.get(featureFilter);
-      if (targetPermissionKeys) {
-        roles.sort((left, right) => {
-          const leftMatched = left.permissionKeys.some((permissionKey) => targetPermissionKeys.has(permissionKey));
-          const rightMatched = right.permissionKeys.some((permissionKey) => targetPermissionKeys.has(permissionKey));
-          if (leftMatched !== rightMatched) {
-            return leftMatched ? -1 : 1;
-          }
-          return 0;
-        });
+    const roles = roleManagement.positions.filter((role) => {
+      if (roleStatusFilter === "ACTIVE" && !role.active) return false;
+      if (roleStatusFilter === "INACTIVE" && role.active) return false;
+      if (featureFilter && !role.featureGrants.some((grant) => grant.featureKey === featureFilter)) {
+        return false;
       }
-    }
+      if (!deferredRoleQuery) return true;
+      return `${role.displayName} ${role.description ?? ""} ${role.positionCode}`
+        .toLowerCase()
+        .includes(deferredRoleQuery);
+    });
     roles.sort((left, right) => {
       if (left.active !== right.active) {
         return left.active ? -1 : 1;
@@ -486,7 +530,7 @@ export function ClubAdminRolesClient({ clubId, initialData }: ClubAdminRolesClie
       return right.memberCount - left.memberCount;
     });
     return roles;
-  }, [featureFilter, permissionKeysByFeature, roleManagement.positions]);
+  }, [deferredRoleQuery, featureFilter, roleManagement.positions, roleStatusFilter]);
 
   const selectedEditRole = useMemo(() => {
     if (selectedSheetState != null) {
@@ -539,11 +583,17 @@ export function ClubAdminRolesClient({ clubId, initialData }: ClubAdminRolesClie
     }
   };
 
+  const handleRoleSheetTabChange = (tab: RoleSheetTab) => {
+    if (!selectedEditRole) return;
+    setSelectedSheetState({ positionId: selectedEditRole.clubPositionId, tab });
+    updateSheetSearchParams(selectedEditRole.clubPositionId, tab);
+  };
+
   return (
     <div className="min-h-screen bg-[var(--background-light)] text-slate-900">
-      <div className="min-h-screen bg-[#f8f6f6]">
+      <div className="min-h-screen bg-[var(--color-bg)]">
         <ClubPageHeader
-          title="직책 관리"
+          title="직책·권한"
           subtitle={roleManagement.clubName}
           icon="admin_panel_settings"
           theme="admin"
@@ -557,7 +607,6 @@ export function ClubAdminRolesClient({ clubId, initialData }: ClubAdminRolesClie
 
         <main className="semo-page-admin semo-nav-bottom-space space-y-4 px-4 pt-4">
           <RoleOverviewCard
-            clubName={roleManagement.clubName}
             stats={stats}
             featureFilter={featureFilter}
             clubId={clubId}
@@ -566,17 +615,51 @@ export function ClubAdminRolesClient({ clubId, initialData }: ClubAdminRolesClie
           <RoleTabBar activeTab={activeTab} reduceMotion={reduceMotion} onChange={setActiveTab} />
 
           {activeTab === "ROLES" ? (
-            <section className="space-y-4">
+            <section role="tabpanel" className="space-y-4">
+              <div className="rounded-[var(--radius-card)] border border-slate-200 bg-white p-3 shadow-sm">
+                <label className="relative block">
+                  <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[20px] text-slate-400" aria-hidden="true">search</span>
+                  <span className="sr-only">직책 검색</span>
+                  <input
+                    value={roleQuery}
+                    onChange={(event) => setRoleQuery(event.target.value)}
+                    placeholder="직책 이름이나 설명 검색"
+                    className="h-11 w-full rounded-[var(--radius-control)] bg-slate-100 pl-10 pr-4 text-sm outline-none focus:ring-2 focus:ring-[var(--primary)]/25"
+                  />
+                </label>
+                <div className="mt-3 grid grid-cols-3 gap-2">
+                  {([
+                    ["ACTIVE", "사용 중"],
+                    ["INACTIVE", "사용 종료"],
+                    ["ALL", "전체"],
+                  ] as const).map(([value, label]) => (
+                    <button
+                      key={value}
+                      type="button"
+                      aria-pressed={roleStatusFilter === value}
+                      onClick={() => setRoleStatusFilter(value)}
+                      className={`min-h-11 rounded-[var(--radius-control)] px-3 text-sm font-bold ${
+                        roleStatusFilter === value
+                          ? "bg-slate-900 text-white"
+                          : "bg-slate-100 text-slate-600"
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
               {sortedRoles.length > 0 ? (
                 sortedRoles.map((role, index) => {
-                  const permissionLabels = role.permissionKeys.map(
-                    (permissionKey) => permissionLabelMap.get(permissionKey) ?? permissionKey,
+                  const accessLabels = getPositionFeatureAccessLabels(
+                    roleManagement.permissionGroups,
+                    role.featureGrants,
                   );
                   return (
                     <RoleCard
                       key={role.clubPositionId}
                       role={role}
-                      permissionLabels={permissionLabels}
+                      accessLabels={accessLabels}
                       index={index}
                       reduceMotion={reduceMotion}
                       onOpenSheet={handleOpenRoleSheet}
@@ -584,13 +667,19 @@ export function ClubAdminRolesClient({ clubId, initialData }: ClubAdminRolesClie
                   );
                 })
               ) : (
-                <EmptyRoleState clubId={clubId} reduceMotion={reduceMotion} />
+                roleManagement.positions.length === 0 ? (
+                  <EmptyRoleState clubId={clubId} reduceMotion={reduceMotion} />
+                ) : (
+                  <div className="rounded-[var(--radius-card)] border border-dashed border-slate-300 bg-white px-5 py-10 text-center text-sm text-slate-500">
+                    검색 조건에 맞는 직책이 없습니다.
+                  </div>
+                )
               )}
             </section>
           ) : null}
 
           {activeTab === "PERMISSIONS" ? (
-            <section className="space-y-4">
+            <section role="tabpanel" className="space-y-4">
               {roleManagement.permissionGroups.map((group, index) => (
                 <PermissionGroupCard
                   key={group.featureKey}
@@ -604,17 +693,17 @@ export function ClubAdminRolesClient({ clubId, initialData }: ClubAdminRolesClie
           ) : null}
 
           {activeTab === "HISTORY" ? (
-            <section className="space-y-4">
+            <section role="tabpanel" className="space-y-4">
               {roleHistoryQuery.isPending ? (
-                <div className="rounded-[28px] border border-slate-200 bg-white p-5 text-sm text-slate-500 shadow-sm">
+                <div className="rounded-[var(--radius-card)] border border-slate-200 bg-white p-5 text-sm text-slate-500 shadow-sm">
                   직책 보유 이력을 불러오는 중입니다.
                 </div>
               ) : roleHistoryQuery.isError ? (
-                <div className="rounded-[28px] border border-rose-100 bg-rose-50 p-5 text-sm font-semibold text-rose-600">
+                <div className="rounded-[var(--radius-card)] border border-rose-100 bg-rose-50 p-5 text-sm font-semibold text-rose-600">
                   직책 보유 이력을 불러오지 못했습니다.
                 </div>
               ) : histories.length === 0 ? (
-                <div className="rounded-[28px] border border-slate-200 bg-white p-5 text-sm text-slate-500 shadow-sm">
+                <div className="rounded-[var(--radius-card)] border border-slate-200 bg-white p-5 text-sm text-slate-500 shadow-sm">
                   아직 기록된 직책 보유 이력이 없습니다.
                 </div>
               ) : (
@@ -635,8 +724,7 @@ export function ClubAdminRolesClient({ clubId, initialData }: ClubAdminRolesClie
           <RouterLink
             href={`/clubs/${clubId}/admin/more/roles/new`}
             aria-label="직책 만들기"
-            className={`fixed ${FAB_RIGHT_OFFSET_CLASS_NAME} ${getActionFabBottomClass(true)} z-40 flex h-14 w-14 items-center justify-center rounded-full bg-[#ec5b13] text-white transition-transform active:scale-95`}
-            style={{ boxShadow: "0 6px 16px rgba(236, 91, 19, 0.32)" }}
+            className={`fixed ${FAB_RIGHT_OFFSET_CLASS_NAME} ${getActionFabBottomClass(true)} z-40 flex h-14 w-14 items-center justify-center rounded-full bg-[var(--primary)] text-white shadow-[var(--shadow-card)] transition-transform active:scale-95`}
           >
             <span className="material-symbols-outlined text-[28px]" aria-hidden="true">add</span>
           </RouterLink>
@@ -653,6 +741,7 @@ export function ClubAdminRolesClient({ clubId, initialData }: ClubAdminRolesClie
               canDelete={roleManagement.canDelete}
               canAssign={roleManagement.canAssign}
               onClose={handleCloseRoleSheet}
+              onTabChange={handleRoleSheetTabChange}
               onRolesChanged={refreshRoleManagement}
             />
           ) : null}

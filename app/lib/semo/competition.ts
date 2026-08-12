@@ -157,6 +157,7 @@ export type TournamentDetailResponse = {
   feeRequired: boolean;
   feeAmount: number | null;
   feeCurrencyCode: string;
+  financeIntegrationEnabled: boolean;
   postedToBoard: boolean;
   postedToCalendar: boolean;
   pinned: boolean;
@@ -310,6 +311,7 @@ export type ClubBracketHomeResponse = {
   clubName: string;
   admin: boolean;
   canCreate: boolean;
+  tournamentIntegrationEnabled: boolean;
   approvedBracketCount: number;
   pendingBracketCount: number;
   featuredBracket: BracketSummary | null;

@@ -20,9 +20,9 @@ export function updateRoleMutationOptions(clubId: string, positionId: string) {
   });
 }
 
-export function deleteRoleMutationOptions(clubId: string, positionId: string) {
+export function deleteRoleMutationOptions(clubId: string, positionId: string, version: number) {
   return mutationOptions({
-    mutationFn: () => deleteClubAdminRole(clubId, positionId),
+    mutationFn: () => deleteClubAdminRole(clubId, positionId, version),
   });
 }
 

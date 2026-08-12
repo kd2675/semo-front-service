@@ -237,6 +237,9 @@ export function ClubTournamentDetailClient({
                 <p className="mt-2 text-sm font-semibold text-slate-700">
                   {getTournamentFormatLabel(payload.matchFormat)} · {getTournamentFeeLabel(payload)}
                 </p>
+                {payload.feeRequired && !payload.financeIntegrationEnabled ? (
+                  <p className="mt-1.5 text-xs leading-5 text-slate-500">납부 방법은 운영진이 별도로 안내합니다.</p>
+                ) : null}
               </div>
             </div>
           </motion.section>

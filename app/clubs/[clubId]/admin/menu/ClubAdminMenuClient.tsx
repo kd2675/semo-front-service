@@ -60,6 +60,37 @@ function getFeatureDescription(feature: ClubFeatureSummary) {
   return feature.description ?? "";
 }
 
+function getFeatureName(featureKey: string, features: ClubFeatureSummary[]) {
+  const feature = features.find((item) => item.featureKey === featureKey);
+  return feature ? getFeatureDisplayName(feature) : featureKey;
+}
+
+function collectRequiredFeatureKeys(featureKey: string, features: ClubFeatureSummary[], collected = new Set<string>()) {
+  const feature = features.find((item) => item.featureKey === featureKey);
+  for (const requiredFeatureKey of feature?.requiredFeatureKeys ?? []) {
+    if (collected.has(requiredFeatureKey)) continue;
+    collected.add(requiredFeatureKey);
+    collectRequiredFeatureKeys(requiredFeatureKey, features, collected);
+  }
+  return collected;
+}
+
+function collectDependentFeatureKeys(featureKey: string, features: ClubFeatureSummary[], collected = new Set<string>()) {
+  for (const feature of features) {
+    if (!(feature.requiredFeatureKeys ?? []).includes(featureKey) || collected.has(feature.featureKey)) continue;
+    collected.add(feature.featureKey);
+    collectDependentFeatureKeys(feature.featureKey, features, collected);
+  }
+  return collected;
+}
+
+function sortByEnabledState(features: ClubFeatureSummary[]) {
+  return [
+    ...features.filter((feature) => feature.enabled),
+    ...features.filter((feature) => !feature.enabled),
+  ];
+}
+
 type ClubAdminMenuClientProps = {
   clubId: string;
   clubName: string;
@@ -69,15 +100,19 @@ type ClubAdminMenuClientProps = {
 
 type EnabledFeatureCardProps = {
   feature: ClubFeatureSummary;
+  features: ClubFeatureSummary[];
   activeFeatureKey: string | null;
   onToggle: (featureKey: string) => void;
 };
 
 function EnabledFeatureCard({
   feature,
+  features,
   activeFeatureKey,
   onToggle,
 }: EnabledFeatureCardProps) {
+  const requiredFeatureNames = (feature.requiredFeatureKeys ?? [])
+    .map((featureKey) => getFeatureName(featureKey, features));
   const {
     attributes,
     listeners,
@@ -95,7 +130,7 @@ function EnabledFeatureCard({
         transform: CSS.Transform.toString(transform),
         transition,
       }}
-      className={`relative flex min-h-[88px] items-center gap-3 rounded-xl border bg-white px-4 py-4 shadow-sm transition-colors ${
+      className={`relative flex min-h-[88px] items-start gap-3 rounded-xl border bg-white px-4 py-4 shadow-sm transition-colors sm:items-center ${
         activeFeatureKey != null && activeFeatureKey !== feature.featureKey
           ? "border-[var(--primary)]/35"
           : "border-slate-200"
@@ -115,16 +150,27 @@ function EnabledFeatureCard({
       <div className="flex size-12 shrink-0 items-center justify-center rounded-lg bg-[var(--primary)]/10 text-[var(--primary)]">
         <span className="material-symbols-outlined" aria-hidden="true">{feature.iconName}</span>
       </div>
-      <div className="flex flex-1 flex-col">
+      <div className="min-w-0 flex flex-1 flex-col">
         <p className="text-base font-bold">{getFeatureDisplayName(feature)}</p>
         <p className="text-sm text-slate-500">{getFeatureDescription(feature)}</p>
+        {feature.mandatory ? (
+          <p className="mt-2 inline-flex w-fit items-center gap-1 rounded-lg bg-slate-100 px-2 py-1 text-xs font-bold text-slate-600">
+            <span className="material-symbols-outlined text-[14px]" aria-hidden="true">lock</span>
+            {feature.mandatoryReason ?? "현재 클럽 정책에서 필수입니다."}
+          </p>
+        ) : requiredFeatureNames.length > 0 ? (
+          <p className="mt-2 text-xs font-semibold text-slate-500">
+            함께 사용: {requiredFeatureNames.join(" · ")}
+          </p>
+        ) : null}
       </div>
       <button
         type="button"
         onClick={() => onToggle(feature.featureKey)}
-        className="rounded-full bg-[var(--primary)]/10 px-4 py-2 text-xs font-bold text-[var(--primary)] transition hover:bg-[var(--primary)]/20"
+        disabled={feature.mandatory}
+        className="inline-flex min-h-11 shrink-0 items-center rounded-xl bg-[var(--primary)]/10 px-4 text-xs font-bold text-[var(--primary)] transition hover:bg-[var(--primary)]/20 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500"
       >
-        비활성화
+        {feature.mandatory ? "필수 사용" : "비활성화"}
       </button>
     </article>
   );
@@ -275,18 +321,46 @@ export function ClubAdminMenuClient({
   });
 
   const handleToggle = (featureKey: string) => {
+    const target = features.find((feature) => feature.featureKey === featureKey);
+    if (!target) return;
+    if (target.available === false) {
+      showToast(target.unavailableReason ?? "현재 클럽 정책에서는 사용할 수 없는 기능입니다.", "info");
+      return;
+    }
+    if (target.enabled && target.mandatory) {
+      showToast(target.mandatoryReason ?? "현재 클럽 정책에서 필수인 기능입니다.", "info");
+      return;
+    }
+
+    const affectedFeatureKeys = target.enabled
+      ? collectDependentFeatureKeys(featureKey, features)
+      : collectRequiredFeatureKeys(featureKey, features);
     startTransition(() => {
       setFeatures((current) => {
-        const toggled = current.map((feature) =>
-          feature.featureKey === featureKey
-            ? { ...feature, enabled: !feature.enabled }
-            : feature,
-        );
-        const nextEnabled = toggled.filter((feature) => feature.enabled);
-        const nextDisabled = toggled.filter((feature) => !feature.enabled);
-        return [...nextEnabled, ...nextDisabled];
+        const toggled = current.map((feature) => {
+          if (feature.featureKey === featureKey) {
+            return { ...feature, enabled: !target.enabled };
+          }
+          if (affectedFeatureKeys.has(feature.featureKey)) {
+            return { ...feature, enabled: !target.enabled };
+          }
+          return feature;
+        });
+        return sortByEnabledState(toggled);
       });
     });
+
+    if (affectedFeatureKeys.size > 0) {
+      const affectedNames = Array.from(affectedFeatureKeys)
+        .map((key) => getFeatureName(key, features))
+        .join(" · ");
+      showToast(
+        target.enabled
+          ? `${getFeatureDisplayName(target)} 비활성화에 따라 ${affectedNames}도 함께 비활성화했습니다.`
+          : `${getFeatureDisplayName(target)} 사용에 필요한 ${affectedNames}도 함께 활성화했습니다.`,
+        "info",
+      );
+    }
   };
 
   const handleDragStart = (event: DragStartEvent) => {
@@ -623,6 +697,20 @@ export function ClubAdminMenuClient({
             ) : null}
           </motion.section>
 
+          <motion.section className="px-4 py-4" {...staggeredFadeUpMotion(3, reduceMotion)}>
+            <div className="rounded-2xl border border-orange-100 bg-orange-50/70 p-4">
+              <div className="flex items-start gap-3">
+                <span className="material-symbols-outlined mt-0.5 text-[20px] text-orange-700" aria-hidden="true">account_tree</span>
+                <div>
+                  <h2 className="text-sm font-black text-orange-950">기능 조합 기준</h2>
+                  <p className="mt-1 text-xs leading-5 text-orange-900/75">
+                    출석은 일정과, 인수인계는 직책·권한과 함께 사용합니다. 대회–재정, 대진표–대회, 업무·재정·결정의 일정 연결은 선택 연동이므로 필요한 기능만 켤 수 있습니다.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </motion.section>
+
           <motion.section className="px-4 py-4" {...staggeredFadeUpMotion(2, reduceMotion)}>
             <div className="mb-4 flex items-center gap-2">
               <span className="material-symbols-outlined text-[var(--primary)]" aria-hidden="true">view_quilt</span>
@@ -653,6 +741,7 @@ export function ClubAdminMenuClient({
                         <EnabledFeatureCard
                           key={`${feature.featureKey || feature.adminPath || feature.userPath || "feature"}-${index}`}
                           feature={feature}
+                          features={features}
                           activeFeatureKey={activeFeatureKey}
                           onToggle={handleToggle}
                         />
@@ -692,14 +781,22 @@ export function ClubAdminMenuClient({
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-bold">{getFeatureDisplayName(feature)}</p>
                       <p className="line-clamp-2 text-xs text-slate-500">{getFeatureDescription(feature)}</p>
+                      {(feature.requiredFeatureKeys ?? []).length > 0 ? (
+                        <p className="mt-1 text-xs font-semibold text-slate-500">
+                          함께 활성화: {(feature.requiredFeatureKeys ?? []).map((key) => getFeatureName(key, features)).join(" · ")}
+                        </p>
+                      ) : feature.unavailableReason ? (
+                        <p className="mt-1 text-xs font-semibold text-amber-700">{feature.unavailableReason}</p>
+                      ) : null}
                     </div>
                     <button
                       type="button"
                       onClick={() => handleToggle(feature.featureKey)}
-                      className="inline-flex shrink-0 items-center justify-center gap-1 rounded-lg bg-slate-200 px-3 py-2 text-xs font-bold text-slate-700 transition-colors hover:bg-slate-300"
+                      disabled={feature.available === false}
+                      className="inline-flex min-h-11 shrink-0 items-center justify-center gap-1 rounded-xl bg-slate-200 px-3 text-xs font-bold text-slate-700 transition-colors hover:bg-slate-300 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
                     >
-                      <span className="material-symbols-outlined text-sm" aria-hidden="true">add</span>
-                      활성화
+                      <span className="material-symbols-outlined text-sm" aria-hidden="true">{feature.available === false ? "lock" : "add"}</span>
+                      {feature.available === false ? "정책 필요" : "활성화"}
                     </button>
                   </motion.article>
                 ))

@@ -10,6 +10,7 @@ import { createRoleMutationOptions } from "@/app/lib/react-query/roles/mutations
 import { adminRoleManagementQueryOptions } from "@/app/lib/react-query/roles/queries";
 import { AdminFeatureSettingsLoadingShell } from "../../../AdminRouteLoadingShells";
 import { RoleEditorForm } from "../components/RoleEditorForm";
+import { toFeatureGrantRequests } from "../utils/roleUtils";
 
 type ClubAdminRoleCreateFallbackClientProps = {
   clubId: string;
@@ -58,10 +59,9 @@ export function ClubAdminRoleCreateFallbackClient({
   return (
     <RoleEditorForm
       clubId={clubId}
-      clubName={payload.clubName}
       title="직책 생성"
-      mode="create"
       permissionGroups={payload.permissionGroups}
+      positionTemplates={payload.positionTemplates ?? []}
       onSubmit={async (value) => {
         const request: CreateClubPositionRequest = {
           displayName: value.displayName,
@@ -69,11 +69,11 @@ export function ClubAdminRoleCreateFallbackClient({
           description: value.description,
           iconName: value.iconName,
           colorHex: value.colorHex,
-          permissionKeys: value.permissionKeys,
+          featureGrants: toFeatureGrantRequests(value.featureGrants),
         };
         const result = await createRoleMutation.mutateAsync(request);
         if (!result.ok || !result.data) {
-          return { success: false };
+          return { success: false, message: result.message };
         }
         await invalidateClubQueries(queryClient, clubId);
         return {
