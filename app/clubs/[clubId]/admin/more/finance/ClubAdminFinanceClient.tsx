@@ -10,9 +10,8 @@ import {
   useRef,
   useState,
 } from "react";
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { AnimatePresence, useReducedMotion } from "motion/react";
 import { useSearchParams } from "next/navigation";
-import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import { useAppToast } from "@/app/hooks/useAppToast";
 import { ScheduleActionConfirmModal } from "@/app/clubs/[clubId]/schedule/modals/ScheduleActionConfirmModal";
 import {
@@ -33,7 +32,6 @@ import {
   type UpsertFinanceBudgetRequest,
 } from "@/app/lib/clubs";
 import { FAB_RIGHT_OFFSET_CLASS_NAME, getActionFabBottomClass } from "@/app/lib/fab";
-import { staggeredFadeUpMotion } from "@/app/lib/motion";
 import { invalidateClubQueries } from "@/app/lib/react-query/common";
 import {
   createAdminFinanceExpenseMutationOptions,
@@ -69,11 +67,18 @@ import {
   FinanceExpenseDetailModal,
   FinanceOperationsPanel,
   FinancePeriodEditorModal,
-  MetricCard,
   ObligationDetailModal,
-  PermissionChip,
   SettlementsTabPanel,
 } from "./components";
+import { FinanceAdminOverview } from "./FinanceAdminOverview";
+import {
+  type AdminFinanceTabKey,
+  combineDateTimeValue,
+  mergeObligationSummary,
+  type ObligationFilter,
+  resolveInitialFinanceTab,
+  type TargetScope,
+} from "./financeClientUtils";
 
 type ClubAdminFinanceClientProps = {
   clubId: string;
@@ -83,41 +88,6 @@ type ClubAdminFinanceClientProps = {
   initialRequestFeed: ClubFinanceRequestFeedResponse;
   initialExpenseFeed: ClubFinanceExpenseFeedResponse;
 };
-
-type ObligationFilter = "ALL" | "OPEN" | "SETTLED";
-type TargetScope = "ALL_ACTIVE_MEMBERS" | "SELECTED_MEMBERS";
-type AdminFinanceTabKey = "DASHBOARD" | "BILLING" | "EXPENSES" | "SETTLEMENTS" | "OPERATIONS";
-
-const ADMIN_FINANCE_TABS: Array<{ key: AdminFinanceTabKey; label: string }> = [
-  { key: "DASHBOARD", label: "재정 대시보드" },
-  { key: "BILLING", label: "회비 관리" },
-  { key: "EXPENSES", label: "지출 관리" },
-  { key: "SETTLEMENTS", label: "정산 관리" },
-  { key: "OPERATIONS", label: "예산·마감" },
-];
-
-function resolveInitialFinanceTab(value: string | null): AdminFinanceTabKey {
-  const normalized = value?.trim().toUpperCase();
-  return ADMIN_FINANCE_TABS.some((tab) => tab.key === normalized)
-    ? normalized as AdminFinanceTabKey
-    : "DASHBOARD";
-}
-
-function combineDateTimeValue(dateValue: string, timeValue: string) {
-  if (!dateValue) {
-    return null;
-  }
-  return `${dateValue}T${timeValue || "23:59"}:00`;
-}
-
-function mergeObligationSummary(
-  current: ClubAdminFinanceObligation[],
-  nextObligation: ClubAdminFinanceObligation,
-) {
-  return current.map((obligation) =>
-    obligation.obligationId === nextObligation.obligationId ? nextObligation : obligation,
-  );
-}
 
 export function ClubAdminFinanceClient({
   clubId,
@@ -803,65 +773,14 @@ export function ClubAdminFinanceClient({
   return (
     <div className="min-h-screen bg-[var(--background-light)] text-slate-900">
       <div className="min-h-screen bg-[#f8f6f6]">
-        <ClubPageHeader
-          title="재정 관리"
-          subtitle={finance.clubName}
-          icon="payments"
-          theme="admin"
-          containerClassName="semo-page-admin-wide"
+        <FinanceAdminOverview
+          finance={finance}
+          activeTab={activeTab}
+          reduceMotion={reduceMotion}
+          onTabChange={setActiveTab}
         />
 
-        <main className="semo-page-admin-wide semo-nav-bottom-space space-y-5 px-4 pt-4">
-          <motion.section
-            className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm"
-            {...staggeredFadeUpMotion(0, reduceMotion)}
-          >
-            <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
-              <div className="max-w-3xl">
-                <p className="text-xs font-semibold tracking-wide text-slate-400">재무 운영</p>
-                <h2 className="mt-2 text-2xl font-bold">모임의 재정 흐름을 한곳에서 관리하세요.</h2>
-                <p className="mt-2 text-sm leading-6 text-slate-500">
-                  회비 발행과 수납 현황부터 회원 요청, 운영 지출까지 필요한 업무를 빠르게 이어갈 수 있습니다.
-                </p>
-                <div className="mt-4 flex flex-wrap gap-2">
-                  <PermissionChip label="조회" enabled />
-                  <PermissionChip label="발행" enabled={finance.canIssue} />
-                  <PermissionChip label="납부 완료" enabled={finance.canMarkPaid} />
-                  <PermissionChip label="면제" enabled={finance.canMarkWaive} />
-                </div>
-              </div>
-              <div className="grid w-full grid-cols-2 gap-3 xl:max-w-[420px]">
-                <MetricCard label="총 청구액" value={finance.totalBilledAmountLabel} accent />
-                <MetricCard label="수납 완료" value={finance.totalCollectedAmountLabel} />
-                <MetricCard label="미수금" value={finance.totalOutstandingAmountLabel} />
-                <MetricCard label="면제 금액" value={finance.totalWaivedAmountLabel} />
-              </div>
-            </div>
-          </motion.section>
-
-          <motion.section
-            className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm"
-            {...staggeredFadeUpMotion(1, reduceMotion)}
-          >
-            <div className="grid grid-cols-2 gap-2 sm:flex">
-              {ADMIN_FINANCE_TABS.map((tab) => (
-                <button
-                  key={tab.key}
-                  type="button"
-                  onClick={() => setActiveTab(tab.key)}
-                  aria-pressed={activeTab === tab.key}
-                  className={`w-full rounded-full px-4 py-2.5 text-sm font-bold transition sm:w-auto sm:shrink-0 ${
-                    activeTab === tab.key
-                      ? "bg-[#ec5b13] text-white"
-                      : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                  }`}
-                >
-                  {tab.label}
-                </button>
-              ))}
-            </div>
-          </motion.section>
-
+        <main className="semo-page-admin-wide semo-nav-bottom-space space-y-5 px-4 pt-5">
           {activeTab === "DASHBOARD" ? (
             <DashboardTabPanel
               finance={finance}

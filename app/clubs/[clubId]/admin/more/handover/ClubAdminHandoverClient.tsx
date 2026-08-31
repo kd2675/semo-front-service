@@ -5,6 +5,7 @@ import { useMemo, useState, type FormEvent } from "react";
 
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import { ClubRouteErrorState, ClubRouteLoadingState } from "@/app/components/ClubRouteState";
+import { DatePopoverField } from "@/app/components/DatePopoverField";
 import { ScheduleActionConfirmModal } from "@/app/clubs/[clubId]/schedule/modals/ScheduleActionConfirmModal";
 import { ResourceAttachmentPanel } from "@/app/components/ResourceAttachmentPanel";
 import { RouterLink } from "@/app/components/RouterLink";
@@ -191,6 +192,10 @@ export function ClubAdminHandoverClient({ clubId }: { clubId: string }) {
 
   const submitTerm = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (!termForm.startDate || !termForm.endDate) {
+      showToast("임기 시작일과 종료일을 모두 선택해주세요.", "error");
+      return;
+    }
     const result = editingTermId == null
       ? await createTermMutation.mutateAsync(termForm)
       : await updateTermMutation.mutateAsync({ termId: editingTermId, request: termForm });
@@ -692,8 +697,8 @@ function TermsTab({ terms, canManage, showForm, editingTermId, form, pending, on
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
             <FormField label="임기 이름"><input aria-label="임기 이름" required maxLength={100} value={form.termName} onChange={(event) => onFormChange({ ...form, termName: event.target.value })} className={fieldClassName} placeholder="예: 2026년 2학기" /></FormField>
             <FormField label="임기 유형"><select aria-label="임기 유형" value={form.termType} onChange={(event) => onFormChange({ ...form, termType: event.target.value as OperatingTermType })} className={fieldClassName}>{TERM_TYPE_OPTIONS.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}</select></FormField>
-            <FormField label="시작일"><input aria-label="임기 시작일" required type="date" value={form.startDate} onChange={(event) => onFormChange({ ...form, startDate: event.target.value })} className={fieldClassName} /></FormField>
-            <FormField label="종료일"><input aria-label="임기 종료일" required type="date" value={form.endDate} onChange={(event) => onFormChange({ ...form, endDate: event.target.value })} className={fieldClassName} /></FormField>
+            <FormField label="시작일"><DatePopoverField value={form.startDate} maxDate={form.endDate || undefined} onChange={(value) => onFormChange({ ...form, startDate: value })} placeholder="임기 시작일 선택" buttonClassName={fieldClassName} /></FormField>
+            <FormField label="종료일"><DatePopoverField value={form.endDate} minDate={form.startDate || undefined} onChange={(value) => onFormChange({ ...form, endDate: value })} placeholder="임기 종료일 선택" buttonClassName={fieldClassName} /></FormField>
           </div>
           <div className="mt-4"><FormField label="운영 목표와 설명"><textarea aria-label="운영 목표와 설명" rows={3} maxLength={1000} value={form.description ?? ""} onChange={(event) => onFormChange({ ...form, description: event.target.value })} className={textareaClassName} placeholder="이 임기의 목표, 운영 범위와 특이사항" /></FormField></div>
           <div className="mt-4 flex gap-2"><button type="button" onClick={onCancel} className="min-h-11 flex-1 rounded-2xl bg-slate-100 text-sm font-bold text-slate-700">취소</button><button type="submit" disabled={pending} className="min-h-11 flex-1 rounded-2xl bg-orange-500 text-sm font-bold text-white disabled:opacity-50">{editingTermId == null ? "임기 만들기" : "수정 저장"}</button></div>

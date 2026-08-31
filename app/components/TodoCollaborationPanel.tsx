@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 
 import { useAppToast } from "@/app/hooks/useAppToast";
+import { useAppConfirm } from "@/app/hooks/useAppConfirm";
 import {
   addTodoChecklistMutationOptions,
   addTodoCommentMutationOptions,
@@ -30,6 +31,7 @@ export function TodoCollaborationPanel({
 }: TodoCollaborationPanelProps) {
   const queryClient = useQueryClient();
   const { showToast } = useAppToast();
+  const { showConfirm } = useAppConfirm();
   const [open, setOpen] = useState(false);
   const [newChecklistContent, setNewChecklistContent] = useState("");
   const [newCommentContent, setNewCommentContent] = useState("");
@@ -176,11 +178,17 @@ export function TodoCollaborationPanel({
                         <button
                           type="button"
                           disabled={pending}
-                          onClick={async () => {
-                            if (!window.confirm(`체크리스트 항목을 삭제할까요?\n\n${item.content}`)) return;
-                            const result = await deleteChecklistMutation.mutateAsync(item.todoChecklistItemId);
-                            await handleResult(result, "체크리스트 항목을 삭제했습니다.");
-                          }}
+                          onClick={() => showConfirm({
+                            title: "체크리스트 항목을 삭제할까요?",
+                            message: `“${item.content}” 항목을 삭제합니다. 삭제한 항목은 복구할 수 없습니다.`,
+                            tone: "danger",
+                            cancelLabel: "취소",
+                            confirmLabel: "항목 삭제",
+                            onConfirm: async () => {
+                              const result = await deleteChecklistMutation.mutateAsync(item.todoChecklistItemId);
+                              await handleResult(result, "체크리스트 항목을 삭제했습니다.");
+                            },
+                          })}
                           aria-label={`${item.content} 삭제`}
                           className="flex size-11 shrink-0 items-center justify-center rounded-xl text-slate-300 transition hover:bg-rose-50 hover:text-rose-600"
                         >
@@ -234,11 +242,17 @@ export function TodoCollaborationPanel({
                           <button
                             type="button"
                             disabled={pending}
-                            onClick={async () => {
-                              if (!window.confirm("이 댓글을 삭제할까요?")) return;
-                              const result = await deleteCommentMutation.mutateAsync(comment.todoCommentId);
-                              await handleResult(result, "댓글을 삭제했습니다.");
-                            }}
+                            onClick={() => showConfirm({
+                              title: "댓글을 삭제할까요?",
+                              message: "삭제한 댓글은 복구할 수 없습니다.",
+                              tone: "danger",
+                              cancelLabel: "취소",
+                              confirmLabel: "댓글 삭제",
+                              onConfirm: async () => {
+                                const result = await deleteCommentMutation.mutateAsync(comment.todoCommentId);
+                                await handleResult(result, "댓글을 삭제했습니다.");
+                              },
+                            })}
                             aria-label={`${comment.authorDisplayName ?? "멤버"} 댓글 삭제`}
                             className="flex size-11 shrink-0 items-center justify-center rounded-xl text-slate-300 transition hover:bg-rose-50 hover:text-rose-600"
                           >

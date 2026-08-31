@@ -182,6 +182,10 @@ for (const filePath of files) {
         if (type !== "hidden" && !hasAccessibleName) {
           failures.push(`${relativePath(filePath)}:${getLine(sourceFile, node)} 폼 필드에 접근성 이름이 없습니다.`);
         }
+
+        if (tagName === "input" && (type === "date" || type === "time")) {
+          failures.push(`${relativePath(filePath)}:${getLine(sourceFile, node)} 공용 날짜·시간 popover 대신 네이티브 ${type} 입력을 사용합니다.`);
+        }
       }
 
       if (INTERACTIVE_NAMES.has(tagName)) {
@@ -221,6 +225,10 @@ for (const filePath of files) {
 
   if (source.includes("text-[10px]")) {
     failures.push(`${relativePath(filePath)} 모바일에서 읽기 어려운 10px 텍스트를 사용합니다.`);
+  }
+
+  if (/\bwindow\.confirm\s*\(/.test(source)) {
+    failures.push(`${relativePath(filePath)} 전역 confirm 대신 브라우저 window.confirm을 사용합니다.`);
   }
 
   const hasModalPresentation = source.includes('presentation === "modal"');
