@@ -68,6 +68,7 @@ function memberCoreRadius(value: number | undefined) {
   if (memberCount <= 9) return 13;
   if (memberCount <= 19) return 15;
   if (memberCount <= 49) return 17;
+  if (memberCount <= 99) return 18;
   return 19;
 }
 
