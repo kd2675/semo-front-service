@@ -3,6 +3,7 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { DiscoverClubModal } from "@/app/home/DiscoverClubModal";
 import { DiscoverSection } from "@/app/home/DiscoverSection";
+import { ClubGrowthCoreMark } from "@/app/components/ClubGrowthCoreMark";
 import { RouterLink } from "@/app/components/RouterLink";
 import { useAppToast } from "@/app/hooks/useAppToast";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
@@ -294,7 +295,7 @@ export default function Home() {
                         className="flex h-full min-w-[240px] flex-col gap-3 rounded-xl border border-slate-100 bg-slate-50 p-3 shadow-sm transition-transform hover:-translate-y-0.5"
                       >
                         <div
-                          className="aspect-[16/9] w-full rounded-lg bg-slate-200 bg-cover bg-center"
+                          className="relative aspect-[16/9] w-full overflow-hidden rounded-lg bg-slate-200 bg-cover bg-center"
                           style={club.imageUrl ? { backgroundImage: `url("${club.imageUrl}")` } : undefined}
                         >
                           {!club.imageUrl ? (
@@ -302,6 +303,9 @@ export default function Home() {
                               <span className="material-symbols-outlined text-4xl" aria-hidden="true">groups</span>
                             </div>
                           ) : null}
+                          <div className="absolute bottom-2 right-2 flex size-16 items-center justify-center rounded-xl border border-white/80 bg-white/90 shadow-md backdrop-blur-sm">
+                            <ClubGrowthCoreMark growthCore={club.growthCore} size={60} />
+                          </div>
                         </div>
                         <div>
                           <div className="flex items-center justify-between gap-3">

@@ -4,6 +4,20 @@ import type { RegionScope } from "@/app/lib/regions";
 
 type ClubId = string | number;
 
+export type ClubGrowthCore = {
+  tierCode: "RAW" | "IRON" | "BRONZE" | "SILVER" | "GOLD" | "PLATINUM" | "DIAMOND" | string;
+  tierLabel: string;
+  nextTierCode: string | null;
+  nextTierLabel: string | null;
+  togetherProgress: number;
+  operationsProgress: number;
+  continuityProgress: number;
+  overallProgress: number;
+  activityLevel: number;
+  policyVersion: number;
+  lastProjectedAt: string | null;
+};
+
 export type CreateClubRequest = {
   name: string;
   description?: string | null;
@@ -42,6 +56,7 @@ export type ClubCreateResponse = {
   fileName: string | null;
   imageUrl: string | null;
   thumbnailUrl: string | null;
+  growthCore: ClubGrowthCore;
 };
 
 export type MyClubSummary = {
@@ -64,6 +79,7 @@ export type MyClubSummary = {
   fileName: string | null;
   imageUrl: string | null;
   thumbnailUrl: string | null;
+  growthCore: ClubGrowthCore;
 };
 
 export type ClubDiscoverSummary = {
@@ -91,6 +107,7 @@ export type ClubDiscoverSummary = {
   clubJoinRequestId: number | null;
   recommendedByCategory: boolean;
   recommendedByTags: boolean;
+  growthCore: ClubGrowthCore;
 };
 
 export type ClubDiscoverResponse = {

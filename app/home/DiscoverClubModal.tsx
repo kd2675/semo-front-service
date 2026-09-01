@@ -1,6 +1,7 @@
 "use client";
 
 import { RouteModal } from "@/app/components/RouteModal";
+import { ClubGrowthCorePanel } from "@/app/components/ClubGrowthCorePanel";
 import {
   getActivityCategoryLabel,
   getAffiliationTypeLabel,
@@ -70,6 +71,10 @@ export function DiscoverClubModal({
           >
             <span className="material-symbols-outlined" aria-hidden="true">close</span>
           </button>
+        </div>
+
+        <div className="mt-5">
+          <ClubGrowthCorePanel growthCore={club.growthCore} compact />
         </div>
 
         <div className="mt-5 grid grid-cols-2 gap-3">

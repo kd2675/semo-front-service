@@ -7,6 +7,7 @@ import {
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion, useReducedMotion } from "motion/react";
 import { startTransition, useCallback, useEffect, useMemo, useState } from "react";
+import { ClubGrowthCorePanel } from "@/app/components/ClubGrowthCorePanel";
 import { ClubModeSwitchFab } from "@/app/components/ClubModeSwitchFab";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import { useAppToast } from "@/app/hooks/useAppToast";
@@ -674,7 +675,13 @@ export function ClubDashboardFallbackClient({
             )}
           </motion.section>
 
-          <motion.section {...staggeredFadeUpMotion(2, reduceMotion)}>
+          {club ? (
+            <motion.div {...staggeredFadeUpMotion(2, reduceMotion)}>
+              <ClubGrowthCorePanel growthCore={club.growthCore} />
+            </motion.div>
+          ) : null}
+
+          <motion.section {...staggeredFadeUpMotion(3, reduceMotion)}>
             {dashboardLoading ? (
               <ClubDashboardWidgetGridShell />
             ) : dashboardError ? (

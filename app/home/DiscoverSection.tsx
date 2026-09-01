@@ -8,6 +8,7 @@ import {
   getAffiliationTypeLabel,
   getPrimaryClubActivityLabel,
 } from "@/app/lib/clubClassification";
+import { ClubGrowthCoreMark } from "@/app/components/ClubGrowthCoreMark";
 import { type ClubDiscoverSummary } from "@/app/lib/clubs";
 import { staggeredFadeUpMotion } from "@/app/lib/motion";
 
@@ -124,15 +125,11 @@ export function DiscoverSection({
                 {...staggeredFadeUpMotion(index + 7, reduceMotion)}
               >
                 <div className="flex gap-4">
-                  <div
-                    className="size-20 shrink-0 rounded-2xl bg-slate-100 bg-cover bg-center"
-                    style={club.imageUrl ? { backgroundImage: `url("${club.imageUrl}")` } : undefined}
-                  >
-                    {!club.imageUrl ? (
-                      <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-[var(--primary)]/12 to-blue-100 text-[var(--primary)]">
-                        <span className="material-symbols-outlined text-3xl" aria-hidden="true">groups</span>
-                      </div>
-                    ) : null}
+                  <div className="relative flex size-20 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-blue-100 bg-[radial-gradient(circle_at_50%_36%,rgba(19,91,236,0.12),transparent_64%),#f8fafc]">
+                    <ClubGrowthCoreMark growthCore={club.growthCore} size={76} />
+                    <span className="absolute bottom-1 rounded-full bg-white/90 px-1.5 py-0.5 text-[9px] font-extrabold text-slate-600 shadow-sm">
+                      {club.growthCore?.tierLabel ?? "원석"}
+                    </span>
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
