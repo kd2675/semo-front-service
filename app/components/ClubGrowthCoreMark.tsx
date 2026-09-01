@@ -26,7 +26,7 @@ const INITIAL_CORE: ClubGrowthCore = {
   togetherProgress: 0,
   operationsProgress: 0,
   continuityProgress: 0,
-  overallProgress: 0,
+  memberCount: 0,
   activityLevel: 0,
   policyVersion: 1,
   lastProjectedAt: null,
@@ -61,6 +61,16 @@ function trianglePoint(progress: number, direction: "top" | "right" | "left") {
     : `${60 - xOffset},${64 + yOffset}`;
 }
 
+function memberCoreRadius(value: number | undefined) {
+  const memberCount = Number.isFinite(value) ? Math.max(1, Math.floor(value ?? 0)) : 1;
+  if (memberCount <= 1) return 9;
+  if (memberCount <= 4) return 11;
+  if (memberCount <= 9) return 13;
+  if (memberCount <= 19) return 15;
+  if (memberCount <= 49) return 17;
+  return 19;
+}
+
 export function ClubGrowthCoreMark({
   growthCore,
   size = 80,
@@ -74,15 +84,15 @@ export function ClubGrowthCoreMark({
   const together = clampProgress(core.togetherProgress);
   const operations = clampProgress(core.operationsProgress);
   const continuity = clampProgress(core.continuityProgress);
-  const overall = clampProgress(core.overallProgress);
+  const memberCount = Number.isFinite(core.memberCount) ? Math.max(0, Math.floor(core.memberCount)) : 0;
   const activityLevel = Math.max(0, Math.min(4, Math.round(core.activityLevel ?? 0)));
-  const coreRadius = 10 + overall * 0.08;
+  const coreRadius = memberCoreRadius(memberCount);
   const currentTriangle = [
     trianglePoint(together, "top"),
     trianglePoint(operations, "right"),
     trianglePoint(continuity, "left"),
   ].join(" ");
-  const ariaLabel = `${core.tierLabel} 코어. 함께 ${together}%, 운영 ${operations}%, 이어짐 ${continuity}%, 최근 활동 밝기 ${activityLevel}단계.`;
+  const ariaLabel = `${core.tierLabel} 코어. 활성 멤버 ${memberCount}명, 함께 ${together}%, 운영 ${operations}%, 이어짐 ${continuity}%, 최근 활동 밝기 ${activityLevel}단계.`;
   const glowOpacity = 0.12 + activityLevel * 0.12;
   const shouldAnimate = animateActivity && activityLevel > 0 && !prefersReducedMotion;
 

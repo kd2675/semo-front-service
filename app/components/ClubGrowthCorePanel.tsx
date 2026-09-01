@@ -52,8 +52,8 @@ export function ClubGrowthCorePanel({ growthCore, compact = false }: ClubGrowthC
               <p className="text-xs font-extrabold tracking-[0.16em] text-[var(--primary)]">SEMO GROWTH CORE</p>
               <h2 className="mt-1 text-xl font-black tracking-tight text-slate-900">세 꼭짓점이 함께 만드는 성장</h2>
               <p className="mt-2 max-w-xl text-sm leading-6 text-slate-500">
-                실제 모임 기록이 세 축을 키웁니다. 세 축이 모두 차면 현재 삼각은 코어에 흡수되고,
-                소재가 올라간 작은 삼각으로 다음 성장을 시작합니다.
+                활성 멤버가 많을수록 코어가 커지고 실제 모임 기록이 세 축을 키웁니다. 세 축이 모두 차면
+                현재 삼각은 코어에 흡수되고, 소재가 올라간 작은 삼각으로 다음 성장을 시작합니다.
               </p>
             </div>
             <div className="flex flex-col items-end gap-1">

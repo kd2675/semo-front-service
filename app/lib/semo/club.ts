@@ -12,7 +12,7 @@ export type ClubGrowthCore = {
   togetherProgress: number;
   operationsProgress: number;
   continuityProgress: number;
-  overallProgress: number;
+  memberCount: number;
   activityLevel: number;
   policyVersion: number;
   lastProjectedAt: string | null;
