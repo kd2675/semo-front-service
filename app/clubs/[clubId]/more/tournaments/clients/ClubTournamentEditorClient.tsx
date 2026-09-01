@@ -218,13 +218,13 @@ export function ClubTournamentEditorClient({
 
   const actionBarClassName = isModal
     ? "sticky bottom-0 z-20 border-t border-slate-200 bg-white/95 p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] backdrop-blur"
-    : "fixed bottom-0 left-1/2 z-20 w-full max-w-md -translate-x-1/2 border-t border-slate-200 bg-white/95 p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] backdrop-blur";
+    : "fixed bottom-0 left-1/2 z-20 w-full max-w-[var(--page-user)] -translate-x-1/2 border-t border-slate-200 bg-white/95 p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] backdrop-blur";
   const inputClassName = "block w-full rounded-[16px] border border-slate-200 bg-slate-50 px-4 py-3 text-sm leading-6 text-slate-900";
   const textareaClassName = "block w-full rounded-[16px] border border-slate-200 bg-slate-50 px-4 py-3 text-sm leading-6 text-slate-900";
 
   return (
     <div className={isModal ? "flex min-h-0 flex-1 flex-col bg-white font-display text-slate-900" : "bg-[var(--background-light)] font-display text-slate-900"}>
-      <div className={isModal ? "flex min-h-0 flex-1 flex-col bg-white" : "mx-auto flex min-h-screen max-w-md flex-col bg-white"}>
+      <div className={isModal ? "flex min-h-0 flex-1 flex-col bg-white" : "semo-page-user flex min-h-screen flex-col bg-white/92"}>
         <ClubPageHeader
           title={isEdit ? "대회 수정" : "대회 생성"}
           subtitle="대회 운영"

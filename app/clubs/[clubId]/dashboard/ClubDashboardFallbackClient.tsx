@@ -1,12 +1,15 @@
 "use client";
 
+import { startTransition, useCallback, useEffect, useMemo, useState } from "react";
+
 import {
   type DragEndEvent,
   type DragStartEvent,
 } from "@dnd-kit/core";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { motion, useReducedMotion } from "motion/react";
-import { startTransition, useCallback, useEffect, useMemo, useState } from "react";
+import { motion } from "motion/react";
+
+import { useHydrationSafeReducedMotion } from "@/app/hooks/useHydrationSafeReducedMotion";
 import { ClubGrowthCorePanel } from "@/app/components/ClubGrowthCorePanel";
 import { ClubModeSwitchFab } from "@/app/components/ClubModeSwitchFab";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
@@ -40,6 +43,7 @@ import {
   myClubQueryOptions,
 } from "@/app/lib/react-query/club/queries";
 import { invalidateClubQueries } from "@/app/lib/react-query/common";
+
 import {
   ClubDashboardLoadingShell,
   ClubDashboardWidgetGridShell,
@@ -70,8 +74,7 @@ export function ClubDashboardFallbackClient({
   clubId,
 }: ClubDashboardFallbackClientProps) {
   const queryClient = useQueryClient();
-  const prefersReducedMotion = useReducedMotion();
-  const reduceMotion = Boolean(prefersReducedMotion);
+  const reduceMotion = useHydrationSafeReducedMotion();
   const clubQuery = useQuery(myClubQueryOptions(clubId));
   const club = clubQuery.data ?? null;
   const [editorWidgetsState, setEditorWidgets] = useState<ClubDashboardWidgetSummary[] | null>(null);

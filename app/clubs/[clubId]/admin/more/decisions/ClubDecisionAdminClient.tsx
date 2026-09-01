@@ -268,5 +268,5 @@ export function ClubDecisionAdminClient({ clubId }: { clubId: string }) {
 }
 
 function HeroMetric({ label, value, danger = false }: { label: string; value: number; danger?: boolean }) {
-  return <div className="rounded-2xl bg-white/8 px-3 py-3"><p className="text-[11px] font-bold text-white/50">{label}</p><p className={`mt-1 text-xl font-black ${danger ? "text-rose-300" : "text-white"}`}>{value}</p></div>;
+  return <div className="rounded-2xl bg-white/8 px-3 py-3"><p className="text-xs font-bold text-white/50">{label}</p><p className={`mt-1 text-xl font-black ${danger ? "text-rose-300" : "text-white"}`}>{value}</p></div>;
 }

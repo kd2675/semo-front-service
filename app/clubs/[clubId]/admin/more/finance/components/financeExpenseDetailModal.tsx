@@ -105,7 +105,7 @@ export function FinanceExpenseDetailModal({
       <section className="flex min-h-0 flex-1 flex-col">
         <div className="flex items-center justify-between gap-4 border-b border-slate-200 px-5 py-4">
           <div className="min-w-0">
-            <div className="flex items-center gap-2"><p className="text-xs font-semibold text-slate-400">지출 전표 #{expense.expenseId}</p><span className={`rounded-lg px-2 py-1 text-[11px] font-bold ${posted ? "bg-emerald-50 text-emerald-700" : "bg-rose-50 text-rose-600"}`}>{posted ? "정상" : "취소"}</span></div>
+            <div className="flex items-center gap-2"><p className="text-xs font-semibold text-slate-400">지출 전표 #{expense.expenseId}</p><span className={`rounded-lg px-2 py-1 text-xs font-bold ${posted ? "bg-emerald-50 text-emerald-700" : "bg-rose-50 text-rose-600"}`}>{posted ? "정상" : "취소"}</span></div>
             <h3 className="mt-1 truncate text-xl font-bold text-slate-900">{expense.title}</h3>
           </div>
           <button type="button" aria-label="지출 상세 닫기" onClick={onClose} disabled={busy} className="semo-icon-control rounded-xl text-slate-400 hover:bg-slate-100 disabled:opacity-40"><span className="material-symbols-outlined" aria-hidden="true">close</span></button>
@@ -153,7 +153,7 @@ export function FinanceExpenseDetailModal({
 
           <section className="rounded-[var(--radius-modal)] border border-slate-200 bg-white p-4">
             <div className="flex items-center justify-between"><div><p className="text-xs font-semibold text-slate-400">감사 추적</p><h4 className="mt-1 text-base font-bold text-slate-900">정정·취소 이력</h4></div><span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-500">{revisionsQuery.data?.length ?? 0}건</span></div>
-            {revisionsQuery.isPending ? <div className="mt-4 h-20 animate-pulse rounded-2xl bg-slate-100" /> : revisionsQuery.isError ? <button type="button" onClick={() => void revisionsQuery.refetch()} className="mt-4 w-full rounded-2xl bg-rose-50 px-4 py-3 text-sm font-bold text-rose-600">이력 다시 불러오기</button> : revisionsQuery.data?.length ? <div className="mt-4 space-y-3">{revisionsQuery.data.map((revision) => <article key={revision.financeExpenseRevisionId} className="rounded-2xl bg-slate-50 p-4"><div className="flex items-start justify-between gap-3"><div><span className={`rounded-lg px-2 py-1 text-[11px] font-bold ${revision.revisionTypeCode === "VOID" ? "bg-rose-50 text-rose-600" : "bg-orange-50 text-[var(--primary)]"}`}>{revision.revisionTypeCode === "VOID" ? "취소" : "정정"}</span><p className="mt-3 text-sm font-bold text-slate-900">{revision.reason}</p><p className="mt-1 text-xs text-slate-500">{revision.revisedByDisplayName} · {revision.revisedAt}</p></div><div className="text-right text-xs text-slate-500"><p>{revision.previousAmount.toLocaleString("ko-KR")}원</p><p className="mt-1 font-bold text-slate-900">→ {revision.nextAmount == null ? "취소" : `${revision.nextAmount.toLocaleString("ko-KR")}원`}</p></div></div></article>)}</div> : <p className="mt-4 rounded-2xl bg-slate-50 px-4 py-5 text-sm text-slate-500">아직 정정·취소 이력이 없습니다.</p>}
+            {revisionsQuery.isPending ? <div className="mt-4 h-20 animate-pulse rounded-2xl bg-slate-100" /> : revisionsQuery.isError ? <button type="button" onClick={() => void revisionsQuery.refetch()} className="mt-4 w-full rounded-2xl bg-rose-50 px-4 py-3 text-sm font-bold text-rose-600">이력 다시 불러오기</button> : revisionsQuery.data?.length ? <div className="mt-4 space-y-3">{revisionsQuery.data.map((revision) => <article key={revision.financeExpenseRevisionId} className="rounded-2xl bg-slate-50 p-4"><div className="flex items-start justify-between gap-3"><div><span className={`rounded-lg px-2 py-1 text-xs font-bold ${revision.revisionTypeCode === "VOID" ? "bg-rose-50 text-rose-600" : "bg-orange-50 text-[var(--primary)]"}`}>{revision.revisionTypeCode === "VOID" ? "취소" : "정정"}</span><p className="mt-3 text-sm font-bold text-slate-900">{revision.reason}</p><p className="mt-1 text-xs text-slate-500">{revision.revisedByDisplayName} · {revision.revisedAt}</p></div><div className="text-right text-xs text-slate-500"><p>{revision.previousAmount.toLocaleString("ko-KR")}원</p><p className="mt-1 font-bold text-slate-900">→ {revision.nextAmount == null ? "취소" : `${revision.nextAmount.toLocaleString("ko-KR")}원`}</p></div></div></article>)}</div> : <p className="mt-4 rounded-2xl bg-slate-50 px-4 py-5 text-sm text-slate-500">아직 정정·취소 이력이 없습니다.</p>}
           </section>
         </div>
       </section>
@@ -168,7 +168,7 @@ const CATEGORY_OPTIONS = [
 ].map(([value, label]) => ({ value, label }));
 
 function Meta({ label, value, strong = false }: { label: string; value: string; strong?: boolean }) {
-  return <div><p className="text-[11px] font-semibold text-slate-400">{label}</p><p className={`mt-1 text-sm ${strong ? "font-bold text-slate-900" : "text-slate-600"}`}>{value}</p></div>;
+  return <div><p className="text-xs font-semibold text-slate-400">{label}</p><p className={`mt-1 text-sm ${strong ? "font-bold text-slate-900" : "text-slate-600"}`}>{value}</p></div>;
 }
 
 function Field({ label, children }: { label: string; children: ReactNode }) {

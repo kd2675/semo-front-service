@@ -318,13 +318,13 @@ export function ClubNoticeEditorClient({
           : "bg-[var(--background-light)] font-display text-slate-900"
       }
     >
-      <div className={isModal ? "flex min-h-0 flex-1 flex-col" : "mx-auto flex min-h-screen max-w-md flex-col bg-white"}>
+      <div className={isModal ? "flex min-h-0 flex-1 flex-col" : "semo-page-user flex min-h-screen flex-col bg-white/92"}>
         <ClubPageHeader
           title={isEdit ? "공지 수정" : "공지 작성"}
           subtitle={clubName}
           icon="edit_square"
           layout={isModal ? "modal" : "page"}
-          containerClassName={isModal ? undefined : "max-w-md"}
+          containerClassName={isModal ? undefined : "semo-page-user"}
           leftSlot={
             !isModal ? (
               <RouterLink
@@ -442,7 +442,7 @@ export function ClubNoticeEditorClient({
                     <span className="material-symbols-outlined text-[var(--primary)]" aria-hidden="true">leaderboard</span>
                     <div>
                       <span className="block text-sm font-semibold text-slate-900">게시판에도 공유</span>
-                      <span className="mt-0.5 block text-[11px] text-slate-500">
+                      <span className="mt-0.5 block text-xs text-slate-500">
                         {postToBoard ? "사용 중 · 게시판 메인에도 함께 노출됩니다" : "미사용"}
                       </span>
                     </div>
@@ -455,7 +455,7 @@ export function ClubNoticeEditorClient({
                     <span className="material-symbols-outlined text-[var(--primary)]" aria-hidden="true">event_upcoming</span>
                     <div>
                       <span className="block text-sm font-semibold text-slate-900">캘린더에도 공유</span>
-                      <span className="mt-0.5 block text-[11px] text-slate-500">
+                      <span className="mt-0.5 block text-xs text-slate-500">
                         {postToCalendar ? "사용 중 · 캘린더 메인에도 함께 노출됩니다" : "미사용"}
                       </span>
                     </div>
@@ -530,7 +530,7 @@ export function ClubNoticeEditorClient({
                           <span className="material-symbols-outlined text-[var(--primary)]" aria-hidden="true">schedule</span>
                           <div>
                             <span className="block text-sm font-semibold text-slate-900">시간 입력</span>
-                            <span className="mt-0.5 block text-[11px] text-slate-500">
+                            <span className="mt-0.5 block text-xs text-slate-500">
                               {scheduleTimeEnabled ? "사용 중 · 시작/종료 시간을 함께 저장합니다" : "미사용 · 날짜만 저장합니다"}
                             </span>
                           </div>
@@ -578,7 +578,7 @@ export function ClubNoticeEditorClient({
                   <span className="material-symbols-outlined text-[var(--primary)]" aria-hidden="true">keep</span>
                   <div>
                     <span className="block text-sm font-semibold text-slate-900">핀 고정</span>
-                    <span className="mt-0.5 block text-[11px] text-slate-500">
+                    <span className="mt-0.5 block text-xs text-slate-500">
                       {pinned ? "사용 중 · 공지 목록에서 핀 고정으로 노출" : "미사용"}
                     </span>
                   </div>
@@ -618,7 +618,7 @@ export function ClubNoticeEditorClient({
         {isEdit && (canEdit || canDelete) ? (
           <div
             className={`${
-              isModal ? "sticky max-w-none" : "fixed left-0 right-0 mx-auto max-w-md"
+              isModal ? "sticky max-w-none" : "fixed left-0 right-0 mx-auto max-w-[var(--page-user)]"
             } bottom-0 z-20 border-t border-slate-100 bg-white p-4`}
           >
             <div className="flex gap-3">

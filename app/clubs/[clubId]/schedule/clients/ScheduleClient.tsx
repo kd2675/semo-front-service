@@ -1,7 +1,10 @@
 "use client";
 
 import { startTransition, useMemo, useState } from "react";
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+
+import { AnimatePresence, motion } from "motion/react";
+
+import { useHydrationSafeReducedMotion } from "@/app/hooks/useHydrationSafeReducedMotion";
 import { ClubModeSwitchFab } from "@/app/components/ClubModeSwitchFab";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import { RouteModal } from "@/app/components/RouteModal";
@@ -28,6 +31,7 @@ import type {
   ClubScheduleVoteSummary,
   TournamentSummary,
 } from "@/app/lib/clubs";
+
 import { ClubScheduleEditorClient } from "./ClubScheduleEditorClient";
 import { ClubScheduleVoteEditorClient } from "./ClubScheduleVoteEditorClient";
 
@@ -521,8 +525,7 @@ export function ScheduleClient({
   onChangeMonth,
   onContentChanged,
 }: ScheduleClientProps) {
-  const prefersReducedMotion = useReducedMotion();
-  const reduceMotion = Boolean(prefersReducedMotion);
+  const reduceMotion = useHydrationSafeReducedMotion();
   const today = new Date();
   const month = useMemo(() => buildCalendarMonth(activeYear, activeMonth, payload.items), [activeMonth, activeYear, payload.items]);
   const [selectedDayState, setSelectedDayState] = useState<SelectedDayState>({
@@ -612,7 +615,7 @@ export function ScheduleClient({
 
   return (
     <div className="bg-[var(--background-light)] font-display text-slate-900">
-      <div className="relative mx-auto flex min-h-full w-full max-w-md flex-col bg-[var(--background-light)]">
+      <div className="semo-page-user relative flex min-h-full flex-col bg-[var(--background-light)]">
         <ClubPageHeader
           title="캘린더"
           subtitle={payload.clubName}

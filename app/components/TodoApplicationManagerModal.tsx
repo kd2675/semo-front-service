@@ -103,7 +103,7 @@ export function TodoApplicationManagerModal({
                           </p>
                           <p className="mt-1 text-xs text-slate-400">{application.appliedAtLabel ?? "신청 시각 없음"}</p>
                         </div>
-                        <span className={`rounded-full px-3 py-1 text-[11px] font-bold ${
+                        <span className={`rounded-full px-3 py-1 text-xs font-bold ${
                           application.applicationStatus === "SELECTED"
                             ? "bg-emerald-50 text-emerald-700"
                             : application.applicationStatus === "REJECTED"

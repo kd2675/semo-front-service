@@ -1,6 +1,11 @@
 "use client";
 
+import { useState } from "react";
+
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { motion } from "motion/react";
+
+import { useHydrationSafeReducedMotion } from "@/app/hooks/useHydrationSafeReducedMotion";
 import { RouterLink } from "@/app/components/RouterLink";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import { type TournamentDetailResponse } from "@/app/lib/clubs";
@@ -14,8 +19,6 @@ import {
   getTournamentStatusBadgeClassName,
   getTournamentStatusLabel,
 } from "@/app/lib/tournament";
-import { motion, useReducedMotion } from "motion/react";
-import { useState } from "react";
 import { getQueryErrorMessage } from "@/app/lib/queryUtils";
 import { invalidateClubQueries } from "@/app/lib/react-query/common";
 import {
@@ -26,6 +29,7 @@ import {
   tournamentDetailQueryOptions,
   tournamentQueryKeys,
 } from "@/app/lib/react-query/tournaments/queries";
+
 import { ClubDetailLoadingShell } from "../../../ClubRouteLoadingShells";
 
 type ClubTournamentDetailClientProps = {
@@ -45,8 +49,7 @@ export function ClubTournamentDetailClient({
   basePath,
   onRequestClose,
 }: ClubTournamentDetailClientProps) {
-  const prefersReducedMotion = useReducedMotion();
-  const reduceMotion = Boolean(prefersReducedMotion);
+  const reduceMotion = useHydrationSafeReducedMotion();
   const queryClient = useQueryClient();
   const {
     data: queryPayload,
@@ -150,7 +153,7 @@ export function ClubTournamentDetailClient({
       && selectedRosterIds.length <= maximumTeammateCount);
   return (
     <div className={isModal ? "flex min-h-0 flex-1 flex-col bg-white font-display text-slate-900" : "min-h-full bg-white font-display text-slate-900"}>
-      <div className={isModal ? "flex min-h-0 flex-1 flex-col bg-white" : "mx-auto flex min-h-full max-w-md flex-col bg-white"}>
+      <div className={isModal ? "flex min-h-0 flex-1 flex-col bg-white" : "semo-page-user flex min-h-full flex-col bg-white/92"}>
         <ClubPageHeader
           title="대회 상세"
           subtitle={payload.clubName}
@@ -454,15 +457,15 @@ export function ClubTournamentDetailClient({
                       ) : null}
                       <div className="mt-2 flex flex-wrap gap-2">
                         {participant.feePaymentStatusLabel ? (
-                          <span className="rounded-full bg-white px-2.5 py-1 text-[11px] font-bold text-slate-600 ring-1 ring-slate-200">
+                          <span className="rounded-full bg-white px-2.5 py-1 text-xs font-bold text-slate-600 ring-1 ring-slate-200">
                             참가비 {participant.feePaymentStatusLabel}
                           </span>
                         ) : null}
                         {participant.checkedInAtLabel ? (
-                          <span className="rounded-full bg-sky-50 px-2.5 py-1 text-[11px] font-bold text-sky-700">체크인 완료</span>
+                          <span className="rounded-full bg-sky-50 px-2.5 py-1 text-xs font-bold text-sky-700">체크인 완료</span>
                         ) : null}
                         {participant.placement ? (
-                          <span className="rounded-full bg-amber-50 px-2.5 py-1 text-[11px] font-bold text-amber-700">{participant.placement}위</span>
+                          <span className="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-bold text-amber-700">{participant.placement}위</span>
                         ) : null}
                       </div>
                       {participant.resultNote ? <p className="mt-2 text-xs text-slate-600">{participant.resultNote}</p> : null}

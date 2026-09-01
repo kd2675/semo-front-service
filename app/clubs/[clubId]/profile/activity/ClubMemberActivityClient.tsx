@@ -1,17 +1,20 @@
 "use client";
 
-import { useInfiniteQuery } from "@tanstack/react-query";
-import { ClubModeSwitchFab } from "@/app/components/ClubModeSwitchFab";
-import {
-  type ClubMemberActivityEntry,
-  type ClubMemberActivityResponse,
-} from "@/app/lib/clubs";
-import { motion, useReducedMotion } from "motion/react";
 import {
   useEffect,
   useMemo,
   useState,
 } from "react";
+
+import { useInfiniteQuery } from "@tanstack/react-query";
+import { motion } from "motion/react";
+
+import { useHydrationSafeReducedMotion } from "@/app/hooks/useHydrationSafeReducedMotion";
+import { ClubModeSwitchFab } from "@/app/components/ClubModeSwitchFab";
+import {
+  type ClubMemberActivityEntry,
+  type ClubMemberActivityResponse,
+} from "@/app/lib/clubs";
 import { staggeredFadeUpMotion } from "@/app/lib/motion";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import { memberActivityInfiniteQueryOptions } from "@/app/lib/react-query/activities/queries";
@@ -141,8 +144,7 @@ export function ClubMemberActivityClient({
   initialData,
   isAdmin,
 }: ClubMemberActivityClientProps) {
-  const prefersReducedMotion = useReducedMotion();
-  const reduceMotion = Boolean(prefersReducedMotion);
+  const reduceMotion = useHydrationSafeReducedMotion();
   const [sentinelNode, setSentinelNode] = useState<HTMLDivElement | null>(null);
   const activityQuery = useInfiniteQuery(memberActivityInfiniteQueryOptions(clubId, initialData));
   const activity = useMemo<ClubMemberActivityResponse>(() => {
@@ -198,7 +200,7 @@ export function ClubMemberActivityClient({
 
   return (
     <div className="min-h-full bg-[var(--background-light)] text-slate-900">
-      <div className="mx-auto flex min-h-full max-w-md flex-col bg-[var(--background-light)]">
+      <div className="semo-page-user flex min-h-full flex-col bg-[var(--background-light)]">
         <ClubPageHeader
           title="내 활동"
           icon="timeline"
@@ -211,7 +213,7 @@ export function ClubMemberActivityClient({
             className="rounded-[var(--radius-modal)] border border-[var(--primary)]/10 bg-white px-5 py-4 shadow-sm"
             {...staggeredFadeUpMotion(0, reduceMotion)}
           >
-            <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[var(--primary)]/60">
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[var(--primary)]/60">
               내 활동 기록
             </p>
             <h2 className="mt-2 text-xl font-bold text-slate-900">내가 남긴 활동만 시간순으로 확인</h2>
@@ -227,7 +229,7 @@ export function ClubMemberActivityClient({
                 if (item.type === "separator") {
                   return (
                     <div key={item.key} className="relative flex justify-center py-2">
-                      <span className="z-10 bg-[var(--background-light)] px-4 text-[11px] font-bold uppercase tracking-[0.24em] text-slate-400">
+                      <span className="z-10 bg-[var(--background-light)] px-4 text-xs font-bold uppercase tracking-[0.24em] text-slate-400">
                         {item.label}
                       </span>
                       <div className="absolute inset-x-0 top-1/2 h-px bg-[var(--primary)]/5" />
@@ -262,7 +264,7 @@ export function ClubMemberActivityClient({
                     >
                       <div className="flex flex-wrap items-center gap-2">
                         <span
-                          className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${subjectMeta.badgeClassName}`}
+                          className={`rounded-full px-2.5 py-1 text-xs font-bold ${subjectMeta.badgeClassName}`}
                         >
                           {item.entry.subject}
                         </span>
@@ -271,7 +273,7 @@ export function ClubMemberActivityClient({
                         </span>
                         <span className="text-xs text-slate-400">{relativeTime}</span>
                         {item.entry.status === "FAIL" ? (
-                          <span className="rounded-full bg-rose-50 px-2.5 py-1 text-[11px] font-bold text-rose-600">
+                          <span className="rounded-full bg-rose-50 px-2.5 py-1 text-xs font-bold text-rose-600">
                             실패
                           </span>
                         ) : null}

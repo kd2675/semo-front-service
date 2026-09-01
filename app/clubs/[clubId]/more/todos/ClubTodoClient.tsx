@@ -1,10 +1,12 @@
 "use client";
 
-import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { motion, useReducedMotion } from "motion/react";
 import RouterLink from "next/link";
 import { useState } from "react";
 
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { motion } from "motion/react";
+
+import { useHydrationSafeReducedMotion } from "@/app/hooks/useHydrationSafeReducedMotion";
 import { ClubModeSwitchFab } from "@/app/components/ClubModeSwitchFab";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import { TodoCollaborationPanel } from "@/app/components/TodoCollaborationPanel";
@@ -30,8 +32,7 @@ type ClubTodoClientProps = {
 
 export function ClubTodoClient({ clubId, initialData, isAdmin }: ClubTodoClientProps) {
   const queryClient = useQueryClient();
-  const prefersReducedMotion = useReducedMotion();
-  const reduceMotion = Boolean(prefersReducedMotion);
+  const reduceMotion = useHydrationSafeReducedMotion();
   const [claimableSize, setClaimableSize] = useState(8);
   const todoQuery = useQuery({
     ...todoQueryOptions(clubId, claimableSize),
@@ -109,7 +110,7 @@ export function ClubTodoClient({ clubId, initialData, isAdmin }: ClubTodoClientP
           className="bg-white/85 backdrop-blur-md"
         />
 
-        <main className="semo-nav-bottom-space mx-auto flex w-full max-w-md flex-col gap-4 px-4 pt-4">
+        <main className="semo-page-user semo-nav-bottom-space flex flex-col gap-4 px-4 pt-4">
           <motion.section
             className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
             {...staggeredFadeUpMotion(0, reduceMotion)}
@@ -370,7 +371,7 @@ function Badge({ tone, label }: { tone: "sky" | "slate" | "amber" | "blue" | "em
   }[tone];
 
   return (
-    <span className={`rounded-full px-3 py-1 text-[11px] font-bold ${className}`}>
+    <span className={`rounded-full px-3 py-1 text-xs font-bold ${className}`}>
       {label}
     </span>
   );

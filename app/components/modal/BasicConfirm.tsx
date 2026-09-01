@@ -68,7 +68,7 @@ export function BasicConfirm({
         <div className="relative px-5 pb-6 pt-4">
           <div className="absolute inset-x-0 top-0 h-24 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.95),transparent_70%)]" />
           <div className="relative flex items-center justify-between gap-3">
-            <span className="text-[11px] font-black tracking-[0.24em] text-slate-500">{styles.eyebrow}</span>
+            <span className="text-xs font-black tracking-[0.24em] text-slate-500">{styles.eyebrow}</span>
             <button
               type="button"
               onClick={onCancel}
@@ -85,7 +85,7 @@ export function BasicConfirm({
             </div>
             <h3 className="mt-4 text-[1.24rem] font-black tracking-tight text-slate-950">{confirm.title}</h3>
             <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-slate-600">{confirm.message}</p>
-            <p className="mt-3 text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-400">
+            <p className="mt-3 text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
               취소 또는 확인을 선택하세요
             </p>
           </div>

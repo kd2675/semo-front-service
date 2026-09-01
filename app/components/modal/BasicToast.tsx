@@ -1,7 +1,8 @@
 "use client";
 
-import { motion, useReducedMotion } from "motion/react";
+import { motion } from "motion/react";
 
+import { useHydrationSafeReducedMotion } from "@/app/hooks/useHydrationSafeReducedMotion";
 import { toastMotion } from "@/app/lib/motion";
 import type { ToastItem } from "@/app/redux/slices/modalSlice";
 
@@ -55,8 +56,7 @@ export function BasicToast({
   onAction,
   onClose,
 }: BasicToastProps) {
-  const prefersReducedMotion = useReducedMotion();
-  const reduceMotion = Boolean(prefersReducedMotion);
+  const reduceMotion = useHydrationSafeReducedMotion();
   const styles = getToastToneStyles(toast.tone);
   const remainingProgress = Math.max(0, Math.min(100, 100 - progress));
 

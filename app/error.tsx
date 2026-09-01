@@ -18,7 +18,7 @@ export default function RootError({ error, reset }: RootErrorProps) {
   return (
     <main className="semo-user-theme flex min-h-screen items-center justify-center bg-[var(--color-bg)] px-4 py-10">
       <section className="semo-card w-full max-w-md p-6 text-center" role="alert">
-        <SemoBrandMark className="mx-auto size-14 text-rose-700" />
+        <SemoBrandMark className="mx-auto size-14 text-rose-700" animated />
         <h1 className="mt-4 text-xl font-bold text-slate-900">화면을 불러오지 못했습니다</h1>
         <p className="mt-2 text-sm leading-6 text-slate-600">일시적인 오류가 발생했습니다. 다시 시도하거나 홈으로 이동해주세요.</p>
         <div className="mt-6 flex flex-col gap-2 sm:flex-row sm:justify-center">

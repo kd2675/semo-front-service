@@ -149,7 +149,7 @@ export function ClubDashboardWidgetFeatureContent({
             <p className="line-clamp-2 text-sm text-slate-500">{latestNotice.summary}</p>
             <div className="flex items-center justify-between rounded-lg bg-slate-50 px-3 py-2">
               <p className="text-xs font-medium text-slate-500">{latestNotice.author}</p>
-              <span className="rounded-full bg-blue-100 px-2 py-0.5 text-[11px] font-bold text-blue-600">
+              <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-bold text-blue-600">
                 {localizeRelativeTimeLabel(latestNotice.timeAgo)}
               </span>
             </div>
@@ -186,7 +186,7 @@ export function ClubDashboardWidgetFeatureContent({
                   <p className="truncate text-sm font-bold text-slate-900">{notice.title}</p>
                   <p className="truncate text-xs text-slate-500">{notice.summary}</p>
                 </div>
-                <span className="shrink-0 text-[11px] font-bold text-sky-600">{localizeRelativeTimeLabel(notice.timeAgo)}</span>
+                <span className="shrink-0 text-xs font-bold text-sky-600">{localizeRelativeTimeLabel(notice.timeAgo)}</span>
               </RouterLink>
             ))}
           </>
@@ -372,7 +372,7 @@ export function ClubDashboardWidgetFeatureContent({
                 </p>
                 <p className="mt-2 line-clamp-2 text-base font-bold text-slate-900">{tournamentHero.title}</p>
               </div>
-              <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-bold text-emerald-700">
+              <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-bold text-emerald-700">
                 {getTournamentStatusLabel(tournamentHero.tournamentStatus)}
               </span>
             </div>
@@ -384,7 +384,7 @@ export function ClubDashboardWidgetFeatureContent({
               <p className="text-xs font-medium text-slate-500">
                 {getTournamentFormatLabel(tournamentHero.matchFormat)} · {tournamentHero.approvedApplicationCount}명 승인
               </p>
-              <span className="rounded-full bg-white px-2 py-0.5 text-[11px] font-bold text-emerald-700">
+              <span className="rounded-full bg-white px-2 py-0.5 text-xs font-bold text-emerald-700">
                 {getTournamentFeeLabel(tournamentHero)}
               </span>
             </div>
@@ -461,7 +461,7 @@ export function ClubDashboardWidgetFeatureContent({
                 <p className="mt-2 line-clamp-2 text-base font-bold text-slate-900">{bracketHero.title}</p>
               </div>
               <span
-                className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${
+                className={`rounded-full px-2 py-0.5 text-xs font-bold ${
                   bracketHero.approvalStatus === "APPROVED"
                     ? "bg-emerald-50 text-emerald-700"
                     : bracketHero.approvalStatus === "PENDING"
@@ -489,12 +489,12 @@ export function ClubDashboardWidgetFeatureContent({
                 {bracketHero.participantCount}명 참가
                 {bracketHero.authorDisplayName ? ` · ${bracketHero.authorDisplayName}` : ""}
               </p>
-              <span className="rounded-full bg-white px-2 py-0.5 text-[11px] font-bold text-amber-700">
+              <span className="rounded-full bg-white px-2 py-0.5 text-xs font-bold text-amber-700">
                 {bracketHero.sourceType === "TOURNAMENT" ? "대회 연동" : "직접 작성"}
               </span>
             </div>
             {latestMyBracket && featuredBracket && latestMyBracket.bracketRecordId !== featuredBracket.bracketRecordId ? (
-              <p className="mt-3 text-[11px] font-medium text-slate-400">공개 대진표: {featuredBracket.title}</p>
+              <p className="mt-3 text-xs font-medium text-slate-400">공개 대진표: {featuredBracket.title}</p>
             ) : null}
           </RouterLink>
         ) : (

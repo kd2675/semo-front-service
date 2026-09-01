@@ -152,13 +152,13 @@ export function BillingTabPanel({
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="rounded-full bg-white px-2.5 py-1 text-[11px] font-bold text-slate-500">{obligation.targetScopeLabel}</span>
+                      <span className="rounded-full bg-white px-2.5 py-1 text-xs font-bold text-slate-500">{obligation.targetScopeLabel}</span>
                       {obligation.overduePaymentCount > 0 ? (
-                        <span className="rounded-full bg-rose-100 px-2.5 py-1 text-[11px] font-bold text-rose-600">연체 {obligation.overduePaymentCount}건</span>
+                        <span className="rounded-full bg-rose-100 px-2.5 py-1 text-xs font-bold text-rose-600">연체 {obligation.overduePaymentCount}건</span>
                       ) : obligation.pendingPaymentCount > 0 ? (
-                        <span className="rounded-full bg-amber-100 px-2.5 py-1 text-[11px] font-bold text-amber-700">미납 {obligation.pendingPaymentCount}건</span>
+                        <span className="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-bold text-amber-700">미납 {obligation.pendingPaymentCount}건</span>
                       ) : (
-                        <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-[11px] font-bold text-emerald-700">정산 완료</span>
+                        <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-bold text-emerald-700">정산 완료</span>
                       )}
                     </div>
                     <div className="mt-3 flex items-start justify-between gap-3">

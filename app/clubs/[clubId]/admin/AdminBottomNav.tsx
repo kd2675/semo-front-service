@@ -1,9 +1,12 @@
 "use client";
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
+
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { AnimatePresence, motion } from "motion/react";
+
+import { useHydrationSafeReducedMotion } from "@/app/hooks/useHydrationSafeReducedMotion";
 import { MoreNavigationMenu } from "@/app/components/MoreNavigationMenu";
 import { RouterLink } from "@/app/components/RouterLink";
 import { useBottomNavScrollDocking } from "@/app/hooks/useBottomNavScrollDocking";
@@ -49,8 +52,7 @@ function stripQuery(path: string) {
 
 export function AdminBottomNav({ clubId }: AdminBottomNavProps) {
   const pathname = usePathname();
-  const prefersReducedMotion = useReducedMotion();
-  const reduceMotion = Boolean(prefersReducedMotion);
+  const reduceMotion = useHydrationSafeReducedMotion();
   const isDocked = useBottomNavScrollDocking({ routeKey: pathname });
   const [openMenuPathname, setOpenMenuPathname] = useState<string | null>(null);
   const queryClient = useQueryClient();
@@ -144,7 +146,7 @@ export function AdminBottomNav({ clubId }: AdminBottomNavProps) {
             <span className="semo-nav-icon" data-active={isActive}>
               <span className="material-symbols-outlined text-[24px]" aria-hidden="true">{item.icon}</span>
               {morePendingCount > 0 ? (
-                <span className="absolute -right-1 -top-0.5 min-w-5 rounded-full border-2 border-white bg-rose-500 px-1 text-center text-[11px] font-bold leading-4 text-white">
+                <span className="absolute -right-1 -top-0.5 min-w-5 rounded-full border-2 border-white bg-rose-500 px-1 text-center text-xs font-bold leading-4 text-white">
                   {morePendingCount > 99 ? "99+" : morePendingCount}
                 </span>
               ) : null}

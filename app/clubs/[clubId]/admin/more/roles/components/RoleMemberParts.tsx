@@ -32,11 +32,11 @@ export function RoleMemberIdentity({
       <div className="min-w-0">
         <div className="flex flex-wrap items-center gap-2">
           <p className="truncate text-sm font-semibold text-slate-900">{member.displayName}</p>
-          <span className={`rounded-full px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.18em] ${getRoleToneClass(member)}`}>
+          <span className={`rounded-full px-2.5 py-1 text-xs font-bold uppercase tracking-[0.18em] ${getRoleToneClass(member)}`}>
             {getClubRoleLabel(member.roleCode)}
           </span>
           {showSelf && member.self ? (
-            <span className="rounded-full bg-slate-900 px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-white">
+            <span className="rounded-full bg-slate-900 px-2.5 py-1 text-xs font-bold uppercase tracking-[0.18em] text-white">
               나
             </span>
           ) : null}
@@ -70,7 +70,7 @@ export function RoleOtherPositions({
         {relatedPositions.map((position) => (
           <span
             key={`${member.clubMemberId}-${position.clubPositionId}`}
-            className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-[11px] font-semibold text-slate-600"
+            className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600"
           >
             <span
               className="material-symbols-outlined text-[15px]"

@@ -1,13 +1,16 @@
 "use client";
 
-import { motion, useReducedMotion } from "motion/react";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 
+import { motion } from "motion/react";
+
+import { useHydrationSafeReducedMotion } from "@/app/hooks/useHydrationSafeReducedMotion";
 import { RouterLink } from "@/app/components/RouterLink";
 import { useAppToast } from "@/app/hooks/useAppToast";
 import { staggeredFadeUpMotion } from "@/app/lib/motion";
 import type { ClubPermissionGroup, ClubPositionTemplate } from "@/app/lib/clubs";
+
 import { RoleAccessMatrix } from "./RoleAccessMatrix";
 import { RoleTemplatePicker } from "./RoleTemplatePicker";
 import {
@@ -52,8 +55,7 @@ export function RoleEditorForm({
   onSubmit,
 }: RoleEditorFormProps) {
   const router = useRouter();
-  const prefersReducedMotion = useReducedMotion();
-  const reduceMotion = Boolean(prefersReducedMotion);
+  const reduceMotion = useHydrationSafeReducedMotion();
   const [form, setForm] = useState(() => buildRoleFormValue());
   const [submitting, setSubmitting] = useState(false);
   const { showToast, clearToast } = useAppToast();

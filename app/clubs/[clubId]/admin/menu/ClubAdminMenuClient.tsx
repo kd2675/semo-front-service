@@ -1,5 +1,7 @@
 "use client";
 
+import { startTransition, useEffect, useMemo, useState } from "react";
+
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   DndContext,
@@ -22,11 +24,12 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { motion } from "motion/react";
+
+import { useHydrationSafeReducedMotion } from "@/app/hooks/useHydrationSafeReducedMotion";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import { RouterLink } from "@/app/components/RouterLink";
 import { useAppToast } from "@/app/hooks/useAppToast";
-import { motion, useReducedMotion } from "motion/react";
-import { startTransition, useEffect, useMemo, useState } from "react";
 import {
   type ApplyClubOperationTemplateResponse,
   type ClubFeatureSummary,
@@ -238,8 +241,7 @@ export function ClubAdminMenuClient({
   canPersist = true,
 }: ClubAdminMenuClientProps) {
   const queryClient = useQueryClient();
-  const prefersReducedMotion = useReducedMotion();
-  const reduceMotion = Boolean(prefersReducedMotion);
+  const reduceMotion = useHydrationSafeReducedMotion();
   const [features, setFeatures] = useState(() => cloneFeatures(initialFeatures));
   const [savedFeatures, setSavedFeatures] = useState(() => cloneFeatures(initialFeatures));
   const [savedEnabledFeatureKeys, setSavedEnabledFeatureKeys] = useState<string[]>(
@@ -575,19 +577,19 @@ export function ClubAdminMenuClient({
                         <span className="material-symbols-outlined" aria-hidden="true">{preset.iconName}</span>
                       </div>
                       {preset.includedInCurrentConfiguration ? (
-                        <span className="rounded-full bg-emerald-50 px-3 py-1 text-[11px] font-bold text-emerald-700">구성 포함</span>
+                        <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700">구성 포함</span>
                       ) : null}
                     </div>
                     <h3 className="mt-4 text-lg font-black text-slate-900">{preset.displayName}</h3>
                     <p className="mt-2 text-sm leading-6 text-slate-500">{preset.description}</p>
                     <div className="mt-4 flex flex-wrap gap-1.5">
                       {preset.featureDisplayNames.slice(0, 6).map((featureName) => (
-                        <span key={featureName} className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-bold text-slate-600">
+                        <span key={featureName} className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-600">
                           {featureName}
                         </span>
                       ))}
                       {preset.featureDisplayNames.length > 6 ? (
-                        <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-bold text-slate-500">
+                        <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-500">
                           +{preset.featureDisplayNames.length - 6}
                         </span>
                       ) : null}
@@ -630,7 +632,7 @@ export function ClubAdminMenuClient({
                       <div className="flex size-11 items-center justify-center rounded-xl bg-orange-50 text-[var(--primary)]">
                         <span className="material-symbols-outlined" aria-hidden="true">{template.iconName}</span>
                       </div>
-                      <span className="rounded-full bg-slate-100 px-3 py-1 text-[11px] font-bold text-slate-500">
+                      <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-500">
                         {template.recurrenceFrequency === "WEEKLY"
                           ? "매주"
                           : template.recurrenceFrequency === "MONTHLY"

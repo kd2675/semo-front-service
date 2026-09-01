@@ -1,18 +1,21 @@
 "use client";
 
+import {
+  useDeferredValue,
+  useState,
+} from "react";
+import { useRouter } from "next/navigation";
+
 import { useMutation, useQuery } from "@tanstack/react-query";
+import { AnimatePresence, motion } from "motion/react";
+
+import { useHydrationSafeReducedMotion } from "@/app/hooks/useHydrationSafeReducedMotion";
 import { DiscoverClubModal } from "@/app/home/DiscoverClubModal";
 import { DiscoverSection } from "@/app/home/DiscoverSection";
 import { ClubGrowthCoreMark } from "@/app/components/ClubGrowthCoreMark";
 import { RouterLink } from "@/app/components/RouterLink";
 import { SemoBrandMark } from "@/app/components/SemoBrandMark";
 import { useAppToast } from "@/app/hooks/useAppToast";
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import {
-  useDeferredValue,
-  useState,
-} from "react";
-import { useRouter } from "next/navigation";
 import { logout } from "@/app/lib/auth";
 import { normalizeRole } from "@/app/lib/authPolicy";
 import {
@@ -42,8 +45,7 @@ function createProfileLabel(user: AuthUser | null): string {
 
 export default function Home() {
   const router = useRouter();
-  const prefersReducedMotion = useReducedMotion();
-  const reduceMotion = Boolean(prefersReducedMotion);
+  const reduceMotion = useHydrationSafeReducedMotion();
   const user = useAppSelector((state) => state.auth.user);
   const [searchQuery, setSearchQuery] = useState("");
   const [isSigningOut, setIsSigningOut] = useState(false);
@@ -221,7 +223,7 @@ export default function Home() {
             {...staggeredFadeUpMotion(0, reduceMotion)}
           >
             <div className="flex min-w-0 items-center gap-3">
-              <SemoBrandMark className="size-11 shrink-0 text-[var(--primary)]" label="SEMO" />
+              <SemoBrandMark className="size-11 shrink-0 text-[var(--primary)]" label="SEMO" animated />
               <div className="min-w-0">
                 <h1 className="text-xl font-black leading-tight tracking-tight text-slate-950">SEMO</h1>
                 <p className="truncate text-xs font-semibold text-slate-500">모임의 운영과 기록을 이어가는 공간</p>
@@ -253,18 +255,18 @@ export default function Home() {
           </motion.header>
 
           <motion.section className="px-4 pb-2 pt-6 sm:px-6" {...staggeredFadeUpMotion(2, reduceMotion)}>
-            <div className="relative flex flex-col items-start gap-4 overflow-hidden rounded-[var(--radius-card)] bg-slate-950 p-5 text-white shadow-[var(--shadow-card)] sm:flex-row sm:items-center sm:justify-between">
-              <SemoBrandMark className="pointer-events-none absolute -right-3 -top-7 size-28 text-white opacity-[0.08]" />
+            <div className="semo-launch-panel relative flex flex-col items-start gap-4 overflow-hidden rounded-[var(--radius-card)] p-5 text-white shadow-[var(--shadow-card)] sm:flex-row sm:items-center sm:justify-between sm:p-6">
+              <SemoBrandMark className="semo-launch-symbol pointer-events-none absolute -right-3 -top-7 size-28 text-white opacity-[0.1]" />
               <div className="flex-1">
-                <p className="text-xs font-bold tracking-[0.18em] text-blue-200">NEW SEMO</p>
+                <p className="text-xs font-bold tracking-[0.18em] text-blue-200">새로운 시작 · 작은 세모</p>
                 <h2 className="mt-1 text-lg font-black text-white">새 모임의 첫 세모 만들기</h2>
                 <p className="mt-1 text-sm leading-5 text-slate-300">모임이 만들어지는 순간 작은 세모와 원석 코어가 함께 시작됩니다.</p>
               </div>
               <RouterLink
                 href="/clubs/create"
-                className="relative inline-flex min-h-11 w-full shrink-0 items-center justify-center rounded-[var(--radius-control)] bg-white px-4 text-sm font-black text-slate-950 shadow-sm transition-transform active:scale-95 sm:ml-4 sm:w-auto"
+                className="semo-secondary-action relative inline-flex min-h-11 w-full shrink-0 items-center justify-center rounded-[var(--radius-control)] bg-white px-4 text-sm font-black text-slate-950 shadow-sm sm:ml-4 sm:w-auto"
               >
-                시작하기
+                새 모임 만들기
               </RouterLink>
             </div>
           </motion.section>
@@ -289,36 +291,38 @@ export default function Home() {
                 <p className="mt-1 text-xs text-slate-500">가입한 모임을 확인하고 있습니다.</p>
               </div>
             ) : myClubs.length > 0 ? (
-              <div className="hide-scrollbar flex overflow-x-auto pb-1">
-                <div className="flex items-stretch gap-4">
+              <div className="hide-scrollbar flex overflow-x-auto pb-1 md:overflow-visible">
+                <div className="flex items-stretch gap-4 md:grid md:w-full md:grid-cols-2 lg:grid-cols-3">
                   {myClubs.map((club, index) => (
                     <motion.div
                       key={club.clubId}
-                      className="min-w-[240px]"
+                      className="min-w-[240px] md:min-w-0"
                       {...staggeredFadeUpMotion(index + 4, reduceMotion)}
                     >
                       <RouterLink
                         href={`/clubs/${club.clubId}`}
-                        className="semo-card semo-card-interactive flex h-full min-w-[240px] flex-col gap-3 p-3 sm:min-w-[280px]"
+                        className="semo-card semo-card-interactive flex h-full min-w-[240px] flex-col gap-3 p-3 sm:min-w-[280px] md:min-w-0"
                       >
                         <div
                           className="relative aspect-[16/9] w-full overflow-hidden rounded-lg bg-slate-200 bg-cover bg-center"
                           style={club.imageUrl ? { backgroundImage: `url("${club.imageUrl}")` } : undefined}
                         >
                           {!club.imageUrl ? (
-                            <div className="flex h-full w-full items-center justify-center bg-[var(--primary)]/8 text-[var(--primary)]">
-                              <SemoBrandMark className="size-16 opacity-55" />
+                            <div className="flex h-full w-full items-center justify-center bg-[linear-gradient(145deg,color-mix(in_srgb,var(--primary)_12%,white),color-mix(in_srgb,var(--primary)_3%,white))] text-[var(--primary)]">
+                              <span className="text-4xl font-black opacity-45" aria-hidden="true">
+                                {club.name.trim().slice(0, 1) || "세"}
+                              </span>
                             </div>
                           ) : null}
                           <div className="absolute bottom-2 right-2 flex size-16 items-center justify-center rounded-xl border border-white/80 bg-white/90 shadow-md backdrop-blur-sm">
-                            <ClubGrowthCoreMark growthCore={club.growthCore} size={60} />
+                            <ClubGrowthCoreMark growthCore={club.growthCore} size={60} presentation="core-only" />
                           </div>
                         </div>
                         <div>
                           <div className="flex items-center justify-between gap-3">
                             <p className="text-base font-bold text-slate-900">{club.name}</p>
                             {club.admin ? (
-                              <span className="rounded-full bg-[var(--primary)]/10 px-2 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-[var(--primary)]">
+                              <span className="rounded-full bg-[var(--primary)]/10 px-2 py-1 text-xs font-bold uppercase tracking-[0.18em] text-[var(--primary)]">
                                 관리자
                               </span>
                             ) : null}

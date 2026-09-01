@@ -1,7 +1,5 @@
 "use client";
 
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import {
   startTransition,
   useEffect,
@@ -9,6 +7,11 @@ import {
   useRef,
   useState,
 } from "react";
+
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { AnimatePresence, motion } from "motion/react";
+
+import { useHydrationSafeReducedMotion } from "@/app/hooks/useHydrationSafeReducedMotion";
 import { ClubModeSwitchFab } from "@/app/components/ClubModeSwitchFab";
 import { ItemReadStatusModal } from "@/app/components/ItemReadStatusModal";
 import { RouteModal } from "@/app/components/RouteModal";
@@ -42,12 +45,13 @@ import {
   deleteScheduleVoteMutationOptions,
 } from "@/app/lib/react-query/schedule/mutations";
 import { deleteTournamentMutationOptions } from "@/app/lib/react-query/tournaments/mutations";
+import { ClubPageHeader } from "@/app/components/ClubPageHeader";
+
 import { ClubNoticeEditorClient } from "./ClubNoticeEditorClient";
 import { NoticeManageCard } from "../components/NoticeManageCard";
 import { BoardScheduleManageCard } from "../components/BoardScheduleManageCard";
 import { ClubBoardFeedLoadingShell } from "../../ClubRouteLoadingShells";
 import { ScheduleActionConfirmModal } from "../../schedule/modals/ScheduleActionConfirmModal";
-import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import { ClubScheduleEditorClient } from "../../schedule/clients/ClubScheduleEditorClient";
 import { ClubScheduleVoteEditorClient } from "../../schedule/clients/ClubScheduleVoteEditorClient";
 import { PinnedBoardCarousel } from "../components/PinnedBoardCarousel";
@@ -88,8 +92,7 @@ function isPinnedBoardItem(item: ClubBoardFeedItem) {
 
 export function ClubBoardFeedClient({ clubId }: ClubBoardFeedClientProps) {
   const queryClient = useQueryClient();
-  const prefersReducedMotion = useReducedMotion();
-  const reduceMotion = Boolean(prefersReducedMotion);
+  const reduceMotion = useHydrationSafeReducedMotion();
   const [items, setItems] = useState<ClubBoardFeedItem[]>([]);
   const [clubName, setClubName] = useState("게시판");
   const [isAdmin, setIsAdmin] = useState(false);
@@ -351,7 +354,7 @@ export function ClubBoardFeedClient({ clubId }: ClubBoardFeedClientProps) {
 
   return (
     <div className="bg-[var(--background-light)] font-display text-slate-900">
-      <div className="relative mx-auto flex min-h-full max-w-md flex-col bg-white">
+      <div className="semo-page-user relative flex min-h-full flex-col bg-white/92">
         <ClubPageHeader
           title="게시판"
           subtitle={clubName}

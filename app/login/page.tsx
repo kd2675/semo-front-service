@@ -1,9 +1,11 @@
 "use client";
 
 import { Suspense, useEffect, useMemo, useState } from "react";
-import { motion, useReducedMotion } from "motion/react";
 import { useRouter, useSearchParams } from "next/navigation";
 
+import { motion } from "motion/react";
+
+import { useHydrationSafeReducedMotion } from "@/app/hooks/useHydrationSafeReducedMotion";
 import { SemoBrandMark } from "@/app/components/SemoBrandMark";
 import useAuthSession from "@/app/hooks/useAuthSession";
 import { login, logout, signup } from "@/app/lib/auth";
@@ -29,8 +31,7 @@ function LoginPageContent() {
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const prefersReducedMotion = useReducedMotion();
-  const reduceMotion = Boolean(prefersReducedMotion);
+  const reduceMotion = useHydrationSafeReducedMotion();
   const nextPath = useMemo(
     () => sanitizeAuthNextPath(searchParams.get("next")),
     [searchParams],
@@ -113,7 +114,7 @@ function LoginPageContent() {
       <div className="semo-orb semo-orb-right" />
       <section className="relative z-10 mx-auto grid min-h-[calc(100vh-4rem)] w-full max-w-5xl items-center gap-10 lg:grid-cols-[1fr_420px]">
         <motion.div {...staggeredFadeUpMotion(0, reduceMotion)}>
-          <SemoBrandMark className="size-16 text-[var(--primary)]" label="SEMO" />
+          <SemoBrandMark className="size-16 text-[var(--primary)]" label="SEMO" animated />
           <p className="mt-5 text-xs font-black tracking-[0.28em] text-[var(--primary)]">SEMO · 세상의 모든 모임</p>
           <h1 className="mt-4 max-w-xl break-keep text-4xl font-extrabold leading-[1.08] tracking-[-0.045em] md:text-6xl">
             모임의 시작부터
@@ -132,6 +133,7 @@ function LoginPageContent() {
 
         <motion.form
           onSubmit={handleSubmit}
+          noValidate
           className="semo-panel w-full p-5"
           {...staggeredFadeUpMotion(1, reduceMotion)}
         >
@@ -144,6 +146,7 @@ function LoginPageContent() {
                   setMode(item);
                   setMessage(null);
                 }}
+                aria-pressed={item === mode}
                 className={item === mode
                   ? "rounded-lg bg-white px-3 py-2.5 text-sm font-extrabold text-[var(--foreground)] shadow-sm"
                   : "rounded-lg px-3 py-2.5 text-sm font-bold text-[var(--muted)]"}
@@ -170,7 +173,7 @@ function LoginPageContent() {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="mt-5 min-h-12 w-full rounded-lg bg-[var(--primary)] px-4 py-3 text-sm font-extrabold text-white hover:brightness-110 disabled:cursor-wait disabled:opacity-60"
+            className="semo-primary-action mt-5 min-h-12 w-full rounded-lg bg-[var(--primary)] px-4 py-3 text-sm font-extrabold text-white disabled:cursor-wait disabled:opacity-60"
           >
             {isSubmitting ? "처리 중" : mode === "login" ? "SEMO 로그인" : "가입 후 시작"}
           </button>
@@ -216,6 +219,7 @@ function SemoField({
         value={value}
         onChange={(event) => onChange(event.target.value)}
         autoComplete={autoComplete}
+        required
         maxLength={255}
         className="mt-1 min-h-12 w-full rounded-lg border border-[var(--line)] bg-white/90 px-3 py-3 text-sm font-bold outline-none focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/10"
       />
@@ -229,7 +233,7 @@ function SemoLoginProgress({ reduceMotion }: { reduceMotion: boolean }) {
       <div className="semo-orb semo-orb-left" />
       <div className="semo-orb semo-orb-right" />
       <motion.section className="semo-panel relative w-full max-w-sm p-7 text-center" {...staggeredFadeUpMotion(0, reduceMotion)}>
-        <SemoBrandMark className="mx-auto size-12 text-[var(--primary)]" />
+        <SemoBrandMark className="mx-auto size-12 text-[var(--primary)]" animated />
         <p className="text-xs font-black tracking-[0.18em] text-[var(--primary)]">로그인 중</p>
         <h1 className="mt-4 text-2xl font-extrabold">로그인을 준비하고 있습니다</h1>
         <p className="mt-2 text-sm font-semibold text-[var(--muted)]">세션과 클럽 프로필을 확인합니다.</p>

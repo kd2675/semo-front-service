@@ -1,7 +1,9 @@
 "use client";
 
+import { motion } from "motion/react";
+
+import { useHydrationSafeReducedMotion } from "@/app/hooks/useHydrationSafeReducedMotion";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
-import { motion, useReducedMotion } from "motion/react";
 import { staggeredFadeUpMotion } from "@/app/lib/motion";
 
 export type ClubAdminStatsMetric = {
@@ -107,8 +109,7 @@ export function ClubAdminStatsClient({
   memberActivityItems,
   recentActivities,
 }: ClubAdminStatsClientProps) {
-  const prefersReducedMotion = useReducedMotion();
-  const reduceMotion = Boolean(prefersReducedMotion);
+  const reduceMotion = useHydrationSafeReducedMotion();
 
   return (
     <div className="min-h-screen bg-[var(--background-light)] text-slate-900">
@@ -148,7 +149,7 @@ export function ClubAdminStatsClient({
                     <span className={`material-symbols-outlined text-xl ${TONE_CLASS[accent]}`}>
                       {metric.icon}
                     </span>
-                    <span className={`text-[11px] font-bold ${TONE_CLASS[accent]}`}>
+                    <span className={`text-xs font-bold ${TONE_CLASS[accent]}`}>
                       {metric.detail}
                     </span>
                   </div>
@@ -207,11 +208,11 @@ export function ClubAdminStatsClient({
                           <p className="truncate text-sm font-bold text-slate-900">{activity.subject}</p>
                           <p className="mt-1 text-sm text-slate-600">{activity.detail}</p>
                         </div>
-                        <span className={`shrink-0 rounded-full px-2 py-1 text-[11px] font-bold ${statusClass}`}>
+                        <span className={`shrink-0 rounded-full px-2 py-1 text-xs font-bold ${statusClass}`}>
                           {activity.status === "FAIL" ? "실패" : "성공"}
                         </span>
                       </div>
-                      <p className="mt-2 text-[11px] font-medium text-slate-400">{activity.createdAtLabel}</p>
+                      <p className="mt-2 text-xs font-medium text-slate-400">{activity.createdAtLabel}</p>
                     </motion.article>
                   );
                 })}

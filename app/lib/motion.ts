@@ -98,9 +98,8 @@ export function staggeredFadeUpMotion(index: number, reduced: boolean): MotionPr
   const itemDelay = reduced ? 0 : Math.min(index * 0.045 + step * 0.01, 0.36);
   return {
     initial: { opacity: reduced ? 1 : 0, y: travelY },
-    whileInView: { opacity: 1, y: 0 },
+    animate: { opacity: 1, y: 0 },
     exit: { opacity: 1, y: reduced ? 0 : -6 },
-    viewport: { once: true, amount: 0.18, margin: "0px 0px -6% 0px" },
     transition: {
       duration: itemDuration,
       ease: EASE_OUT,

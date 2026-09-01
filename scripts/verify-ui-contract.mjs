@@ -239,6 +239,10 @@ for (const filePath of files) {
     failures.push(`${relativePath(filePath)} 공용 디자인 계약 밖의 Material Tailwind 컴포넌트를 사용합니다.`);
   }
 
+  if (source.includes("useReducedMotion")) {
+    failures.push(`${relativePath(filePath)} hydration-safe 공용 reduced motion 훅을 거치지 않습니다.`);
+  }
+
   if (path.basename(filePath) === "BasicToast.tsx" && source.includes("<RouteModal")) {
     failures.push(`${relativePath(filePath)} 토스트가 비차단 피드백 대신 모달로 구현돼 있습니다.`);
   }
@@ -265,16 +269,66 @@ const tinyTextCount = files.reduce((count, filePath) => {
   const source = fs.readFileSync(filePath, "utf8");
   return count + (source.match(/text-\[11px\]/g)?.length ?? 0);
 }, 0);
-const maxTinyTextCount = 218;
+const maxTinyTextCount = 0;
 
 if (tinyTextCount > maxTinyTextCount) {
   failures.push(`11px 보조 텍스트가 기준 ${maxTinyTextCount}건을 초과했습니다: ${tinyTextCount}건`);
 }
 
 const globalStyles = fs.readFileSync(path.join(APP_DIRECTORY, "globals.css"), "utf8");
-for (const requiredToken of ["--color-bg:", "--secondary:", "--font-app-display:"]) {
+for (const requiredToken of [
+  "--color-bg:",
+  "--secondary:",
+  "--font-app-display:",
+  "--radius-card:",
+  "--shadow-card:",
+  "--duration-normal:",
+  "--page-user:",
+  "--page-admin:",
+]) {
   if (!globalStyles.includes(requiredToken)) {
     failures.push(`app/globals.css에 필수 디자인 토큰 ${requiredToken.slice(0, -1)}이 없습니다.`);
+  }
+}
+
+const providersSource = fs.readFileSync(path.join(APP_DIRECTORY, "providers.tsx"), "utf8");
+if (!providersSource.includes("<SemoMotionField />")) {
+  failures.push("app/providers.tsx가 전역 SemoMotionField를 렌더링하지 않습니다.");
+}
+if (!providersSource.includes('MotionConfig reducedMotion="user"')) {
+  failures.push("app/providers.tsx가 사용자 reduced motion 설정을 따르지 않습니다.");
+}
+
+for (const summaryCoreFile of [
+  "page.tsx",
+  "home/DiscoverSection.tsx",
+  "home/DiscoverClubModal.tsx",
+]) {
+  const source = fs.readFileSync(path.join(APP_DIRECTORY, summaryCoreFile), "utf8");
+  if (!source.includes('presentation="core-only"')) {
+    failures.push(`${summaryCoreFile}가 외부 요약 문맥에서 코어 보석만 표시하지 않습니다.`);
+  }
+}
+
+const growthPanelSource = fs.readFileSync(
+  path.join(APP_DIRECTORY, "components/ClubGrowthCorePanel.tsx"),
+  "utf8",
+);
+if (growthPanelSource.includes('presentation="core-only"')) {
+  failures.push("클럽 내부 성장 패널이 바깥 성장 삼각을 숨깁니다.");
+}
+
+const growthMarkSource = fs.readFileSync(
+  path.join(APP_DIRECTORY, "components/ClubGrowthCoreMark.tsx"),
+  "utf8",
+);
+for (const stageContract of [
+  "TIER_STAGE_GUIDES.map",
+  "data-tier-stage={stage}",
+  'strokeDasharray="3 4"',
+]) {
+  if (!growthMarkSource.includes(stageContract)) {
+    failures.push(`클럽 내부 성장 마크가 3단계 점선 계약 ${stageContract}을 지키지 않습니다.`);
   }
 }
 

@@ -211,7 +211,7 @@ export function ClubScheduleEditorClient({
   const submitLabel = saving ? "저장 중..." : isEdit ? "수정 저장" : "저장하기";
   const actionBarClassName = isModal
     ? "sticky bottom-0 z-20 border-t border-slate-200 bg-white/95 p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] backdrop-blur"
-    : "fixed bottom-0 left-1/2 z-20 w-full max-w-md -translate-x-1/2 border-t border-slate-200 bg-white/95 p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] backdrop-blur";
+    : "fixed bottom-0 left-1/2 z-20 w-full max-w-[var(--page-user)] -translate-x-1/2 border-t border-slate-200 bg-white/95 p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] backdrop-blur";
 
   const handleDelete = async () => {
     if (!eventId) {
@@ -317,7 +317,7 @@ export function ClubScheduleEditorClient({
         className={
           isModal
             ? "flex min-h-0 flex-1 flex-col bg-[var(--background-light)]"
-            : "relative mx-auto flex min-h-screen max-w-md flex-col bg-[var(--background-light)] shadow-[0_18px_50px_rgba(15,23,42,0.12)]"
+            : "semo-page-user relative flex min-h-screen flex-col bg-[var(--background-light)] shadow-[var(--shadow-floating)]"
         }
       >
         <div
@@ -330,7 +330,7 @@ export function ClubScheduleEditorClient({
             sticky={false}
             layout={isModal ? "modal" : "page"}
             className="border-[var(--primary)]/10"
-            containerClassName={isModal ? undefined : "max-w-md"}
+            containerClassName={isModal ? undefined : "semo-page-user"}
             leftSlot={
               !isModal ? (
                 <RouterLink
@@ -356,7 +356,7 @@ export function ClubScheduleEditorClient({
             }
           />
 
-          <div className={`mx-auto flex w-full max-w-md flex-col gap-2 px-4 pb-4 ${isModal ? "max-w-none px-5" : ""}`}>
+          <div className={`mx-auto flex w-full max-w-[var(--page-user)] flex-col gap-2 px-4 pb-4 ${isModal ? "max-w-none px-5" : ""}`}>
             <p className="text-sm font-medium text-slate-700">일정 정보 입력</p>
             <div
               className="h-1.5 overflow-hidden rounded-full bg-[var(--primary)]/10"
@@ -507,7 +507,7 @@ export function ClubScheduleEditorClient({
                     <span className="material-symbols-outlined text-[var(--primary)]" aria-hidden="true">campaign</span>
                     <div>
                       <span className="block text-sm font-semibold text-slate-900">게시판에도 공유</span>
-                      <span className="mt-0.5 block text-[11px] text-slate-500">
+                      <span className="mt-0.5 block text-xs text-slate-500">
                         {postToBoard ? "사용 중 · 게시판 메인에도 함께 노출됩니다" : "미사용"}
                       </span>
                     </div>
@@ -529,7 +529,7 @@ export function ClubScheduleEditorClient({
                     <span className="material-symbols-outlined text-[var(--primary)]" aria-hidden="true">calendar_month</span>
                     <div>
                       <span className="block text-sm font-semibold text-slate-900">캘린더에도 공유</span>
-                      <span className="mt-0.5 block text-[11px] text-slate-500">
+                      <span className="mt-0.5 block text-xs text-slate-500">
                         {postToCalendar ? "사용 중 · 캘린더 메인에도 함께 노출됩니다" : "미사용"}
                       </span>
                     </div>
@@ -551,7 +551,7 @@ export function ClubScheduleEditorClient({
                     <span className="material-symbols-outlined text-[var(--primary)]" aria-hidden="true">push_pin</span>
                     <div>
                       <span className="block text-sm font-semibold text-slate-900">핀 고정</span>
-                      <span className="mt-0.5 block text-[11px] text-slate-500">
+                      <span className="mt-0.5 block text-xs text-slate-500">
                         {pinned ? "사용 중 · 게시판 중요 고정 게시물로 우선 노출됩니다" : "미사용"}
                       </span>
                     </div>
@@ -575,7 +575,7 @@ export function ClubScheduleEditorClient({
                     <span className="material-symbols-outlined text-[var(--primary)]" aria-hidden="true">payments</span>
                     <div>
                       <span className="block text-sm font-semibold text-slate-900">참가비</span>
-                      <span className="mt-0.5 block text-[11px] text-slate-500">
+                      <span className="mt-0.5 block text-xs text-slate-500">
                         {feeRequired ? "사용 중 · 금액 입력 또는 미정 가능" : "미사용"}
                       </span>
                     </div>
@@ -613,7 +613,7 @@ export function ClubScheduleEditorClient({
                     <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
                       <div className="flex flex-col">
                         <span className="text-sm font-medium text-slate-700">금액 미정</span>
-                        <span className="text-[11px] text-slate-400">아직 금액이 확정되지 않았으면 켜두세요</span>
+                        <span className="text-xs text-slate-400">아직 금액이 확정되지 않았으면 켜두세요</span>
                       </div>
                       <label className="relative inline-flex cursor-pointer items-center">
                         <input
@@ -636,7 +636,7 @@ export function ClubScheduleEditorClient({
                     <span className="material-symbols-outlined text-[var(--primary)]" aria-hidden="true">how_to_reg</span>
                     <div>
                       <span className="block text-sm font-semibold text-slate-900">참석 응답</span>
-                      <span className="mt-0.5 block text-[11px] text-slate-500">
+                      <span className="mt-0.5 block text-xs text-slate-500">
                         {participationEnabled ? "사용 중" : "미사용"}
                       </span>
                     </div>
@@ -691,7 +691,7 @@ export function ClubScheduleEditorClient({
                       <span className="material-symbols-outlined text-[var(--primary)]" aria-hidden="true">account_balance_wallet</span>
                       <div>
                         <span className="block text-sm font-semibold text-slate-900">1/n 정산</span>
-                        <span className="mt-0.5 block text-[11px] text-slate-500">
+                        <span className="mt-0.5 block text-xs text-slate-500">
                           참석 인원 기준으로 참가비를 균등 분할합니다
                         </span>
                       </div>

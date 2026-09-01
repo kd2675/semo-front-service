@@ -1,11 +1,14 @@
 "use client";
 
-import { useInfiniteQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
+
+import { useInfiniteQuery } from "@tanstack/react-query";
+import { motion } from "motion/react";
+
+import { useHydrationSafeReducedMotion } from "@/app/hooks/useHydrationSafeReducedMotion";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import { RouterLink } from "@/app/components/RouterLink";
 import { type ClubAdminActivityFeedResponse } from "@/app/lib/clubs";
-import { motion, useReducedMotion } from "motion/react";
 import { staggeredFadeUpMotion } from "@/app/lib/motion";
 import { adminActivitiesInfiniteQueryOptions } from "@/app/lib/react-query/activities/queries";
 
@@ -44,8 +47,7 @@ function formatRelativeTime(value: string | null, fallback: string | null) {
 }
 
 export function ClubAdminLogsClient({ clubId, clubName, initialData }: ClubAdminLogsClientProps) {
-  const prefersReducedMotion = useReducedMotion();
-  const reduceMotion = Boolean(prefersReducedMotion);
+  const reduceMotion = useHydrationSafeReducedMotion();
   const [sentinelNode, setSentinelNode] = useState<HTMLDivElement | null>(null);
   const [selectedPositionId, setSelectedPositionId] = useState<number | null>(null);
   const logsQuery = useInfiniteQuery(adminActivitiesInfiniteQueryOptions(clubId, initialData, selectedPositionId));
@@ -170,20 +172,20 @@ export function ClubAdminLogsClient({ clubId, clubName, initialData }: ClubAdmin
                         {activity.actorPositions.map((position) => (
                           <span
                             key={`${activity.activityId}-${position.clubPositionId}`}
-                            className="rounded-full bg-orange-50 px-2.5 py-1 text-[11px] font-semibold text-orange-700"
+                            className="rounded-full bg-orange-50 px-2.5 py-1 text-xs font-semibold text-orange-700"
                           >
                             {position.displayName}
                           </span>
                         ))}
-                        <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-600">
+                        <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600">
                           {activity.subject}
                         </span>
                         {activity.status === "FAIL" ? (
-                          <span className="rounded-full bg-rose-50 px-2.5 py-1 text-[11px] font-semibold text-rose-600">
+                          <span className="rounded-full bg-rose-50 px-2.5 py-1 text-xs font-semibold text-rose-600">
                             실패
                           </span>
                         ) : (
-                          <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-600">
+                          <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-600">
                             성공
                           </span>
                         )}

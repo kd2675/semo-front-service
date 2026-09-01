@@ -206,7 +206,7 @@ export function ClubMoreHubClient({ clubId, mode }: ClubMoreHubClientProps) {
                 >
                   <span className="material-symbols-outlined text-[18px]" aria-hidden="true">{item.iconName}</span>
                   {item.label}
-                  <span className="text-[11px] font-medium text-slate-400">{formatRecentUsage(item.lastUsedAt)}</span>
+                  <span className="text-xs font-medium text-slate-400">{formatRecentUsage(item.lastUsedAt)}</span>
                 </RouterLink>
               ))}
             </div>
@@ -298,11 +298,11 @@ function HubFeatureCard({
           <span className="block truncate text-sm font-black text-slate-800">{item.label}</span>
           <span className="mt-1 flex flex-wrap items-center gap-1.5">
             {pendingCount > 0 ? (
-              <span className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${overdueCount > 0 ? "bg-rose-50 text-rose-700" : "bg-slate-100 text-slate-600"}`}>
+              <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${overdueCount > 0 ? "bg-rose-50 text-rose-700" : "bg-slate-100 text-slate-600"}`}>
                 {overdueCount > 0 ? `지연 ${overdueCount} · 전체 ${pendingCount}` : `대기 ${pendingCount}`}
               </span>
             ) : (
-              <span className="text-[11px] font-medium text-slate-400">바로가기</span>
+              <span className="text-xs font-medium text-slate-400">바로가기</span>
             )}
           </span>
         </span>

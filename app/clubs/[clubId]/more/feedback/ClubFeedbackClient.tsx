@@ -1,8 +1,11 @@
 "use client";
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { motion, useReducedMotion } from "motion/react";
 import { startTransition, useMemo, useState } from "react";
+
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { motion } from "motion/react";
+
+import { useHydrationSafeReducedMotion } from "@/app/hooks/useHydrationSafeReducedMotion";
 import { ClubModeSwitchFab } from "@/app/components/ClubModeSwitchFab";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import { ResourceAttachmentPanel } from "@/app/components/ResourceAttachmentPanel";
@@ -76,8 +79,7 @@ export function ClubFeedbackClient({
   isAdmin,
   canPersist = true,
 }: ClubFeedbackClientProps) {
-  const prefersReducedMotion = useReducedMotion();
-  const reduceMotion = Boolean(prefersReducedMotion);
+  const reduceMotion = useHydrationSafeReducedMotion();
   const queryClient = useQueryClient();
   const feedbackHomeQuery = useQuery({
     ...feedbackHomeQueryOptions(clubId),
@@ -180,7 +182,7 @@ export function ClubFeedbackClient({
 
   return (
     <div className="semo-user-theme min-h-screen bg-[var(--background-light)] text-slate-900">
-      <div className="mx-auto min-h-screen max-w-md bg-[var(--background-light)]">
+      <div className="semo-page-user min-h-screen bg-[var(--background-light)]">
         <ClubPageHeader
           title="피드백"
           subtitle={feedbackHome.clubName}

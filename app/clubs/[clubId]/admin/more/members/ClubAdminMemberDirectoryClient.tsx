@@ -1,9 +1,11 @@
 "use client";
 
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { motion, useReducedMotion } from "motion/react";
 import { useEffect, useMemo, useState } from "react";
 
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { motion } from "motion/react";
+
+import { useHydrationSafeReducedMotion } from "@/app/hooks/useHydrationSafeReducedMotion";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import { useAppToast } from "@/app/hooks/useAppToast";
 import {
@@ -401,8 +403,7 @@ export function ClubAdminMemberDirectoryClient({
   initialData,
 }: ClubAdminMemberDirectoryClientProps) {
   const queryClient = useQueryClient();
-  const prefersReducedMotion = useReducedMotion();
-  const reduceMotion = Boolean(prefersReducedMotion);
+  const reduceMotion = useHydrationSafeReducedMotion();
   const [settings, setSettings] = useState(initialData.settings);
   const [savedSettings, setSavedSettings] = useState(initialData.settings);
   const [saving, setSaving] = useState(false);

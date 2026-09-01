@@ -2,12 +2,14 @@ type SemoBrandMarkProps = {
   className?: string;
   label?: string;
   title?: string;
+  animated?: boolean;
 };
 
 export function SemoBrandMark({
   className,
   label,
   title,
+  animated = false,
 }: SemoBrandMarkProps) {
   const isDecorative = !label;
 
@@ -19,6 +21,8 @@ export function SemoBrandMark({
       aria-hidden={isDecorative ? "true" : undefined}
       aria-label={label}
       className={className}
+      data-semo-brand-mark
+      data-animated={animated ? "true" : "false"}
     >
       {title ? <title>{title}</title> : null}
       <path
@@ -28,6 +32,7 @@ export function SemoBrandMark({
         stroke="currentColor"
         strokeWidth="3"
         strokeLinejoin="round"
+        data-semo-brand-frame
       />
       <path
         d="M32 17 48 46H16L32 17Z"
@@ -35,6 +40,7 @@ export function SemoBrandMark({
         strokeWidth="2"
         strokeLinejoin="round"
         opacity="0.58"
+        data-semo-brand-frame
       />
       <path
         d="m32 25 9 16H23l9-16Z"
@@ -42,6 +48,7 @@ export function SemoBrandMark({
         stroke="white"
         strokeWidth="1.5"
         strokeLinejoin="round"
+        data-semo-brand-core
       />
       <circle cx="32" cy="6" r="2.5" fill="currentColor" />
       <circle cx="58" cy="53" r="2.5" fill="currentColor" />

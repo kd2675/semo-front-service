@@ -158,17 +158,17 @@ export function ScheduleAttendanceModal({
                 <h3 id="attendance-summary-heading" className="sr-only">출석 요약</h3>
                 <div className="grid grid-cols-3 gap-2">
                   <div className="rounded-2xl bg-slate-50 px-3 py-3">
-                    <p className="text-[11px] font-semibold text-slate-500">참석 예정</p>
+                    <p className="text-xs font-semibold text-slate-500">참석 예정</p>
                     <p className="mt-1 text-lg font-bold text-slate-900">{payload.summary.goingCount}</p>
                   </div>
                   <div className="rounded-2xl bg-emerald-50 px-3 py-3">
-                    <p className="text-[11px] font-semibold text-emerald-700">도착 확인</p>
+                    <p className="text-xs font-semibold text-emerald-700">도착 확인</p>
                     <p className="mt-1 text-lg font-bold text-emerald-800">
                       {payload.summary.presentCount + payload.summary.lateCount}
                     </p>
                   </div>
                   <div className="rounded-2xl bg-amber-50 px-3 py-3">
-                    <p className="text-[11px] font-semibold text-amber-700">미확인</p>
+                    <p className="text-xs font-semibold text-amber-700">미확인</p>
                     <p className="mt-1 text-lg font-bold text-amber-800">{payload.summary.unmarkedCount}</p>
                   </div>
                 </div>
@@ -196,7 +196,7 @@ export function ScheduleAttendanceModal({
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2">
                           <p className="truncate text-sm font-bold text-slate-900">{member.displayName}</p>
-                          <span className="shrink-0 text-[11px] text-slate-400">{getRoleLabel(member.roleCode)}</span>
+                          <span className="shrink-0 text-xs text-slate-400">{getRoleLabel(member.roleCode)}</span>
                         </div>
                         <p className="mt-1 text-xs text-slate-500">
                           {getParticipationLabel(member.participationStatus)} · {getAttendanceLabel(member.attendanceStatus)}
@@ -255,7 +255,7 @@ export function ScheduleAttendanceModal({
               aria-describedby="schedule-attendance-note-length"
               className="mt-3 w-full resize-none rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none transition focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/10"
             />
-            <p id="schedule-attendance-note-length" className="mt-1 text-right text-[11px] text-slate-400">
+            <p id="schedule-attendance-note-length" className="mt-1 text-right text-xs text-slate-400">
               {note.length}/500
             </p>
             {actionError ? <p className="mt-2 text-xs font-medium text-rose-600">{actionError}</p> : null}

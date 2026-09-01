@@ -1,5 +1,10 @@
 "use client";
 
+import { useMemo, useState } from "react";
+
+import { AnimatePresence, motion } from "motion/react";
+
+import { useHydrationSafeReducedMotion } from "@/app/hooks/useHydrationSafeReducedMotion";
 import { RouteModal } from "@/app/components/RouteModal";
 import { ClubModeSwitchFab } from "@/app/components/ClubModeSwitchFab";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
@@ -21,8 +26,6 @@ import {
   getTournamentStatusBadgeClassName,
   getTournamentStatusLabel,
 } from "@/app/lib/tournament";
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { useMemo, useState } from "react";
 
 type ClubTournamentHomeClientProps = {
   clubId: string;
@@ -60,11 +63,11 @@ function TournamentCard({
       <div className="mb-5 flex items-start justify-between gap-4">
         <div>
           <div className="flex flex-wrap gap-2">
-            <span className={`rounded-full px-3 py-1 text-[11px] font-black uppercase tracking-[0.22em] ${approvalClassName}`}>
+            <span className={`rounded-full px-3 py-1 text-xs font-black uppercase tracking-[0.22em] ${approvalClassName}`}>
               {approvalLabel}
             </span>
             {tournament.approvalStatus === "APPROVED" ? (
-              <span className={`rounded-full px-3 py-1 text-[11px] font-black uppercase tracking-[0.22em] ${statusClassName}`}>
+              <span className={`rounded-full px-3 py-1 text-xs font-black uppercase tracking-[0.22em] ${statusClassName}`}>
                 {statusLabel}
               </span>
             ) : null}
@@ -74,7 +77,7 @@ function TournamentCard({
           </h3>
         </div>
         <div className="min-w-[68px] rounded-[var(--radius-card)] bg-slate-100 px-3 py-3 text-center">
-          <span className="block text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">
+          <span className="block text-xs font-black uppercase tracking-[0.2em] text-slate-400">
             {new Date(`${tournament.startDate}T00:00:00`).toLocaleDateString("ko-KR", { month: "short" })}
           </span>
           <span className="mt-1 block text-xl font-black text-[var(--primary)]">
@@ -148,7 +151,7 @@ function AdminInsightTile({
 }) {
   return (
     <div className="semo-card relative min-h-[140px] overflow-hidden p-6">
-      <p className="text-[11px] font-black uppercase tracking-[0.22em] text-slate-400">{label}</p>
+      <p className="text-xs font-black uppercase tracking-[0.22em] text-slate-400">{label}</p>
       <p className="mt-3 text-4xl font-black tracking-tight text-slate-900">{value}</p>
       <p className="mt-6 text-sm font-medium text-slate-500">{detail}</p>
       <div className="absolute -bottom-4 -right-4 opacity-10">
@@ -165,8 +168,7 @@ export function ClubTournamentHomeClient({
   bracketEnabled = false,
   onReload,
 }: ClubTournamentHomeClientProps) {
-  const prefersReducedMotion = useReducedMotion();
-  const reduceMotion = Boolean(prefersReducedMotion);
+  const reduceMotion = useHydrationSafeReducedMotion();
   const [activeTab, setActiveTab] = useState<UserTabKey>("FEATURED");
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [detailTournamentId, setDetailTournamentId] = useState<string | null>(null);
@@ -373,11 +375,11 @@ export function ClubTournamentHomeClient({
                       </div>
                       <div>
                         <div className="flex flex-wrap gap-2">
-                          <span className={`rounded-full px-3 py-1 text-[11px] font-black uppercase tracking-[0.18em] ${getTournamentApprovalBadgeClassName(tournament.approvalStatus)}`}>
+                          <span className={`rounded-full px-3 py-1 text-xs font-black uppercase tracking-[0.18em] ${getTournamentApprovalBadgeClassName(tournament.approvalStatus)}`}>
                             {getTournamentApprovalLabel(tournament.approvalStatus)}
                           </span>
                           {tournament.approvalStatus === "APPROVED" ? (
-                            <span className={`rounded-full px-3 py-1 text-[11px] font-black uppercase tracking-[0.18em] ${getTournamentStatusBadgeClassName(tournament.tournamentStatus)}`}>
+                            <span className={`rounded-full px-3 py-1 text-xs font-black uppercase tracking-[0.18em] ${getTournamentStatusBadgeClassName(tournament.tournamentStatus)}`}>
                               {getTournamentStatusLabel(tournament.tournamentStatus)}
                             </span>
                           ) : null}

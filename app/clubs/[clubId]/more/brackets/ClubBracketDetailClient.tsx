@@ -164,7 +164,7 @@ export function ClubBracketDetailClient({
   return (
     <div className={`${isAdminMode ? "semo-admin-theme" : "semo-user-theme"} ${isModal ? "flex min-h-0 flex-1 flex-col font-display text-slate-900" : "min-h-full font-display text-slate-900"}`}>
       <div
-        className={isModal ? "flex min-h-0 flex-1 flex-col" : "mx-auto flex min-h-full max-w-md flex-col"}
+        className={isModal ? "flex min-h-0 flex-1 flex-col" : "semo-page-user flex min-h-full flex-col"}
         style={{ backgroundColor: "var(--background-light)" }}
       >
         <ClubPageHeader
@@ -205,13 +205,13 @@ export function ClubBracketDetailClient({
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
               <div className="min-w-0 sm:max-w-[74%]">
                 <div className="mb-3 flex flex-wrap gap-2">
-                  <span className={`rounded-full px-3 py-1 text-[11px] font-black uppercase tracking-[0.22em] ${approvalBadgeClass(payload.approvalStatus)}`}>
+                  <span className={`rounded-full px-3 py-1 text-xs font-black uppercase tracking-[0.22em] ${approvalBadgeClass(payload.approvalStatus)}`}>
                     {approvalLabel(payload.approvalStatus)}
                   </span>
-                  <span className="rounded-full bg-white px-3 py-1 text-[11px] font-black uppercase tracking-[0.22em] text-slate-600">
+                  <span className="rounded-full bg-white px-3 py-1 text-xs font-black uppercase tracking-[0.22em] text-slate-600">
                     {sourceLabel(payload.sourceType)}
                   </span>
-                  <span className="rounded-full bg-white px-3 py-1 text-[11px] font-black uppercase tracking-[0.22em] text-slate-600">
+                  <span className="rounded-full bg-white px-3 py-1 text-xs font-black uppercase tracking-[0.22em] text-slate-600">
                     {payload.participantCount}명
                   </span>
                 </div>
@@ -221,7 +221,7 @@ export function ClubBracketDetailClient({
                 </p>
               </div>
               <div className="w-full rounded-[var(--radius-card)] bg-white/85 px-4 py-3 text-left shadow-sm sm:w-auto sm:text-right">
-                <p className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">작성자</p>
+                <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">작성자</p>
                 <p className="mt-1 text-lg font-black text-slate-900">{payload.authorDisplayName ?? "-"}</p>
               </div>
             </div>
@@ -296,7 +296,7 @@ export function ClubBracketDetailClient({
                             : "직접 입력"}
                       </p>
                     </div>
-                    <span className="rounded-full bg-white px-3 py-1 text-[11px] font-black uppercase tracking-[0.18em] text-slate-600">
+                    <span className="rounded-full bg-white px-3 py-1 text-xs font-black uppercase tracking-[0.18em] text-slate-600">
                       {participant.seedNumber}
                     </span>
                   </div>
@@ -316,7 +316,7 @@ export function ClubBracketDetailClient({
                     <div className="mt-3 space-y-3">
                       {round.matches.map((match) => (
                         <div key={match.matchNumber} className="rounded-xl bg-white px-3 py-3">
-                          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">
+                          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
                             경기 {match.matchNumber}
                           </p>
                           <div className="mt-2 space-y-1">
@@ -365,7 +365,7 @@ export function ClubBracketDetailClient({
 function InfoCard({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-[var(--radius-card)] bg-white/85 p-4 shadow-sm">
-      <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">{label}</p>
+      <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">{label}</p>
       <p className="mt-2 text-sm font-semibold text-slate-700">{value}</p>
     </div>
   );

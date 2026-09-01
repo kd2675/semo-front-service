@@ -167,22 +167,22 @@ export function PinnedBoardCarousel({
                 <div className="relative z-10 flex h-full flex-col">
                   <div className="mb-4 flex items-start justify-between gap-3">
                     <div className="flex min-w-0 items-center gap-2">
-                      <span className={`${meta.typeBadgeClassName} rounded px-2 py-0.5 text-[11px] font-bold uppercase`}>
+                      <span className={`${meta.typeBadgeClassName} rounded px-2 py-0.5 text-xs font-bold uppercase`}>
                         {meta.typeLabel}
                       </span>
-                      <span className="rounded bg-rose-50 px-2 py-0.5 text-[11px] font-bold uppercase text-rose-600">
+                      <span className="rounded bg-rose-50 px-2 py-0.5 text-xs font-bold uppercase text-rose-600">
                         중요
                       </span>
                       {meta.shareBadges.map((shareBadge) => (
                         <span
                           key={shareBadge.label}
-                          className={`rounded px-2 py-0.5 text-[11px] font-bold uppercase ${shareBadge.className}`}
+                          className={`rounded px-2 py-0.5 text-xs font-bold uppercase ${shareBadge.className}`}
                         >
                           {shareBadge.label}
                         </span>
                       ))}
                     </div>
-                    <span className={`shrink-0 text-[11px] ${surface.metaClassName}`}>{meta.dateLabel}</span>
+                    <span className={`shrink-0 text-xs ${surface.metaClassName}`}>{meta.dateLabel}</span>
                   </div>
 
                   {!useImageBackground && meta.imageUrl ? (
@@ -219,7 +219,7 @@ export function PinnedBoardCarousel({
                     )}
                     <div className="min-w-0">
                       <p className="truncate text-xs font-semibold">{meta.authorDisplayName}</p>
-                      <p className={`truncate text-[11px] ${surface.metaClassName}`}>{meta.authorRoleCode}</p>
+                      <p className={`truncate text-xs ${surface.metaClassName}`}>{meta.authorRoleCode}</p>
                     </div>
                   </div>
                 </div>

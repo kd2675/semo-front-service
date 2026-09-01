@@ -1,8 +1,11 @@
 "use client";
 
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { motion, useReducedMotion } from "motion/react";
 import { startTransition, useDeferredValue, useMemo, useState } from "react";
+
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { motion } from "motion/react";
+
+import { useHydrationSafeReducedMotion } from "@/app/hooks/useHydrationSafeReducedMotion";
 import { RouterLink } from "@/app/components/RouterLink";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import { useAppAlert } from "@/app/hooks/useAppAlert";
@@ -64,7 +67,7 @@ function SummaryMetric({
 }) {
   return (
     <div className="rounded-[var(--radius-card)] border border-white/80 bg-white/80 px-4 py-3 shadow-[0_14px_34px_rgba(15,23,42,0.08)] backdrop-blur">
-      <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-400">{label}</p>
+      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">{label}</p>
       <p className="mt-2 text-2xl font-black tracking-tight text-slate-900">{value}</p>
       <p className="mt-1 text-xs leading-5 text-slate-500">{detail}</p>
     </div>
@@ -94,12 +97,12 @@ function JoinRequestCard({
           <div className="flex flex-wrap items-center gap-2">
             <p className="text-base font-black tracking-tight text-slate-900">{item.displayName}</p>
             <span
-              className={`rounded-full px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.16em] ${accentClassName}`}
+              className={`rounded-full px-2.5 py-1 text-xs font-bold uppercase tracking-[0.16em] ${accentClassName}`}
             >
               대기 중
             </span>
             {isRequestedToday(item.requestedAt) ? (
-              <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.16em] text-slate-600">
+              <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-600">
                 오늘
               </span>
             ) : null}
@@ -151,8 +154,7 @@ export function ClubJoinRequestInboxClient({
   initialData,
 }: ClubJoinRequestInboxClientProps) {
   const queryClient = useQueryClient();
-  const prefersReducedMotion = useReducedMotion();
-  const reduceMotion = Boolean(prefersReducedMotion);
+  const reduceMotion = useHydrationSafeReducedMotion();
   const [query, setQuery] = useState("");
   const [requests, setRequests] = useState(initialData.requests);
   const [reviewingJoinRequestId, setReviewingJoinRequestId] = useState<number | null>(null);
@@ -233,7 +235,7 @@ export function ClubJoinRequestInboxClient({
           >
             <div className="absolute -right-8 -top-12 h-32 w-32 rounded-full bg-[var(--primary)]/10 blur-3xl" />
             <div className="relative">
-              <p className="text-[11px] font-bold uppercase tracking-[0.28em] text-[var(--primary)]">
+              <p className="text-xs font-bold uppercase tracking-[0.28em] text-[var(--primary)]">
                 가입 요청
               </p>
               <h2 className="mt-3 text-[28px] font-black tracking-[-0.04em] text-slate-900">
@@ -280,7 +282,7 @@ export function ClubJoinRequestInboxClient({
           >
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">운영 노트</p>
+                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">운영 노트</p>
                 <p className="mt-1 text-sm font-bold text-slate-900">
                   {latestRequestedAtLabel
                     ? `가장 최근 접수 ${latestRequestedAtLabel}`

@@ -1,9 +1,12 @@
 "use client";
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { motion, useReducedMotion } from "motion/react";
 import { useMemo, useRef, useState } from "react";
 import type { CSSProperties } from "react";
+
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { motion } from "motion/react";
+
+import { useHydrationSafeReducedMotion } from "@/app/hooks/useHydrationSafeReducedMotion";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import { ResourceAttachmentPanel } from "@/app/components/ResourceAttachmentPanel";
 import { useAppToast } from "@/app/hooks/useAppToast";
@@ -80,8 +83,7 @@ export function ClubAdminFeedbackClient({
   initialData,
   initialDetail,
 }: ClubAdminFeedbackClientProps) {
-  const prefersReducedMotion = useReducedMotion();
-  const reduceMotion = Boolean(prefersReducedMotion);
+  const reduceMotion = useHydrationSafeReducedMotion();
   const queryClient = useQueryClient();
   const feedbackHomeQuery = useQuery({
     ...adminFeedbackHomeQueryOptions(clubId),

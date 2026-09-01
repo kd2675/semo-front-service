@@ -1,5 +1,12 @@
+"use client";
+
+import { motion } from "motion/react";
+
+import { useHydrationSafeReducedMotion } from "@/app/hooks/useHydrationSafeReducedMotion";
 import { ClubGrowthCoreMark } from "@/app/components/ClubGrowthCoreMark";
 import type { ClubGrowthCore } from "@/app/lib/clubs";
+import { getTierTransitionProgress, getTierTransitionStage } from "@/app/lib/growthCore";
+import { inViewFadeUpMotion } from "@/app/lib/motion";
 
 type ClubGrowthCorePanelProps = {
   growthCore?: ClubGrowthCore | null;
@@ -27,21 +34,28 @@ function activityLabel(level: number) {
 }
 
 export function ClubGrowthCorePanel({ growthCore, compact = false }: ClubGrowthCorePanelProps) {
+  const reduceMotion = useHydrationSafeReducedMotion();
   const tierLabel = growthCore?.tierLabel ?? "원석";
   const nextTierLabel = growthCore?.nextTierLabel;
   const activityLevel = growthCore?.activityLevel ?? 0;
+  const tierTransitionStage = getTierTransitionStage(getTierTransitionProgress(growthCore));
 
   return (
-    <section className="semo-card overflow-hidden">
+    <motion.section className="semo-card overflow-hidden" {...inViewFadeUpMotion(0, reduceMotion)}>
       <div className={`grid ${compact ? "gap-4 p-4" : "gap-6 p-5 md:grid-cols-[12rem_1fr] md:p-6"}`}>
         <div className="relative flex min-h-44 items-center justify-center overflow-hidden rounded-[var(--radius-card)] bg-[radial-gradient(circle_at_50%_38%,color-mix(in_srgb,var(--primary)_12%,transparent),transparent_58%),linear-gradient(145deg,#f8fafc,#eef4ff)]">
           <div className="absolute inset-x-6 top-5 h-px bg-gradient-to-r from-transparent via-[var(--primary)]/35 to-transparent" />
+          {nextTierLabel ? (
+            <span className="absolute right-3 top-3 rounded-full border border-white/80 bg-white/90 px-2.5 py-1 text-xs font-extrabold text-[var(--primary)] shadow-sm">
+              {nextTierLabel}까지 {tierTransitionStage}/3
+            </span>
+          ) : null}
           <ClubGrowthCoreMark
             growthCore={growthCore}
             size={compact ? 132 : 164}
             animateActivity={!compact}
           />
-          <span className="absolute bottom-3 rounded-full border border-white/80 bg-white/90 px-3 py-1 text-[11px] font-extrabold tracking-[0.08em] text-slate-700 shadow-sm">
+          <span className="absolute bottom-3 rounded-full border border-white/80 bg-white/90 px-3 py-1 text-xs font-extrabold tracking-[0.08em] text-slate-700 shadow-sm">
             {tierLabel} 코어
           </span>
         </div>
@@ -60,15 +74,15 @@ export function ClubGrowthCorePanel({ growthCore, compact = false }: ClubGrowthC
               <span className="rounded-full bg-[var(--primary)]/10 px-3 py-1 text-xs font-bold text-[var(--primary)]">
                 코어 {activityLabel(activityLevel)}
               </span>
-              <span className="text-[11px] text-slate-400">최근 14일 기록 기준</span>
+              <span className="text-xs text-slate-400">최근 14일 기록 기준</span>
             </div>
           </div>
 
           <div className="mt-5 grid gap-4">
-            {AXES.map((axis) => {
+            {AXES.map((axis, index) => {
               const progress = growthCore?.[axis.key] ?? 0;
               return (
-                <div key={axis.key}>
+                <motion.div key={axis.key} {...inViewFadeUpMotion(index + 1, reduceMotion)}>
                   <div className="flex items-end justify-between gap-4">
                     <div>
                       <p className="text-sm font-extrabold text-slate-800">{axis.label}</p>
@@ -84,23 +98,26 @@ export function ClubGrowthCorePanel({ growthCore, compact = false }: ClubGrowthC
                     aria-valuemax={100}
                     aria-valuenow={progress}
                   >
-                    <div
+                    <motion.div
                       className="h-full rounded-full bg-[var(--primary)] transition-[width] duration-300"
-                      style={{ width: `${Math.max(0, Math.min(100, progress))}%` }}
+                      initial={{ width: reduceMotion ? `${Math.max(0, Math.min(100, progress))}%` : 0 }}
+                      whileInView={{ width: `${Math.max(0, Math.min(100, progress))}%` }}
+                      viewport={{ once: true, amount: 0.8 }}
+                      transition={{ duration: reduceMotion ? 0.01 : 0.7, delay: reduceMotion ? 0 : index * 0.12, ease: "easeOut" }}
                     />
                   </div>
-                </div>
+                </motion.div>
               );
             })}
           </div>
 
           <p className="mt-5 border-t border-slate-100 pt-4 text-xs leading-5 text-slate-500">
             {nextTierLabel
-              ? `다음 소재는 ${nextTierLabel}입니다. 이 표시는 순위가 아니라 모임에 남은 운영 기록의 누적 단계입니다.`
+              ? `다음 소재는 ${nextTierLabel}이며 현재 3단계 중 ${tierTransitionStage}단계입니다. 세 축 중 가장 낮은 진행값이 33%·66% 점선을 넘을 때 다음 단계로 이동하고, 세 축 모두 100%에 닿으면 소재가 올라갑니다.`
               : "최종 소재에 도달했습니다. 이 표시는 순위가 아니라 모임에 남은 운영 기록의 누적 단계입니다."}
           </p>
         </div>
       </div>
-    </section>
+    </motion.section>
   );
 }

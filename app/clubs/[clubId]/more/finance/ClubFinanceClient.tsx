@@ -1,8 +1,11 @@
 "use client";
 
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { startTransition, useMemo, useState, type ReactNode } from "react";
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { AnimatePresence, motion } from "motion/react";
+
+import { useHydrationSafeReducedMotion } from "@/app/hooks/useHydrationSafeReducedMotion";
 import { ClubModeSwitchFab } from "@/app/components/ClubModeSwitchFab";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import { ResourceAttachmentPanel } from "@/app/components/ResourceAttachmentPanel";
@@ -121,8 +124,7 @@ export function ClubFinanceClient({
   isAdmin,
 }: ClubFinanceClientProps) {
   const queryClient = useQueryClient();
-  const prefersReducedMotion = useReducedMotion();
-  const reduceMotion = Boolean(prefersReducedMotion);
+  const reduceMotion = useHydrationSafeReducedMotion();
   const finance = initialData;
   const [createdRequests, setCreatedRequests] = useState<ClubFinanceRequest[]>([]);
   const [showActionSheet, setShowActionSheet] = useState(false);
@@ -230,7 +232,7 @@ export function ClubFinanceClient({
           className="bg-white/85 backdrop-blur-md"
         />
 
-        <main className="semo-nav-bottom-space mx-auto flex w-full max-w-md flex-1 flex-col gap-4 px-4 pt-4">
+        <main className="semo-page-user semo-nav-bottom-space flex flex-1 flex-col gap-4 px-4 pt-4">
           <motion.section
             className="rounded-[var(--radius-modal)] border border-slate-200 bg-white p-5 shadow-sm"
             {...staggeredFadeUpMotion(0, reduceMotion)}
@@ -562,11 +564,11 @@ function CompactTransactionCard({ obligation }: { obligation: ClubFinanceUserObl
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <span
-              className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${getStatusClassName(obligation.payment)}`}
+              className={`rounded-full px-2.5 py-1 text-xs font-bold ${getStatusClassName(obligation.payment)}`}
             >
               {obligation.payment.paymentStatusLabel}
             </span>
-            <span className="rounded-full bg-white px-2.5 py-1 text-[11px] font-bold text-slate-500">
+            <span className="rounded-full bg-white px-2.5 py-1 text-xs font-bold text-slate-500">
               {obligation.obligationTypeLabel}
             </span>
           </div>
@@ -604,10 +606,10 @@ function ObligationCard({
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <span className={`rounded-full px-3 py-1 text-[11px] font-bold ${getStatusClassName(obligation.payment)}`}>
+            <span className={`rounded-full px-3 py-1 text-xs font-bold ${getStatusClassName(obligation.payment)}`}>
               {obligation.payment.paymentStatusLabel}
             </span>
-            <span className="rounded-full bg-white px-3 py-1 text-[11px] font-bold text-slate-500">
+            <span className="rounded-full bg-white px-3 py-1 text-xs font-bold text-slate-500">
               {obligation.obligationTypeLabel}
             </span>
           </div>
@@ -632,11 +634,11 @@ function FinanceRequestCard({ request, onOpen }: { request: ClubFinanceRequest; 
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <span
-              className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${getRequestStatusClassName(request)}`}
+              className={`rounded-full px-2.5 py-1 text-xs font-bold ${getRequestStatusClassName(request)}`}
             >
               {request.statusLabel}
             </span>
-            <span className="rounded-full bg-white px-2.5 py-1 text-[11px] font-bold text-slate-500">
+            <span className="rounded-full bg-white px-2.5 py-1 text-xs font-bold text-slate-500">
               {request.requestTypeLabel}
             </span>
           </div>

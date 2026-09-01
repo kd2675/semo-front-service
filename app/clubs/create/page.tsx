@@ -1,13 +1,16 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+
+import { motion } from "motion/react";
+
+import { useHydrationSafeReducedMotion } from "@/app/hooks/useHydrationSafeReducedMotion";
 import { RouterLink } from "@/app/components/RouterLink";
 import { ClubClassificationField } from "@/app/components/ClubClassificationField";
 import { ClubGrowthCoreMark } from "@/app/components/ClubGrowthCoreMark";
 import { ClubRegionField } from "@/app/components/ClubRegionField";
 import { SemoBrandMark } from "@/app/components/SemoBrandMark";
-import { motion, useReducedMotion } from "motion/react";
-import { useEffect, useState } from "react";
 import { createClub } from "@/app/lib/clubs";
 import type { ActivityCategoryKey, ActivityTagKey, AffiliationTypeKey } from "@/app/lib/clubClassification";
 import { uploadTempImage } from "@/app/lib/imageUpload";
@@ -26,8 +29,7 @@ const MEMBERSHIP_OPTIONS = [
 
 export default function CreateClubPage() {
   const router = useRouter();
-  const prefersReducedMotion = useReducedMotion();
-  const reduceMotion = Boolean(prefersReducedMotion);
+  const reduceMotion = useHydrationSafeReducedMotion();
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [activityCategory, setActivityCategory] = useState<ActivityCategoryKey>("SPORTS");

@@ -1,7 +1,10 @@
 "use client";
 
-import { motion, useReducedMotion } from "motion/react";
 import { useEffect, useEffectEvent, useRef } from "react";
+
+import { motion } from "motion/react";
+
+import { useHydrationSafeReducedMotion } from "@/app/hooks/useHydrationSafeReducedMotion";
 import { overlayFadeMotion, popInMotion } from "@/app/lib/motion";
 
 const FOCUSABLE_SELECTOR = [
@@ -32,8 +35,7 @@ export function RouteModal({
   ariaLabel = "대화상자",
   ariaLabelledBy,
 }: RouteModalProps) {
-  const prefersReducedMotion = useReducedMotion();
-  const reduceMotion = Boolean(prefersReducedMotion);
+  const reduceMotion = useHydrationSafeReducedMotion();
   const dialogRef = useRef<HTMLElement | null>(null);
   const dismiss = useEffectEvent(onDismiss);
   const canDismissWithEscape = useEffectEvent(() => dismissOnEscape);

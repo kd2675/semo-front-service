@@ -1,6 +1,12 @@
 "use client";
 
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { AnimatePresence, motion } from "motion/react";
+
+import { useHydrationSafeReducedMotion } from "@/app/hooks/useHydrationSafeReducedMotion";
 import { RouterLink } from "@/app/components/RouterLink";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import { RouteModal } from "@/app/components/RouteModal";
@@ -17,9 +23,6 @@ import {
   getTournamentStatusBadgeClassName,
   getTournamentStatusLabel,
 } from "@/app/lib/tournament";
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
 import { getQueryErrorMessage } from "@/app/lib/queryUtils";
 import { invalidateClubQueries } from "@/app/lib/react-query/common";
 import {
@@ -35,6 +38,7 @@ import {
   tournamentDetailQueryOptions,
   tournamentQueryKeys,
 } from "@/app/lib/react-query/tournaments/queries";
+
 import { ClubDetailLoadingShell } from "../../../ClubRouteLoadingShells";
 
 type ClubTournamentManageClientProps = {
@@ -58,8 +62,7 @@ export function ClubTournamentManageClient({
   onRequestClose,
   onDeleted,
 }: ClubTournamentManageClientProps) {
-  const prefersReducedMotion = useReducedMotion();
-  const reduceMotion = Boolean(prefersReducedMotion);
+  const reduceMotion = useHydrationSafeReducedMotion();
   const router = useRouter();
   const queryClient = useQueryClient();
   const {
@@ -333,7 +336,7 @@ export function ClubTournamentManageClient({
 
   return (
     <div className={isModal ? "flex min-h-0 flex-1 flex-col bg-white font-display text-slate-900" : "min-h-full bg-white font-display text-slate-900"}>
-      <div className={isModal ? "flex min-h-0 flex-1 flex-col bg-white" : "mx-auto flex min-h-full max-w-md flex-col bg-white"}>
+      <div className={isModal ? "flex min-h-0 flex-1 flex-col bg-white" : "semo-page-user flex min-h-full flex-col bg-white/92"}>
         <ClubPageHeader
           title="대회 관리"
           subtitle={payload.clubName}
@@ -375,11 +378,11 @@ export function ClubTournamentManageClient({
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
               <div className="min-w-0">
                 <div className="flex flex-wrap gap-2">
-                  <span className={`rounded-full px-3 py-1 text-[11px] font-black uppercase tracking-[0.22em] ${getTournamentApprovalBadgeClassName(payload.approvalStatus)}`}>
+                  <span className={`rounded-full px-3 py-1 text-xs font-black uppercase tracking-[0.22em] ${getTournamentApprovalBadgeClassName(payload.approvalStatus)}`}>
                     {getTournamentApprovalLabel(payload.approvalStatus)}
                   </span>
                   {payload.approvalStatus === "APPROVED" ? (
-                    <span className={`rounded-full px-3 py-1 text-[11px] font-black uppercase tracking-[0.22em] ${getTournamentStatusBadgeClassName(payload.tournamentStatus)}`}>
+                    <span className={`rounded-full px-3 py-1 text-xs font-black uppercase tracking-[0.22em] ${getTournamentStatusBadgeClassName(payload.tournamentStatus)}`}>
                       {getTournamentStatusLabel(payload.tournamentStatus)}
                     </span>
                   ) : null}
@@ -395,7 +398,7 @@ export function ClubTournamentManageClient({
                 ) : null}
               </div>
               <div className="w-full rounded-[var(--radius-card)] bg-slate-100 px-4 py-3 text-left sm:w-auto sm:text-right">
-                <p className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">신청/승인</p>
+                <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">신청/승인</p>
                 <p className="mt-1 text-lg font-black text-slate-900">
                   {payload.applicantCount}/{payload.approvedCount}
                 </p>
@@ -509,7 +512,7 @@ export function ClubTournamentManageClient({
                             <p className="mt-2 text-sm text-slate-600">{application.applicationNote}</p>
                           ) : null}
                         </div>
-                        <span className={`rounded-full px-3 py-1 text-[11px] font-black tracking-wide ${
+                        <span className={`rounded-full px-3 py-1 text-xs font-black tracking-wide ${
                           application.applicationStatus === "APPROVED"
                             ? "bg-emerald-50 text-emerald-700"
                             : application.applicationStatus === "REJECTED"
@@ -531,17 +534,17 @@ export function ClubTournamentManageClient({
                       ) : null}
                       <div className="mt-3 flex flex-wrap gap-2">
                         {application.feePaymentStatusLabel ? (
-                          <span className="rounded-full bg-white px-3 py-1 text-[11px] font-bold text-slate-600 ring-1 ring-slate-200">
+                          <span className="rounded-full bg-white px-3 py-1 text-xs font-bold text-slate-600 ring-1 ring-slate-200">
                             참가비 {application.feePaymentStatusLabel}
                           </span>
                         ) : null}
                         {application.checkedInAtLabel ? (
-                          <span className="rounded-full bg-sky-50 px-3 py-1 text-[11px] font-bold text-sky-700">
+                          <span className="rounded-full bg-sky-50 px-3 py-1 text-xs font-bold text-sky-700">
                             {application.checkedInAtLabel} 체크인
                           </span>
                         ) : null}
                         {application.placement ? (
-                          <span className="rounded-full bg-amber-50 px-3 py-1 text-[11px] font-bold text-amber-700">
+                          <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-bold text-amber-700">
                             {application.placement}위
                           </span>
                         ) : null}

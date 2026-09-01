@@ -1,9 +1,12 @@
 "use client";
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import Image from "next/image";
-import { motion, useReducedMotion } from "motion/react";
 import { startTransition, useRef, useState, type ChangeEvent } from "react";
+
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { motion } from "motion/react";
+
+import { useHydrationSafeReducedMotion } from "@/app/hooks/useHydrationSafeReducedMotion";
 import { ClubModeSwitchFab } from "@/app/components/ClubModeSwitchFab";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import { uploadTempImage } from "@/app/lib/imageUpload";
@@ -13,6 +16,7 @@ import { getClubRoleLabel, getMembershipStatusLabel } from "@/app/lib/roleLabels
 import { updateClubProfileMutationOptions } from "@/app/lib/react-query/club/mutations";
 import { clubProfileQueryOptions } from "@/app/lib/react-query/club/queries";
 import { invalidateClubQueries } from "@/app/lib/react-query/common";
+
 import { ClubProfileLoadingShell } from "../ClubRouteLoadingShells";
 
 type ClubProfileFallbackClientProps = {
@@ -38,8 +42,7 @@ function getClubRecordPresentation(record: { title: string; value: string }) {
 
 export function ClubProfileFallbackClient({ clubId }: ClubProfileFallbackClientProps) {
   const queryClient = useQueryClient();
-  const prefersReducedMotion = useReducedMotion();
-  const reduceMotion = Boolean(prefersReducedMotion);
+  const reduceMotion = useHydrationSafeReducedMotion();
   const { data: queryPayload, isPending, isError, error: queryError } = useQuery(
     clubProfileQueryOptions(clubId),
   );
@@ -145,7 +148,7 @@ export function ClubProfileFallbackClient({ clubId }: ClubProfileFallbackClientP
 
   return (
     <div className="min-h-full bg-[var(--background-light)] font-display text-slate-900">
-      <div className="mx-auto flex min-h-full max-w-md flex-col bg-white shadow-[var(--shadow-floating)]">
+      <div className="semo-page-user flex min-h-full flex-col bg-white/92 shadow-[var(--shadow-floating)]">
         <ClubPageHeader title="내 프로필" icon="person" />
 
         <main className="semo-nav-bottom-space flex-1">

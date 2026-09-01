@@ -90,14 +90,14 @@ export function DecisionRecordCard({
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="rounded-full bg-[var(--primary)]/8 px-2.5 py-1 text-[11px] font-bold text-[var(--primary)]">
+            <span className="rounded-full bg-[var(--primary)]/8 px-2.5 py-1 text-xs font-bold text-[var(--primary)]">
               {record.recordType === "MEETING_MINUTES" ? "회의록" : "운영 결정"}
             </span>
-            <span className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${status.className}`}>{status.label}</span>
-            <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-bold text-slate-500">
+            <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${status.className}`}>{status.label}</span>
+            <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-500">
               {record.visibilityScope === "MEMBERS" ? "멤버 공개" : "운영진 공개"}
             </span>
-            {reviewDue ? <span className="rounded-full bg-rose-50 px-2.5 py-1 text-[11px] font-bold text-rose-700">검토 필요</span> : null}
+            {reviewDue ? <span className="rounded-full bg-rose-50 px-2.5 py-1 text-xs font-bold text-rose-700">검토 필요</span> : null}
           </div>
           <h2 className="mt-3 text-lg font-black leading-7 text-slate-900">{record.title}</h2>
           <p className="mt-2 text-xs text-slate-400">
@@ -111,7 +111,7 @@ export function DecisionRecordCard({
       </div>
 
       <div className="mt-4 rounded-2xl bg-slate-50 px-4 py-4">
-        <p className="text-[11px] font-bold text-slate-400">결정·합의 내용</p>
+        <p className="text-xs font-bold text-slate-400">결정·합의 내용</p>
         <p className="mt-2 whitespace-pre-wrap text-sm font-semibold leading-6 text-slate-700">{record.decisionContent}</p>
       </div>
 
@@ -183,15 +183,15 @@ export function DecisionRecordCard({
 }
 
 function InfoCell({ label, value, danger = false }: { label: string; value: string; danger?: boolean }) {
-  return <div className={`min-w-0 rounded-xl px-3 py-2.5 ${danger ? "bg-rose-50" : "bg-slate-50"}`}><p className={`text-[11px] font-bold ${danger ? "text-rose-500" : "text-slate-400"}`}>{label}</p><p className={`mt-1 break-words font-bold ${danger ? "text-rose-700" : "text-slate-700"}`}>{value}</p></div>;
+  return <div className={`min-w-0 rounded-xl px-3 py-2.5 ${danger ? "bg-rose-50" : "bg-slate-50"}`}><p className={`text-xs font-bold ${danger ? "text-rose-500" : "text-slate-400"}`}>{label}</p><p className={`mt-1 break-words font-bold ${danger ? "text-rose-700" : "text-slate-700"}`}>{value}</p></div>;
 }
 
 function DetailText({ label, value, empty }: { label: string; value?: string | null; empty?: string }) {
-  return <div><p className="text-[11px] font-bold text-slate-400">{label}</p><p className="mt-1 whitespace-pre-wrap text-sm leading-6 text-slate-600">{value || empty}</p></div>;
+  return <div><p className="text-xs font-bold text-slate-400">{label}</p><p className="mt-1 whitespace-pre-wrap text-sm leading-6 text-slate-600">{value || empty}</p></div>;
 }
 
 function ResourceLinks({ title, links }: { title: string; links: DecisionRecord["resourceLinks"] }) {
-  return <div><p className="text-[11px] font-bold text-slate-400">{title}</p><div className="mt-2 flex flex-wrap gap-2">{links.map((link) => <RouterLink key={`${link.relationType}-${link.resourceType}-${link.resourceId}`} href={link.targetPath} className="inline-flex min-h-11 items-center gap-1 rounded-[var(--radius-control)] bg-[var(--primary)]/8 px-3 text-xs font-bold text-[var(--primary)]"><span>{resourceTypeLabel(link.resourceType)} · {link.title}</span><span className="material-symbols-outlined text-[15px]" aria-hidden="true">arrow_outward</span></RouterLink>)}</div></div>;
+  return <div><p className="text-xs font-bold text-slate-400">{title}</p><div className="mt-2 flex flex-wrap gap-2">{links.map((link) => <RouterLink key={`${link.relationType}-${link.resourceType}-${link.resourceId}`} href={link.targetPath} className="inline-flex min-h-11 items-center gap-1 rounded-[var(--radius-control)] bg-[var(--primary)]/8 px-3 text-xs font-bold text-[var(--primary)]"><span>{resourceTypeLabel(link.resourceType)} · {link.title}</span><span className="material-symbols-outlined text-[15px]" aria-hidden="true">arrow_outward</span></RouterLink>)}</div></div>;
 }
 
 function ActionButton({ label, onClick, pending, tone }: { label: string; onClick: () => void; pending: boolean; tone: "primary" | "light" | "danger" }) {

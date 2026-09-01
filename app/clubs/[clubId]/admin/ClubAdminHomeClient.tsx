@@ -1,8 +1,10 @@
 "use client";
 
+import { motion } from "motion/react";
+
+import { useHydrationSafeReducedMotion } from "@/app/hooks/useHydrationSafeReducedMotion";
 import { RouterLink } from "@/app/components/RouterLink";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
-import { motion, useReducedMotion } from "motion/react";
 import { staggeredFadeUpMotion } from "@/app/lib/motion";
 
 type AdminSummaryMetric = {
@@ -84,8 +86,7 @@ export function ClubAdminHomeClient({
   actions,
   activities,
 }: ClubAdminHomeClientProps) {
-  const prefersReducedMotion = useReducedMotion();
-  const reduceMotion = Boolean(prefersReducedMotion);
+  const reduceMotion = useHydrationSafeReducedMotion();
 
   return (
     <div className="semo-app-shell text-slate-900">
@@ -118,7 +119,7 @@ export function ClubAdminHomeClient({
                   {metric.value}
                 </h3>
                 <p
-                  className={`mt-1 flex items-center gap-1 text-[11px] ${
+                  className={`mt-1 flex items-center gap-1 text-xs ${
                     DETAIL_TONE_CLASS[metric.detailTone ?? "slate"]
                   }`}
                 >
@@ -189,7 +190,7 @@ export function ClubAdminHomeClient({
                         <span className="font-bold text-slate-900">{activity.actorDisplayName}</span>{" "}
                         {activity.detail}
                       </p>
-                      <div className="mt-1 flex flex-wrap items-center gap-2 text-[11px]">
+                      <div className="mt-1 flex flex-wrap items-center gap-2 text-xs">
                         <span className="rounded-full bg-slate-100 px-2 py-0.5 font-semibold text-slate-600">
                           {activity.subject}
                         </span>

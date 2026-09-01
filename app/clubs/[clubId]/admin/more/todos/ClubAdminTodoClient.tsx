@@ -1,8 +1,11 @@
 "use client";
 
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { AnimatePresence, useReducedMotion } from "motion/react";
 import { useState } from "react";
+
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { AnimatePresence } from "motion/react";
+
+import { useHydrationSafeReducedMotion } from "@/app/hooks/useHydrationSafeReducedMotion";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import { TodoApplicationManagerModal } from "@/app/components/TodoApplicationManagerModal";
 import { useAppToast } from "@/app/hooks/useAppToast";
@@ -25,6 +28,7 @@ import {
   adminTodoApplicationsQueryOptions,
   adminTodosQueryOptions,
 } from "@/app/lib/react-query/todos/queries";
+
 import {
   type ApplicationFilter,
   type AssignmentFilter,
@@ -58,8 +62,7 @@ type ClubAdminTodoClientProps = {
 
 export function ClubAdminTodoClient({ clubId, initialData }: ClubAdminTodoClientProps) {
   const queryClient = useQueryClient();
-  const prefersReducedMotion = useReducedMotion();
-  const reduceMotion = Boolean(prefersReducedMotion);
+  const reduceMotion = useHydrationSafeReducedMotion();
   const [todoData, setTodoData] = useState(initialData);
   const canCreate = todoData.canCreate;
   const canAssign = todoData.canAssign;

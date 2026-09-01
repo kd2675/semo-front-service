@@ -68,7 +68,7 @@ export function ClubClassificationField({
       <div>
         <div className="flex items-center justify-between gap-3">
           <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">활동 태그</p>
-          <p className="text-[11px] font-medium text-slate-400">최대 5개</p>
+          <p className="text-xs font-medium text-slate-400">최대 5개</p>
         </div>
         {activityTagOptions.length > 0 ? (
           <div className="mt-3 flex flex-wrap gap-2">

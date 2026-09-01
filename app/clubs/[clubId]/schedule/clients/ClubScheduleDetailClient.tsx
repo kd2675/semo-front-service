@@ -1,11 +1,14 @@
 "use client";
 
+import { useState } from "react";
+
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { AnimatePresence, motion } from "motion/react";
+
+import { useHydrationSafeReducedMotion } from "@/app/hooks/useHydrationSafeReducedMotion";
 import { RouterLink } from "@/app/components/RouterLink";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import { RouteModal } from "@/app/components/RouteModal";
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { useState } from "react";
 import { ClubModeSwitchFab } from "@/app/components/ClubModeSwitchFab";
 import { type ClubScheduleEventDetailResponse } from "@/app/lib/clubs";
 import { getShareTargetBadges } from "@/app/lib/contentBadge";
@@ -17,6 +20,7 @@ import {
   scheduleEventDetailQueryOptions,
   scheduleQueryKeys,
 } from "@/app/lib/react-query/schedule/queries";
+
 import { ClubDetailLoadingShell } from "../../ClubRouteLoadingShells";
 import { ScheduleAttendanceModal } from "../modals/ScheduleAttendanceModal";
 
@@ -118,8 +122,7 @@ export function ClubScheduleDetailClient({
   presentation = "page",
   onRequestClose,
 }: ClubScheduleDetailClientProps) {
-  const prefersReducedMotion = useReducedMotion();
-  const reduceMotion = Boolean(prefersReducedMotion);
+  const reduceMotion = useHydrationSafeReducedMotion();
   const queryClient = useQueryClient();
   const {
     data: queryPayload,
@@ -173,13 +176,13 @@ export function ClubScheduleDetailClient({
 
   return (
     <div className={isModal ? "flex min-h-0 flex-1 flex-col bg-white font-display text-slate-900" : "min-h-full bg-white font-display text-slate-900"}>
-      <div className={`relative flex flex-col bg-white ${isModal ? "min-h-0 flex-1" : "mx-auto min-h-full max-w-md"}`}>
+      <div className={`relative flex flex-col bg-white ${isModal ? "min-h-0 flex-1" : "semo-page-user min-h-full"}`}>
         <ClubPageHeader
           title="일정 상세"
           subtitle={payload?.clubName}
           icon="calendar_month"
           layout={isModal ? "modal" : "page"}
-          containerClassName={isModal ? "max-w-none px-6" : "max-w-md"}
+          containerClassName={isModal ? "max-w-none px-6" : "semo-page-user"}
           leftSlot={
             !isModal ? (
               <RouterLink
@@ -286,7 +289,7 @@ export function ClubScheduleDetailClient({
                     <div className="relative flex h-32 w-full items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-[linear-gradient(135deg,#f3f4f6_25%,#e5e7eb_100%)]">
                       <div className="flex flex-col items-center text-slate-400">
                         <span className="material-symbols-outlined mb-1 text-[32px]" aria-hidden="true">map</span>
-                        <span className="text-[11px] font-bold uppercase tracking-[0.24em]">지도 미리보기</span>
+                        <span className="text-xs font-bold uppercase tracking-[0.24em]">지도 미리보기</span>
                       </div>
                     </div>
                   </div>
@@ -298,16 +301,16 @@ export function ClubScheduleDetailClient({
                     onClick={() => setShowGoingParticipants(true)}
                     className="rounded-xl border border-[#f3f4f6] bg-[#f9fafb] p-4 text-left transition hover:border-[var(--primary)]/25 hover:bg-[#f5f8ff]"
                   >
-                    <p className="mb-1 text-[11px] font-bold text-slate-400">참석 인원</p>
+                    <p className="mb-1 text-xs font-bold text-slate-400">참석 인원</p>
                     <p className="font-bold">
                       {payload.goingCount}
                       {payload.attendeeLimit ? ` / ${payload.attendeeLimit}` : ""}{" "}
                       <span className="text-xs font-normal text-slate-400">참석</span>
                     </p>
-                    <p className="mt-2 text-[11px] font-medium text-[var(--primary)]">참석 명단 보기</p>
+                    <p className="mt-2 text-xs font-medium text-[var(--primary)]">참석 명단 보기</p>
                   </button>
                   <div className="rounded-xl border border-[#f3f4f6] bg-[#f9fafb] p-4">
-                    <p className="mb-1 text-[11px] font-bold text-slate-400">참석 조건</p>
+                    <p className="mb-1 text-xs font-bold text-slate-400">참석 조건</p>
                     <p className="font-bold">{payload.participationConditionText ?? "조건 없음"}</p>
                   </div>
                 </div>
@@ -359,7 +362,7 @@ export function ClubScheduleDetailClient({
                         <p className="text-sm font-bold text-[var(--primary)]">
                           {payload.feeRequired ? (payload.feeNWaySplit ? "1/n 정산" : "참가비 있음") : "무료"}
                         </p>
-                        <p className="text-[11px] font-medium text-[var(--primary)]/70">
+                        <p className="text-xs font-medium text-[var(--primary)]/70">
                           {buildFeeDescription(payload)}
                         </p>
                       </div>
@@ -392,7 +395,7 @@ export function ClubScheduleDetailClient({
               className={`mx-auto space-y-3 ${
                 isModal
                   ? "max-w-none pb-[env(safe-area-inset-bottom)]"
-                  : "max-w-md pb-[calc(env(safe-area-inset-bottom)+4.75rem)]"
+                  : "max-w-[var(--page-user)] pb-[calc(env(safe-area-inset-bottom)+4.75rem)]"
               }`}
             >
               {showParticipationActions ? (

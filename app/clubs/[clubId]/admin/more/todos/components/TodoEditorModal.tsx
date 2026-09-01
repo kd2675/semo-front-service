@@ -648,7 +648,7 @@ function CompactChoiceCard({
     >
       <span className="material-symbols-outlined text-[19px]" aria-hidden="true">{icon}</span>
       <span className="mt-1 block text-sm font-bold text-slate-900">{label}</span>
-      <span className="mt-1 block text-[11px] leading-4 text-slate-500">{description}</span>
+      <span className="mt-1 block text-xs leading-4 text-slate-500">{description}</span>
     </button>
   );
 }
@@ -726,7 +726,7 @@ function SelectableCard({
         <div className="flex items-center gap-2">
           <p className="text-sm font-bold text-slate-900">{label}</p>
           {selected ? (
-            <span className="rounded-full bg-[var(--primary)] px-2 py-0.5 text-[11px] font-bold text-white">
+            <span className="rounded-full bg-[var(--primary)] px-2 py-0.5 text-xs font-bold text-white">
               선택됨
             </span>
           ) : null}

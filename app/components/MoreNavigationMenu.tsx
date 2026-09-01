@@ -55,7 +55,7 @@ export function MoreNavigationMenu({ items, mode, onNavigate }: MoreNavigationMe
               </span>
               {(item.pendingCount ?? 0) > 0 ? (
                 <span
-                  className={`shrink-0 rounded-full px-2 py-1 text-[11px] font-bold ${
+                  className={`shrink-0 rounded-full px-2 py-1 text-xs font-bold ${
                     (item.overdueCount ?? 0) > 0
                       ? "bg-rose-50 text-rose-700"
                       : mode === "admin"

@@ -372,7 +372,7 @@ export function CreateObligationModal({
                   <div className="space-y-3">
                     <div className="flex items-center justify-between gap-3">
                       <p className="text-sm font-semibold text-slate-700">선택 멤버</p>
-                      <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-500">{selectedMemberIds.length}명 선택</span>
+                      <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-500">{selectedMemberIds.length}명 선택</span>
                     </div>
 
                     <input
@@ -403,7 +403,7 @@ export function CreateObligationModal({
                                 <p className="text-sm font-bold text-slate-900">{member.memberDisplayName}</p>
                                 <p className="mt-1 text-xs text-slate-500">{getClubRoleLabel(member.memberRoleCode)}</p>
                               </div>
-                              <span className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${selected ? "bg-[var(--primary)] text-white" : "bg-white text-slate-500"}`}>
+                              <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${selected ? "bg-[var(--primary)] text-white" : "bg-white text-slate-500"}`}>
                                 {selected ? "선택됨" : "추가"}
                               </span>
                             </button>

@@ -1,7 +1,7 @@
 "use client";
 
 import { RouteModal } from "@/app/components/RouteModal";
-import { ClubGrowthCorePanel } from "@/app/components/ClubGrowthCorePanel";
+import { ClubGrowthCoreMark } from "@/app/components/ClubGrowthCoreMark";
 import {
   getActivityCategoryLabel,
   getAffiliationTypeLabel,
@@ -54,7 +54,7 @@ export function DiscoverClubModal({
             <div className="flex flex-wrap items-center gap-2">
               <h3 className="text-xl font-bold tracking-tight text-slate-900">{club.name}</h3>
               {club.recommendedByTags || club.recommendedByCategory ? (
-                <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-bold uppercase text-emerald-600">
+                <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-bold uppercase text-emerald-600">
                   추천
                 </span>
               ) : null}
@@ -73,8 +73,8 @@ export function DiscoverClubModal({
           </button>
         </div>
 
-        <div className="mt-5">
-          <ClubGrowthCorePanel growthCore={club.growthCore} compact />
+        <div className="mt-5 flex min-h-40 items-center justify-center overflow-hidden rounded-[var(--radius-card)] border border-slate-200 bg-slate-50">
+          <ClubGrowthCoreMark growthCore={club.growthCore} size={120} presentation="core-only" />
         </div>
 
         <div className="mt-5 grid grid-cols-2 gap-3">

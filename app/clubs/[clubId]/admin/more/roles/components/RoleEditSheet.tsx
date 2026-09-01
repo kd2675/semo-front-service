@@ -1,5 +1,10 @@
 "use client";
 
+import { startTransition, useDeferredValue, useEffect, useMemo, useState } from "react";
+
+import { AnimatePresence, motion } from "motion/react";
+
+import { useHydrationSafeReducedMotion } from "@/app/hooks/useHydrationSafeReducedMotion";
 import { useAppToast } from "@/app/hooks/useAppToast";
 import { useDialogFocusManagement } from "@/app/hooks/useDialogFocusManagement";
 import { ScheduleActionConfirmModal } from "@/app/clubs/[clubId]/schedule/modals/ScheduleActionConfirmModal";
@@ -17,8 +22,7 @@ import {
   type ClubPositionSummary,
   type UpdateClubPositionRequest,
 } from "@/app/lib/clubs";
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { startTransition, useDeferredValue, useEffect, useMemo, useState } from "react";
+
 import { RoleMemberIdentity, RoleOtherPositions } from "./RoleMemberParts";
 import { RoleAccessMatrix } from "./RoleAccessMatrix";
 import {
@@ -89,12 +93,12 @@ function MemberAssignmentCard({
       </div>
 
       <div className="mt-4 flex flex-wrap gap-2">
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-orange-50 px-3 py-1.5 text-[11px] font-semibold text-orange-800">
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-orange-50 px-3 py-1.5 text-xs font-semibold text-orange-800">
           <span className="material-symbols-outlined text-[16px]" aria-hidden="true">workspace_premium</span>
           {assigned ? `${role.displayName} 연결됨` : "직책 미연결"}
         </span>
         {member.joinedAtLabel ? (
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1.5 text-[11px] font-semibold text-slate-600">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-600">
             <span className="material-symbols-outlined text-[16px]" aria-hidden="true">calendar_month</span>
             {member.joinedAtLabel}
           </span>
@@ -117,8 +121,7 @@ export function RoleEditSheet({
   onTabChange,
   onRolesChanged,
 }: RoleEditSheetProps) {
-  const prefersReducedMotion = useReducedMotion();
-  const reduceMotion = Boolean(prefersReducedMotion);
+  const reduceMotion = useHydrationSafeReducedMotion();
   const [detailPayload, setDetailPayload] = useState<ClubPositionDetailResponse | null>(null);
   const [memberPayload, setMemberPayload] = useState<ClubAdminMembersResponse | null>(null);
   const [form, setForm] = useState<RoleFormValue>(buildRoleFormValue(role));
@@ -375,7 +378,7 @@ export function RoleEditSheet({
                   <span className="material-symbols-outlined text-[30px]" aria-hidden="true">{form.iconName}</span>
                 </div>
                 <div>
-                  <p className="text-[11px] font-black uppercase tracking-[0.28em] text-orange-800">
+                  <p className="text-xs font-black uppercase tracking-[0.28em] text-orange-800">
                     {canUpdate ? "직책 편집" : "직책 상세"}
                   </p>
                   <h2 className="mt-1 text-2xl font-black tracking-tight text-slate-900 sm:text-3xl">
@@ -668,7 +671,7 @@ export function RoleEditSheet({
                               {item.icon}
                             </span>
                             <div>
-                              <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400">{item.label}</p>
+                              <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-400">{item.label}</p>
                               <p className="text-lg font-black tracking-tight text-slate-900">
                               {item.value}
                               </p>
@@ -705,7 +708,7 @@ export function RoleEditSheet({
                             </h3>
                           </div>
                           <span
-                            className="rounded-full px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.22em]"
+                            className="rounded-full px-3 py-1.5 text-xs font-bold uppercase tracking-[0.22em]"
                             style={{ backgroundColor: `${colorHex}16`, color: colorHex }}
                           >
                             {assignedMembers.length}명 표시
@@ -739,7 +742,7 @@ export function RoleEditSheet({
                               배정 가능한 멤버
                             </h3>
                           </div>
-                          <span className="rounded-full bg-slate-900 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.22em] text-white">
+                          <span className="rounded-full bg-slate-900 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.22em] text-white">
                             {availableMembers.length}명
                           </span>
                         </div>

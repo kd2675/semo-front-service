@@ -1,12 +1,15 @@
 "use client";
 
+import { startTransition, useDeferredValue, useEffect, useId, useMemo, useState } from "react";
+
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { AnimatePresence, motion } from "motion/react";
+
+import { useHydrationSafeReducedMotion } from "@/app/hooks/useHydrationSafeReducedMotion";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import { RouteModal } from "@/app/components/RouteModal";
 import { useAppToast } from "@/app/hooks/useAppToast";
 import { useAppAlert } from "@/app/hooks/useAppAlert";
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { startTransition, useDeferredValue, useEffect, useId, useMemo, useState } from "react";
 import { type ClubAdminMember } from "@/app/lib/clubs";
 import { staggeredFadeUpMotion } from "@/app/lib/motion";
 import { invalidateClubQueries } from "@/app/lib/react-query/common";
@@ -225,8 +228,7 @@ export function ClubAdminMembersClient({
   initialMembers,
 }: ClubAdminMembersClientProps) {
   const queryClient = useQueryClient();
-  const prefersReducedMotion = useReducedMotion();
-  const reduceMotion = Boolean(prefersReducedMotion);
+  const reduceMotion = useHydrationSafeReducedMotion();
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("전체");
   const [members, setMembers] = useState(initialMembers);
@@ -405,7 +407,7 @@ export function ClubAdminMembersClient({
                         <div className="flex items-center gap-2">
                           <p className="truncate text-base font-bold">{member.displayName}</p>
                           <span
-                            className={`rounded-full px-2 py-0.5 text-[11px] font-bold uppercase ${getStatusBadgeClassName(member.membershipStatus)}`}
+                            className={`rounded-full px-2 py-0.5 text-xs font-bold uppercase ${getStatusBadgeClassName(member.membershipStatus)}`}
                           >
                             {getStatusLabel(member.membershipStatus)}
                           </span>

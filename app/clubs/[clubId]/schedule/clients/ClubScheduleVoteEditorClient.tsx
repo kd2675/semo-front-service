@@ -156,10 +156,10 @@ export function ClubScheduleVoteEditorClient({
     : "bg-[var(--background-light)] font-display text-slate-900";
   const shellClassName = isModal
     ? "flex min-h-0 flex-1 flex-col bg-white"
-    : "relative mx-auto flex min-h-screen max-w-md flex-col bg-white shadow-[var(--shadow-floating)]";
+    : "semo-page-user relative flex min-h-screen flex-col bg-white/92 shadow-[var(--shadow-floating)]";
   const bottomBarClassName = isModal
     ? "sticky bottom-0 border-t border-slate-200 bg-white p-4 shadow-[0_-4px_10px_rgba(0,0,0,0.05)]"
-    : "fixed bottom-0 left-0 right-0 z-20 mx-auto max-w-md bg-white p-4 shadow-[0_-4px_10px_rgba(0,0,0,0.05)]";
+    : "fixed bottom-0 left-0 right-0 z-20 mx-auto max-w-[var(--page-user)] bg-white p-4 shadow-[var(--shadow-floating)]";
   const submitLabel = saving ? (isEdit ? "수정 중..." : "생성 중...") : isEdit ? "수정 완료" : "투표 생성";
   const helperClubName = initialClubName ?? "SEMO";
 
@@ -171,7 +171,7 @@ export function ClubScheduleVoteEditorClient({
           subtitle={helperClubName}
           icon={isEdit ? "edit_note" : "ballot"}
           layout={isModal ? "modal" : "page"}
-          containerClassName={isModal ? undefined : "max-w-md"}
+          containerClassName={isModal ? undefined : "semo-page-user"}
           leftSlot={
             !isModal ? (
               <RouterLink

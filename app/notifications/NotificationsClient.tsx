@@ -241,9 +241,9 @@ function NotificationCard({
       </span>
       <span className="min-w-0 flex-1">
         <span className="flex items-center gap-2">
-          <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-bold text-slate-600">{meta.label}</span>
+          <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-bold text-slate-600">{meta.label}</span>
           {!item.read ? <span className="size-2 rounded-full bg-rose-500" aria-label="읽지 않음" /> : null}
-          <time dateTime={item.createdAt ?? undefined} className="ml-auto text-[11px] text-slate-400">
+          <time dateTime={item.createdAt ?? undefined} className="ml-auto text-xs text-slate-400">
             {item.createdAtLabel}
           </time>
         </span>

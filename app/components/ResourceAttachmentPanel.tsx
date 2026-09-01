@@ -193,7 +193,7 @@ export function ResourceAttachmentPanel({
                 className="min-w-0 flex-1 rounded-sm text-left outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]/30 disabled:cursor-wait disabled:opacity-60"
               >
                 <span className="block truncate text-xs font-bold text-slate-800">{attachment.originalFileName}</span>
-                <span className="mt-0.5 block text-[11px] text-slate-400">
+                <span className="mt-0.5 block text-xs text-slate-400">
                   {downloadingAttachmentId === attachment.attachmentId ? "다운로드 중..." : `${formatFileSize(attachment.sizeBytes)} · ${visibilityLabel(attachment.visibilityScope)}`}
                 </span>
               </button>

@@ -1,16 +1,20 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
 import Image from "next/image";
+
+import { useQuery } from "@tanstack/react-query";
+import { motion } from "motion/react";
+
+import { useHydrationSafeReducedMotion } from "@/app/hooks/useHydrationSafeReducedMotion";
 import { RouterLink } from "@/app/components/RouterLink";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
-import { motion, useReducedMotion } from "motion/react";
 import { ClubModeSwitchFab } from "@/app/components/ClubModeSwitchFab";
 import { type ClubNoticeDetailResponse } from "@/app/lib/clubs";
 import { getLinkedContentBadge, getShareTargetBadges } from "@/app/lib/contentBadge";
 import { staggeredFadeUpMotion } from "@/app/lib/motion";
 import { getQueryErrorMessage } from "@/app/lib/queryUtils";
 import { noticeDetailQueryOptions } from "@/app/lib/react-query/board/queries";
+
 import { ClubDetailLoadingShell } from "../../ClubRouteLoadingShells";
 
 type ClubNoticeDetailClientProps = {
@@ -51,18 +55,18 @@ function NoticeDetailBody({ payload, error, reduceMotion }: NoticeDetailBodyProp
             {...staggeredFadeUpMotion(2, reduceMotion)}
           >
             <div className="mb-3 flex flex-wrap items-center gap-2">
-              <span className={`rounded-full px-2 py-1 text-[11px] font-bold uppercase tracking-wider ${badge.className}`}>
+              <span className={`rounded-full px-2 py-1 text-xs font-bold uppercase tracking-wider ${badge.className}`}>
                 {badge.label}
               </span>
               {payload.pinned ? (
-                <span className="rounded-full bg-slate-100 px-2 py-1 text-[11px] font-bold uppercase tracking-wider text-slate-600">
+                <span className="rounded-full bg-slate-100 px-2 py-1 text-xs font-bold uppercase tracking-wider text-slate-600">
                   핀 고정
                 </span>
               ) : null}
               {shareBadges.map((shareBadge) => (
                 <span
                   key={shareBadge.label}
-                  className={`rounded-full px-2 py-1 text-[11px] font-bold uppercase tracking-wider ${shareBadge.className}`}
+                  className={`rounded-full px-2 py-1 text-xs font-bold uppercase tracking-wider ${shareBadge.className}`}
                 >
                   {shareBadge.label}
                 </span>
@@ -130,8 +134,7 @@ export function ClubNoticeDetailClient({
   basePath,
   onRequestClose,
 }: ClubNoticeDetailClientProps) {
-  const prefersReducedMotion = useReducedMotion();
-  const reduceMotion = Boolean(prefersReducedMotion);
+  const reduceMotion = useHydrationSafeReducedMotion();
   const {
     data: queryPayload,
     isPending: loading,
@@ -175,12 +178,12 @@ export function ClubNoticeDetailClient({
 
   return (
     <div className="bg-[var(--background-light)] font-display text-slate-900">
-      <div className="relative mx-auto flex min-h-full max-w-md flex-col bg-white">
+      <div className="semo-page-user relative flex min-h-full flex-col bg-white/92">
         <ClubPageHeader
           title="공지 상세"
           subtitle={payload?.clubName}
           icon="campaign"
-          containerClassName="max-w-md"
+          containerClassName="semo-page-user"
           leftSlot={
             <RouterLink
               href={basePath ?? `/clubs/${clubId}/board`}

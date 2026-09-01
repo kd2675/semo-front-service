@@ -37,9 +37,9 @@ function MobilePageShell({
 }) {
   return (
     <div className="bg-[var(--background-light)] font-display text-slate-900">
-      <div className="relative mx-auto flex min-h-full max-w-md flex-col bg-white">
+      <div className="semo-page-user relative flex min-h-full flex-col bg-white/92">
         <header className="sticky top-0 z-50 border-b border-slate-200 bg-[var(--background-light)]/85 backdrop-blur-md">
-          <div className="mx-auto flex w-full max-w-md items-center gap-3 p-4">
+          <div className="semo-page-user flex items-center gap-3 p-4">
             <div className="size-10 rounded-xl bg-[var(--primary)]/10" />
             <div className="space-y-2">
               <ShellLine className={`h-5 ${titleWidthClassName}`} />
@@ -487,9 +487,9 @@ export function ClubEditorLoadingShell({
           : "bg-[var(--background-light)] font-display text-slate-900"
       }
     >
-      <div className={isModal ? "flex min-h-0 flex-1 flex-col" : "mx-auto flex min-h-screen max-w-md flex-col bg-white"}>
+      <div className={isModal ? "flex min-h-0 flex-1 flex-col" : "semo-page-user flex min-h-screen flex-col bg-white/92"}>
         <header className="sticky top-0 z-50 border-b border-slate-200 bg-[var(--background-light)]/85 backdrop-blur-md">
-          <div className={`mx-auto flex w-full max-w-md items-center gap-3 p-4 ${isModal ? "max-w-none px-5" : ""}`}>
+          <div className={`mx-auto flex w-full max-w-[var(--page-user)] items-center gap-3 p-4 ${isModal ? "max-w-none px-5" : ""}`}>
             <div className="size-10 rounded-xl bg-[var(--primary)]/10" />
             <div className="space-y-2">
               <ShellLine className="h-5 w-28" />

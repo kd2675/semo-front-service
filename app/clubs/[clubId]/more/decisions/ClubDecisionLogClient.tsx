@@ -37,7 +37,7 @@ export function ClubDecisionLogClient({ clubId }: { clubId: string }) {
             </div>
             <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-white/10"><span className="material-symbols-outlined text-[27px]" aria-hidden="true">history_edu</span></span>
           </div>
-          <div className="mt-5 rounded-[var(--radius-card)] bg-white/10 px-4 py-3"><p className="text-[11px] font-bold text-slate-300">공개된 운영 기록</p><p className="mt-1 text-2xl font-black">{log.records.length}건</p></div>
+          <div className="mt-5 rounded-[var(--radius-card)] bg-white/10 px-4 py-3"><p className="text-xs font-bold text-slate-300">공개된 운영 기록</p><p className="mt-1 text-2xl font-black">{log.records.length}건</p></div>
         </section>
 
         <div className="mt-4 grid grid-cols-3 gap-1 rounded-2xl border border-slate-200 bg-white p-2 shadow-sm">

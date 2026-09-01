@@ -127,10 +127,10 @@ export function AdminFinanceRequestCard({
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <span className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${getFinanceRequestStatusClassName(request)}`}>
+            <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${getFinanceRequestStatusClassName(request)}`}>
               {request.statusLabel}
             </span>
-            <span className="rounded-full bg-white px-2.5 py-1 text-[11px] font-bold text-slate-500">
+            <span className="rounded-full bg-white px-2.5 py-1 text-xs font-bold text-slate-500">
               {request.requestTypeLabel}
             </span>
           </div>
@@ -189,8 +189,8 @@ export function ExpenseLedgerCard({ expense, onOpen }: { expense: ClubFinanceExp
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="rounded-full bg-white px-2.5 py-1 text-[11px] font-bold text-slate-500">{expense.categoryLabel}</span>
-            <span className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${expense.statusCode === "VOIDED" ? "bg-rose-50 text-rose-600" : "bg-orange-50 text-[var(--primary)]"}`}>{expense.statusCode === "VOIDED" ? "취소 전표" : expense.expenseTypeLabel}</span>
+            <span className="rounded-full bg-white px-2.5 py-1 text-xs font-bold text-slate-500">{expense.categoryLabel}</span>
+            <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${expense.statusCode === "VOIDED" ? "bg-rose-50 text-rose-600" : "bg-orange-50 text-[var(--primary)]"}`}>{expense.statusCode === "VOIDED" ? "취소 전표" : expense.expenseTypeLabel}</span>
           </div>
           <h4 className="mt-3 text-base font-bold text-slate-900">{expense.title}</h4>
         </div>
@@ -242,9 +242,9 @@ export function ObligationDetailPanel({
     <div className="space-y-5">
       <section className={`rounded-[var(--radius-modal)] border p-5 shadow-sm ${getObligationFrameClassName(obligation)}`}>
         <div className="flex flex-wrap items-center gap-2">
-          <span className="rounded-full bg-white px-2.5 py-1 text-[11px] font-bold text-slate-500">{obligation.targetScopeLabel}</span>
+          <span className="rounded-full bg-white px-2.5 py-1 text-xs font-bold text-slate-500">{obligation.targetScopeLabel}</span>
           {obligation.overduePaymentCount > 0 ? (
-            <span className="rounded-full bg-rose-100 px-2.5 py-1 text-[11px] font-bold text-rose-600">연체 {obligation.overduePaymentCount}건</span>
+            <span className="rounded-full bg-rose-100 px-2.5 py-1 text-xs font-bold text-rose-600">연체 {obligation.overduePaymentCount}건</span>
           ) : null}
         </div>
 
@@ -288,8 +288,8 @@ export function ObligationDetailPanel({
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
                       <p className="text-base font-bold text-slate-900">{payment.memberDisplayName}</p>
-                      <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-500">{getClubRoleLabel(payment.memberRoleCode)}</span>
-                      <span className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${getPaymentStatusClassName(payment)}`}>{payment.paymentStatusLabel}</span>
+                      <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-500">{getClubRoleLabel(payment.memberRoleCode)}</span>
+                      <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${getPaymentStatusClassName(payment)}`}>{payment.paymentStatusLabel}</span>
                     </div>
                     <div className="mt-3 grid gap-3 text-sm text-slate-600 sm:grid-cols-3">
                       <MetaItem label="청구 금액" value={payment.amountLabel} strong />

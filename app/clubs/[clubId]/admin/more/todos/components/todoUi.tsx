@@ -391,5 +391,5 @@ function Badge({
     rose: "bg-rose-50 text-rose-700",
   }[tone];
 
-  return <span className={`rounded-full px-3 py-1 text-[11px] font-bold ${className}`}>{label}</span>;
+  return <span className={`rounded-full px-3 py-1 text-xs font-bold ${className}`}>{label}</span>;
 }

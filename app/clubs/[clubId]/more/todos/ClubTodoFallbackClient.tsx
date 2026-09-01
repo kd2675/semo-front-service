@@ -41,7 +41,7 @@ export function ClubTodoFallbackClient({ clubId }: ClubTodoFallbackClientProps) 
             icon="assignment"
             className="bg-white/85 backdrop-blur-md"
           />
-          <main className="semo-nav-bottom-space mx-auto flex w-full max-w-md flex-col gap-4 px-4 pt-4">
+          <main className="semo-page-user semo-nav-bottom-space flex flex-col gap-4 px-4 pt-4">
             <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
               <div className="h-3 w-16 rounded-full bg-slate-100" />
               <div className="mt-3 h-6 w-44 rounded-full bg-slate-200" />

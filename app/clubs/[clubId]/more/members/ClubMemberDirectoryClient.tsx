@@ -1,8 +1,10 @@
 "use client";
 
 import { startTransition, useDeferredValue, useMemo, useState } from "react";
-import { motion, useReducedMotion } from "motion/react";
 
+import { motion } from "motion/react";
+
+import { useHydrationSafeReducedMotion } from "@/app/hooks/useHydrationSafeReducedMotion";
 import { ClubModeSwitchFab } from "@/app/components/ClubModeSwitchFab";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import {
@@ -201,7 +203,7 @@ function DirectoryMetric({
 }) {
   return (
     <div className="rounded-[var(--radius-card)] border border-white/80 bg-white/72 px-4 py-3 shadow-[0_10px_24px_rgba(15,23,42,0.06)] backdrop-blur">
-      <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">{label}</p>
+      <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">{label}</p>
       <p className="mt-2 text-2xl font-black tracking-tight text-slate-900">{value}</p>
       <p className="mt-1 text-xs leading-5 text-slate-500">{detail}</p>
     </div>
@@ -213,8 +215,7 @@ export function ClubMemberDirectoryClient({
   initialData,
   isAdmin,
 }: ClubMemberDirectoryClientProps) {
-  const prefersReducedMotion = useReducedMotion();
-  const reduceMotion = Boolean(prefersReducedMotion);
+  const reduceMotion = useHydrationSafeReducedMotion();
   const [query, setQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState<MemberFilterKey>("all");
   const deferredQuery = useDeferredValue(query.trim().toLowerCase());
@@ -289,7 +290,7 @@ export function ClubMemberDirectoryClient({
 
   return (
     <div className="min-h-full bg-[var(--background-light)] text-slate-900">
-      <div className="mx-auto flex min-h-full max-w-md flex-col bg-[var(--background-light)]">
+      <div className="semo-page-user flex min-h-full flex-col bg-[var(--background-light)]">
         <ClubPageHeader
           title="회원 디렉터리"
           subtitle={initialData.clubName}
@@ -306,7 +307,7 @@ export function ClubMemberDirectoryClient({
             <div className="absolute bottom-0 left-[-2rem] h-28 w-28 rounded-full bg-blue-100/70 blur-3xl" />
 
             <div className="relative">
-              <p className="text-[11px] font-bold uppercase tracking-[0.28em] text-[var(--primary)]">
+              <p className="text-xs font-bold uppercase tracking-[0.28em] text-[var(--primary)]">
                 멤버 명단
               </p>
               <h2 className="mt-3 text-[28px] font-black tracking-[-0.04em] text-slate-900">
@@ -393,7 +394,7 @@ export function ClubMemberDirectoryClient({
 
             <div className="mt-4 flex items-center justify-between gap-3">
               <div aria-live="polite">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">필터</p>
+                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">필터</p>
                 <p className="mt-1 text-sm font-bold text-slate-900">현재 {filteredMembers.length}명 표시 중</p>
               </div>
               {hasFilterState ? (
@@ -465,7 +466,7 @@ export function ClubMemberDirectoryClient({
                               <h3 className="truncate text-xl font-black tracking-[-0.03em] text-slate-900">
                                 {member.displayName}
                               </h3>
-                              <span className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${tone.badge}`}>
+                              <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${tone.badge}`}>
                                 {tone.label}
                               </span>
                             </div>
@@ -479,7 +480,7 @@ export function ClubMemberDirectoryClient({
 
                           {settings.showRecentActivity && member.recentActivity ? (
                             <span
-                              className={`shrink-0 rounded-full px-3 py-1 text-[11px] font-bold ${getActivityBadge(member.recentActivity)}`}
+                              className={`shrink-0 rounded-full px-3 py-1 text-xs font-bold ${getActivityBadge(member.recentActivity)}`}
                             >
                               {member.recentActivity.subject}
                             </span>
@@ -487,7 +488,7 @@ export function ClubMemberDirectoryClient({
                         </div>
 
                         <div className="mt-4 rounded-[var(--radius-card)] border border-white/80 bg-slate-50/75 px-4 py-3">
-                          <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400">
+                          <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-400">
                             한줄소개
                           </p>
                           <p className="mt-2 text-sm leading-6 text-slate-700">
@@ -525,7 +526,7 @@ export function ClubMemberDirectoryClient({
                         ) : null}
 
                         <div className="mt-4 rounded-[var(--radius-card)] border border-dashed border-slate-200 bg-white/80 px-4 py-4">
-                          <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.22em] text-slate-400">
+                          <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.22em] text-slate-400">
                             <span className="material-symbols-outlined text-[18px] text-[var(--primary)]" aria-hidden="true">
                               monitoring
                             </span>

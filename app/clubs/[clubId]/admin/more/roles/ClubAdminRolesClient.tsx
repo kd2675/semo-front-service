@@ -1,10 +1,12 @@
 "use client";
 
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useDeferredValue, useMemo, useState } from "react";
 
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { AnimatePresence, motion } from "motion/react";
+
+import { useHydrationSafeReducedMotion } from "@/app/hooks/useHydrationSafeReducedMotion";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import { RouterLink } from "@/app/components/RouterLink";
 import { FAB_RIGHT_OFFSET_CLASS_NAME, getActionFabBottomClass } from "@/app/lib/fab";
@@ -20,6 +22,7 @@ import {
   adminRoleManagementQueryOptions,
   roleQueryKeys,
 } from "@/app/lib/react-query/roles/queries";
+
 import { RoleEditSheet } from "./components/RoleEditSheet";
 import {
   DEFAULT_ROLE_COLOR,
@@ -222,7 +225,7 @@ function RoleCard({
               </p>
             </div>
             <span
-              className="shrink-0 rounded-full px-2.5 py-1 text-[11px] font-bold"
+              className="shrink-0 rounded-full px-2.5 py-1 text-xs font-bold"
               style={{ backgroundColor: `${colorHex}18`, color: colorHex }}
             >
               {getRoleStatusLabel(role)}
@@ -342,7 +345,7 @@ function PermissionGroupCard({
                   <p className="text-sm font-bold text-slate-900">{level.displayName}</p>
                   <p className="mt-1 text-xs leading-5 text-slate-500">{level.description}</p>
                 </div>
-                <span className="shrink-0 rounded-full bg-orange-50 px-2.5 py-1 text-[11px] font-bold text-[var(--primary)]">
+                <span className="shrink-0 rounded-full bg-orange-50 px-2.5 py-1 text-xs font-bold text-[var(--primary)]">
                   {assignedRoles.length}
                 </span>
               </div>
@@ -354,7 +357,7 @@ function PermissionGroupCard({
                     </span>
                   ))}
                   {assignedRoles.length > 4 ? (
-                    <span className="rounded-full bg-white px-2.5 py-1 text-[11px] font-bold text-slate-500">
+                    <span className="rounded-full bg-white px-2.5 py-1 text-xs font-bold text-slate-500">
                       +{assignedRoles.length - 4}
                     </span>
                   ) : null}
@@ -460,7 +463,7 @@ function RoleHistoryCard({
         <span className="font-semibold text-slate-400">종료</span>
         <span className="font-bold text-slate-700">{history.endedAtLabel ?? "현재"}</span>
       </div>
-      <p className="mt-4 break-all text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">
+      <p className="mt-4 break-all text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
         직책 코드 · {history.positionCode}
       </p>
     </motion.article>
@@ -468,8 +471,7 @@ function RoleHistoryCard({
 }
 
 export function ClubAdminRolesClient({ clubId, initialData }: ClubAdminRolesClientProps) {
-  const prefersReducedMotion = useReducedMotion();
-  const reduceMotion = Boolean(prefersReducedMotion);
+  const reduceMotion = useHydrationSafeReducedMotion();
   const queryClient = useQueryClient();
   const router = useRouter();
   const pathname = usePathname();

@@ -1,6 +1,8 @@
 "use client";
 
-import { motion, useReducedMotion } from "motion/react";
+import { motion } from "motion/react";
+
+import { useHydrationSafeReducedMotion } from "@/app/hooks/useHydrationSafeReducedMotion";
 import type { NotiItem } from "@/app/redux/slices/modalSlice";
 
 function getNotiToneStyles(tone: NotiItem["tone"]) {
@@ -59,8 +61,7 @@ export function BasicNoti({
   onAction,
   onClose,
 }: BasicNotiProps) {
-  const prefersReducedMotion = useReducedMotion();
-  const reduceMotion = Boolean(prefersReducedMotion);
+  const reduceMotion = useHydrationSafeReducedMotion();
   const styles = getNotiToneStyles(notification.tone);
 
   return (
@@ -83,7 +84,7 @@ export function BasicNoti({
               <div className="flex items-center gap-2">
                 <span className="text-xs font-black tracking-wide text-slate-400">알림</span>
                 <span className="h-1 w-1 rounded-full bg-slate-300" />
-                <span className="text-[11px] font-semibold text-slate-400">SEMO</span>
+                <span className="text-xs font-semibold text-slate-400">SEMO</span>
               </div>
               <p className="mt-1 text-sm font-black tracking-tight text-slate-900">{notification.title}</p>
               <p className="mt-1 whitespace-pre-wrap text-sm leading-6 text-slate-600">

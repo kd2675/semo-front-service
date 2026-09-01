@@ -1,6 +1,5 @@
 "use client";
 
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   startTransition,
   useDeferredValue,
@@ -10,8 +9,12 @@ import {
   useRef,
   useState,
 } from "react";
-import { AnimatePresence, useReducedMotion } from "motion/react";
 import { useSearchParams } from "next/navigation";
+
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { AnimatePresence } from "motion/react";
+
+import { useHydrationSafeReducedMotion } from "@/app/hooks/useHydrationSafeReducedMotion";
 import { useAppToast } from "@/app/hooks/useAppToast";
 import { ScheduleActionConfirmModal } from "@/app/clubs/[clubId]/schedule/modals/ScheduleActionConfirmModal";
 import {
@@ -55,6 +58,7 @@ import {
   adminFinanceRequestsQueryOptions,
   financeQueryKeys,
 } from "@/app/lib/react-query/finance/queries";
+
 import {
   BillingTabPanel,
   CreateObligationModal,
@@ -99,8 +103,7 @@ export function ClubAdminFinanceClient({
 }: ClubAdminFinanceClientProps) {
   const queryClient = useQueryClient();
   const searchParams = useSearchParams();
-  const prefersReducedMotion = useReducedMotion();
-  const reduceMotion = Boolean(prefersReducedMotion);
+  const reduceMotion = useHydrationSafeReducedMotion();
   const [finance, setFinance] = useState(initialData);
   const [operations, setOperations] = useState(initialOperations);
   const [obligations, setObligations] = useState(initialObligationFeed.items);

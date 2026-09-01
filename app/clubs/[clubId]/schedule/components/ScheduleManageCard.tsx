@@ -1,6 +1,8 @@
 "use client";
 
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { AnimatePresence, motion } from "motion/react";
+
+import { useHydrationSafeReducedMotion } from "@/app/hooks/useHydrationSafeReducedMotion";
 
 type ScheduleManageCardProps = {
   label: string;
@@ -27,8 +29,7 @@ export function ScheduleManageCard({
   variant = "overlay",
   children,
 }: ScheduleManageCardProps) {
-  const prefersReducedMotion = useReducedMotion();
-  const reduceMotion = Boolean(prefersReducedMotion);
+  const reduceMotion = useHydrationSafeReducedMotion();
   const manageable = canEdit || canDelete;
 
   if (variant === "menu") {
@@ -151,7 +152,7 @@ export function ScheduleManageCard({
                 onOpenChange(false);
               }}
               aria-label={`${label} 작업 닫기`}
-              className="flex flex-1 flex-col items-center justify-center gap-2 border-r border-white/40 bg-slate-900/40 px-2 text-[11px] font-bold text-white transition hover:bg-slate-900/55"
+              className="flex flex-1 flex-col items-center justify-center gap-2 border-r border-white/40 bg-slate-900/40 px-2 text-xs font-bold text-white transition hover:bg-slate-900/55"
               initial={false}
               animate={
                 open
@@ -200,7 +201,7 @@ export function ScheduleManageCard({
                   onEdit();
                 }}
                 aria-label={`${label} 수정`}
-                className={`flex flex-1 flex-col items-center justify-center gap-2 bg-amber-500/84 px-2 text-[11px] font-bold text-white transition hover:bg-amber-500/94 ${
+                className={`flex flex-1 flex-col items-center justify-center gap-2 bg-amber-500/84 px-2 text-xs font-bold text-white transition hover:bg-amber-500/94 ${
                   canDelete ? "border-r border-white/40" : ""
                 }`}
                 initial={false}
@@ -230,7 +231,7 @@ export function ScheduleManageCard({
                   onDelete();
                 }}
                 aria-label={`${label} 삭제`}
-                className="flex flex-1 flex-col items-center justify-center gap-2 bg-rose-500/84 px-2 text-[11px] font-bold text-white transition hover:bg-rose-500/94"
+                className="flex flex-1 flex-col items-center justify-center gap-2 bg-rose-500/84 px-2 text-xs font-bold text-white transition hover:bg-rose-500/94"
                 initial={false}
                 animate={
                   open

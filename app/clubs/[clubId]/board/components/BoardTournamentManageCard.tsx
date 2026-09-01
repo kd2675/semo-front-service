@@ -1,7 +1,10 @@
 "use client";
 
 import Image from "next/image";
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+
+import { AnimatePresence, motion } from "motion/react";
+
+import { useHydrationSafeReducedMotion } from "@/app/hooks/useHydrationSafeReducedMotion";
 import type { TournamentSummary } from "@/app/lib/clubs";
 import { getShareTargetBadges } from "@/app/lib/contentBadge";
 import {
@@ -71,8 +74,7 @@ export function BoardTournamentManageCard({
   onOpenReadStatus,
   showBoardShareBadge = false,
 }: BoardTournamentManageCardProps) {
-  const prefersReducedMotion = useReducedMotion();
-  const reduceMotion = Boolean(prefersReducedMotion);
+  const reduceMotion = useHydrationSafeReducedMotion();
   const manageable = canEdit || canDelete;
   const shareBadges = getShareTargetBadges({
     postedToBoard: tournament.postedToBoard,
@@ -90,21 +92,21 @@ export function BoardTournamentManageCard({
               <span className="material-symbols-outlined" aria-hidden="true">emoji_events</span>
             </div>
             <div className="flex flex-wrap items-center gap-2">
-              <span className="rounded bg-emerald-50 px-2 py-0.5 text-[11px] font-bold uppercase text-emerald-700">
+              <span className="rounded bg-emerald-50 px-2 py-0.5 text-xs font-bold uppercase text-emerald-700">
                 대회
               </span>
-              <span className={`rounded px-2 py-0.5 text-[11px] font-bold uppercase ${statusClassName}`}>
+              <span className={`rounded px-2 py-0.5 text-xs font-bold uppercase ${statusClassName}`}>
                 {getTournamentStatusLabel(tournament.tournamentStatus)}
               </span>
               {tournament.pinned ? (
-                <span className="rounded bg-rose-50 px-2 py-0.5 text-[11px] font-bold uppercase text-rose-600">
+                <span className="rounded bg-rose-50 px-2 py-0.5 text-xs font-bold uppercase text-rose-600">
                   고정
                 </span>
               ) : null}
               {shareBadges.map((shareBadge) => (
                 <span
                   key={shareBadge.label}
-                  className={`rounded px-2 py-0.5 text-[11px] font-bold uppercase ${shareBadge.className}`}
+                  className={`rounded px-2 py-0.5 text-xs font-bold uppercase ${shareBadge.className}`}
                 >
                   {shareBadge.label}
                 </span>
@@ -131,7 +133,7 @@ export function BoardTournamentManageCard({
                   targetEvent.stopPropagation();
                   onOpenReadStatus();
                 }}
-                className="mt-2 inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-600 transition hover:bg-slate-200 hover:text-slate-900"
+                className="mt-2 inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600 transition hover:bg-slate-200 hover:text-slate-900"
               >
                 <span className="material-symbols-outlined text-[14px]" aria-hidden="true">visibility</span>
                 읽음 {readCount}명

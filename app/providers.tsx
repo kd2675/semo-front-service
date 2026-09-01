@@ -8,6 +8,7 @@ import { Provider } from "react-redux";
 import AuthGate from "@/app/components/AuthGate";
 import AuthWatcher from "@/app/components/AuthWatcher";
 import { GlobalModalViewport } from "@/app/components/GlobalModalViewport";
+import { SemoMotionField } from "@/app/components/SemoMotionField";
 import { createQueryClient } from "@/app/lib/queryClient";
 import { useAppSelector } from "@/app/redux/hooks";
 import { store } from "@/app/redux/store";
@@ -56,7 +57,10 @@ export default function Providers({ children }: ProvidersProps) {
       <QueryClientProvider client={queryClient}>
         <QueryAuthSync />
         <MotionConfig reducedMotion="user">
-          <AuthGate>{children}</AuthGate>
+          <SemoMotionField />
+          <div className="semo-content-layer">
+            <AuthGate>{children}</AuthGate>
+          </div>
           <Suspense fallback={null}>
             <AuthWatcher />
           </Suspense>

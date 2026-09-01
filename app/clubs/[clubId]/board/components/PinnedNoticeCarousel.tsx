@@ -62,15 +62,15 @@ export function PinnedNoticeCarousel({
                   <div className="mb-4 flex items-start justify-between gap-3">
                     <div className="flex min-w-0 items-center gap-2">
                       {notice.pinned ? (
-                        <span className={surface.badgeClassName + " rounded px-2 py-0.5 text-[11px] font-bold"}>
+                        <span className={surface.badgeClassName + " rounded px-2 py-0.5 text-xs font-bold"}>
                           중요
                         </span>
                       ) : null}
-                      <span className={`rounded px-2 py-0.5 text-[11px] font-bold ${badge.className}`}>
+                      <span className={`rounded px-2 py-0.5 text-xs font-bold ${badge.className}`}>
                         {badge.label}
                       </span>
                     </div>
-                    <span className={`shrink-0 text-[11px] ${surface.dateClassName}`}>{notice.publishedAtLabel}</span>
+                    <span className={`shrink-0 text-xs ${surface.dateClassName}`}>{notice.publishedAtLabel}</span>
                   </div>
 
                   {notice.imageUrl ? (
@@ -106,7 +106,7 @@ export function PinnedNoticeCarousel({
                     )}
                     <div className="min-w-0">
                       <p className="truncate text-xs font-semibold">{notice.authorDisplayName}</p>
-                      <p className={`truncate text-[11px] ${surface.dateClassName}`}>
+                      <p className={`truncate text-xs ${surface.dateClassName}`}>
                         {notice.authorRoleCode ?? "공지 작성자"}
                       </p>
                     </div>

@@ -4,8 +4,8 @@ import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "re
 import { createPortal } from "react-dom";
 
 const WEEK_LABELS = ["일", "월", "화", "수", "목", "금", "토"];
-const POPOVER_WIDTH = 286;
-const POPOVER_HEIGHT = 360;
+const POPOVER_WIDTH = 336;
+const POPOVER_HEIGHT = 430;
 const VIEWPORT_PADDING = 12;
 const POPOVER_OFFSET = 8;
 
@@ -363,7 +363,7 @@ export function DatePopoverField({
                       }
                     }}
                   >
-                    {"<"}
+                    <span className="material-symbols-outlined text-[20px]" aria-hidden="true">chevron_left</span>
                   </button>
                   <div className="cp-title">
                     {cursor.getFullYear()}년 {cursor.getMonth() + 1}월
@@ -379,7 +379,7 @@ export function DatePopoverField({
                       }
                     }}
                   >
-                    {">"}
+                    <span className="material-symbols-outlined text-[20px]" aria-hidden="true">chevron_right</span>
                   </button>
                 </div>
 

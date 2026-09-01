@@ -7,8 +7,8 @@
   --color-admin-primary: #ec5b13;
   --color-background: #f6f7fa;
   --color-surface: #ffffff;
-  --color-surface-raised: rgba(255, 255, 255, 0.92);
-  --color-surface-muted: #f1f4f8;
+  --color-surface-raised: rgba(255, 255, 255, 0.9);
+  --color-surface-muted: #eff3f8;
   --color-foreground: #0f172a;
   --color-muted: #5b6474;
   --color-line: #dce2ea;
@@ -39,15 +39,25 @@
   --control-default: 2.75rem;
   --control-prominent: 3rem;
 
-  --page-user: 30rem;
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+
+  --page-user: 52rem;
   --page-admin: 60rem;
   --page-dashboard: 60rem;
   --page-data: 72rem;
   --page-admin-wide: 72rem;
 
-  --shadow-card: 0 1px 2px rgba(15, 23, 42, 0.06), 0 4px 12px rgba(15, 23, 42, 0.05);
-  --shadow-floating: 0 12px 32px rgba(15, 23, 42, 0.12);
-  --shadow-modal: 0 24px 72px rgba(15, 23, 42, 0.22);
+  --shadow-card: 0 1px 2px rgba(15, 23, 42, 0.045), 0 7px 22px rgba(15, 23, 42, 0.055);
+  --shadow-floating: 0 18px 48px rgba(15, 23, 42, 0.13);
+  --shadow-modal: 0 28px 84px rgba(15, 23, 42, 0.24);
   --shadow: var(--shadow-floating);
   --shadow-soft: var(--shadow-card);
 
@@ -63,6 +73,11 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-app-display);
   --font-display: var(--font-app-display);
+  --radius-sm: 0.5rem;
+  --radius-md: 0.625rem;
+  --radius-lg: var(--radius-control);
+  --radius-xl: var(--radius-card);
+  --radius-2xl: var(--radius-card);
 }
 
 * {
@@ -77,13 +92,126 @@ body {
 body {
   min-height: 100%;
   background:
-    radial-gradient(circle at top left, rgba(19, 91, 236, 0.08), transparent 32%),
-    radial-gradient(circle at bottom right, rgba(19, 91, 236, 0.08), transparent 28%),
+    radial-gradient(circle at top left, rgba(19, 91, 236, 0.09), transparent 34%),
+    radial-gradient(circle at bottom right, rgba(19, 91, 236, 0.07), transparent 30%),
     var(--background-light);
   color: var(--foreground);
   font-family:
     var(--font-semo-display), "Pretendard", "Noto Sans KR", "Apple SD Gothic Neo", sans-serif;
   letter-spacing: -0.015em;
+}
+
+.semo-content-layer {
+  position: relative;
+  z-index: 1;
+  min-height: 100%;
+}
+
+.semo-route-stage {
+  min-height: 100vh;
+}
+
+.semo-motion-field {
+  --scene-primary: var(--color-user-primary);
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.semo-motion-field[data-tone="admin"] {
+  --scene-primary: var(--color-admin-primary);
+}
+
+.semo-scroll-progress[data-tone="admin"] {
+  --scene-primary: var(--color-admin-primary);
+}
+
+.semo-scroll-progress {
+  --scene-primary: var(--color-user-primary);
+  position: fixed;
+  inset: 0 0 auto;
+  z-index: 1200;
+  height: 0.1875rem;
+  transform-origin: 0 50%;
+  background: linear-gradient(90deg, var(--scene-primary), color-mix(in srgb, var(--scene-primary) 45%, white));
+  box-shadow: 0 0 14px color-mix(in srgb, var(--scene-primary) 42%, transparent);
+}
+
+.semo-motion-grid {
+  position: absolute;
+  inset: -12%;
+  opacity: 0.34;
+  background-image:
+    linear-gradient(30deg, color-mix(in srgb, var(--scene-primary) 7%, transparent) 1px, transparent 1px),
+    linear-gradient(150deg, color-mix(in srgb, var(--scene-primary) 6%, transparent) 1px, transparent 1px);
+  background-size: 72px 42px;
+  mask-image: radial-gradient(ellipse at center, black 8%, transparent 72%);
+  animation: semo-grid-drift 32s linear infinite;
+}
+
+.semo-motion-beam {
+  position: absolute;
+  width: 42rem;
+  height: 42rem;
+  border-radius: var(--radius-round);
+  background: radial-gradient(circle, color-mix(in srgb, var(--scene-primary) 11%, transparent), transparent 66%);
+  filter: blur(18px);
+  opacity: 0.78;
+  animation: semo-beam-breathe 11s var(--ease-standard) infinite alternate;
+}
+
+.semo-motion-beam-one {
+  top: -22rem;
+  right: -14rem;
+}
+
+.semo-motion-beam-two {
+  bottom: -25rem;
+  left: -15rem;
+  animation-delay: -5s;
+}
+
+.semo-motion-triangle {
+  position: absolute;
+  overflow: visible;
+  fill: color-mix(in srgb, var(--scene-primary) 3%, transparent);
+  stroke: color-mix(in srgb, var(--scene-primary) 26%, transparent);
+  stroke-width: 0.8;
+  vector-effect: non-scaling-stroke;
+}
+
+.semo-motion-triangle-one {
+  top: 9%;
+  right: 4%;
+}
+
+.semo-motion-triangle-two {
+  bottom: 12%;
+  left: 5%;
+}
+
+.semo-motion-triangle-three {
+  top: 46%;
+  left: 20%;
+}
+
+@keyframes semo-grid-drift {
+  to {
+    transform: translate3d(72px, 42px, 0);
+  }
+}
+
+@keyframes semo-beam-breathe {
+  from {
+    transform: scale(0.92);
+    opacity: 0.54;
+  }
+  to {
+    transform: scale(1.08);
+    opacity: 0.88;
+  }
 }
 
 ::selection {
@@ -106,7 +234,7 @@ body {
 }
 
 .semo-nav-bottom-space {
-  padding-bottom: calc(env(safe-area-inset-bottom) + 6rem);
+  padding-bottom: calc(env(safe-area-inset-bottom) + 9rem);
 }
 
 :where(a, button, input, textarea, select, [role="button"]):focus-visible {
@@ -116,6 +244,26 @@ body {
 
 :where(button, a) {
   -webkit-tap-highlight-color: transparent;
+}
+
+:where(.semo-user-theme, .semo-admin-theme) :where(button, a) {
+  transition-timing-function: var(--ease-standard);
+}
+
+:where(.semo-user-theme, .semo-admin-theme) button:not(:disabled) {
+  transition-property: color, background-color, border-color, box-shadow, opacity, transform;
+  transition-duration: var(--duration-fast);
+}
+
+:where(.semo-user-theme, .semo-admin-theme) button:not(:disabled):active {
+  transform: scale(0.975);
+}
+
+:where(.semo-user-theme, .semo-admin-theme) :where(input, textarea, select) {
+  transition:
+    border-color var(--duration-normal) var(--ease-standard),
+    box-shadow var(--duration-normal) var(--ease-standard),
+    background-color var(--duration-normal) var(--ease-standard);
 }
 
 :where(button, input, textarea, select):disabled {
@@ -148,6 +296,43 @@ button {
     "opsz" 24;
 }
 
+[data-semo-brand-mark] {
+  overflow: visible;
+}
+
+[data-semo-brand-mark][data-animated="true"] [data-semo-brand-frame] {
+  stroke-dasharray: 180;
+  stroke-dashoffset: 180;
+  animation: semo-brand-draw 0.78s var(--ease-standard) forwards;
+}
+
+[data-semo-brand-mark][data-animated="true"] [data-semo-brand-frame]:nth-of-type(2) {
+  animation-delay: 0.12s;
+}
+
+[data-semo-brand-mark][data-animated="true"] [data-semo-brand-core] {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: semo-brand-core-in 0.48s 0.3s var(--ease-standard) both;
+}
+
+@keyframes semo-brand-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes semo-brand-core-in {
+  from {
+    opacity: 0;
+    transform: scale(0.6) rotate(-12deg);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+  }
+}
+
 .semo-panel {
   border: 1px solid var(--line);
   border-radius: var(--radius-modal);
@@ -156,17 +341,79 @@ button {
   backdrop-filter: blur(20px);
 }
 
+.semo-launch-panel {
+  background:
+    linear-gradient(120deg, rgba(19, 91, 236, 0.34), transparent 46%),
+    linear-gradient(155deg, #111b34 0%, #07101f 68%, #111827 100%);
+}
+
+.semo-launch-panel::before {
+  position: absolute;
+  inset: -70% -8% auto auto;
+  width: 20rem;
+  aspect-ratio: 1;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.02);
+  clip-path: polygon(50% 2%, 98% 92%, 2% 92%);
+  content: "";
+  animation: semo-launch-drift 9s var(--ease-standard) infinite alternate;
+}
+
+.semo-launch-symbol {
+  animation: semo-symbol-float 6s var(--ease-standard) infinite;
+}
+
+.semo-primary-action,
+.semo-secondary-action {
+  transition:
+    transform var(--duration-fast) var(--ease-standard),
+    box-shadow var(--duration-normal) var(--ease-standard),
+    filter var(--duration-fast) var(--ease-standard);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .semo-primary-action:hover {
+    box-shadow: 0 10px 26px color-mix(in srgb, var(--primary) 28%, transparent);
+    filter: brightness(1.06);
+    transform: translateY(-2px);
+  }
+
+  .semo-secondary-action:hover {
+    box-shadow: 0 10px 28px rgba(15, 23, 42, 0.18);
+    transform: translateY(-2px);
+  }
+}
+
+@keyframes semo-launch-drift {
+  from {
+    transform: translate3d(0, 0, 0) rotate(-3deg);
+  }
+  to {
+    transform: translate3d(-1.4rem, 1.1rem, 0) rotate(3deg);
+  }
+}
+
+@keyframes semo-symbol-float {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  50% {
+    transform: translateY(0.5rem) rotate(2deg);
+  }
+}
+
 .semo-user-theme {
   --primary: var(--color-user-primary);
   --secondary: #475569;
-  --background-light: #f6f6f8;
+  --background-light: rgba(246, 248, 252, 0.91);
   --color-bg: var(--background-light);
 }
 
 .semo-admin-theme {
   --primary: var(--color-admin-primary);
   --secondary: var(--color-user-primary);
-  --background-light: #f8f6f6;
+  --background-light: rgba(250, 247, 245, 0.92);
   --color-bg: var(--background-light);
 }
 
@@ -217,7 +464,9 @@ button {
 .semo-card {
   border: 1px solid var(--color-line);
   border-radius: var(--radius-card);
-  background: var(--color-surface);
+  background:
+    linear-gradient(145deg, color-mix(in srgb, var(--primary) 2.5%, transparent), transparent 42%),
+    var(--color-surface);
   box-shadow: var(--shadow-card);
 }
 
@@ -232,7 +481,7 @@ button {
   .semo-card-interactive:hover {
     border-color: color-mix(in srgb, var(--primary) 24%, var(--color-line));
     box-shadow: 0 8px 22px rgba(15, 23, 42, 0.09);
-    transform: translateY(-1px);
+    transform: translateY(-3px);
   }
 }
 
@@ -270,6 +519,15 @@ button {
   background: color-mix(in srgb, var(--primary) 8%, white);
   clip-path: polygon(50% 3%, 97% 92%, 3% 92%);
   content: "";
+  transition:
+    transform var(--duration-normal) var(--ease-standard),
+    background-color var(--duration-normal) var(--ease-standard);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .semo-page-glyph:hover::before {
+    transform: rotate(4deg) scale(1.04);
+  }
 }
 
 .semo-page-glyph > * {
@@ -306,10 +564,22 @@ button {
   background: color-mix(in srgb, var(--primary) 12%, transparent);
   clip-path: polygon(50% 4%, 96% 90%, 4% 90%);
   content: "";
+  animation: semo-nav-triangle-in var(--duration-slow) var(--ease-standard) both;
 }
 
 .semo-nav-icon > * {
   position: relative;
+}
+
+@keyframes semo-nav-triangle-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.2rem) scale(0.72) rotate(-8deg);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1) rotate(0deg);
+  }
 }
 
 .semo-modal-accent {
@@ -383,13 +653,43 @@ button {
   .semo-loading-bar::after {
     animation: none;
   }
+
+  .semo-motion-grid,
+  .semo-motion-beam,
+  .semo-nav-icon[data-active="true"]::before,
+  .semo-launch-panel::before,
+  .semo-launch-symbol,
+  [data-semo-brand-mark][data-animated="true"] [data-semo-brand-frame],
+  [data-semo-brand-mark][data-animated="true"] [data-semo-brand-core] {
+    animation: none;
+    stroke-dashoffset: 0;
+  }
+}
+
+@media (max-width: 639px) {
+  .semo-motion-grid {
+    background-size: 54px 32px;
+    opacity: 0.24;
+  }
+
+  .semo-motion-triangle-one {
+    right: -5rem;
+  }
+
+  .semo-motion-triangle-two {
+    left: -3.5rem;
+  }
+
+  .semo-motion-triangle-three {
+    display: none;
+  }
 }
 
 :where(.calendar-popover) {
   --cal-font: var(--font-app-display);
-  --cal-line: #d9e0ef;
-  --cal-ink: #1a2133;
-  --cal-muted: #6a748d;
+  --cal-line: var(--color-line);
+  --cal-ink: var(--color-foreground);
+  --cal-muted: var(--color-muted);
   --cal-accent: var(--primary);
   --cal-accent-deep: color-mix(in srgb, var(--primary) 78%, #0f172a);
 }
@@ -397,24 +697,24 @@ button {
 .calendar-popover {
   position: fixed;
   z-index: 1085;
-  width: 286px;
-  border: 1px solid #d9e0ef;
-  border-radius: 14px;
-  background: linear-gradient(165deg, #ffffff 0%, #f4f8ff 100%);
-  box-shadow: 0 22px 38px rgba(21, 41, 83, 0.24);
+  width: min(21rem, calc(100vw - 1rem));
+  border: 1px solid var(--cal-line);
+  border-radius: var(--radius-card);
+  background: linear-gradient(165deg, #ffffff 0%, color-mix(in srgb, var(--cal-accent) 5%, white) 100%);
+  box-shadow: var(--shadow-modal);
   overflow: hidden;
 }
 
 .calendar-popover__inner {
-  padding: 10px;
+  padding: var(--space-3);
 }
 
 .cp-head {
   display: grid;
-  grid-template-columns: 34px 1fr 34px;
+  grid-template-columns: 44px 1fr 44px;
   align-items: center;
-  gap: 6px;
-  margin-bottom: 8px;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
 }
 
 .cp-title {
@@ -426,10 +726,13 @@ button {
 
 .cp-nav {
   appearance: none;
-  width: 34px;
-  height: 30px;
+  display: inline-flex;
+  width: 44px;
+  height: 44px;
+  align-items: center;
+  justify-content: center;
   border: 1px solid var(--cal-line);
-  border-radius: 8px;
+  border-radius: var(--radius-control);
   background: #fff;
   color: var(--cal-ink);
   font-family: var(--cal-font);
@@ -460,7 +763,7 @@ button {
 .cp-day-grid {
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
-  gap: 4px;
+  gap: var(--space-1);
 }
 
 .cp-day-row {
@@ -469,9 +772,9 @@ button {
 
 .cp-day {
   appearance: none;
-  min-height: 31px;
+  min-height: 40px;
   border: 1px solid transparent;
-  border-radius: 8px;
+  border-radius: var(--radius-control);
   background: transparent;
   color: var(--cal-ink);
   font-family: var(--cal-font);

@@ -1,6 +1,8 @@
 "use client";
 
-import { motion, useReducedMotion } from "motion/react";
+import { motion } from "motion/react";
+
+import { useHydrationSafeReducedMotion } from "@/app/hooks/useHydrationSafeReducedMotion";
 import type { AlertItem } from "@/app/redux/slices/modalSlice";
 
 function getAlertToneStyles(tone: AlertItem["tone"]) {
@@ -54,8 +56,7 @@ type BasicAlertProps = {
 };
 
 export function BasicAlert({ alert, onClose }: BasicAlertProps) {
-  const prefersReducedMotion = useReducedMotion();
-  const reduceMotion = Boolean(prefersReducedMotion);
+  const reduceMotion = useHydrationSafeReducedMotion();
   const styles = getAlertToneStyles(alert.tone);
 
   return (
@@ -77,9 +78,9 @@ export function BasicAlert({ alert, onClose }: BasicAlertProps) {
         </div>
         <div className="relative min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <span className="text-[11px] font-black tracking-[0.24em] opacity-70">{styles.label}</span>
+            <span className="text-xs font-black tracking-[0.24em] opacity-70">{styles.label}</span>
             <span className="h-1.5 w-1.5 rounded-full bg-current opacity-30" />
-            <span className="text-[11px] font-semibold opacity-60">SEMO</span>
+            <span className="text-xs font-semibold opacity-60">SEMO</span>
           </div>
           {alert.title ? <p className="mt-1 text-sm font-bold tracking-tight">{alert.title}</p> : null}
           <p className="mt-0.5 whitespace-pre-wrap text-sm leading-5 opacity-85">{alert.message}</p>

@@ -26,13 +26,13 @@
 
 ## Stack
 
-- Next.js `16.1.6`
+- Next.js `16.3.4`
 - React `19.2.3`
 - TypeScript `5.x`
 - Tailwind CSS `4.x`
 - Motion `12.35.x` (`motion/react`)
 - `@dnd-kit` 기반 정렬/재배치 UI
-- ESLint `9` + `eslint-config-next 16.1.6`
+- ESLint `9` + `eslint-config-next 16.3.4`
 - React Compiler 활성화 (`next.config.ts`)
 
 공통 API 호출은 `app/lib/api.ts`의 `axios` 래퍼가 기준입니다.
@@ -108,9 +108,12 @@ NEXT_PUBLIC_API_URL=http://localhost:8080
 
 ### Visual identity and feedback
 - `SemoBrandMark`는 로그인·루트 홈·로딩·오류 같은 앱 경계의 브랜드 표식입니다.
-- `ClubGrowthCoreMark`는 앱 로고가 아니라 특정 모임의 멤버 수·활동·성장 기록을 표현하는 데이터 표식입니다.
+- `ClubGrowthCoreMark`는 앱 로고가 아니라 특정 모임의 멤버 수·활동·성장 기록을 표현하는 데이터 표식입니다. 내 모임·탐색·공개 소개에서는 크기·빛·소재색만 가진 코어 보석을, 클럽 내부 성장 패널에서는 코어와 바깥 성장 삼각을 함께 표시합니다.
+- `SemoMotionField`는 사용자/관리자 색을 따르는 삼각 배경장, 스크롤 진행선, 저속 부유 모션을 제공하며 콘텐츠보다 뒤에서만 동작합니다.
 - 페이지 헤더와 활성 하단 내비게이션은 공용 삼각 문법을 사용하며, 하단 내비게이션에는 아이콘과 텍스트 라벨을 함께 표시합니다.
 - 유저 주색은 blue token, 관리자 주색은 orange token을 사용하고 기능 고유색은 상태·보조 강조에 제한합니다.
+- 사용자 작업 화면은 `semo-page-user`, 운영 화면은 `semo-page-admin`, 대시보드·데이터 화면은 전용 폭 token을 사용해 데스크톱을 모바일 미리보기 폭으로 제한하지 않습니다.
+- 공용 반경·그림자·간격·동작 시간 token을 우선하며, 본문·보조 정보는 최소 `text-xs`를 기준으로 유지합니다.
 - toast는 비차단 피드백, alert는 닫을 수 있는 배너, confirm과 `RouteModal`은 포커스·스크롤을 관리하는 모달입니다.
 
 ### Shared input components
@@ -200,7 +203,8 @@ NEXT_PUBLIC_API_URL=http://localhost:8080
 
 ### Home / dashboard
 - 사용자 홈은 위젯 API로 공지, 일정, 투표, 프로필, 출석, 회비, 대회, 대진표 정보를 조합합니다.
-- 모임 성장 코어는 모임 생성과 동시에 생기는 상시 기능입니다. 루트 홈의 내 클럽·탐색 카드, 공개 클럽 소개 모달, `/clubs/{clubId}` 홈에 표시하며 More 메뉴나 기능 토글에는 넣지 않습니다. 소재는 영구 티어, 코어 크기는 활성 멤버 수, 코어 내부 밝기는 최근 절대 활동, 바깥 세 꼭짓점은 `함께`·`운영`·`이어짐`을 뜻합니다.
+- 모임 성장 코어는 모임 생성과 동시에 생기는 상시 기능입니다. 루트 홈의 내 클럽·탐색 카드와 공개 클럽 소개 모달에는 소재색·활성 멤버 수 기반 크기·최근 활동 기반 빛만 가진 보석을 표시합니다. 바깥 세 꼭짓점의 `함께`·`운영`·`이어짐` 진행은 `/clubs/{clubId}` 내부 성장 패널에서만 크게 표시하며 More 메뉴나 기능 토글에는 넣지 않습니다.
+- 클럽 내부 성장 세모는 다음 소재까지 33%·66%·100%의 세 점선 단계를 표시하며, 세 축 중 가장 낮은 진행값을 현재 단계 판단에 사용합니다.
 - 관리자 홈은 멤버 수, 승인 대기, 최근 활동, 운영 진입 액션을 보여줍니다.
 - 가입 신청 접수·취소와 내 상태 확인은 루트 홈의 클럽 탐색에서 처리합니다. 클럽 내부 대기열은 관리자 canonical 경로인 `/admin/more/join-requests`에서만 운영합니다.
 - 레거시 `/admin/join-requests`와 사용자 대기열 API는 제거했고, `/more/join-requests` 프론트 경로만 기존 링크 호환을 위해 클럽 홈으로 리다이렉트합니다.
@@ -283,7 +287,7 @@ npm run start
 - 2026-09-01 확인
   - `npm run lint` 성공
   - `npm run verify:auth` 성공
-  - `npm run verify:ui` 성공 (65개 라우트, 208개 TSX UI 계약 검사)
+  - `npm run verify:ui` 성공 (65개 라우트, 209개 TSX UI 계약 검사, 11px 텍스트 0건)
   - `npm run build` 성공
 
 ## Source Notes
@@ -293,5 +297,5 @@ npm run start
   - `useEffectEvent`
   - `startTransition`
   - `useDeferredValue`
-- Motion은 `MotionConfig reducedMotion="user"`와 `useReducedMotion` 경로를 함께 유지합니다.
+- Motion은 `MotionConfig reducedMotion="user"`와 hydration-safe `useHydrationSafeReducedMotion` 경로를 함께 유지합니다.
 - 이미지 로딩은 `next.config.ts`에서 로컬 이미지 서버와 원격 패턴을 허용합니다.

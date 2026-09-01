@@ -26,7 +26,7 @@ export function NotificationBellLink() {
         notifications
       </span>
       {unreadCount > 0 ? (
-        <span className="absolute -right-0.5 -top-0.5 min-w-5 rounded-full border-2 border-white bg-rose-500 px-1 text-center text-[11px] font-bold leading-4 text-white">
+        <span className="absolute -right-0.5 -top-0.5 min-w-5 rounded-full border-2 border-white bg-rose-500 px-1 text-center text-xs font-bold leading-4 text-white">
           {unreadCount > 99 ? "99+" : unreadCount}
         </span>
       ) : null}

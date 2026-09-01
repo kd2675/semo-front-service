@@ -132,7 +132,7 @@ export function ClubDashboardWidgetPersonalContent({
           <p className="text-sm text-slate-500">최근 운영 결정을 가져오지 못했습니다.</p>
         ) : latestDecision ? (
           <RouterLink href={`/clubs/${clubId}/more/decisions`} className="block rounded-xl border border-[var(--primary)]/15 bg-[var(--primary)]/5 p-4 transition-colors hover:border-[var(--primary)]/35">
-            <div className="flex items-center justify-between gap-2"><span className="rounded-full bg-white px-2 py-0.5 text-[11px] font-bold text-[var(--primary)]">{latestDecision.recordType === "MEETING_MINUTES" ? "회의록" : "운영 결정"}</span>{latestDecision.effectiveDate ? <span className="text-[11px] font-semibold text-slate-400">시행 {latestDecision.effectiveDate.replaceAll("-", ".")}</span> : null}</div>
+            <div className="flex items-center justify-between gap-2"><span className="rounded-full bg-white px-2 py-0.5 text-xs font-bold text-[var(--primary)]">{latestDecision.recordType === "MEETING_MINUTES" ? "회의록" : "운영 결정"}</span>{latestDecision.effectiveDate ? <span className="text-xs font-semibold text-slate-400">시행 {latestDecision.effectiveDate.replaceAll("-", ".")}</span> : null}</div>
             <p className="mt-3 line-clamp-1 text-sm font-bold text-slate-900">{latestDecision.title}</p>
             <p className="mt-1 line-clamp-2 text-xs leading-5 text-slate-500">{latestDecision.decisionContent}</p>
           </RouterLink>
@@ -186,14 +186,14 @@ export function ClubDashboardWidgetPersonalContent({
                   animate={{ opacity: 1, scale: 1, y: 0 }}
                   exit={reduceMotion ? undefined : { opacity: 0, scale: 0.96, y: -2 }}
                   transition={{ duration: reduceMotion ? 0 : 0.22, ease: "easeOut" }}
-                  className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${statusClassName}`}
+                  className={`rounded-full px-2 py-0.5 text-xs font-bold ${statusClassName}`}
                 >
                   {statusLabel}
                 </motion.span>
               </AnimatePresence>
             </div>
             {nextAttendanceEvent.checkedInAtLabel ? (
-              <p className="text-[11px] text-slate-400">확인 시각: {nextAttendanceEvent.checkedInAtLabel}</p>
+              <p className="text-xs text-slate-400">확인 시각: {nextAttendanceEvent.checkedInAtLabel}</p>
             ) : null}
           </>
         ) : (
@@ -220,7 +220,7 @@ export function ClubDashboardWidgetPersonalContent({
                 <p className="text-xs font-semibold text-violet-600">최근 출석</p>
                 <p className="mt-2 text-base font-bold text-slate-900">평균 출석률 {recentAttendanceRate ?? 0}%</p>
               </div>
-              <span className="rounded-full bg-violet-50 px-2 py-0.5 text-[11px] font-bold text-violet-700">
+              <span className="rounded-full bg-violet-50 px-2 py-0.5 text-xs font-bold text-violet-700">
                 최근 {recentAttendanceEvents.length}회
               </span>
             </div>
@@ -233,7 +233,7 @@ export function ClubDashboardWidgetPersonalContent({
                   <div key={`${widget.widgetKey}-${event.eventId}`} className="rounded-xl border border-violet-100 bg-violet-50/40 px-3 py-2">
                     <div className="flex items-center justify-between gap-3">
                       <p className="truncate text-sm font-semibold text-slate-900">{event.title}</p>
-                      <span className="text-[11px] font-bold text-violet-700">{completionRate}%</span>
+                      <span className="text-xs font-bold text-violet-700">{completionRate}%</span>
                     </div>
                     <p className="mt-1 text-xs text-slate-500">
                       {event.dateLabel} · {event.attendedCount}/{event.goingCount}명 확인
@@ -272,7 +272,7 @@ export function ClubDashboardWidgetPersonalContent({
                 <p className="mt-2 line-clamp-2 text-base font-bold text-slate-900">{nextFinanceObligation.title}</p>
               </div>
               <span
-                className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${getFinanceStatusClassName(
+                className={`rounded-full px-2 py-0.5 text-xs font-bold ${getFinanceStatusClassName(
                   nextFinanceObligation.payment.paymentStatusCode,
                 )}`}
               >
@@ -285,7 +285,7 @@ export function ClubDashboardWidgetPersonalContent({
               <p className="text-xs font-medium text-slate-500">
                 미납 {financeData?.pendingPaymentCount ?? 0}건 · 연체 {financeData?.overduePaymentCount ?? 0}건
               </p>
-              <span className="rounded-full bg-white px-2 py-0.5 text-[11px] font-bold text-emerald-700">
+              <span className="rounded-full bg-white px-2 py-0.5 text-xs font-bold text-emerald-700">
                 {financeData?.totalPendingAmountLabel ?? nextFinanceObligation.amountLabel}
               </span>
             </div>
@@ -366,7 +366,7 @@ export function ClubDashboardWidgetPersonalContent({
               <p className="text-xs font-medium text-slate-500">
                 {latestOngoingPoll.totalResponses}명 참여 · 선택지 {latestOngoingPoll.optionCount}개
               </p>
-              <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-bold text-amber-600">진행 중</span>
+              <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-bold text-amber-600">진행 중</span>
             </div>
           </RouterLink>
         ) : (

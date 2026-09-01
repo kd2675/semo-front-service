@@ -24,7 +24,7 @@ function GateScreen({
       <div className="semo-orb semo-orb-left" />
       <div className="semo-orb semo-orb-right" />
       <div className="semo-panel flex w-full max-w-md flex-col gap-4 px-6 py-8 text-center">
-        <SemoBrandMark className="mx-auto size-12 text-[var(--primary)]" />
+        <SemoBrandMark className="mx-auto size-12 text-[var(--primary)]" animated />
         <p className="text-xs font-semibold uppercase tracking-[0.32em] text-[var(--primary)]">
           {label}
         </p>
