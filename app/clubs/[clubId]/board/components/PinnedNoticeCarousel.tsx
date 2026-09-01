@@ -17,12 +17,12 @@ function getPinnedSurface(index: number) {
       cardClassName: "bg-slate-900 text-white",
       dateClassName: "text-slate-400",
       summaryClassName: "text-slate-300",
-      badgeClassName: "bg-red-500 text-white",
+      badgeClassName: "bg-rose-500 text-white",
     };
   }
 
   return {
-    cardClassName: "bg-[#135bec] text-white",
+    cardClassName: "bg-[var(--primary)] text-white",
     dateClassName: "text-blue-100",
     summaryClassName: "text-blue-100",
     badgeClassName: "bg-white/20 text-white",

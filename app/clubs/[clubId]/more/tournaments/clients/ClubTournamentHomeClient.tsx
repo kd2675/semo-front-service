@@ -73,7 +73,7 @@ function TournamentCard({
             {tournament.title}
           </h3>
         </div>
-        <div className="min-w-[68px] rounded-[18px] bg-slate-100 px-3 py-3 text-center">
+        <div className="min-w-[68px] rounded-[var(--radius-card)] bg-slate-100 px-3 py-3 text-center">
           <span className="block text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">
             {new Date(`${tournament.startDate}T00:00:00`).toLocaleDateString("ko-KR", { month: "short" })}
           </span>
@@ -301,7 +301,7 @@ export function ClubTournamentHomeClient({
 
               <section className="grid grid-cols-1 gap-6 md:grid-cols-2">
                 {activeUserList.length === 0 ? (
-                  <div className="rounded-[28px] border-2 border-dashed border-slate-300 bg-transparent p-8 text-center text-sm font-medium text-slate-500 md:col-span-2">
+                  <div className="rounded-[var(--radius-modal)] border-2 border-dashed border-slate-300 bg-transparent p-8 text-center text-sm font-medium text-slate-500 md:col-span-2">
                     표시할 대회가 없습니다.
                   </div>
                 ) : (
@@ -368,7 +368,7 @@ export function ClubTournamentHomeClient({
                     {...staggeredFadeUpMotion(index + 3, reduceMotion)}
                   >
                     <div className="flex items-center gap-4">
-                      <div className="flex size-16 items-center justify-center rounded-[20px] bg-slate-100 text-[var(--primary)]">
+                      <div className="flex size-16 items-center justify-center rounded-[var(--radius-card)] bg-slate-100 text-[var(--primary)]">
                         <span className="material-symbols-outlined text-[30px]" aria-hidden="true">emoji_events</span>
                       </div>
                       <div>

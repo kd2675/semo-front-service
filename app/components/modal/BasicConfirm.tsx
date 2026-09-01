@@ -62,9 +62,9 @@ export function BasicConfirm({
       ariaLabel={confirm.title}
       onDismiss={onCancel}
       dismissOnBackdrop={confirm.dismissOnBackdrop}
-      contentClassName="max-w-[22.5rem] rounded-[2rem] border-0 bg-transparent p-0 shadow-none sm:rounded-[2rem]"
+      contentClassName="max-w-[22.5rem] rounded-[var(--radius-modal)] border-0 bg-transparent p-0 shadow-none sm:rounded-[var(--radius-modal)]"
     >
-      <div className={`overflow-hidden rounded-[2rem] border shadow-[0_34px_90px_rgba(15,23,42,0.22)] ${styles.shellClassName}`}>
+      <div className={`overflow-hidden rounded-[var(--radius-modal)] border shadow-[0_34px_90px_rgba(15,23,42,0.22)] ${styles.shellClassName}`}>
         <div className="relative px-5 pb-6 pt-4">
           <div className="absolute inset-x-0 top-0 h-24 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.95),transparent_70%)]" />
           <div className="relative flex items-center justify-between gap-3">

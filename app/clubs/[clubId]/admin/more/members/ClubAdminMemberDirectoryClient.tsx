@@ -79,7 +79,7 @@ function DirectoryStatChip({
   value: string;
 }) {
   return (
-    <article className="rounded-[22px] border border-white/80 bg-white/80 px-4 py-3 shadow-[0_14px_30px_rgba(15,23,42,0.06)] backdrop-blur">
+    <article className="rounded-[var(--radius-card)] border border-white/80 bg-white/80 px-4 py-3 shadow-[0_14px_30px_rgba(15,23,42,0.06)] backdrop-blur">
       <p className="text-xs font-bold text-slate-400">{label}</p>
       <p className="mt-2 text-xl font-extrabold tracking-tight text-slate-950">
         {value}
@@ -105,7 +105,7 @@ function SettingToggleButton({
       onClick={onClick}
       disabled={disabled}
       className={`relative mt-1 inline-flex h-11 w-16 shrink-0 rounded-full transition-colors duration-200 ${
-        checked ? "bg-[#ec5b13]" : "bg-slate-200"
+        checked ? "bg-[var(--primary)]" : "bg-slate-200"
       } ${
         disabled ? "cursor-not-allowed opacity-60" : ""
       }`}
@@ -134,20 +134,20 @@ function VisibilitySettingCard({
 }) {
   return (
     <article
-      className={`relative overflow-hidden rounded-[28px] border border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#f9fafb_100%)] p-4 shadow-[0_10px_24px_rgba(15,23,42,0.04)] ${
+      className={`relative overflow-hidden rounded-[var(--radius-modal)] border border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#f9fafb_100%)] p-4 shadow-[0_10px_24px_rgba(15,23,42,0.04)] ${
         disabled ? "opacity-80" : ""
       }`}
     >
       <div
         className={`absolute inset-y-4 left-0 w-1 rounded-r-full ${
-          enabled ? "bg-[#ec5b13]" : "bg-slate-200"
+          enabled ? "bg-[var(--primary)]" : "bg-slate-200"
         }`}
       />
 
       <div className="flex items-start gap-3 pl-2">
         <div
-          className={`flex size-12 shrink-0 items-center justify-center rounded-[18px] ${
-            enabled ? "bg-[#fff1e4] text-[#ec5b13]" : "bg-slate-100 text-slate-400"
+          className={`flex size-12 shrink-0 items-center justify-center rounded-[var(--radius-card)] ${
+            enabled ? "bg-[#fff1e4] text-[var(--primary)]" : "bg-slate-100 text-slate-400"
           }`}
         >
           <span className="material-symbols-outlined" aria-hidden="true">{item.icon}</span>
@@ -158,7 +158,7 @@ function VisibilitySettingCard({
             <p className="text-sm font-bold text-slate-900">{item.title}</p>
             <span
               className={`rounded-full px-2.5 py-1 text-xs font-bold ${
-                enabled ? "bg-[#ec5b13]/10 text-[#b4541a]" : "bg-slate-100 text-slate-500"
+                enabled ? "bg-[var(--primary)]/10 text-[#b4541a]" : "bg-slate-100 text-slate-500"
               }`}
             >
               {enabled ? "켜짐" : "꺼짐"}
@@ -201,15 +201,15 @@ function VisibilityInsightCard({
   const hiddenCount = Math.max(totalCount - enabledCount, 0);
 
   return (
-    <article className="relative overflow-hidden rounded-[32px] border border-[#f1d8c4] bg-[linear-gradient(150deg,#fff2e7_0%,#fff9f3_60%,#f3f7fb_100%)] p-5 shadow-[0_18px_42px_rgba(236,91,19,0.1)]">
-      <div className="absolute -right-6 bottom-0 text-[72px] font-black tracking-[-0.08em] text-[#ec5b13]/8">
+    <article className="relative overflow-hidden rounded-[var(--radius-modal)] border border-[#f1d8c4] bg-[linear-gradient(150deg,#fff2e7_0%,#fff9f3_60%,#f3f7fb_100%)] p-5 shadow-[0_18px_42px_rgba(236,91,19,0.1)]">
+      <div className="absolute -right-6 bottom-0 text-[72px] font-black tracking-[-0.08em] text-[var(--primary)]/8">
         SEMO
       </div>
 
       <div className="relative">
         <SectionEyebrow>공개 범위와 참여</SectionEyebrow>
         <div className="mt-2 flex items-start gap-3">
-          <div className="flex size-11 shrink-0 items-center justify-center rounded-[18px] bg-white text-[#ec5b13] shadow-sm">
+          <div className="flex size-11 shrink-0 items-center justify-center rounded-[var(--radius-card)] bg-white text-[var(--primary)] shadow-sm">
             <span className="material-symbols-outlined" aria-hidden="true">visibility</span>
           </div>
 
@@ -291,7 +291,7 @@ function MemberAvatar({
   if (member.avatarImageUrl) {
     return (
       <div
-        className="size-14 shrink-0 rounded-[22px] bg-cover bg-center shadow-[0_14px_28px_rgba(15,23,42,0.14)] ring-2 ring-white/90"
+        className="size-14 shrink-0 rounded-[var(--radius-card)] bg-cover bg-center shadow-[0_14px_28px_rgba(15,23,42,0.14)] ring-2 ring-white/90"
         style={{
           backgroundImage: `url('${member.avatarImageUrl}')`,
         }}
@@ -301,7 +301,7 @@ function MemberAvatar({
 
   return (
     <div
-      className={`flex size-14 shrink-0 items-center justify-center rounded-[22px] bg-gradient-to-br ${avatarClassName} text-sm font-black text-white shadow-[0_16px_28px_rgba(15,23,42,0.14)] ring-2 ring-white/90`}
+      className={`flex size-14 shrink-0 items-center justify-center rounded-[var(--radius-card)] bg-gradient-to-br ${avatarClassName} text-sm font-black text-white shadow-[0_16px_28px_rgba(15,23,42,0.14)] ring-2 ring-white/90`}
     >
       {member.displayName.slice(0, 2)}
     </div>
@@ -318,7 +318,7 @@ function AdminPreviewCard({
   const tone = getPreviewTone(member, settings);
 
   return (
-    <article className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-[0_18px_36px_rgba(15,23,42,0.08)]">
+    <article className="overflow-hidden rounded-[var(--radius-modal)] border border-slate-200 bg-white shadow-[0_18px_36px_rgba(15,23,42,0.08)]">
       <div className={`h-1.5 bg-gradient-to-r ${tone.railClassName}`} />
 
       <div className="p-4">
@@ -370,7 +370,7 @@ function AdminPreviewCard({
           </div>
         ) : null}
 
-        <div className="mt-4 rounded-[22px] border border-slate-200/80 bg-slate-50/80 px-3.5 py-3">
+        <div className="mt-4 rounded-[var(--radius-card)] border border-slate-200/80 bg-slate-50/80 px-3.5 py-3">
           <div className="flex items-center justify-between gap-3">
             <p className="text-xs font-bold text-slate-400">
               최근 활동
@@ -475,10 +475,10 @@ export function ClubAdminMemberDirectoryClient({
 
         <main className="semo-nav-bottom-space space-y-5 px-4 pt-4">
           <motion.section
-            className="relative overflow-hidden rounded-[32px] border border-[#f3d8c6] bg-[linear-gradient(160deg,#fff8f2_0%,#fffdf9_52%,#eef3f8_100%)] p-6 shadow-[0_22px_60px_rgba(236,91,19,0.08)]"
+            className="relative overflow-hidden rounded-[var(--radius-modal)] border border-[#f3d8c6] bg-[linear-gradient(160deg,#fff8f2_0%,#fffdf9_52%,#eef3f8_100%)] p-6 shadow-[0_22px_60px_rgba(236,91,19,0.08)]"
             {...staggeredFadeUpMotion(0, reduceMotion)}
           >
-            <div className="absolute -right-8 -top-10 size-32 rounded-full bg-[#ec5b13]/10 blur-3xl" />
+            <div className="absolute -right-8 -top-10 size-32 rounded-full bg-[var(--primary)]/10 blur-3xl" />
             <div className="absolute -bottom-10 left-6 size-24 rounded-full bg-[#135bec]/8 blur-3xl" />
 
             <div className="relative">
@@ -504,7 +504,7 @@ export function ClubAdminMemberDirectoryClient({
           </motion.section>
 
           <motion.section
-            className="overflow-hidden rounded-[32px] border border-slate-200 bg-white shadow-[0_18px_40px_rgba(15,23,42,0.06)]"
+            className="overflow-hidden rounded-[var(--radius-modal)] border border-slate-200 bg-white shadow-[0_18px_40px_rgba(15,23,42,0.06)]"
             {...staggeredFadeUpMotion(1, reduceMotion)}
           >
             <div className="border-b border-slate-200/80 px-5 py-4">
@@ -549,7 +549,7 @@ export function ClubAdminMemberDirectoryClient({
           </motion.section>
 
           <motion.section
-            className="overflow-hidden rounded-[32px] border border-slate-200 bg-[#fffdfb] shadow-[0_20px_44px_rgba(15,23,42,0.07)]"
+            className="overflow-hidden rounded-[var(--radius-modal)] border border-slate-200 bg-[#fffdfb] shadow-[0_20px_44px_rgba(15,23,42,0.07)]"
             {...staggeredFadeUpMotion(6, reduceMotion)}
           >
             <div className="border-b border-slate-200/80 px-5 py-4">
@@ -564,7 +564,7 @@ export function ClubAdminMemberDirectoryClient({
                   </p>
                 </div>
 
-                <div className="rounded-[20px] border border-slate-200 bg-white px-3 py-2 text-right shadow-sm">
+                <div className="rounded-[var(--radius-card)] border border-slate-200 bg-white px-3 py-2 text-right shadow-sm">
                   <p className="text-xs font-bold text-slate-400">
                     미리보기
                   </p>
@@ -593,7 +593,7 @@ export function ClubAdminMemberDirectoryClient({
               type="button"
               onClick={() => void handleSave()}
               disabled={saving || !hasPendingChanges}
-              className="flex w-full items-center justify-center gap-2 rounded-[22px] bg-[#ec5b13] px-4 py-4 text-sm font-bold text-white shadow-[0_18px_30px_rgba(236,91,19,0.28)] transition hover:bg-[#d85211] disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none"
+              className="flex w-full items-center justify-center gap-2 rounded-[var(--radius-card)] bg-[var(--primary)] px-4 py-4 text-sm font-bold text-white shadow-[0_18px_30px_rgba(236,91,19,0.28)] transition hover:bg-[#d85211] disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none"
             >
               <span className="material-symbols-outlined text-[18px]" aria-hidden="true">save</span>
               {saving ? "저장 중..." : hasPendingChanges ? "회원 디렉터리 설정 저장" : "변경사항 없음"}

@@ -248,7 +248,7 @@ export function ClubTournamentEditorClient({
               <div className="rounded-2xl bg-rose-50 px-4 py-3 text-sm font-medium text-rose-600">{error}</div>
             ) : null}
 
-            <section className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm">
+            <section className="rounded-[var(--radius-modal)] border border-slate-200 bg-white p-5 shadow-sm">
               <p className="text-xs font-black tracking-wide text-sky-600">기본 정보</p>
               <div className="mt-4 space-y-4">
                 <label className="block">
@@ -284,7 +284,7 @@ export function ClubTournamentEditorClient({
               </div>
             </section>
 
-            <section className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm">
+            <section className="rounded-[var(--radius-modal)] border border-slate-200 bg-white p-5 shadow-sm">
               <p className="text-xs font-black tracking-wide text-slate-500">일정</p>
               <div className="mt-4 grid grid-cols-2 gap-4">
                 <label className="block">
@@ -320,7 +320,7 @@ export function ClubTournamentEditorClient({
                   />
                 </label>
               </div>
-              <div className="mt-4 rounded-[20px] border border-slate-200 bg-slate-50 p-4">
+              <div className="mt-4 rounded-[var(--radius-card)] border border-slate-200 bg-slate-50 p-4">
                 <p className="text-sm font-semibold text-slate-700">대회 시점</p>
                 <div className="mt-3 grid grid-cols-2 gap-3">
                   {[
@@ -331,7 +331,7 @@ export function ClubTournamentEditorClient({
                       key={option.value}
                       type="button"
                       onClick={() => handleTournamentDateModeChange(option.value as TournamentDateMode)}
-                      className={`rounded-[18px] border px-4 py-3 text-left text-sm font-bold transition ${
+                      className={`rounded-[var(--radius-card)] border px-4 py-3 text-left text-sm font-bold transition ${
                         tournamentDateMode === option.value
                           ? "border-sky-200 bg-white text-sky-700 shadow-sm"
                           : "border-transparent bg-white/60 text-slate-500"
@@ -366,7 +366,7 @@ export function ClubTournamentEditorClient({
               </label>
             </section>
 
-            <section className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm">
+            <section className="rounded-[var(--radius-modal)] border border-slate-200 bg-white p-5 shadow-sm">
               <p className="text-xs font-black tracking-wide text-amber-600">진행 방식</p>
               <div className="mt-4 grid grid-cols-2 gap-3">
                 {[
@@ -378,7 +378,7 @@ export function ClubTournamentEditorClient({
                     key={option.value}
                     type="button"
                     onClick={() => setMatchFormat(option.value as "SINGLE" | "DOUBLE" | "TEAM")}
-                    className={`rounded-[18px] border px-4 py-3 text-left text-sm font-bold transition ${
+                    className={`rounded-[var(--radius-card)] border px-4 py-3 text-left text-sm font-bold transition ${
                       matchFormat === option.value
                         ? "border-sky-200 bg-sky-50 text-sky-700"
                         : "border-slate-200 bg-slate-50 text-slate-600"
@@ -413,10 +413,10 @@ export function ClubTournamentEditorClient({
               </label>
             </section>
 
-            <section className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm">
+            <section className="rounded-[var(--radius-modal)] border border-slate-200 bg-white p-5 shadow-sm">
               <p className="text-xs font-black tracking-wide text-emerald-600">참가비와 공유</p>
               <div className="mt-4 space-y-4">
-                <label className="flex items-center justify-between rounded-[18px] border border-slate-200 bg-slate-50 px-4 py-3">
+                <label className="flex items-center justify-between rounded-[var(--radius-card)] border border-slate-200 bg-slate-50 px-4 py-3">
                   <span className="text-sm font-semibold text-slate-700">참가비 사용</span>
                   <input type="checkbox" checked={feeRequired} onChange={(event) => setFeeRequired(event.target.checked)} className="rounded border-slate-300 text-sky-600" />
                 </label>
@@ -445,7 +445,7 @@ export function ClubTournamentEditorClient({
                   { checked: postToCalendar, setChecked: setPostToCalendar, label: "캘린더에도 공유" },
                   { checked: pinned, setChecked: setPinned, label: "게시판 중요 고정" },
                 ].map((item) => (
-                  <label key={item.label} className="flex items-center justify-between rounded-[18px] border border-slate-200 bg-slate-50 px-4 py-3">
+                  <label key={item.label} className="flex items-center justify-between rounded-[var(--radius-card)] border border-slate-200 bg-slate-50 px-4 py-3">
                     <span className="text-sm font-semibold text-slate-700">{item.label}</span>
                     <input type="checkbox" checked={item.checked} onChange={(event) => item.setChecked(event.target.checked)} className="rounded border-slate-300 text-sky-600" />
                   </label>
@@ -460,7 +460,7 @@ export function ClubTournamentEditorClient({
             type="submit"
             form={formId}
             disabled={saving}
-            className="w-full rounded-[20px] bg-[var(--primary)] px-5 py-4 text-sm font-black text-white shadow-[0_14px_32px_rgba(19,91,236,0.22)] transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
+            className="w-full rounded-[var(--radius-card)] bg-[var(--primary)] px-5 py-4 text-sm font-black text-white shadow-[0_14px_32px_rgba(19,91,236,0.22)] transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {saving ? "저장 중..." : isEdit ? "대회 수정 저장" : "대회 생성"}
           </button>

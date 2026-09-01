@@ -131,7 +131,7 @@ const modalSlice = createSlice({
             message: payload.message.trim(),
             tone: payload.tone ?? "success",
             actionLabel: payload.actionLabel?.trim() || null,
-            durationMs: payload.durationMs ?? 2000,
+            durationMs: payload.durationMs ?? 3600,
           } satisfies ToastItem,
         };
       },

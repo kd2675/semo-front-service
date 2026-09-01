@@ -1,5 +1,5 @@
 /* eslint-disable @next/next/no-page-custom-font */
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import Providers from "@/app/providers";
@@ -10,8 +10,15 @@ const plusJakartaSans = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "SEMO",
-  description: "세상의 모든 모임을 한곳에서 시작하는 SEMO 로그인 셸",
+  title: {
+    default: "SEMO",
+    template: "%s · SEMO",
+  },
+  description: "모임의 활동과 운영 기록을 다음 사람에게 이어가는 SEMO",
+};
+
+export const viewport: Viewport = {
+  themeColor: "#135bec",
 };
 
 export default function RootLayout({

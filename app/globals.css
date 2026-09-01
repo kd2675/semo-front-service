@@ -7,6 +7,7 @@
   --color-admin-primary: #ec5b13;
   --color-background: #f6f7fa;
   --color-surface: #ffffff;
+  --color-surface-raised: rgba(255, 255, 255, 0.92);
   --color-surface-muted: #f1f4f8;
   --color-foreground: #0f172a;
   --color-muted: #5b6474;
@@ -17,10 +18,12 @@
   --color-info: #0369a1;
 
   --background-light: var(--color-background);
+  --color-bg: var(--background-light);
   --foreground: var(--color-foreground);
   --muted: var(--color-muted);
   --line: var(--color-line);
   --primary: var(--color-user-primary);
+  --secondary: #475569;
   --naver: #03c75a;
   --kakao: #fee500;
   --kakao-text: #191919;
@@ -52,13 +55,14 @@
   --duration-normal: 180ms;
   --duration-slow: 260ms;
   --ease-standard: cubic-bezier(0.2, 0, 0, 1);
-  --font-display:
-    var(--font-semo-display), "Pretendard", "Noto Sans KR", "Apple SD Gothic Neo", sans-serif;
+  --font-app-display:
+    "Plus Jakarta Sans", "Pretendard", "Noto Sans KR", "Apple SD Gothic Neo", sans-serif;
 }
 
 @theme inline {
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-display);
+  --font-sans: var(--font-app-display);
+  --font-display: var(--font-app-display);
 }
 
 * {
@@ -77,8 +81,14 @@ body {
     radial-gradient(circle at bottom right, rgba(19, 91, 236, 0.08), transparent 28%),
     var(--background-light);
   color: var(--foreground);
-  font-family: var(--font-display);
+  font-family:
+    var(--font-semo-display), "Pretendard", "Noto Sans KR", "Apple SD Gothic Neo", sans-serif;
   letter-spacing: -0.015em;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--primary) 18%, white);
+  color: var(--foreground);
 }
 
 :where(h1, h2, h3, h4) {
@@ -99,13 +109,13 @@ body {
   padding-bottom: calc(env(safe-area-inset-bottom) + 6rem);
 }
 
-a {
-  color: inherit;
-}
-
 :where(a, button, input, textarea, select, [role="button"]):focus-visible {
   outline: 3px solid color-mix(in srgb, var(--primary) 38%, transparent);
   outline-offset: 2px;
+}
+
+:where(button, a) {
+  -webkit-tap-highlight-color: transparent;
 }
 
 :where(button, input, textarea, select):disabled {
@@ -148,12 +158,31 @@ button {
 
 .semo-user-theme {
   --primary: var(--color-user-primary);
+  --secondary: #475569;
   --background-light: #f6f6f8;
+  --color-bg: var(--background-light);
 }
 
 .semo-admin-theme {
   --primary: var(--color-admin-primary);
+  --secondary: var(--color-user-primary);
   --background-light: #f8f6f6;
+  --color-bg: var(--background-light);
+}
+
+.semo-app-shell {
+  min-height: 100vh;
+  background:
+    linear-gradient(145deg, color-mix(in srgb, var(--primary) 4%, transparent), transparent 36%),
+    var(--background-light);
+  color: var(--foreground);
+}
+
+.semo-sticky-surface {
+  border-color: color-mix(in srgb, var(--color-line) 84%, transparent);
+  background: color-mix(in srgb, var(--background-light) 88%, transparent);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(16px);
 }
 
 .semo-page-user,
@@ -192,6 +221,21 @@ button {
   box-shadow: var(--shadow-card);
 }
 
+.semo-card-interactive {
+  transition:
+    border-color var(--duration-normal) var(--ease-standard),
+    box-shadow var(--duration-normal) var(--ease-standard),
+    transform var(--duration-normal) var(--ease-standard);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .semo-card-interactive:hover {
+    border-color: color-mix(in srgb, var(--primary) 24%, var(--color-line));
+    box-shadow: 0 8px 22px rgba(15, 23, 42, 0.09);
+    transform: translateY(-1px);
+  }
+}
+
 .semo-control {
   min-height: var(--control-default);
   border-radius: var(--radius-control);
@@ -205,6 +249,75 @@ button {
   height: var(--control-default);
   align-items: center;
   justify-content: center;
+  border-radius: var(--radius-control);
+}
+
+.semo-page-glyph {
+  position: relative;
+  display: inline-flex;
+  width: var(--control-default);
+  height: var(--control-default);
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  color: var(--primary);
+}
+
+.semo-page-glyph::before {
+  position: absolute;
+  inset: 0.2rem;
+  border: 1.5px solid color-mix(in srgb, var(--primary) 42%, transparent);
+  background: color-mix(in srgb, var(--primary) 8%, white);
+  clip-path: polygon(50% 3%, 97% 92%, 3% 92%);
+  content: "";
+}
+
+.semo-page-glyph > * {
+  position: relative;
+  transform: translateY(0.16rem);
+}
+
+.semo-nav-item {
+  display: inline-flex;
+  min-width: 3.25rem;
+  min-height: 3.5rem;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.125rem;
+  border-radius: var(--radius-control);
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 1rem;
+}
+
+.semo-nav-icon {
+  position: relative;
+  display: flex;
+  width: 2rem;
+  height: 2rem;
+  align-items: center;
+  justify-content: center;
+}
+
+.semo-nav-icon[data-active="true"]::before {
+  position: absolute;
+  inset: 0;
+  background: color-mix(in srgb, var(--primary) 12%, transparent);
+  clip-path: polygon(50% 4%, 96% 90%, 4% 90%);
+  content: "";
+}
+
+.semo-nav-icon > * {
+  position: relative;
+}
+
+.semo-modal-accent {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--primary) 11%, transparent),
+    transparent
+  );
 }
 
 .semo-orb {
@@ -258,19 +371,27 @@ button {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+
   .semo-loading-bar::after {
     animation: none;
   }
 }
 
 :where(.calendar-popover) {
-  --cal-font:
-    var(--font-semo-display), "Pretendard", "Noto Sans KR", "Apple SD Gothic Neo", sans-serif;
+  --cal-font: var(--font-app-display);
   --cal-line: #d9e0ef;
   --cal-ink: #1a2133;
   --cal-muted: #6a748d;
-  --cal-accent: #2667ff;
-  --cal-accent-deep: #194ec8;
+  --cal-accent: var(--primary);
+  --cal-accent-deep: color-mix(in srgb, var(--primary) 78%, #0f172a);
 }
 
 .calendar-popover {

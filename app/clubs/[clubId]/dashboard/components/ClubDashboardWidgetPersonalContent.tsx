@@ -131,8 +131,8 @@ export function ClubDashboardWidgetPersonalContent({
         ) : decisionError ? (
           <p className="text-sm text-slate-500">최근 운영 결정을 가져오지 못했습니다.</p>
         ) : latestDecision ? (
-          <RouterLink href={`/clubs/${clubId}/more/decisions`} className="block rounded-xl border border-indigo-100 bg-indigo-50/40 p-4 transition-colors hover:border-indigo-300">
-            <div className="flex items-center justify-between gap-2"><span className="rounded-full bg-white px-2 py-0.5 text-[11px] font-bold text-indigo-700">{latestDecision.recordType === "MEETING_MINUTES" ? "회의록" : "운영 결정"}</span>{latestDecision.effectiveDate ? <span className="text-[11px] font-semibold text-slate-400">시행 {latestDecision.effectiveDate.replaceAll("-", ".")}</span> : null}</div>
+          <RouterLink href={`/clubs/${clubId}/more/decisions`} className="block rounded-xl border border-[var(--primary)]/15 bg-[var(--primary)]/5 p-4 transition-colors hover:border-[var(--primary)]/35">
+            <div className="flex items-center justify-between gap-2"><span className="rounded-full bg-white px-2 py-0.5 text-[11px] font-bold text-[var(--primary)]">{latestDecision.recordType === "MEETING_MINUTES" ? "회의록" : "운영 결정"}</span>{latestDecision.effectiveDate ? <span className="text-[11px] font-semibold text-slate-400">시행 {latestDecision.effectiveDate.replaceAll("-", ".")}</span> : null}</div>
             <p className="mt-3 line-clamp-1 text-sm font-bold text-slate-900">{latestDecision.title}</p>
             <p className="mt-1 line-clamp-2 text-xs leading-5 text-slate-500">{latestDecision.decisionContent}</p>
           </RouterLink>

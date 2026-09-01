@@ -221,11 +221,11 @@ export function ClubScheduleDetailClient({
             <>
               <motion.section className="bg-white p-6" {...staggeredFadeUpMotion(2, reduceMotion)}>
                 <div className="mb-3 flex flex-wrap items-center gap-2">
-                  <span className="rounded-md bg-[#e7effd] px-2 py-1 text-xs font-bold uppercase text-[#135bec]">
+                  <span className="rounded-md bg-[#e7effd] px-2 py-1 text-xs font-bold uppercase text-[var(--primary)]">
                     일정
                   </span>
                   {payload.pinned ? (
-                    <span className="rounded-md bg-red-50 px-2 py-1 text-xs font-bold uppercase text-red-600">
+                    <span className="rounded-md bg-rose-50 px-2 py-1 text-xs font-bold uppercase text-rose-600">
                       고정
                     </span>
                   ) : null}
@@ -243,11 +243,11 @@ export function ClubScheduleDetailClient({
 
                 <div className="space-y-3">
                   <div className="flex items-center text-slate-600">
-                    <span className="material-symbols-outlined mr-3 text-[#135bec]" aria-hidden="true">calendar_today</span>
+                    <span className="material-symbols-outlined mr-3 text-[var(--primary)]" aria-hidden="true">calendar_today</span>
                     <span className="text-[15px]">{payload.dateLabel}</span>
                   </div>
                   <div className="flex items-center text-slate-600">
-                    <span className="material-symbols-outlined mr-3 text-[#135bec]" aria-hidden="true">schedule</span>
+                    <span className="material-symbols-outlined mr-3 text-[var(--primary)]" aria-hidden="true">schedule</span>
                     <span className="text-[15px]">
                       {payload.timeLabel ?? "시간 미정"}
                       {durationLabel ? <small className="ml-1 text-slate-400">({durationLabel})</small> : null}
@@ -268,7 +268,7 @@ export function ClubScheduleDetailClient({
                           href={mapHref}
                           target="_blank"
                           rel="noreferrer"
-                          className="text-sm font-semibold text-[#135bec]"
+                          className="text-sm font-semibold text-[var(--primary)]"
                         >
                           지도 열기
                         </a>
@@ -276,7 +276,7 @@ export function ClubScheduleDetailClient({
                     </div>
 
                     <div className="mb-3 flex items-start gap-3">
-                      <span className="material-symbols-outlined mt-0.5 shrink-0 text-[#135bec]" aria-hidden="true">location_on</span>
+                      <span className="material-symbols-outlined mt-0.5 shrink-0 text-[var(--primary)]" aria-hidden="true">location_on</span>
                       <div>
                         <p className="font-semibold">{payload.locationLabel}</p>
                         <p className="text-sm text-slate-500">등록된 위치 정보를 기준으로 지도 앱으로 이동할 수 있습니다.</p>
@@ -352,19 +352,19 @@ export function ClubScheduleDetailClient({
                   <h3 className="text-sm font-bold uppercase tracking-wider text-slate-500">참가비 및 정산</h3>
                   <div className="flex items-center justify-between rounded-xl border border-[#e7effd] bg-[#e7effd]/40 p-4">
                     <div className="flex items-center gap-3">
-                      <div className="rounded-lg bg-[#135bec] p-2 text-white">
+                      <div className="rounded-lg bg-[var(--primary)] p-2 text-white">
                         <span className="material-symbols-outlined text-[20px]" aria-hidden="true">payments</span>
                       </div>
                       <div>
-                        <p className="text-sm font-bold text-[#135bec]">
+                        <p className="text-sm font-bold text-[var(--primary)]">
                           {payload.feeRequired ? (payload.feeNWaySplit ? "1/n 정산" : "참가비 있음") : "무료"}
                         </p>
-                        <p className="text-[11px] font-medium text-[#135bec]/70">
+                        <p className="text-[11px] font-medium text-[var(--primary)]/70">
                           {buildFeeDescription(payload)}
                         </p>
                       </div>
                     </div>
-                    <span className="font-bold text-[#135bec]">{formatFeeLabel(payload)}</span>
+                    <span className="font-bold text-[var(--primary)]">{formatFeeLabel(payload)}</span>
                   </div>
                 </div>
 

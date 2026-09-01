@@ -170,7 +170,7 @@ export function PinnedBoardCarousel({
                       <span className={`${meta.typeBadgeClassName} rounded px-2 py-0.5 text-[11px] font-bold uppercase`}>
                         {meta.typeLabel}
                       </span>
-                      <span className="rounded bg-red-50 px-2 py-0.5 text-[11px] font-bold uppercase text-red-600">
+                      <span className="rounded bg-rose-50 px-2 py-0.5 text-[11px] font-bold uppercase text-rose-600">
                         중요
                       </span>
                       {meta.shareBadges.map((shareBadge) => (

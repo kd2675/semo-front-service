@@ -147,7 +147,7 @@ export function ClubScheduleVoteDetailClient({
   const backHref = basePath ?? `/clubs/${clubId}/schedule`;
 
   return (
-    <div className={isModal ? "flex min-h-0 flex-1 flex-col bg-white font-display text-gray-900 antialiased" : "min-h-full bg-gray-50 font-display text-gray-900 antialiased"}>
+    <div className={isModal ? "flex min-h-0 flex-1 flex-col bg-white font-display text-slate-900 antialiased" : "min-h-full bg-slate-50 font-display text-slate-900 antialiased"}>
       <div className={`relative flex flex-col bg-white ${isModal ? "min-h-0 flex-1" : "mx-auto min-h-full max-w-md shadow-lg"}`}>
         <ClubPageHeader
           title="투표 상세"
@@ -160,9 +160,9 @@ export function ClubScheduleVoteDetailClient({
               <RouterLink
                 href={backHref}
                 aria-label="뒤로 가기"
-                className="rounded-full p-1 transition-colors hover:bg-gray-100"
+                className="rounded-full p-1 transition-colors hover:bg-slate-100"
               >
-                <span className="material-symbols-outlined text-[24px] text-gray-700" aria-hidden="true">arrow_back</span>
+                <span className="material-symbols-outlined text-[24px] text-slate-700" aria-hidden="true">arrow_back</span>
               </RouterLink>
             ) : undefined
           }
@@ -172,9 +172,9 @@ export function ClubScheduleVoteDetailClient({
                 type="button"
                 onClick={onRequestClose}
                 aria-label="투표 상세 닫기"
-                className="semo-icon-control transition-colors hover:bg-gray-100"
+                className="semo-icon-control transition-colors hover:bg-slate-100"
               >
-                <span className="material-symbols-outlined text-[24px] text-gray-700" aria-hidden="true">close</span>
+                <span className="material-symbols-outlined text-[24px] text-slate-700" aria-hidden="true">close</span>
               </button>
             ) : undefined
           }
@@ -205,7 +205,7 @@ export function ClubScheduleVoteDetailClient({
                     {getVoteLifecycleLabel(payload.voteStatus)}
                   </span>
                   {payload.pinned ? (
-                    <span className="rounded-md bg-red-50 px-2 py-1 text-xs font-semibold text-red-600">
+                    <span className="rounded-md bg-rose-50 px-2 py-1 text-xs font-semibold text-rose-600">
                       고정
                     </span>
                   ) : null}
@@ -219,26 +219,26 @@ export function ClubScheduleVoteDetailClient({
                   ))}
                 </div>
                 <h2 className="mb-4 text-2xl font-bold leading-tight">{payload.title}</h2>
-                <div className="flex flex-col gap-1.5 border-y border-gray-100 py-4">
+                <div className="flex flex-col gap-1.5 border-y border-slate-100 py-4">
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-500">투표 기간</span>
-                    <span className="font-medium text-gray-700">{payload.votePeriodLabel}</span>
+                    <span className="text-slate-500">투표 기간</span>
+                    <span className="font-medium text-slate-700">{payload.votePeriodLabel}</span>
                   </div>
                   {payload.voteTimeLabel ? (
                     <div className="flex items-center justify-between text-sm">
-                      <span className="text-gray-500">투표 시간</span>
-                      <span className="font-medium text-gray-700">{payload.voteTimeLabel}</span>
+                      <span className="text-slate-500">투표 시간</span>
+                      <span className="font-medium text-slate-700">{payload.voteTimeLabel}</span>
                     </div>
                   ) : null}
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-500">총 응답 수</span>
+                    <span className="text-slate-500">총 응답 수</span>
                     <span className="font-medium text-blue-600">{payload.totalResponses}명</span>
                   </div>
                 </div>
               </motion.section>
 
               <motion.section className="space-y-4" {...staggeredFadeUpMotion(3, reduceMotion)}>
-                <h3 className="text-sm font-semibold uppercase tracking-wider text-gray-400">투표 항목</h3>
+                <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-400">투표 항목</h3>
 
                 {payload.options.map((option) => {
                   const percent = getOptionPercent(option.voteCount, payload.totalResponses);
@@ -254,7 +254,7 @@ export function ClubScheduleVoteDetailClient({
                       className={`block w-full rounded-2xl p-4 text-left transition-colors ${
                         isSelected
                           ? "overflow-hidden border-2 border-blue-500 bg-white shadow-sm"
-                          : "border border-gray-200 bg-white hover:border-blue-200"
+                          : "border border-slate-200 bg-white hover:border-blue-200"
                       } ${!payload.votingOpen ? "cursor-default" : ""}`}
                     >
                       <div className="relative z-10 mb-2 flex items-start justify-between">
@@ -264,20 +264,20 @@ export function ClubScheduleVoteDetailClient({
                               <span className="material-symbols-outlined text-[16px]" aria-hidden="true">check</span>
                             </span>
                           ) : (
-                            <span className="h-6 w-6 rounded-full border-2 border-gray-200" />
+                            <span className="h-6 w-6 rounded-full border-2 border-slate-200" />
                           )}
-                          <span className={`font-medium ${isSelected ? "font-bold text-gray-900" : "text-gray-700"}`}>
+                          <span className={`font-medium ${isSelected ? "font-bold text-slate-900" : "text-slate-700"}`}>
                             {option.label}
                           </span>
                         </div>
-                        <span className={`text-sm ${isSelected ? "font-bold text-blue-600" : "font-medium text-gray-500"}`}>
+                        <span className={`text-sm ${isSelected ? "font-bold text-blue-600" : "font-medium text-slate-500"}`}>
                           {percent}% ({option.voteCount}명)
                         </span>
                       </div>
 
-                      <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-gray-100">
+                      <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-slate-100">
                         <div
-                          className={`h-full ${isSelected ? "bg-blue-500" : "bg-gray-300"}`}
+                          className={`h-full ${isSelected ? "bg-blue-500" : "bg-slate-300"}`}
                           style={{ width: `${percent}%` }}
                         />
                       </div>

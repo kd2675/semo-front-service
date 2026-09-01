@@ -17,6 +17,7 @@ type RouteModalProps = {
   children: React.ReactNode;
   onDismiss: () => void;
   dismissOnBackdrop?: boolean;
+  dismissOnEscape?: boolean;
   contentClassName?: string;
   ariaLabel?: string;
   ariaLabelledBy?: string;
@@ -26,6 +27,7 @@ export function RouteModal({
   children,
   onDismiss,
   dismissOnBackdrop = true,
+  dismissOnEscape = true,
   contentClassName,
   ariaLabel = "대화상자",
   ariaLabelledBy,
@@ -34,6 +36,7 @@ export function RouteModal({
   const reduceMotion = Boolean(prefersReducedMotion);
   const dialogRef = useRef<HTMLElement | null>(null);
   const dismiss = useEffectEvent(onDismiss);
+  const canDismissWithEscape = useEffectEvent(() => dismissOnEscape);
 
   useEffect(() => {
     const previousOverflow = document.body.style.overflow;
@@ -67,7 +70,9 @@ export function RouteModal({
 
       if (event.key === "Escape") {
         event.preventDefault();
-        dismiss();
+        if (canDismissWithEscape()) {
+          dismiss();
+        }
         return;
       }
 
@@ -128,7 +133,7 @@ export function RouteModal({
         {...popInMotion(reduceMotion)}
       >
         <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-[inherit]">
-          <div className="pointer-events-none absolute inset-x-0 top-0 h-20 bg-[linear-gradient(180deg,rgba(19,91,236,0.12),transparent)]" />
+          <div className="semo-modal-accent pointer-events-none absolute inset-x-0 top-0 h-20" />
           {children}
         </div>
       </motion.section>

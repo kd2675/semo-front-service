@@ -516,6 +516,15 @@ API는 `app/lib/api.ts`와 도메인별 `app/lib/semo/*`, `app/lib/react-query/*
 - 아이콘만 있는 버튼은 accessible name을 제공합니다.
 - 헤더, 닫기 버튼, 좌우 여백은 데스크톱과 모바일에서 기준선이 맞아야 합니다.
 
+SEMO 시각 식별 체계:
+
+- 앱 경계인 로그인, 루트 홈, 로딩, 오류에는 공용 `SemoBrandMark`를 사용합니다. 일반적인 사람·그룹 아이콘을 앱 로고처럼 사용하지 않습니다.
+- `ClubGrowthCoreMark`는 특정 모임의 멤버 수, 활동, 성장 기록을 표현하는 데이터 표식입니다. 앱 로고나 일반 페이지 아이콘으로 대체 사용하지 않습니다.
+- 화면 문맥 아이콘은 `ClubPageHeader`의 삼각 프레임 안에 두고, 현재 하단 내비게이션 항목은 삼각 배경과 보이는 텍스트 라벨을 함께 사용합니다.
+- 유저 화면의 주색은 user token, 관리자 화면의 주색은 admin token입니다. 의사결정, 재정 같은 기능 이름을 이유로 주 CTA 전체를 별도 색으로 바꾸지 않습니다.
+- 기본 표면은 `semo-card`, 상호작용 카드는 `semo-card-interactive`, 컨트롤은 `semo-control` 또는 `semo-icon-control`을 우선합니다. 임의 radius와 shadow를 새로 늘리지 않습니다.
+- 사용자 중심 단일 작업은 `semo-page-user`, 운영 화면은 `semo-page-admin`, 대시보드·데이터 밀집 화면은 각 공용 폭 token을 사용합니다. 데스크톱에서도 모바일 미리보기 폭으로 전체 앱을 가두지 않습니다.
+
 카드 정보 순서:
 
 1. 타입·상태 badge
@@ -551,6 +560,8 @@ API는 `app/lib/api.ts`와 도메인별 `app/lib/semo/*`, `app/lib/react-query/*
 
 1. 전역 alert/confirm/toast
    - `GlobalModalViewport`와 공용 hook
+   - toast는 화면 조작을 막지 않는 비모달 상태 메시지입니다.
+   - alert는 닫을 수 있는 상단 배너, confirm은 사용자의 결정을 기다리는 모달입니다.
 2. URL로 복구되어야 하는 상세·편집
    - `RouteModal`
 3. 기능 내부의 국소 작업

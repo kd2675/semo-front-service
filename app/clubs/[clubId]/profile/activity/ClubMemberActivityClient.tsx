@@ -61,8 +61,8 @@ const SUBJECT_META: Record<
   },
   기능관리: {
     icon: "widgets",
-    avatarClassName: "bg-indigo-50 text-indigo-600 ring-indigo-100",
-    badgeClassName: "bg-indigo-50 text-indigo-700",
+    avatarClassName: "bg-violet-50 text-violet-600 ring-violet-100",
+    badgeClassName: "bg-violet-50 text-violet-700",
   },
   직책관리: {
     icon: "manage_accounts",
@@ -203,15 +203,15 @@ export function ClubMemberActivityClient({
           title="내 활동"
           icon="timeline"
           subtitle={initialData.clubName}
-          className="border-[#135bec]/10 bg-white/85 backdrop-blur-md"
+          className="border-[var(--primary)]/10 bg-white/85 backdrop-blur-md"
         />
 
         <main className="semo-nav-bottom-space flex-1 px-4 pt-4">
           <motion.section
-            className="rounded-[28px] border border-[#135bec]/10 bg-white px-5 py-4 shadow-sm"
+            className="rounded-[var(--radius-modal)] border border-[var(--primary)]/10 bg-white px-5 py-4 shadow-sm"
             {...staggeredFadeUpMotion(0, reduceMotion)}
           >
-            <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[#135bec]/60">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[var(--primary)]/60">
               내 활동 기록
             </p>
             <h2 className="mt-2 text-xl font-bold text-slate-900">내가 남긴 활동만 시간순으로 확인</h2>
@@ -221,7 +221,7 @@ export function ClubMemberActivityClient({
           </motion.section>
 
           <div className="relative mt-5">
-            <div className="absolute left-[21px] top-4 bottom-4 w-0.5 bg-[#135bec]/10" />
+            <div className="absolute left-[21px] top-4 bottom-4 w-0.5 bg-[var(--primary)]/10" />
             <div className="space-y-6">
               {renderedItems.map((item, index) => {
                 if (item.type === "separator") {
@@ -230,7 +230,7 @@ export function ClubMemberActivityClient({
                       <span className="z-10 bg-[var(--background-light)] px-4 text-[11px] font-bold uppercase tracking-[0.24em] text-slate-400">
                         {item.label}
                       </span>
-                      <div className="absolute inset-x-0 top-1/2 h-px bg-[#135bec]/5" />
+                      <div className="absolute inset-x-0 top-1/2 h-px bg-[var(--primary)]/5" />
                     </div>
                   );
                 }
@@ -254,10 +254,10 @@ export function ClubMemberActivityClient({
                       </span>
                     </div>
                     <article
-                      className={`rounded-[24px] border bg-white p-4 shadow-sm ${
+                      className={`rounded-[var(--radius-card)] border bg-white p-4 shadow-sm ${
                         item.entry.status === "FAIL"
                           ? "border-rose-100"
-                          : "border-[#135bec]/5"
+                          : "border-[var(--primary)]/5"
                       }`}
                     >
                       <div className="flex flex-wrap items-center gap-2">

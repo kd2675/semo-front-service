@@ -188,7 +188,7 @@ export function ClubTournamentDetailClient({
           ) : null}
 
           <motion.section
-            className="overflow-hidden rounded-[30px] bg-[linear-gradient(135deg,#e9f0ff_0%,#ffffff_55%,#f2f6ff_100%)] p-6 shadow-[0_18px_50px_rgba(0,75,202,0.12)] ring-1 ring-sky-100"
+            className="overflow-hidden rounded-[var(--radius-modal)] bg-[linear-gradient(135deg,#e9f0ff_0%,#ffffff_55%,#f2f6ff_100%)] p-6 shadow-[0_18px_50px_rgba(0,75,202,0.12)] ring-1 ring-sky-100"
             {...staggeredFadeUpMotion(2, reduceMotion)}
           >
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -204,7 +204,7 @@ export function ClubTournamentDetailClient({
                     </span>
                   ) : null}
                   {payload.pinned ? (
-                    <span className="rounded-full bg-red-50 px-3 py-1 text-xs font-black text-red-600">
+                    <span className="rounded-full bg-rose-50 px-3 py-1 text-xs font-black text-rose-600">
                       고정
                     </span>
                   ) : null}
@@ -221,18 +221,18 @@ export function ClubTournamentDetailClient({
                 </p>
               </div>
 
-              <div className="w-full rounded-[22px] bg-white/80 px-4 py-3 text-left shadow-sm sm:w-auto sm:text-right">
+              <div className="w-full rounded-[var(--radius-card)] bg-white/80 px-4 py-3 text-left shadow-sm sm:w-auto sm:text-right">
                 <p className="text-xs font-black text-slate-400">기간</p>
                 <p className="mt-1 text-lg font-black text-slate-900">{payload.tournamentPeriodLabel}</p>
               </div>
             </div>
 
             <div className="mt-5 grid grid-cols-2 gap-3">
-              <div className="rounded-[20px] bg-white/80 p-4 shadow-sm">
+              <div className="rounded-[var(--radius-card)] bg-white/80 p-4 shadow-sm">
                 <p className="text-xs font-bold text-slate-400">신청 기간</p>
                 <p className="mt-2 text-sm font-semibold text-slate-700">{payload.applicationWindowLabel}</p>
               </div>
-              <div className="rounded-[20px] bg-white/80 p-4 shadow-sm">
+              <div className="rounded-[var(--radius-card)] bg-white/80 p-4 shadow-sm">
                 <p className="text-xs font-bold text-slate-400">형식 / 참가비</p>
                 <p className="mt-2 text-sm font-semibold text-slate-700">
                   {getTournamentFormatLabel(payload.matchFormat)} · {getTournamentFeeLabel(payload)}
@@ -246,14 +246,14 @@ export function ClubTournamentDetailClient({
 
           <motion.section className="mt-6 space-y-4" {...staggeredFadeUpMotion(3, reduceMotion)}>
             <div className="grid grid-cols-2 gap-3">
-              <div className="rounded-[22px] border border-slate-200 bg-white p-4 shadow-sm">
+              <div className="rounded-[var(--radius-card)] border border-slate-200 bg-white p-4 shadow-sm">
                 <p className="text-xs font-bold text-slate-400">신청 / 승인</p>
                 <p className="mt-2 text-xl font-black tracking-tight text-slate-900">
                   {payload.applicantCount}
                   <span className="ml-2 text-xs font-semibold text-slate-400">신청 / {payload.approvedCount} 승인</span>
                 </p>
               </div>
-              <div className="rounded-[22px] border border-slate-200 bg-white p-4 shadow-sm">
+              <div className="rounded-[var(--radius-card)] border border-slate-200 bg-white p-4 shadow-sm">
                 <p className="text-xs font-bold text-slate-400">참가 선수 / 제한</p>
                 <p className="mt-2 text-xl font-black tracking-tight text-slate-900">
                   {payload.participantCount}
@@ -265,14 +265,14 @@ export function ClubTournamentDetailClient({
             </div>
 
             {payload.locationLabel ? (
-              <div className="rounded-[22px] border border-slate-200 bg-white p-4 shadow-sm">
+              <div className="rounded-[var(--radius-card)] border border-slate-200 bg-white p-4 shadow-sm">
                 <p className="text-xs font-bold text-slate-400">장소</p>
                 <p className="mt-2 text-sm font-semibold text-slate-700">{payload.locationLabel}</p>
               </div>
             ) : null}
 
             {payload.detailText ? (
-              <div className="rounded-[22px] border border-slate-200 bg-white p-4 shadow-sm">
+              <div className="rounded-[var(--radius-card)] border border-slate-200 bg-white p-4 shadow-sm">
                 <p className="text-xs font-bold text-slate-400">상세 안내</p>
                 <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-slate-600">{payload.detailText}</p>
               </div>
@@ -302,7 +302,7 @@ export function ClubTournamentDetailClient({
             </div>
 
             {mode !== "admin" && payload.canApply && showApplyForm ? (
-              <div className="rounded-[24px] border border-sky-200 bg-sky-50/60 p-4">
+              <div className="rounded-[var(--radius-card)] border border-sky-200 bg-sky-50/60 p-4">
                 <div className="flex items-start justify-between gap-4">
                   <div>
                     <p className="text-sm font-black text-slate-900">참가 정보</p>
@@ -392,7 +392,7 @@ export function ClubTournamentDetailClient({
           </motion.section>
 
           <motion.section
-            className="mt-8 rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm"
+            className="mt-8 rounded-[var(--radius-modal)] border border-slate-200 bg-white p-5 shadow-sm"
             {...staggeredFadeUpMotion(4, reduceMotion)}
           >
             <div className="mb-4">
@@ -426,7 +426,7 @@ export function ClubTournamentDetailClient({
           </motion.section>
 
           <motion.section
-            className="mt-8 rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm"
+            className="mt-8 rounded-[var(--radius-modal)] border border-slate-200 bg-white p-5 shadow-sm"
             {...staggeredFadeUpMotion(5, reduceMotion)}
           >
             <div className="mb-4">

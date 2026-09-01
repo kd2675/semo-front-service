@@ -132,7 +132,7 @@ export function ClubMoreHubClient({ clubId, mode }: ClubMoreHubClientProps) {
   }
 
   return (
-    <div className="min-h-screen bg-[var(--background-light)] text-slate-900">
+    <div className="semo-app-shell text-slate-900">
       <ClubPageHeader
         title={isAdmin ? "운영 허브" : "더보기"}
         subtitle={summary.clubName}
@@ -141,7 +141,7 @@ export function ClubMoreHubClient({ clubId, mode }: ClubMoreHubClientProps) {
       />
 
       <main className={`semo-nav-bottom-space px-4 py-5 ${isAdmin ? "semo-page-admin" : "semo-page-user"}`}>
-        <section className={`overflow-hidden rounded-[var(--radius-card)] p-5 text-white ${isAdmin ? "bg-slate-900" : "bg-[#135bec]"}`}>
+        <section className={`overflow-hidden rounded-[var(--radius-card)] p-5 text-white ${isAdmin ? "bg-slate-900" : "bg-[var(--primary)]"}`}>
           <div className="flex items-start justify-between gap-4">
             <div>
               <p className="text-xs font-bold text-white/65">지금 확인할 운영 항목</p>
@@ -169,7 +169,6 @@ export function ClubMoreHubClient({ clubId, mode }: ClubMoreHubClientProps) {
                 <HubFeatureCard
                   key={`attention-${item.key}`}
                   item={item}
-                  mode={mode}
                   onNavigate={handleNavigate}
                   onFavorite={handleFavorite}
                   favoritePending={favoritePendingItemKey === item.key}
@@ -186,7 +185,6 @@ export function ClubMoreHubClient({ clubId, mode }: ClubMoreHubClientProps) {
                 <HubFeatureCard
                   key={`favorite-${item.key}`}
                   item={item}
-                  mode={mode}
                   onNavigate={handleNavigate}
                   onFavorite={handleFavorite}
                   favoritePending={favoritePendingItemKey === item.key}
@@ -228,7 +226,6 @@ export function ClubMoreHubClient({ clubId, mode }: ClubMoreHubClientProps) {
                       <HubFeatureCard
                         key={item.key}
                         item={item}
-                        mode={mode}
                         onNavigate={handleNavigate}
                         onFavorite={handleFavorite}
                         favoritePending={favoritePendingItemKey === item.key}
@@ -273,20 +270,18 @@ function HubSection({
 
 function HubFeatureCard({
   item,
-  mode,
   onNavigate,
   onFavorite,
   favoritePending,
 }: {
   item: MoreNavigationItem;
-  mode: "user" | "admin";
   onNavigate: (item: MoreNavigationItem) => void;
   onFavorite: (item: MoreNavigationItem) => void;
   favoritePending: boolean;
 }) {
   const pendingCount = item.pendingCount ?? 0;
   const overdueCount = item.overdueCount ?? 0;
-  const accentClassName = mode === "admin" ? "bg-orange-50 text-orange-700" : "bg-blue-50 text-blue-700";
+  const accentClassName = "bg-[var(--primary)]/10 text-[var(--primary)]";
 
   return (
     <article className="flex min-h-24 items-center gap-2 rounded-[var(--radius-card)] border border-slate-200 bg-white p-3 shadow-[var(--shadow-card)] transition hover:border-slate-300">

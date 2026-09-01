@@ -30,9 +30,13 @@ function GlobalAlertLayer() {
       return;
     }
 
+    if (alert.tone === "danger" || alert.tone === "warning") {
+      return;
+    }
+
     const timeoutId = window.setTimeout(() => {
       dispatch(deleteAllAlert());
-    }, 1500);
+    }, 5000);
 
     return () => window.clearTimeout(timeoutId);
   }, [alert, dispatch]);
@@ -40,7 +44,7 @@ function GlobalAlertLayer() {
   return (
     <AnimatePresence initial={false}>
       {alert ? (
-        <BasicAlert alert={alert} />
+        <BasicAlert alert={alert} onClose={() => dispatch(deleteAllAlert())} />
       ) : null}
     </AnimatePresence>
   );
@@ -119,8 +123,6 @@ function GlobalToastLayer() {
 function GlobalConfirmLayer() {
   const dispatch = useAppDispatch();
   const confirm = useAppSelector((state) => state.modal.confirm[0] ?? null);
-  const hasToast = useAppSelector((state) => state.modal.toast.length > 0);
-
   const handleClose = (id: string) => {
     dispatch(deleteConfirm(id));
     clearModalCallbacks(id);
@@ -138,7 +140,7 @@ function GlobalConfirmLayer() {
 
   return (
     <AnimatePresence initial={false} mode="wait">
-      {confirm && !hasToast ? (
+      {confirm ? (
         <BasicConfirm
           key={confirm.id}
           confirm={confirm}

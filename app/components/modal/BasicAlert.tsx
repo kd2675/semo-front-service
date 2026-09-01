@@ -50,9 +50,10 @@ function getAlertToneStyles(tone: AlertItem["tone"]) {
 
 type BasicAlertProps = {
   alert: AlertItem;
+  onClose: () => void;
 };
 
-export function BasicAlert({ alert }: BasicAlertProps) {
+export function BasicAlert({ alert, onClose }: BasicAlertProps) {
   const prefersReducedMotion = useReducedMotion();
   const reduceMotion = Boolean(prefersReducedMotion);
   const styles = getAlertToneStyles(alert.tone);
@@ -68,10 +69,10 @@ export function BasicAlert({ alert }: BasicAlertProps) {
     >
       <div
         role="alert"
-        className={`relative flex w-full max-w-[min(92vw,42rem)] items-start gap-3 overflow-hidden rounded-[1.6rem] border px-4 py-3.5 backdrop-blur-xl ${styles.panelClassName}`}
+        className={`pointer-events-auto relative flex w-full max-w-[min(92vw,42rem)] items-start gap-3 overflow-hidden rounded-[var(--radius-card)] border px-4 py-3.5 backdrop-blur-xl ${styles.panelClassName}`}
       >
         <div className={`pointer-events-none absolute -right-10 -top-10 h-28 w-28 rounded-full blur-2xl ${styles.glowClassName}`} />
-        <div className={`relative mt-0.5 flex size-11 shrink-0 items-center justify-center rounded-[1.05rem] ${styles.iconWrapClassName}`}>
+        <div className={`relative mt-0.5 flex size-11 shrink-0 items-center justify-center rounded-[var(--radius-control)] ${styles.iconWrapClassName}`}>
           <span className="material-symbols-outlined text-[22px]" aria-hidden="true">{styles.icon}</span>
         </div>
         <div className="relative min-w-0 flex-1">
@@ -83,6 +84,14 @@ export function BasicAlert({ alert }: BasicAlertProps) {
           {alert.title ? <p className="mt-1 text-sm font-bold tracking-tight">{alert.title}</p> : null}
           <p className="mt-0.5 whitespace-pre-wrap text-sm leading-5 opacity-85">{alert.message}</p>
         </div>
+        <button
+          type="button"
+          onClick={onClose}
+          className="semo-icon-control -mr-2 -mt-1 shrink-0 bg-white/55 text-current opacity-55 transition hover:opacity-100"
+          aria-label={`${alert.title ?? "시스템"} 알림 닫기`}
+        >
+          <span className="material-symbols-outlined text-[20px]" aria-hidden="true">close</span>
+        </button>
       </div>
     </motion.div>
   );

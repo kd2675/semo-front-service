@@ -5,6 +5,7 @@ import { DiscoverClubModal } from "@/app/home/DiscoverClubModal";
 import { DiscoverSection } from "@/app/home/DiscoverSection";
 import { ClubGrowthCoreMark } from "@/app/components/ClubGrowthCoreMark";
 import { RouterLink } from "@/app/components/RouterLink";
+import { SemoBrandMark } from "@/app/components/SemoBrandMark";
 import { useAppToast } from "@/app/hooks/useAppToast";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import {
@@ -179,14 +180,14 @@ export default function Home() {
   };
 
   const discoverClubs = discoverPayload?.clubs ?? [];
-  const discoverTitle = deferredSearchQuery.length > 0 ? "검색 결과" : "추천 클럽";
+  const discoverTitle = deferredSearchQuery.length > 0 ? "검색 결과" : "추천 모임";
   const discoverSubtitle =
     deferredSearchQuery.length > 0
       ? `"${deferredSearchQuery}" 검색 결과`
-      : discoverPayload?.recommendationLabel ?? "최근 개설된 공개 클럽";
+      : discoverPayload?.recommendationLabel ?? "최근 개설된 공개 모임";
 
   return (
-    <div className="bg-[var(--background-light)] font-display text-slate-900 antialiased">
+    <div className="semo-user-theme semo-app-shell font-display antialiased">
       <AnimatePresence>
         {isSigningOut ? (
           <>
@@ -214,22 +215,26 @@ export default function Home() {
       </AnimatePresence>
 
       <div className="relative flex min-h-screen w-full flex-col">
-        <main className="relative mx-auto flex min-h-screen w-full max-w-md flex-col overflow-x-hidden bg-white pb-24 shadow-xl">
+        <main className="relative mx-auto flex min-h-screen w-full max-w-6xl flex-col overflow-x-hidden pb-28">
           <motion.header
-            className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-100 bg-white p-4 pb-2"
+            className="semo-sticky-surface sticky top-0 z-20 flex items-center justify-between gap-4 border-b px-4 py-3 sm:px-6"
             {...staggeredFadeUpMotion(0, reduceMotion)}
           >
-            <div
-              className="flex size-10 shrink-0 items-center overflow-hidden rounded-full ring-2 ring-[var(--primary)]/20"
-              title={`${userName} · ${roleLabel}`}
-              aria-label={`${userName} ${roleLabel}`}
-            >
-              <div className="flex size-10 items-center justify-center bg-gradient-to-br from-[var(--primary)] to-blue-600 text-sm font-bold text-white">
-                {profileLabel}
+            <div className="flex min-w-0 items-center gap-3">
+              <SemoBrandMark className="size-11 shrink-0 text-[var(--primary)]" label="SEMO" />
+              <div className="min-w-0">
+                <h1 className="text-xl font-black leading-tight tracking-tight text-slate-950">SEMO</h1>
+                <p className="truncate text-xs font-semibold text-slate-500">모임의 운영과 기록을 이어가는 공간</p>
               </div>
             </div>
-            <h2 className="ml-3 flex-1 text-xl font-bold leading-tight tracking-tight text-slate-900">SEMO</h2>
-            <div className="flex items-center justify-end gap-2">
+            <div className="flex shrink-0 items-center justify-end gap-2">
+              <div
+                className="flex size-10 shrink-0 items-center justify-center rounded-full bg-[var(--primary)] text-sm font-bold text-white ring-2 ring-[var(--primary)]/15"
+                title={`${userName} · ${roleLabel}`}
+                aria-label={`${userName} ${roleLabel}`}
+              >
+                {profileLabel}
+              </div>
               <motion.button
                 type="button"
                 onClick={handleSignOut}
@@ -247,15 +252,17 @@ export default function Home() {
             </div>
           </motion.header>
 
-          <motion.section className="px-4 pb-2" {...staggeredFadeUpMotion(2, reduceMotion)}>
-            <div className="flex items-center justify-between rounded-xl bg-gradient-to-br from-[var(--primary)] to-blue-600 p-4 shadow-lg shadow-[var(--primary)]/20">
+          <motion.section className="px-4 pb-2 pt-6 sm:px-6" {...staggeredFadeUpMotion(2, reduceMotion)}>
+            <div className="relative flex flex-col items-start gap-4 overflow-hidden rounded-[var(--radius-card)] bg-slate-950 p-5 text-white shadow-[var(--shadow-card)] sm:flex-row sm:items-center sm:justify-between">
+              <SemoBrandMark className="pointer-events-none absolute -right-3 -top-7 size-28 text-white opacity-[0.08]" />
               <div className="flex-1">
-                <h3 className="text-lg font-bold text-white">새 클럽 만들기</h3>
-                <p className="mt-1 text-xs leading-5 text-blue-100">운영에 필요한 기능을 한곳에서 시작하세요.</p>
+                <p className="text-xs font-bold tracking-[0.18em] text-blue-200">NEW SEMO</p>
+                <h2 className="mt-1 text-lg font-black text-white">새 모임의 첫 세모 만들기</h2>
+                <p className="mt-1 text-sm leading-5 text-slate-300">모임이 만들어지는 순간 작은 세모와 원석 코어가 함께 시작됩니다.</p>
               </div>
               <RouterLink
                 href="/clubs/create"
-                className="rounded-lg bg-white px-4 py-2 text-sm font-bold text-[var(--primary)] shadow-sm transition-transform active:scale-95"
+                className="relative inline-flex min-h-11 w-full shrink-0 items-center justify-center rounded-[var(--radius-control)] bg-white px-4 text-sm font-black text-slate-950 shadow-sm transition-transform active:scale-95 sm:ml-4 sm:w-auto"
               >
                 시작하기
               </RouterLink>
@@ -263,19 +270,19 @@ export default function Home() {
           </motion.section>
 
           <motion.section
-            className="flex items-center justify-between px-4 pb-2 pt-4"
+            className="flex items-center justify-between px-4 pb-2 pt-6 sm:px-6"
             {...staggeredFadeUpMotion(3, reduceMotion)}
           >
             <div className="flex flex-col">
-              <h2 className="text-lg font-bold leading-none text-slate-900">내 클럽</h2>
-              <span className="mt-1 text-xs font-medium text-slate-500">가입한 모임</span>
+              <h2 className="text-lg font-black leading-none text-slate-900">내 모임</h2>
+              <span className="mt-1 text-xs font-medium text-slate-500">참여 중인 모임과 현재 세모</span>
             </div>
             <span className="text-sm font-semibold text-[var(--primary)]">
               {myClubs.length.toLocaleString("ko-KR")}개
             </span>
           </motion.section>
 
-          <motion.section className="px-4 pb-4" {...staggeredFadeUpMotion(4, reduceMotion)}>
+          <motion.section className="px-4 pb-4 sm:px-6" {...staggeredFadeUpMotion(4, reduceMotion)}>
             {isLoadingMyClubs ? (
               <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-10 text-center">
                 <p className="text-sm font-semibold text-slate-700">내 클럽을 불러오는 중입니다.</p>
@@ -292,15 +299,15 @@ export default function Home() {
                     >
                       <RouterLink
                         href={`/clubs/${club.clubId}`}
-                        className="flex h-full min-w-[240px] flex-col gap-3 rounded-xl border border-slate-100 bg-slate-50 p-3 shadow-sm transition-transform hover:-translate-y-0.5"
+                        className="semo-card semo-card-interactive flex h-full min-w-[240px] flex-col gap-3 p-3 sm:min-w-[280px]"
                       >
                         <div
                           className="relative aspect-[16/9] w-full overflow-hidden rounded-lg bg-slate-200 bg-cover bg-center"
                           style={club.imageUrl ? { backgroundImage: `url("${club.imageUrl}")` } : undefined}
                         >
                           {!club.imageUrl ? (
-                            <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-[var(--primary)]/10 to-blue-100 text-[var(--primary)]">
-                              <span className="material-symbols-outlined text-4xl" aria-hidden="true">groups</span>
+                            <div className="flex h-full w-full items-center justify-center bg-[var(--primary)]/8 text-[var(--primary)]">
+                              <SemoBrandMark className="size-16 opacity-55" />
                             </div>
                           ) : null}
                           <div className="absolute bottom-2 right-2 flex size-16 items-center justify-center rounded-xl border border-white/80 bg-white/90 shadow-md backdrop-blur-sm">
@@ -317,7 +324,7 @@ export default function Home() {
                             ) : null}
                           </div>
                           <p className="mt-1 line-clamp-2 text-xs font-medium text-slate-500">
-                            {club.summary ?? club.description ?? "클럽 소개가 아직 없습니다."}
+                            {club.summary ?? club.description ?? "모임 소개가 아직 없습니다."}
                           </p>
                           <div className="mt-3 flex flex-wrap items-center gap-1.5 text-xs font-medium text-slate-500">
                             <span className="material-symbols-outlined text-sm text-[var(--primary)]" aria-hidden="true">group</span>
@@ -334,9 +341,9 @@ export default function Home() {
               </div>
             ) : (
               <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-10 text-center">
-                <p className="text-sm font-semibold text-slate-700">아직 가입한 클럽이 없습니다.</p>
+                <p className="text-sm font-semibold text-slate-700">아직 참여 중인 모임이 없습니다.</p>
                 <p className="mt-1 text-xs text-slate-500">
-                  {myClubsError ?? "추천 클럽을 둘러보고 원하는 모임에 가입해 보세요."}
+                  {myClubsError ?? "공개 모임을 둘러보고 원하는 모임에 참여해 보세요."}
                 </p>
               </div>
             )}
@@ -358,13 +365,13 @@ export default function Home() {
           />
 
           <motion.div
-            className="fixed bottom-6 right-[max(1.5rem,calc(50%-180px))] z-20 flex size-14 items-center justify-center rounded-full bg-[var(--primary)] text-white shadow-2xl transition-transform active:scale-90"
+            className="fixed bottom-6 right-[max(1.5rem,calc((100vw-72rem)/2+1.5rem))] z-20 flex size-14 items-center justify-center rounded-full bg-[var(--primary)] text-white shadow-[var(--shadow-floating)] transition-transform active:scale-90"
             {...staggeredFadeUpMotion(8, reduceMotion)}
             whileTap={reduceMotion ? undefined : { scale: 0.9 }}
           >
             <RouterLink
               href="/clubs/create"
-              aria-label="클럽 만들기"
+              aria-label="새 모임 만들기"
               className="flex size-full items-center justify-center"
             >
               <span className="material-symbols-outlined text-3xl" aria-hidden="true">add</span>

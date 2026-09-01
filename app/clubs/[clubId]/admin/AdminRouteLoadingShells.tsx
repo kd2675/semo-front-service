@@ -363,7 +363,7 @@ export function AdminFinanceLoadingShell() {
 export function AdminFeatureSettingsLoadingShell() {
   return (
     <AdminMobileShellFrame titleWidthClassName="w-28" subtitleWidthClassName="w-24">
-      <section className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm">
+      <section className="rounded-[var(--radius-modal)] border border-slate-200 bg-white p-5 shadow-sm">
         <ShellLine className="h-3 w-28" />
         <ShellLine className="mt-4 h-8 w-40" />
         <ShellLine className="mt-3 h-4 w-full" />
@@ -372,7 +372,7 @@ export function AdminFeatureSettingsLoadingShell() {
       {Array.from({ length: 3 }, (_, index) => (
         <section
           key={`admin-feature-setting-${index}`}
-          className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm"
+          className="rounded-[var(--radius-modal)] border border-slate-200 bg-white p-5 shadow-sm"
         >
           <div className="flex items-start justify-between gap-4">
             <div className="flex items-start gap-3">
@@ -395,13 +395,13 @@ export function AdminFeatureSettingsLoadingShell() {
 export function AdminTimelineLoadingShell() {
   return (
     <AdminMobileShellFrame titleWidthClassName="w-28" subtitleWidthClassName="w-24">
-      <section className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm">
+      <section className="rounded-[var(--radius-modal)] border border-slate-200 bg-white p-5 shadow-sm">
         <ShellLine className="h-3 w-24" />
         <ShellLine className="mt-4 h-8 w-36" />
         <ShellLine className="mt-3 h-4 w-full" />
         <ShellLine className="mt-2 h-4 w-5/6" />
       </section>
-      <section className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm">
+      <section className="rounded-[var(--radius-modal)] border border-slate-200 bg-white p-5 shadow-sm">
         <div className="flex items-start gap-3">
           <div className="mt-1 size-5 rounded-full bg-[var(--primary)]/10" />
           <div className="flex-1 space-y-3">

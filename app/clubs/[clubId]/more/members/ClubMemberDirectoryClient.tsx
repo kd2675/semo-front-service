@@ -91,19 +91,19 @@ function getMemberTone(
 ) {
   if (settings.showPositions && member.roleCode === "OWNER") {
     return {
-      rail: "from-slate-900 via-slate-700 to-[#135bec]",
-      glow: "from-[#135bec]/18 via-blue-100/80 to-transparent",
-      avatar: "from-slate-900 to-[#135bec]",
+      rail: "from-slate-900 via-slate-700 to-[var(--primary)]",
+      glow: "from-[var(--primary)]/18 via-blue-100/80 to-transparent",
+      avatar: "from-slate-900 to-[var(--primary)]",
       badge: "bg-slate-900 text-white",
       label: "핵심 운영",
     };
   }
   if (settings.showPositions && member.roleCode === "ADMIN") {
     return {
-      rail: "from-[#135bec] via-blue-500 to-sky-400",
-      glow: "from-[#135bec]/16 via-blue-100/75 to-transparent",
-      avatar: "from-[#135bec] to-blue-500",
-      badge: "bg-[#135bec]/10 text-[#135bec]",
+      rail: "from-[var(--primary)] via-blue-500 to-sky-400",
+      glow: "from-[var(--primary)]/16 via-blue-100/75 to-transparent",
+      avatar: "from-[var(--primary)] to-blue-500",
+      badge: "bg-[var(--primary)]/10 text-[var(--primary)]",
       label: "운영 멤버",
     };
   }
@@ -149,7 +149,7 @@ function MemberAvatar({
   if (member.avatarImageUrl) {
     return (
       <div
-        className={`${sizeClassName} overflow-hidden rounded-[20px] bg-slate-200 shadow-[0_10px_28px_rgba(15,23,42,0.14)] ring-2 ring-white/90`}
+        className={`${sizeClassName} overflow-hidden rounded-[var(--radius-card)] bg-slate-200 shadow-[0_10px_28px_rgba(15,23,42,0.14)] ring-2 ring-white/90`}
         style={{ backgroundImage: `url('${member.avatarImageUrl}')`, backgroundPosition: "center", backgroundSize: "cover" }}
       />
     );
@@ -157,7 +157,7 @@ function MemberAvatar({
 
   return (
     <div
-      className={`${sizeClassName} flex items-center justify-center rounded-[20px] bg-gradient-to-br ${gradientClassName} ${textClassName} font-black text-white shadow-[0_12px_28px_rgba(19,91,236,0.18)] ring-2 ring-white/90`}
+      className={`${sizeClassName} flex items-center justify-center rounded-[var(--radius-card)] bg-gradient-to-br ${gradientClassName} ${textClassName} font-black text-white shadow-[0_12px_28px_rgba(19,91,236,0.18)] ring-2 ring-white/90`}
     >
       {member.displayName.slice(0, 2)}
     </div>
@@ -200,7 +200,7 @@ function DirectoryMetric({
   detail: string;
 }) {
   return (
-    <div className="rounded-[22px] border border-white/80 bg-white/72 px-4 py-3 shadow-[0_10px_24px_rgba(15,23,42,0.06)] backdrop-blur">
+    <div className="rounded-[var(--radius-card)] border border-white/80 bg-white/72 px-4 py-3 shadow-[0_10px_24px_rgba(15,23,42,0.06)] backdrop-blur">
       <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">{label}</p>
       <p className="mt-2 text-2xl font-black tracking-tight text-slate-900">{value}</p>
       <p className="mt-1 text-xs leading-5 text-slate-500">{detail}</p>
@@ -294,15 +294,15 @@ export function ClubMemberDirectoryClient({
           title="회원 디렉터리"
           subtitle={initialData.clubName}
           icon="groups"
-          className="border-[#135bec]/10 bg-white/85 backdrop-blur-md"
+          className="border-[var(--primary)]/10 bg-white/85 backdrop-blur-md"
         />
 
         <main className="semo-nav-bottom-space space-y-4 px-4 pt-4">
           <motion.section
-            className="relative overflow-hidden rounded-[32px] border border-[#135bec]/10 bg-[linear-gradient(160deg,rgba(255,255,255,0.96)_0%,rgba(244,248,255,0.96)_55%,rgba(232,240,255,0.92)_100%)] p-5 shadow-[0_22px_55px_rgba(19,91,236,0.14)]"
+            className="relative overflow-hidden rounded-[var(--radius-modal)] border border-[var(--primary)]/10 bg-[linear-gradient(160deg,rgba(255,255,255,0.96)_0%,rgba(244,248,255,0.96)_55%,rgba(232,240,255,0.92)_100%)] p-5 shadow-[0_22px_55px_rgba(19,91,236,0.14)]"
             {...staggeredFadeUpMotion(0, reduceMotion)}
           >
-            <div className="absolute -right-8 -top-12 h-32 w-32 rounded-full bg-[#135bec]/12 blur-3xl" />
+            <div className="absolute -right-8 -top-12 h-32 w-32 rounded-full bg-[var(--primary)]/12 blur-3xl" />
             <div className="absolute bottom-0 left-[-2rem] h-28 w-28 rounded-full bg-blue-100/70 blur-3xl" />
 
             <div className="relative">
@@ -340,7 +340,7 @@ export function ClubMemberDirectoryClient({
                   </div>
                 </div>
 
-                <div className="w-full rounded-[24px] bg-slate-900 px-4 py-3 text-white shadow-[0_16px_36px_rgba(15,23,42,0.18)] sm:w-auto">
+                <div className="w-full rounded-[var(--radius-card)] bg-slate-900 px-4 py-3 text-white shadow-[0_16px_36px_rgba(15,23,42,0.18)] sm:w-auto">
                   <p className="text-xs font-semibold text-white/60">멤버</p>
                   <p className="mt-1 text-2xl font-black tracking-tight">
                     {initialData.totalMemberCount}
@@ -372,10 +372,10 @@ export function ClubMemberDirectoryClient({
           </motion.section>
 
           <motion.section
-            className="rounded-[28px] border border-slate-200/80 bg-white/90 p-4 shadow-[0_16px_36px_rgba(15,23,42,0.08)] backdrop-blur"
+            className="rounded-[var(--radius-modal)] border border-slate-200/80 bg-white/90 p-4 shadow-[0_16px_36px_rgba(15,23,42,0.08)] backdrop-blur"
             {...staggeredFadeUpMotion(1, reduceMotion)}
           >
-            <label className="flex items-center gap-3 rounded-[22px] border border-slate-200 bg-slate-50/90 px-4 py-3 transition focus-within:border-[var(--primary)]/30 focus-within:bg-white">
+            <label className="flex items-center gap-3 rounded-[var(--radius-card)] border border-slate-200 bg-slate-50/90 px-4 py-3 transition focus-within:border-[var(--primary)]/30 focus-within:bg-white">
               <span className="material-symbols-outlined text-slate-400" aria-hidden="true">search</span>
               <input
                 value={query}
@@ -430,7 +430,7 @@ export function ClubMemberDirectoryClient({
 
           {filteredMembers.length === 0 ? (
             <motion.section
-              className="rounded-[28px] border border-dashed border-slate-300 bg-white/92 px-5 py-10 text-center shadow-sm"
+              className="rounded-[var(--radius-modal)] border border-dashed border-slate-300 bg-white/92 px-5 py-10 text-center shadow-sm"
               {...staggeredFadeUpMotion(2, reduceMotion)}
             >
               <div className="mx-auto flex size-14 items-center justify-center rounded-2xl bg-[var(--primary)]/10 text-[var(--primary)]">
@@ -448,7 +448,7 @@ export function ClubMemberDirectoryClient({
               return (
                 <motion.article
                   key={member.clubProfileId}
-                  className="relative overflow-hidden rounded-[30px] border border-slate-200/80 bg-white/95 p-5 shadow-[0_18px_44px_rgba(15,23,42,0.08)] backdrop-blur"
+                  className="relative overflow-hidden rounded-[var(--radius-modal)] border border-slate-200/80 bg-white/95 p-5 shadow-[0_18px_44px_rgba(15,23,42,0.08)] backdrop-blur"
                   {...staggeredFadeUpMotion(index + 2, reduceMotion)}
                 >
                   <div className={`absolute inset-x-0 top-0 h-24 bg-gradient-to-r ${tone.glow}`} />
@@ -486,7 +486,7 @@ export function ClubMemberDirectoryClient({
                           ) : null}
                         </div>
 
-                        <div className="mt-4 rounded-[24px] border border-white/80 bg-slate-50/75 px-4 py-3">
+                        <div className="mt-4 rounded-[var(--radius-card)] border border-white/80 bg-slate-50/75 px-4 py-3">
                           <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400">
                             한줄소개
                           </p>
@@ -524,7 +524,7 @@ export function ClubMemberDirectoryClient({
                           </div>
                         ) : null}
 
-                        <div className="mt-4 rounded-[24px] border border-dashed border-slate-200 bg-white/80 px-4 py-4">
+                        <div className="mt-4 rounded-[var(--radius-card)] border border-dashed border-slate-200 bg-white/80 px-4 py-4">
                           <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.22em] text-slate-400">
                             <span className="material-symbols-outlined text-[18px] text-[var(--primary)]" aria-hidden="true">
                               monitoring

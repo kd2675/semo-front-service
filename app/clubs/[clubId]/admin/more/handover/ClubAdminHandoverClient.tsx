@@ -335,7 +335,7 @@ export function ClubAdminHandoverClient({ clubId }: { clubId: string }) {
       <ClubPageHeader title="인수인계 센터" subtitle={center.clubName} icon="move_up" theme="admin" />
 
       <main className="semo-nav-bottom-space semo-page-admin px-4 py-5">
-        <section className="overflow-hidden rounded-[30px] bg-slate-950 p-5 text-white shadow-lg shadow-slate-200/70">
+        <section className="overflow-hidden rounded-[var(--radius-modal)] bg-slate-950 p-5 text-white shadow-lg shadow-slate-200/70">
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0">
               <p className="text-xs font-bold text-white/55">현재 운영 임기</p>
@@ -616,10 +616,10 @@ function OverviewTab({
           <SectionTitle title="최근 주요 결정" description="확정된 회의록과 운영 결정의 맥락을 다음 집행부가 바로 확인할 수 있습니다." />
           <div className="space-y-2">
             {(center.recentDecisions ?? []).map((decision) => (
-              <RouterLink key={decision.decisionRecordId} href={decision.targetPath} className="flex min-h-16 items-center gap-3 rounded-2xl border border-indigo-100 bg-indigo-50/40 px-4 py-3 transition hover:border-indigo-200">
-                <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-indigo-100 text-indigo-700"><span className="material-symbols-outlined text-[20px]" aria-hidden="true">{decision.recordType === "MEETING_MINUTES" ? "meeting_room" : "gavel"}</span></span>
+              <RouterLink key={decision.decisionRecordId} href={decision.targetPath} className="flex min-h-16 items-center gap-3 rounded-2xl border border-[var(--primary)]/15 bg-[var(--primary)]/5 px-4 py-3 transition hover:border-[var(--primary)]/30">
+                <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-[var(--primary)]/10 text-[var(--primary)]"><span className="material-symbols-outlined text-[20px]" aria-hidden="true">{decision.recordType === "MEETING_MINUTES" ? "meeting_room" : "gavel"}</span></span>
                 <span className="min-w-0 flex-1"><span className="block truncate text-sm font-black text-slate-800">{decision.title}</span><span className="mt-1 block text-xs text-slate-500">{decision.effectiveDate ? `시행 ${formatDate(decision.effectiveDate)}` : decision.confirmedAt ? `확정 ${formatDateTime(decision.confirmedAt)}` : "확정 기록"}</span></span>
-                <span className="material-symbols-outlined text-[20px] text-indigo-300" aria-hidden="true">chevron_right</span>
+                <span className="material-symbols-outlined text-[20px] text-[var(--primary)]/45" aria-hidden="true">chevron_right</span>
               </RouterLink>
             ))}
           </div>
@@ -692,7 +692,7 @@ function TermsTab({ terms, canManage, showForm, editingTermId, form, pending, on
     <div className="mt-6 space-y-4">
       <SectionTitle title="운영 임기" description="연도·학기·시즌을 같은 구조로 관리하고 집행부 스냅샷을 보존합니다." action={canManage && !showForm ? <button type="button" onClick={onCreate} className="min-h-10 rounded-xl bg-orange-500 px-3 text-xs font-bold text-white">임기 추가</button> : null} />
       {showForm ? (
-        <form onSubmit={onSubmit} className="rounded-[26px] border border-orange-200 bg-white p-5 shadow-sm">
+        <form onSubmit={onSubmit} className="rounded-[var(--radius-modal)] border border-orange-200 bg-white p-5 shadow-sm">
           <h3 className="text-base font-black">{editingTermId == null ? "새 운영 임기" : "운영 임기 수정"}</h3>
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
             <FormField label="임기 이름"><input aria-label="임기 이름" required maxLength={100} value={form.termName} onChange={(event) => onFormChange({ ...form, termName: event.target.value })} className={fieldClassName} placeholder="예: 2026년 2학기" /></FormField>
@@ -706,7 +706,7 @@ function TermsTab({ terms, canManage, showForm, editingTermId, form, pending, on
       ) : null}
       <div className="space-y-3">
         {terms.length > 0 ? terms.map((term) => (
-          <article key={term.clubOperatingTermId} className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
+          <article key={term.clubOperatingTermId} className="rounded-[var(--radius-card)] border border-slate-200 bg-white p-5 shadow-sm">
             <div className="flex items-start justify-between gap-3"><div className="min-w-0"><h3 className="truncate text-lg font-black">{term.termName}</h3><p className="mt-1 text-xs text-slate-500">{formatDate(term.startDate)} – {formatDate(term.endDate)}</p></div><span className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-bold ${termStatusClass(term.statusCode)}`}>{termStatusLabel(term.statusCode)}</span></div>
             {term.description ? <p className="mt-3 text-sm leading-6 text-slate-600">{term.description}</p> : null}
             <div className="mt-4 grid grid-cols-2 gap-2 sm:flex">
@@ -740,7 +740,7 @@ function ExecutivesTab({ center, displayedTerm, selectedTermId, assignments, for
       <SectionTitle title="집행부 구성" description={`${displayedTerm?.termName ?? "선택한 임기 없음"} 기준의 책임과 담당자를 보존합니다. 이 명단 자체는 실제 권한을 부여하지 않습니다.`} />
       <HandoverTermFilter terms={center.terms} selectedTermId={selectedTermId} onSelectTerm={onSelectTerm} />
       {editable ? (
-        <form onSubmit={onSubmit} className="rounded-[26px] border border-slate-200 bg-white p-5 shadow-sm">
+        <form onSubmit={onSubmit} className="rounded-[var(--radius-modal)] border border-slate-200 bg-white p-5 shadow-sm">
           <h3 className="text-sm font-black">집행부 멤버 추가 또는 책임 수정</h3>
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
             <FormField label="멤버"><select aria-label="집행부 멤버" required value={form.memberId} onChange={(event) => onFormChange({ ...form, memberId: event.target.value })} className={fieldClassName}><option value="">멤버 선택</option>{center.memberOptions.map((item) => <option key={item.clubMemberId} value={item.clubMemberId}>{item.displayName}</option>)}</select></FormField>
@@ -752,7 +752,7 @@ function ExecutivesTab({ center, displayedTerm, selectedTermId, assignments, for
       ) : null}
       <div className="space-y-3">
         {assignments.length > 0 ? assignments.map((assignment) => (
-          <article key={assignment.clubTermExecutiveAssignmentId} className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
+          <article key={assignment.clubTermExecutiveAssignmentId} className="rounded-[var(--radius-card)] border border-slate-200 bg-white p-5 shadow-sm">
             <div className="flex items-start gap-3"><span className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-slate-900 text-sm font-black text-white">{initials(assignment.memberDisplayName)}</span><div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2"><h3 className="text-base font-black">{assignment.memberDisplayName}</h3><span className="rounded-full bg-orange-50 px-2.5 py-1 text-[11px] font-bold text-orange-700">{assignment.positionDisplayName}</span></div><p className="mt-2 text-sm leading-6 text-slate-600">{assignment.responsibility ?? "직책 설명을 바탕으로 책임 범위를 작성해주세요."}</p></div></div>
             {editable ? <button type="button" disabled={pending} onClick={() => onDelete(assignment.clubTermExecutiveAssignmentId)} className="mt-4 min-h-10 w-full rounded-xl bg-slate-100 text-xs font-bold text-slate-600 disabled:opacity-50">배정 제거</button> : null}
           </article>
@@ -782,7 +782,7 @@ function NotesTab({ center, selectedTermId, editingNoteId, form, onFormChange, o
       <SectionTitle title="다음 담당자 메모" description="역할별 책임, 주의사항과 후속 작업을 지정된 담당자에게 전달합니다." />
       <HandoverTermFilter terms={center.terms} selectedTermId={selectedTermId} onSelectTerm={onSelectTerm} />
       {center.canManage ? (
-        <form id="handover-note-form" onSubmit={onSubmit} className="scroll-mt-24 rounded-[26px] border border-slate-200 bg-white p-5 shadow-sm">
+        <form id="handover-note-form" onSubmit={onSubmit} className="scroll-mt-24 rounded-[var(--radius-modal)] border border-slate-200 bg-white p-5 shadow-sm">
           <h3 className="mb-4 text-sm font-black text-slate-900">
             {editingNoteId == null ? "새 인수인계 메모" : "인수인계 메모 수정"}
           </h3>
@@ -804,7 +804,7 @@ function HandoverNoteCard({ clubId, note, canManage, canAcknowledge, pending, on
   const acknowledged = note.statusCode === "ACKNOWLEDGED";
   const [attachmentsOpen, setAttachmentsOpen] = useState(false);
   return (
-    <article className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
+    <article className="rounded-[var(--radius-card)] border border-slate-200 bg-white p-5 shadow-sm">
       <div className="flex items-start justify-between gap-3"><div className="min-w-0"><div className="flex flex-wrap gap-2">{note.positionDisplayName ? <span className="rounded-full bg-orange-50 px-2.5 py-1 text-[11px] font-bold text-orange-700">{note.positionDisplayName}</span> : null}<span className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${acknowledged ? "bg-emerald-50 text-emerald-700" : note.statusCode === "READY" ? "bg-blue-50 text-blue-700" : "bg-slate-100 text-slate-600"}`}>{acknowledged ? "확인 완료" : note.statusCode === "READY" ? "인계 준비" : "초안"}</span></div><h3 className="mt-3 text-base font-black">{note.title}</h3></div>{note.dueAt ? <span className="shrink-0 text-[11px] font-bold text-slate-400">{formatDateTime(note.dueAt)}</span> : null}</div>
       <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-slate-600">{note.content}</p>
       <div className="mt-4 flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-400"><span>작성 {note.createdByDisplayName}</span>{note.assignedMemberDisplayName ? <span>인계 대상 {note.assignedMemberDisplayName}</span> : null}<span>{note.fromTermName ?? "현재"} → {note.toTermName ?? "다음 임기 미정"}</span></div>
@@ -844,5 +844,5 @@ function FormField({ label, children }: { label: string; children: React.ReactNo
 }
 
 function EmptyState({ icon, title, description }: { icon: string; title: string; description: string }) {
-  return <div className="rounded-[24px] border border-dashed border-slate-300 bg-white px-5 py-8 text-center"><span className="material-symbols-outlined text-[32px] text-slate-300" aria-hidden="true">{icon}</span><p className="mt-3 text-sm font-black text-slate-700">{title}</p><p className="mt-1 text-xs leading-5 text-slate-400">{description}</p></div>;
+  return <div className="rounded-[var(--radius-card)] border border-dashed border-slate-300 bg-white px-5 py-8 text-center"><span className="material-symbols-outlined text-[32px] text-slate-300" aria-hidden="true">{icon}</span><p className="mt-3 text-sm font-black text-slate-700">{title}</p><p className="mt-1 text-xs leading-5 text-slate-400">{description}</p></div>;
 }

@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 
 import { NotificationBellLink } from "@/app/components/NotificationBellLink";
 import { RouterLink } from "@/app/components/RouterLink";
+import { SemoBrandMark } from "@/app/components/SemoBrandMark";
 
 type ClubPageHeaderTheme = "user" | "admin";
 type ClubPageHeaderLayout = "page" | "modal";
@@ -35,9 +36,7 @@ export function ClubPageHeader({
   layout = "page",
   showNotifications = true,
 }: ClubPageHeaderProps) {
-  const headerClassName = `${sticky ? "sticky top-0 z-50" : ""} border-b border-slate-200 backdrop-blur-md ${
-    theme === "admin" ? "bg-[#f8f6f6]/85" : "bg-[var(--background-light)]/85"
-  } ${className ?? ""}`;
+  const headerClassName = `${sticky ? "sticky top-0 z-50" : ""} semo-sticky-surface border-b ${className ?? ""}`;
   const resolvedContainerClassName =
     containerClassName ?? (
       layout === "modal"
@@ -46,10 +45,12 @@ export function ClubPageHeader({
           ? "semo-page-admin"
           : "semo-page-user"
     );
-  const iconElement = (
-    <div className="semo-icon-control shrink-0 rounded-xl bg-[var(--primary)]/10 text-[var(--primary)]">
-      <span className="material-symbols-outlined" aria-hidden="true">{icon}</span>
-    </div>
+  const iconElement = icon === "home" ? (
+    <SemoBrandMark className="size-10 text-[var(--primary)]" />
+  ) : (
+    <span className="semo-page-glyph" aria-hidden="true">
+      <span className="material-symbols-outlined text-[21px]" aria-hidden="true">{icon}</span>
+    </span>
   );
 
   return (
@@ -61,7 +62,7 @@ export function ClubPageHeader({
         <div className="min-w-0 flex items-center gap-3">
           {leftSlot ? <div className="shrink-0">{leftSlot}</div> : null}
           {icon === "home" ? (
-            <RouterLink href="/" aria-label="SEMO 홈으로 이동">
+            <RouterLink href="/" aria-label="SEMO 전체 모임 홈으로 이동" className="semo-icon-control">
               {iconElement}
             </RouterLink>
           ) : (

@@ -155,7 +155,7 @@ export function TodoEditorModal({
               </p>
             </div>
 
-            <div className="space-y-4 rounded-3xl bg-slate-50 p-4">
+            <div className="space-y-4 rounded-[var(--radius-modal)] bg-slate-50 p-4">
               {canCreate ? (
                 <>
                   <label className="block">

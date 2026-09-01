@@ -58,7 +58,7 @@ function getStatusTone(statusCode: ClubFeedbackStatusCode) {
     case "CLOSED":
       return "bg-slate-200 text-slate-600";
     default:
-      return "bg-orange-50 text-[#ec5b13]";
+      return "bg-orange-50 text-[var(--primary)]";
   }
 }
 
@@ -208,7 +208,7 @@ export function ClubAdminFeedbackClient({
 
         <main className="semo-nav-bottom-space space-y-4 px-4 pt-4">
           <motion.section
-            className="rounded-[28px] border border-[#f2d8c5] bg-[linear-gradient(150deg,#fff1e6_0%,#fff9f4_58%,#f8fbff_100%)] p-5 shadow-[0_20px_46px_rgba(236,91,19,0.1)]"
+            className="rounded-[var(--radius-modal)] border border-[#f2d8c5] bg-[linear-gradient(150deg,#fff1e6_0%,#fff9f4_58%,#f8fbff_100%)] p-5 shadow-[0_20px_46px_rgba(236,91,19,0.1)]"
             {...staggeredFadeUpMotion(0, reduceMotion)}
           >
             <p className="text-xs font-bold tracking-wide text-[var(--primary)]">
@@ -223,7 +223,7 @@ export function ClubAdminFeedbackClient({
               익명 제출은 운영진에게도 작성자가 표시되지 않으며, 접수 내용을 임의로 공개할 수 없습니다.
             </p>
             <div className="mt-5 grid grid-cols-2 gap-3">
-              <div className="rounded-[22px] border border-white/80 bg-white/85 px-4 py-3 shadow-sm">
+              <div className="rounded-[var(--radius-card)] border border-white/80 bg-white/85 px-4 py-3 shadow-sm">
                 <p className="text-xs font-semibold text-slate-400">
                   총 건수
                 </p>
@@ -231,7 +231,7 @@ export function ClubAdminFeedbackClient({
                   {feedbackHome.totalCount}
                 </p>
               </div>
-              <div className="rounded-[22px] border border-white/80 bg-white/85 px-4 py-3 shadow-sm">
+              <div className="rounded-[var(--radius-card)] border border-white/80 bg-white/85 px-4 py-3 shadow-sm">
                 <p className="text-xs font-semibold text-slate-400">
                   답변 완료
                 </p>
@@ -243,7 +243,7 @@ export function ClubAdminFeedbackClient({
           </motion.section>
 
           <motion.section
-            className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm"
+            className="rounded-[var(--radius-modal)] border border-slate-200 bg-white p-5 shadow-sm"
             {...staggeredFadeUpMotion(1, reduceMotion)}
           >
             <div className="flex items-start justify-between gap-3">
@@ -253,7 +253,7 @@ export function ClubAdminFeedbackClient({
                   처리 상태 기준으로 확인하고 답변할 수 있습니다.
                 </p>
               </div>
-              <span className="rounded-full bg-orange-50 px-3 py-1 text-xs font-bold text-[#ec5b13]">
+              <span className="rounded-full bg-orange-50 px-3 py-1 text-xs font-bold text-[var(--primary)]">
                 검토 중 {feedbackHome.inReviewCount}
               </span>
             </div>
@@ -288,9 +288,9 @@ export function ClubAdminFeedbackClient({
                     type="button"
                     disabled={isSaving}
                     onClick={() => void loadDetail(item.feedbackId)}
-                    className={`w-full rounded-[24px] border px-4 py-4 text-left transition ${
+                    className={`w-full rounded-[var(--radius-card)] border px-4 py-4 text-left transition ${
                       selectedFeedbackId === item.feedbackId
-                        ? "border-[#ec5b13]/35 bg-[#fff6f1]"
+                        ? "border-[var(--primary)]/35 bg-[#fff6f1]"
                         : "border-slate-200 bg-white hover:border-slate-300"
                     }`}
                     {...staggeredFadeUpMotion(index + 2, reduceMotion)}
@@ -321,7 +321,7 @@ export function ClubAdminFeedbackClient({
           </motion.section>
 
           <motion.section
-            className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm"
+            className="rounded-[var(--radius-modal)] border border-slate-200 bg-white p-5 shadow-sm"
             {...staggeredFadeUpMotion(2, reduceMotion)}
           >
             <div className="flex items-start justify-between gap-3">
@@ -342,7 +342,7 @@ export function ClubAdminFeedbackClient({
               </div>
             ) : (
               <div className="mt-4 space-y-4">
-                <div className="rounded-[24px] bg-slate-50 px-4 py-4">
+                <div className="rounded-[var(--radius-card)] bg-slate-50 px-4 py-4">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${getStatusTone(selectedDetail.statusCode)}`}>
                       {selectedDetail.statusLabel}
@@ -389,8 +389,8 @@ export function ClubAdminFeedbackClient({
                               key={option.value}
                               className={`semo-control min-w-0 px-2 text-xs font-bold transition ${
                                 selected
-                                  ? "bg-[#ec5b13] text-white shadow-sm"
-                                  : "border border-slate-200 bg-white text-slate-600 hover:border-[#ec5b13]/40 hover:bg-orange-50"
+                                  ? "bg-[var(--primary)] text-white shadow-sm"
+                                  : "border border-slate-200 bg-white text-slate-600 hover:border-[var(--primary)]/40 hover:bg-orange-50"
                               }`}
                             >
                               <input
@@ -451,7 +451,7 @@ export function ClubAdminFeedbackClient({
                       onChange={(event) => setAdminAnswer(event.target.value)}
                       rows={5}
                       placeholder="답변이 없으면 빈 상태로 저장할 수 있습니다."
-                      className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-[#ec5b13] focus:ring-2 focus:ring-[#ec5b13]/10"
+                      className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/10"
                     />
                   </label>
                 </div>
@@ -460,7 +460,7 @@ export function ClubAdminFeedbackClient({
                   type="button"
                   onClick={() => void handleSave()}
                   disabled={isSaving}
-                  className="flex w-full items-center justify-center rounded-2xl bg-[#ec5b13] py-3.5 text-sm font-bold text-white transition hover:bg-[#d45110] disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500"
+                  className="flex w-full items-center justify-center rounded-2xl bg-[var(--primary)] py-3.5 text-sm font-bold text-white transition hover:bg-[#d45110] disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500"
                 >
                   {isSaving ? "저장 중..." : "관리 상태 저장"}
                 </button>

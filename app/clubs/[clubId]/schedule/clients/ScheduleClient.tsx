@@ -276,13 +276,13 @@ function getEventDotClassName(eventCount: number, maxEventCount: number, isActiv
 
   const ratio = (eventCount / maxEventCount) * 100;
   if (ratio > 75) {
-    return "bg-red-500";
+    return "bg-rose-500";
   }
   if (ratio > 50) {
     return "bg-orange-500";
   }
   if (ratio > 25) {
-    return "bg-yellow-400";
+    return "bg-amber-400";
   }
   if (ratio > 0) {
     return isActive ? "bg-white" : "bg-white ring-1 ring-slate-300";
@@ -332,7 +332,7 @@ function EventCard({
               일정
             </span>
             {event.pinned ? (
-              <span className="rounded bg-red-50 px-2 py-0.5 text-xs font-bold text-red-600">
+              <span className="rounded bg-rose-50 px-2 py-0.5 text-xs font-bold text-rose-600">
                 고정
               </span>
             ) : null}
@@ -381,7 +381,7 @@ function NoticeCard({
               공지
             </span>
             {notice.pinned ? (
-              <span className="rounded bg-red-50 px-2 py-0.5 text-xs font-bold text-red-600">
+              <span className="rounded bg-rose-50 px-2 py-0.5 text-xs font-bold text-rose-600">
                 고정
               </span>
             ) : null}
@@ -430,7 +430,7 @@ function VoteCard({
               투표
             </span>
             {vote.pinned ? (
-              <span className="rounded bg-red-50 px-2 py-0.5 text-xs font-bold text-red-600">
+              <span className="rounded bg-rose-50 px-2 py-0.5 text-xs font-bold text-rose-600">
                 고정
               </span>
             ) : null}
@@ -486,7 +486,7 @@ function TournamentCard({
               {getTournamentStatusLabel(tournament.tournamentStatus)}
             </span>
             {tournament.pinned ? (
-              <span className="rounded bg-red-50 px-2 py-0.5 text-xs font-bold text-red-600">
+              <span className="rounded bg-rose-50 px-2 py-0.5 text-xs font-bold text-rose-600">
                 고정
               </span>
             ) : null}
@@ -722,9 +722,9 @@ export function ScheduleClient({
               <div className="flex items-center gap-2 rounded-full bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-500">
                 <span>적음</span>
                 <span className="size-1.5 rounded-full bg-white ring-1 ring-slate-300" />
-                <span className="size-1.5 rounded-full bg-yellow-400" />
+                <span className="size-1.5 rounded-full bg-amber-400" />
                 <span className="size-1.5 rounded-full bg-orange-500" />
-                <span className="size-1.5 rounded-full bg-red-500" />
+                <span className="size-1.5 rounded-full bg-rose-500" />
                 <span>많음</span>
               </div>
             </div>

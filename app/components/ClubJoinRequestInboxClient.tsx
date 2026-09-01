@@ -3,7 +3,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion, useReducedMotion } from "motion/react";
 import { startTransition, useDeferredValue, useMemo, useState } from "react";
-import type { CSSProperties } from "react";
 import { RouterLink } from "@/app/components/RouterLink";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import { useAppAlert } from "@/app/hooks/useAppAlert";
@@ -46,7 +45,7 @@ function RequestAvatar({
 }) {
   return (
     <div
-      className="flex size-14 shrink-0 items-center justify-center rounded-[20px] text-sm font-black text-white shadow-[0_14px_32px_rgba(15,23,42,0.16)]"
+      className="flex size-14 shrink-0 items-center justify-center rounded-[var(--radius-card)] text-sm font-black text-white shadow-[0_14px_32px_rgba(15,23,42,0.16)]"
       style={{ backgroundColor: item.profileColor ?? accentColor }}
     >
       {item.displayName.slice(0, 2)}
@@ -64,7 +63,7 @@ function SummaryMetric({
   detail: string;
 }) {
   return (
-    <div className="rounded-[24px] border border-white/80 bg-white/80 px-4 py-3 shadow-[0_14px_34px_rgba(15,23,42,0.08)] backdrop-blur">
+    <div className="rounded-[var(--radius-card)] border border-white/80 bg-white/80 px-4 py-3 shadow-[0_14px_34px_rgba(15,23,42,0.08)] backdrop-blur">
       <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-400">{label}</p>
       <p className="mt-2 text-2xl font-black tracking-tight text-slate-900">{value}</p>
       <p className="mt-1 text-xs leading-5 text-slate-500">{detail}</p>
@@ -88,7 +87,7 @@ function JoinRequestCard({
   onReview?: (requestStatus: "APPROVED" | "REJECTED") => void;
 }) {
   return (
-    <article className="rounded-[28px] border border-slate-200/80 bg-white p-5 shadow-[0_18px_42px_rgba(15,23,42,0.08)]">
+    <article className="rounded-[var(--radius-modal)] border border-slate-200/80 bg-white p-5 shadow-[0_18px_42px_rgba(15,23,42,0.08)]">
       <div className="flex items-start gap-4">
         <RequestAvatar item={item} accentColor={accentColor} />
         <div className="min-w-0 flex-1">
@@ -111,7 +110,7 @@ function JoinRequestCard({
             {item.tagline ? <span>{item.tagline}</span> : null}
           </div>
 
-          <div className="mt-4 rounded-[22px] bg-slate-50 px-4 py-3 text-sm leading-6 text-slate-600">
+          <div className="mt-4 rounded-[var(--radius-card)] bg-slate-50 px-4 py-3 text-sm leading-6 text-slate-600">
             {item.requestMessage?.trim() || "신청 메시지가 아직 남겨지지 않았습니다."}
           </div>
         </div>
@@ -123,7 +122,7 @@ function JoinRequestCard({
             type="button"
             disabled={reviewing}
             onClick={() => onReview("APPROVED")}
-            className="rounded-2xl bg-[var(--secondary)] px-4 py-2.5 text-sm font-bold text-white transition-opacity disabled:cursor-not-allowed disabled:opacity-50"
+            className="rounded-2xl bg-[var(--primary)] px-4 py-2.5 text-sm font-bold text-white transition-opacity disabled:cursor-not-allowed disabled:opacity-50"
           >
             {reviewing ? "처리 중..." : "승인"}
           </button>
@@ -212,24 +211,13 @@ export function ClubJoinRequestInboxClient({
     );
   };
 
-  const primaryColor = "#ec5b13";
-  const secondaryColor = "#135bec";
-  const outerClassName = "bg-[#f8f6f6]";
+  const primaryColor = "var(--primary)";
   const containerClassName = "max-w-5xl";
-  const accentClassName = "bg-orange-50 text-[#ec5b13]";
+  const accentClassName = "bg-[var(--primary)]/10 text-[var(--primary)]";
 
   return (
-    <div
-      className={`min-h-full ${outerClassName} text-slate-900`}
-      style={
-        {
-          "--primary": primaryColor,
-          "--secondary": secondaryColor,
-          "--background-light": "#f8f6f6",
-        } as CSSProperties
-      }
-    >
-      <div className={`mx-auto min-h-full ${containerClassName} ${outerClassName}`}>
+    <div className="semo-app-shell text-slate-900">
+      <div className={`mx-auto min-h-full ${containerClassName}`}>
         <ClubPageHeader
           title="신규가입 운영"
           subtitle={initialData.clubName}
@@ -240,13 +228,10 @@ export function ClubJoinRequestInboxClient({
 
         <main className="semo-nav-bottom-space space-y-4 px-4 pt-4">
           <motion.section
-            className="relative overflow-hidden rounded-[32px] border border-[#ec5b13]/10 bg-[linear-gradient(160deg,rgba(255,255,255,0.96)_0%,rgba(255,246,240,0.96)_54%,rgba(255,235,223,0.9)_100%)] p-5 shadow-[0_24px_60px_rgba(15,23,42,0.12)]"
+            className="relative overflow-hidden rounded-[var(--radius-modal)] border border-[var(--primary)]/10 bg-[linear-gradient(160deg,rgba(255,255,255,0.96)_0%,rgba(255,246,240,0.96)_54%,rgba(255,235,223,0.9)_100%)] p-5 shadow-[0_24px_60px_rgba(15,23,42,0.12)]"
             {...staggeredFadeUpMotion(0, reduceMotion)}
           >
-            <div
-              className="absolute -right-8 -top-12 h-32 w-32 rounded-full blur-3xl"
-              style={{ backgroundColor: `${primaryColor}22` }}
-            />
+            <div className="absolute -right-8 -top-12 h-32 w-32 rounded-full bg-[var(--primary)]/10 blur-3xl" />
             <div className="relative">
               <p className="text-[11px] font-bold uppercase tracking-[0.28em] text-[var(--primary)]">
                 가입 요청
@@ -268,7 +253,7 @@ export function ClubJoinRequestInboxClient({
                     {highlightedApplicants || "지금은 검토 중인 가입 신청이 없습니다."}
                   </p>
                 </div>
-                <div className="rounded-[24px] bg-slate-900 px-4 py-3 text-white shadow-[0_18px_40px_rgba(15,23,42,0.18)]">
+                <div className="rounded-[var(--radius-card)] bg-slate-900 px-4 py-3 text-white shadow-[0_18px_40px_rgba(15,23,42,0.18)]">
                   <p className="text-xs font-semibold text-white/60">대기 중</p>
                   <p className="mt-1 text-2xl font-black tracking-tight">{requests.length}</p>
                 </div>
@@ -290,7 +275,7 @@ export function ClubJoinRequestInboxClient({
           </motion.section>
 
           <motion.section
-            className="rounded-[28px] border border-slate-200/80 bg-white/90 p-4 shadow-[0_16px_36px_rgba(15,23,42,0.08)] backdrop-blur"
+            className="rounded-[var(--radius-modal)] border border-slate-200/80 bg-white/90 p-4 shadow-[0_16px_36px_rgba(15,23,42,0.08)] backdrop-blur"
             {...staggeredFadeUpMotion(1, reduceMotion)}
           >
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -310,7 +295,7 @@ export function ClubJoinRequestInboxClient({
               </RouterLink>
             </div>
 
-            <label className="mt-4 flex items-center gap-3 rounded-[22px] border border-slate-200 bg-slate-50/90 px-4 py-3 transition focus-within:border-[var(--primary)]/30 focus-within:bg-white">
+            <label className="mt-4 flex items-center gap-3 rounded-[var(--radius-card)] border border-slate-200 bg-slate-50/90 px-4 py-3 transition focus-within:border-[var(--primary)]/30 focus-within:bg-white">
               <span className="material-symbols-outlined text-slate-400" aria-hidden="true">search</span>
               <input
                 value={query}
@@ -329,7 +314,7 @@ export function ClubJoinRequestInboxClient({
 
           {filteredRequests.length === 0 ? (
             <motion.section
-              className="rounded-[28px] border border-dashed border-slate-200 bg-white px-5 py-10 text-center shadow-sm"
+              className="rounded-[var(--radius-modal)] border border-dashed border-slate-200 bg-white px-5 py-10 text-center shadow-sm"
               {...staggeredFadeUpMotion(2, reduceMotion)}
             >
               <p className="text-base font-black tracking-tight text-slate-900">

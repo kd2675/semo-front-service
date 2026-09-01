@@ -30,10 +30,10 @@ export function MetricCard({
   return (
     <div
       className={`rounded-2xl px-4 py-3 ${
-        accent ? "bg-orange-50 text-[#ec5b13]" : "bg-slate-50 text-slate-900"
+        accent ? "bg-orange-50 text-[var(--primary)]" : "bg-slate-50 text-slate-900"
       } ${compact ? "min-w-[72px]" : ""}`}
     >
-      <p className={`text-xs font-semibold uppercase tracking-[0.18em] ${accent ? "text-[#ec5b13]/70" : "text-slate-400"}`}>
+      <p className={`text-xs font-semibold uppercase tracking-[0.18em] ${accent ? "text-[var(--primary)]/70" : "text-slate-400"}`}>
         {label}
       </p>
       <p className="mt-2 text-lg font-bold">{value}</p>
@@ -45,7 +45,7 @@ export function PermissionChip({ label, enabled }: { label: string; enabled: boo
   return (
     <span
       className={`rounded-full px-3 py-1 text-xs font-bold ${
-        enabled ? "bg-[#fff5ef] text-[#ec5b13]" : "bg-slate-100 text-slate-400"
+        enabled ? "bg-[#fff5ef] text-[var(--primary)]" : "bg-slate-100 text-slate-400"
       }`}
     >
       {label}
@@ -68,13 +68,13 @@ export function WorkspaceStatusCard({
 }) {
   return (
     <article
-      className={`rounded-[28px] border p-5 shadow-sm ${
-        muted ? "border-slate-200 bg-slate-50" : "border-[#ec5b13]/15 bg-[#fff7f2]"
+      className={`rounded-[var(--radius-modal)] border p-5 shadow-sm ${
+        muted ? "border-slate-200 bg-slate-50" : "border-[var(--primary)]/15 bg-[#fff7f2]"
       }`}
     >
       <div className="flex items-center justify-between gap-3">
         <h4 className="text-lg font-bold text-slate-900">{title}</h4>
-        <span className={`rounded-full px-3 py-1 text-xs font-bold ${muted ? "bg-white text-slate-500" : "bg-[#ec5b13] text-white"}`}>
+        <span className={`rounded-full px-3 py-1 text-xs font-bold ${muted ? "bg-white text-slate-500" : "bg-[var(--primary)] text-white"}`}>
           {status}
         </span>
       </div>
@@ -99,7 +99,7 @@ export function EmptyAdminState({
   description: string;
 }) {
   return (
-    <div className="rounded-3xl border border-dashed border-slate-200 bg-slate-50 px-4 py-8 text-center">
+    <div className="rounded-[var(--radius-modal)] border border-dashed border-slate-200 bg-slate-50 px-4 py-8 text-center">
       <p className="text-sm font-semibold text-slate-900">{title}</p>
       <p className="mt-2 text-sm leading-6 text-slate-500">{description}</p>
     </div>
@@ -123,7 +123,7 @@ export function AdminFinanceRequestCard({
   const actionsDisabled = reviewDone || busy || !canReview;
 
   return (
-    <article className="rounded-3xl border border-slate-200 bg-slate-50 p-4">
+    <article className="rounded-[var(--radius-modal)] border border-slate-200 bg-slate-50 p-4">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
@@ -185,12 +185,12 @@ export function AdminFinanceRequestCard({
 
 export function ExpenseLedgerCard({ expense, onOpen }: { expense: ClubFinanceExpense; onOpen: () => void }) {
   return (
-    <article className="rounded-3xl border border-slate-200 bg-slate-50 p-4">
+    <article className="rounded-[var(--radius-modal)] border border-slate-200 bg-slate-50 p-4">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <span className="rounded-full bg-white px-2.5 py-1 text-[11px] font-bold text-slate-500">{expense.categoryLabel}</span>
-            <span className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${expense.statusCode === "VOIDED" ? "bg-rose-50 text-rose-600" : "bg-orange-50 text-[#ec5b13]"}`}>{expense.statusCode === "VOIDED" ? "취소 전표" : expense.expenseTypeLabel}</span>
+            <span className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${expense.statusCode === "VOIDED" ? "bg-rose-50 text-rose-600" : "bg-orange-50 text-[var(--primary)]"}`}>{expense.statusCode === "VOIDED" ? "취소 전표" : expense.expenseTypeLabel}</span>
           </div>
           <h4 className="mt-3 text-base font-bold text-slate-900">{expense.title}</h4>
         </div>
@@ -208,7 +208,7 @@ export function ExpenseLedgerCard({ expense, onOpen }: { expense: ClubFinanceExp
           <MetaItem label="연결 요청" value={`#${expense.sourceRequestId}`} strong />
         ) : null}
       </div>
-      <button type="button" onClick={onOpen} className="mt-4 min-h-11 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-bold text-[#ec5b13] transition hover:bg-orange-50">전표 상세·증빙·정정 이력</button>
+      <button type="button" onClick={onOpen} className="mt-4 min-h-11 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-bold text-[var(--primary)] transition hover:bg-orange-50">전표 상세·증빙·정정 이력</button>
     </article>
   );
 }
@@ -240,7 +240,7 @@ export function ObligationDetailPanel({
 
   return (
     <div className="space-y-5">
-      <section className={`rounded-3xl border p-5 shadow-sm ${getObligationFrameClassName(obligation)}`}>
+      <section className={`rounded-[var(--radius-modal)] border p-5 shadow-sm ${getObligationFrameClassName(obligation)}`}>
         <div className="flex flex-wrap items-center gap-2">
           <span className="rounded-full bg-white px-2.5 py-1 text-[11px] font-bold text-slate-500">{obligation.targetScopeLabel}</span>
           {obligation.overduePaymentCount > 0 ? (
@@ -276,7 +276,7 @@ export function ObligationDetailPanel({
         </div>
 
         {loading ? <div className="rounded-2xl border border-dashed border-slate-200 bg-white px-4 py-8 text-center text-sm text-slate-500">멤버별 납부 내역을 불러오는 중입니다.</div> : null}
-        {error ? <div className="rounded-2xl bg-red-50 px-4 py-3 text-sm text-red-600">{error}</div> : null}
+        {error ? <div className="rounded-2xl bg-rose-50 px-4 py-3 text-sm text-rose-600">{error}</div> : null}
         {!loading && !error && payments.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-slate-200 bg-white px-4 py-8 text-center text-sm text-slate-500">납부 대상이 없습니다.</div>
         ) : null}

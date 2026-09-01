@@ -106,6 +106,13 @@ NEXT_PUBLIC_API_URL=http://localhost:8080
 - 일부 상세/수정 흐름은 전용 페이지가 아니라 route modal 패턴을 사용합니다.
   - 예: 공지 상세/수정, 일정 상세/수정, 투표 상세/수정, 대회 상세
 
+### Visual identity and feedback
+- `SemoBrandMark`는 로그인·루트 홈·로딩·오류 같은 앱 경계의 브랜드 표식입니다.
+- `ClubGrowthCoreMark`는 앱 로고가 아니라 특정 모임의 멤버 수·활동·성장 기록을 표현하는 데이터 표식입니다.
+- 페이지 헤더와 활성 하단 내비게이션은 공용 삼각 문법을 사용하며, 하단 내비게이션에는 아이콘과 텍스트 라벨을 함께 표시합니다.
+- 유저 주색은 blue token, 관리자 주색은 orange token을 사용하고 기능 고유색은 상태·보조 강조에 제한합니다.
+- toast는 비차단 피드백, alert는 닫을 수 있는 배너, confirm과 `RouteModal`은 포커스·스크롤을 관리하는 모달입니다.
+
 ### Shared input components
 - 날짜 선택은 네이티브 `input[type="date"]` 대신 `app/components/DatePopoverField.tsx`를 공용 기준으로 사용합니다.
 - 시간 선택은 네이티브 `input[type="time"]` 대신 `app/components/TimePopoverField.tsx`를 공용 기준으로 사용합니다.
@@ -273,10 +280,10 @@ npm run start
 
 ## Verification Snapshot
 
-- 2026-08-12 확인
+- 2026-09-01 확인
   - `npm run lint` 성공
   - `npm run verify:auth` 성공
-  - `npm run verify:ui` 성공 (65개 라우트, 199개 TSX UI 계약 검사)
+  - `npm run verify:ui` 성공 (65개 라우트, 208개 TSX UI 계약 검사)
   - `npm run build` 성공
 
 ## Source Notes

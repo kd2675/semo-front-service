@@ -2,12 +2,13 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
+import { RouteModal } from "@/app/components/RouteModal";
 import { useAppToast } from "@/app/hooks/useAppToast";
 import { useAppAlert } from "@/app/hooks/useAppAlert";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { startTransition, useDeferredValue, useEffect, useId, useMemo, useState } from "react";
 import { type ClubAdminMember } from "@/app/lib/clubs";
-import { overlayFadeMotion, popInMotion, staggeredFadeUpMotion } from "@/app/lib/motion";
+import { staggeredFadeUpMotion } from "@/app/lib/motion";
 import { invalidateClubQueries } from "@/app/lib/react-query/common";
 import {
   updateMemberRoleMutationOptions,
@@ -52,7 +53,7 @@ function getStatusLabel(membershipStatus: string) {
 function getStatusBadgeClassName(membershipStatus: string) {
   switch (membershipStatus) {
     case "ACTIVE":
-      return "bg-green-100 text-green-700";
+      return "bg-emerald-100 text-emerald-700";
     case "DORMANT":
       return "bg-slate-100 text-slate-600";
     default:
@@ -100,8 +101,6 @@ function MemberManageModal({
   onDismiss: () => void;
   onSave: (nextRoleCode: string, nextMembershipStatus: "ACTIVE" | "DORMANT") => Promise<void>;
 }) {
-  const prefersReducedMotion = useReducedMotion();
-  const reduceMotion = Boolean(prefersReducedMotion);
   const titleId = useId();
   const [roleCode, setRoleCode] = useState(member.roleCode);
   const [membershipStatus, setMembershipStatus] = useState<"ACTIVE" | "DORMANT">(
@@ -109,23 +108,14 @@ function MemberManageModal({
   );
 
   return (
-    <AnimatePresence>
-      <motion.div
-        key="member-manage-backdrop"
-        className="fixed inset-0 z-40 bg-slate-950/30 backdrop-blur-sm"
-        {...overlayFadeMotion(reduceMotion)}
-      />
-      <motion.div
-        key="member-manage-dialog"
-        className="fixed inset-0 z-50 flex items-center justify-center px-4 py-6"
-        {...popInMotion(reduceMotion)}
-      >
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby={titleId}
-          className="w-full max-w-md rounded-[28px] bg-white p-5 shadow-[0_24px_60px_rgba(15,23,42,0.18)]"
-        >
+    <RouteModal
+      ariaLabelledBy={titleId}
+      onDismiss={onDismiss}
+      dismissOnBackdrop={!saving}
+      dismissOnEscape={!saving}
+      contentClassName="max-w-md"
+    >
+        <div className="overflow-y-auto bg-white p-5">
           <div className="flex items-start justify-between gap-4">
             <div className="flex items-center gap-3">
               <MemberAvatar member={member} />
@@ -138,8 +128,9 @@ function MemberManageModal({
             </div>
             <button
               type="button"
+              disabled={saving}
               onClick={onDismiss}
-              className="semo-icon-control bg-slate-100 text-slate-500"
+              className="semo-icon-control bg-slate-100 text-slate-500 disabled:opacity-45"
               aria-label="관리 모달 닫기"
             >
               <span className="material-symbols-outlined" aria-hidden="true">close</span>
@@ -152,40 +143,54 @@ function MemberManageModal({
               <p className="mb-3 text-xs leading-5 text-slate-500">
                 관리자는 클럽 전체 설정을 관리합니다. 세부 업무만 맡길 때는 일반 회원으로 두고 직책·권한에서 위임하세요.
               </p>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-2 gap-2" role="radiogroup" aria-label="모임 접근 등급">
                 {EDITABLE_ROLE_OPTIONS.map((option) => (
-                  <button
+                  <label
                     key={option.code}
-                    type="button"
-                    onClick={() => setRoleCode(option.code)}
-                    className={`rounded-xl px-3 py-3 text-sm font-semibold transition-colors ${
+                    className={`flex min-h-12 cursor-pointer items-center justify-center rounded-[var(--radius-control)] px-3 py-3 text-sm font-semibold transition-colors ${
                       roleCode === option.code
                         ? "bg-[var(--primary)] text-white"
                         : "bg-slate-100 text-slate-600"
                     }`}
                   >
+                    <input
+                      type="radio"
+                      name="roleCode"
+                      value={option.code}
+                      checked={roleCode === option.code}
+                      onChange={() => setRoleCode(option.code)}
+                      disabled={saving}
+                      className="sr-only"
+                    />
                     {option.label}
-                  </button>
+                  </label>
                 ))}
               </div>
             </section>
 
             <section>
               <p className="mb-2 text-sm font-bold text-slate-900">회원 상태</p>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-2 gap-2" role="radiogroup" aria-label="회원 상태">
                 {STATUS_OPTIONS.map((option) => (
-                  <button
+                  <label
                     key={option.code}
-                    type="button"
-                    onClick={() => setMembershipStatus(option.code)}
-                    className={`rounded-xl px-3 py-3 text-sm font-semibold transition-colors ${
+                    className={`flex min-h-12 cursor-pointer items-center justify-center rounded-[var(--radius-control)] px-3 py-3 text-sm font-semibold transition-colors ${
                       membershipStatus === option.code
                         ? "bg-[var(--secondary)] text-white"
                         : "bg-slate-100 text-slate-600"
                     }`}
                   >
+                    <input
+                      type="radio"
+                      name="membershipStatus"
+                      value={option.code}
+                      checked={membershipStatus === option.code}
+                      onChange={() => setMembershipStatus(option.code)}
+                      disabled={saving}
+                      className="sr-only"
+                    />
                     {option.label}
-                  </button>
+                  </label>
                 ))}
               </div>
             </section>
@@ -194,8 +199,9 @@ function MemberManageModal({
           <div className="mt-6 flex gap-3">
             <button
               type="button"
+              disabled={saving}
               onClick={onDismiss}
-              className="flex-1 rounded-2xl bg-slate-100 px-4 py-3 text-sm font-bold text-slate-600"
+              className="flex-1 rounded-[var(--radius-control)] bg-slate-100 px-4 py-3 text-sm font-bold text-slate-600 disabled:opacity-45"
             >
               닫기
             </button>
@@ -203,14 +209,13 @@ function MemberManageModal({
               type="button"
               disabled={saving}
               onClick={() => void onSave(roleCode, membershipStatus)}
-              className="flex-1 rounded-2xl bg-[var(--primary)] px-4 py-3 text-sm font-bold text-white disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500"
+              className="flex-1 rounded-[var(--radius-control)] bg-[var(--primary)] px-4 py-3 text-sm font-bold text-white disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500"
             >
               {saving ? "저장 중..." : "저장"}
             </button>
           </div>
         </div>
-      </motion.div>
-    </AnimatePresence>
+    </RouteModal>
   );
 }
 

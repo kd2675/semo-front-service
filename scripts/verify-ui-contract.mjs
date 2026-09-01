@@ -227,6 +227,26 @@ for (const filePath of files) {
     failures.push(`${relativePath(filePath)} 모바일에서 읽기 어려운 10px 텍스트를 사용합니다.`);
   }
 
+  if (source.includes("text-[9px]")) {
+    failures.push(`${relativePath(filePath)} 모바일에서 읽기 어려운 9px 텍스트를 사용합니다.`);
+  }
+
+  if (source.includes("semo-page-shell")) {
+    failures.push(`${relativePath(filePath)} 정의되지 않은 semo-page-shell 레이아웃 클래스를 사용합니다.`);
+  }
+
+  if (source.includes("@material-tailwind/react")) {
+    failures.push(`${relativePath(filePath)} 공용 디자인 계약 밖의 Material Tailwind 컴포넌트를 사용합니다.`);
+  }
+
+  if (path.basename(filePath) === "BasicToast.tsx" && source.includes("<RouteModal")) {
+    failures.push(`${relativePath(filePath)} 토스트가 비차단 피드백 대신 모달로 구현돼 있습니다.`);
+  }
+
+  if (/role\s*=\s*["']button["']/.test(source)) {
+    failures.push(`${relativePath(filePath)} 비네이티브 role=button 대신 button 또는 링크를 사용해야 합니다.`);
+  }
+
   if (/\bwindow\.confirm\s*\(/.test(source)) {
     failures.push(`${relativePath(filePath)} 전역 confirm 대신 브라우저 window.confirm을 사용합니다.`);
   }
@@ -245,10 +265,17 @@ const tinyTextCount = files.reduce((count, filePath) => {
   const source = fs.readFileSync(filePath, "utf8");
   return count + (source.match(/text-\[11px\]/g)?.length ?? 0);
 }, 0);
-const maxTinyTextCount = 222;
+const maxTinyTextCount = 218;
 
 if (tinyTextCount > maxTinyTextCount) {
   failures.push(`11px 보조 텍스트가 기준 ${maxTinyTextCount}건을 초과했습니다: ${tinyTextCount}건`);
+}
+
+const globalStyles = fs.readFileSync(path.join(APP_DIRECTORY, "globals.css"), "utf8");
+for (const requiredToken of ["--color-bg:", "--secondary:", "--font-app-display:"]) {
+  if (!globalStyles.includes(requiredToken)) {
+    failures.push(`app/globals.css에 필수 디자인 토큰 ${requiredToken.slice(0, -1)}이 없습니다.`);
+  }
 }
 
 console.log(`SEMO UI 계약 검사: ${routeCount}개 라우트, ${files.length}개 TSX, 11px 보조 텍스트 ${tinyTextCount}/${maxTinyTextCount}건`);

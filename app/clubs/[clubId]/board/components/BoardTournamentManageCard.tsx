@@ -82,20 +82,8 @@ export function BoardTournamentManageCard({
   const statusClassName = getTournamentStatusBadgeClassName(tournament.tournamentStatus);
 
   return (
-    <div className="relative overflow-visible rounded-[8px] border border-slate-100 bg-white shadow-sm">
-      <div
-        role="button"
-        tabIndex={0}
-        onClick={onOpen}
-        onKeyDown={(eventKey) => {
-          if (eventKey.key === "Enter" || eventKey.key === " ") {
-            eventKey.preventDefault();
-            onOpen();
-          }
-        }}
-        className="block cursor-pointer px-4 py-4 text-left transition hover:bg-slate-50"
-        aria-label={`${tournament.title} 대회 자세히 보기`}
-      >
+    <div className="semo-card relative overflow-visible">
+      <article className="px-4 py-4">
         <div className="mb-2 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-emerald-500/10 text-emerald-600">
@@ -109,7 +97,7 @@ export function BoardTournamentManageCard({
                 {getTournamentStatusLabel(tournament.tournamentStatus)}
               </span>
               {tournament.pinned ? (
-                <span className="rounded bg-red-50 px-2 py-0.5 text-[11px] font-bold uppercase text-red-600">
+                <span className="rounded bg-rose-50 px-2 py-0.5 text-[11px] font-bold uppercase text-rose-600">
                   고정
                 </span>
               ) : null}
@@ -150,8 +138,17 @@ export function BoardTournamentManageCard({
               </button>
             ) : null}
           </div>
-          {manageable ? (
-            <div className="relative">
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={onOpen}
+              className="semo-icon-control text-[var(--primary)] transition hover:bg-[var(--primary)]/8"
+              aria-label={`${tournament.title} 대회 자세히 보기`}
+            >
+              <span className="material-symbols-outlined text-[20px]" aria-hidden="true">arrow_forward</span>
+            </button>
+            {manageable ? (
+              <div className="relative">
               <button
                 type="button"
                 aria-label={`${tournament.title} 관리 메뉴`}
@@ -205,10 +202,11 @@ export function BoardTournamentManageCard({
                   </motion.div>
                 ) : null}
               </AnimatePresence>
-            </div>
-          ) : null}
+              </div>
+            ) : null}
+          </div>
         </div>
-      </div>
+      </article>
     </div>
   );
 }

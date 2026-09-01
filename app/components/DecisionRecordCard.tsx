@@ -86,11 +86,11 @@ export function DecisionRecordCard({
   const draft = record.statusCode === "DRAFT";
 
   return (
-    <article className={`rounded-[26px] border bg-white p-5 shadow-sm ${reviewDue ? "border-rose-200" : "border-slate-200"}`}>
+    <article className={`rounded-[var(--radius-modal)] border bg-white p-5 shadow-sm ${reviewDue ? "border-rose-200" : "border-slate-200"}`}>
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="rounded-full bg-indigo-50 px-2.5 py-1 text-[11px] font-bold text-indigo-700">
+            <span className="rounded-full bg-[var(--primary)]/8 px-2.5 py-1 text-[11px] font-bold text-[var(--primary)]">
               {record.recordType === "MEETING_MINUTES" ? "회의록" : "운영 결정"}
             </span>
             <span className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${status.className}`}>{status.label}</span>
@@ -105,7 +105,7 @@ export function DecisionRecordCard({
             {record.confirmedAt ? `확정 ${formatDateTime(record.confirmedAt)}` : `작성 ${record.createdByDisplayName}`}
           </p>
         </div>
-        <span className="material-symbols-outlined shrink-0 text-[24px] text-indigo-300" aria-hidden="true">
+        <span className="material-symbols-outlined shrink-0 text-[24px] text-[var(--primary)]/45" aria-hidden="true">
           {record.recordType === "MEETING_MINUTES" ? "meeting_room" : "gavel"}
         </span>
       </div>
@@ -191,7 +191,7 @@ function DetailText({ label, value, empty }: { label: string; value?: string | n
 }
 
 function ResourceLinks({ title, links }: { title: string; links: DecisionRecord["resourceLinks"] }) {
-  return <div><p className="text-[11px] font-bold text-slate-400">{title}</p><div className="mt-2 flex flex-wrap gap-2">{links.map((link) => <RouterLink key={`${link.relationType}-${link.resourceType}-${link.resourceId}`} href={link.targetPath} className="inline-flex min-h-9 items-center gap-1 rounded-xl bg-indigo-50 px-3 text-xs font-bold text-indigo-700"><span>{resourceTypeLabel(link.resourceType)} · {link.title}</span><span className="material-symbols-outlined text-[15px]" aria-hidden="true">arrow_outward</span></RouterLink>)}</div></div>;
+  return <div><p className="text-[11px] font-bold text-slate-400">{title}</p><div className="mt-2 flex flex-wrap gap-2">{links.map((link) => <RouterLink key={`${link.relationType}-${link.resourceType}-${link.resourceId}`} href={link.targetPath} className="inline-flex min-h-11 items-center gap-1 rounded-[var(--radius-control)] bg-[var(--primary)]/8 px-3 text-xs font-bold text-[var(--primary)]"><span>{resourceTypeLabel(link.resourceType)} · {link.title}</span><span className="material-symbols-outlined text-[15px]" aria-hidden="true">arrow_outward</span></RouterLink>)}</div></div>;
 }
 
 function ActionButton({ label, onClick, pending, tone }: { label: string; onClick: () => void; pending: boolean; tone: "primary" | "light" | "danger" }) {

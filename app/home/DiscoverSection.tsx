@@ -77,7 +77,7 @@ export function DiscoverSection({
 }: DiscoverSectionProps) {
   return (
     <>
-      <motion.div className="px-4 py-4" {...staggeredFadeUpMotion(1, reduceMotion)}>
+      <motion.div className="px-4 py-4 sm:px-6" {...staggeredFadeUpMotion(1, reduceMotion)}>
         <label className="flex w-full flex-col">
           <div className="flex h-12 w-full items-stretch rounded-xl border border-transparent bg-slate-100 transition-all focus-within:border-[var(--primary)]/50">
             <div className="flex items-center justify-center pl-4 text-slate-500">
@@ -85,8 +85,8 @@ export function DiscoverSection({
             </div>
             <input
               className="form-input flex w-full border-none bg-transparent px-3 text-base font-normal text-slate-900 placeholder:text-slate-500 focus:ring-0"
-              placeholder="클럽 이름이나 소개를 검색해 보세요."
-              aria-label="클럽 검색"
+              placeholder="모임 이름이나 소개를 검색해 보세요."
+              aria-label="모임 검색"
               value={searchQuery}
               onChange={(event) => {
                 const nextValue = event.target.value;
@@ -97,22 +97,22 @@ export function DiscoverSection({
         </label>
       </motion.div>
 
-      <motion.section className="px-4 pb-3 pt-6" {...staggeredFadeUpMotion(6, reduceMotion)}>
+      <motion.section className="px-4 pb-3 pt-6 sm:px-6" {...staggeredFadeUpMotion(6, reduceMotion)}>
         <div className="flex items-baseline gap-2">
           <h2 className="text-lg font-bold text-slate-900">{discoverTitle}</h2>
-          <span className="text-[11px] font-medium text-slate-400">클럽 찾기/가입신청</span>
+          <span className="text-xs font-medium text-slate-400">모임 찾기 · 가입 신청</span>
         </div>
         <p className="mt-1 text-xs text-slate-500">{discoverSubtitle}</p>
       </motion.section>
 
-      <section className="flex flex-1 flex-col gap-4 px-4 pb-20">
+      <section className="grid flex-1 gap-4 px-4 pb-20 sm:px-6 md:grid-cols-2">
         {isLoadingDiscover ? (
           <motion.div
-            className="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-10 text-center"
+            className="rounded-[var(--radius-card)] border border-dashed border-slate-200 bg-slate-50 px-4 py-10 text-center md:col-span-2"
             {...staggeredFadeUpMotion(7, reduceMotion)}
           >
-            <p className="text-sm font-semibold text-slate-700">클럽을 탐색하는 중입니다.</p>
-            <p className="mt-1 text-xs text-slate-500">공개 클럽과 가입 상태를 확인하고 있습니다.</p>
+            <p className="text-sm font-semibold text-slate-700">모임을 탐색하는 중입니다.</p>
+            <p className="mt-1 text-xs text-slate-500">공개 모임과 가입 상태를 확인하고 있습니다.</p>
           </motion.div>
         ) : discoverClubs.length > 0 ? (
           discoverClubs.map((club, index) => {
@@ -121,13 +121,13 @@ export function DiscoverSection({
             return (
               <motion.article
                 key={club.clubId}
-                className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm"
+                className="semo-card semo-card-interactive flex h-full flex-col p-4"
                 {...staggeredFadeUpMotion(index + 7, reduceMotion)}
               >
                 <div className="flex gap-4">
                   <div className="relative flex size-20 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-blue-100 bg-[radial-gradient(circle_at_50%_36%,rgba(19,91,236,0.12),transparent_64%),#f8fafc]">
                     <ClubGrowthCoreMark growthCore={club.growthCore} size={76} />
-                    <span className="absolute bottom-1 rounded-full bg-white/90 px-1.5 py-0.5 text-[9px] font-extrabold text-slate-600 shadow-sm">
+                    <span className="absolute bottom-1 rounded-full bg-white/90 px-1.5 py-0.5 text-[11px] font-extrabold text-slate-600 shadow-sm">
                       {club.growthCore?.tierLabel ?? "원석"}
                     </span>
                   </div>
@@ -149,7 +149,7 @@ export function DiscoverSection({
                       ) : null}
                     </div>
                     <p className="mt-1 line-clamp-2 text-sm leading-6 text-slate-500">
-                      {club.summary ?? club.description ?? "클럽 소개가 아직 없습니다."}
+                      {club.summary ?? club.description ?? "모임 소개가 아직 없습니다."}
                     </p>
                     <div className="mt-3 flex flex-wrap items-center gap-2 text-[11px] font-semibold text-slate-500">
                       <span className="rounded-full bg-slate-100 px-2.5 py-1">
@@ -170,7 +170,7 @@ export function DiscoverSection({
                   </div>
                 </div>
 
-                <div className="mt-4 flex flex-wrap gap-2">
+                <div className="mt-auto flex flex-wrap gap-2 pt-4">
                   <button
                     type="button"
                     onClick={() => onOpenClub(club)}
@@ -208,16 +208,16 @@ export function DiscoverSection({
           })
         ) : (
           <motion.div
-            className="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-10 text-center"
+            className="rounded-[var(--radius-card)] border border-dashed border-slate-200 bg-slate-50 px-4 py-10 text-center md:col-span-2"
             {...staggeredFadeUpMotion(7, reduceMotion)}
           >
             <p className="text-sm font-semibold text-slate-700">
-              {discoverError ?? "표시할 공개 클럽이 없습니다."}
+              {discoverError ?? "표시할 공개 모임이 없습니다."}
             </p>
             <p className="mt-1 text-xs text-slate-500">
               {hasSearchQuery
                 ? "검색어를 바꾸거나 다른 키워드로 다시 찾아보세요."
-                : "새 클럽이 등록되면 이 영역에 추천이 표시됩니다."}
+                : "새 모임이 등록되면 이 영역에 추천이 표시됩니다."}
             </p>
           </motion.div>
         )}

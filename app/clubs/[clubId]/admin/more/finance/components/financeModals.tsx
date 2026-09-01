@@ -101,7 +101,7 @@ export function FinanceActionSheetModal({
   onOpenExpense: () => void;
 }) {
   return (
-    <RouteModal ariaLabel="재정 입력 메뉴" onDismiss={onClose} contentClassName="max-w-md rounded-[2rem] sm:rounded-[2rem]">
+    <RouteModal ariaLabel="재정 입력 메뉴" onDismiss={onClose} contentClassName="max-w-md rounded-[var(--radius-modal)] sm:rounded-[var(--radius-modal)]">
       <section className="px-5 py-5">
         <div className="flex items-center justify-between">
           <div>
@@ -123,9 +123,9 @@ export function FinanceActionSheetModal({
             type="button"
             onClick={onOpenCreate}
             disabled={!canCreateObligation}
-            className="flex w-full items-start gap-3 rounded-3xl border border-slate-200 bg-white px-4 py-4 text-left transition hover:border-[#ec5b13]/30 hover:bg-[#fff7f2] disabled:cursor-not-allowed disabled:opacity-45"
+            className="flex w-full items-start gap-3 rounded-[var(--radius-modal)] border border-slate-200 bg-white px-4 py-4 text-left transition hover:border-[var(--primary)]/30 hover:bg-[#fff7f2] disabled:cursor-not-allowed disabled:opacity-45"
           >
-            <div className="rounded-full bg-[#ec5b13]/10 p-2 text-[#ec5b13]">
+            <div className="rounded-full bg-[var(--primary)]/10 p-2 text-[var(--primary)]">
               <span className="material-symbols-outlined text-[20px]" aria-hidden="true">add_card</span>
             </div>
             <div className="min-w-0 flex-1">
@@ -138,9 +138,9 @@ export function FinanceActionSheetModal({
             type="button"
             onClick={onOpenExpense}
             disabled={!canCreateExpense}
-            className="flex w-full items-start gap-3 rounded-3xl border border-slate-200 bg-white px-4 py-4 text-left transition hover:border-[#ec5b13]/30 hover:bg-[#fff7f2] disabled:cursor-not-allowed disabled:opacity-45"
+            className="flex w-full items-start gap-3 rounded-[var(--radius-modal)] border border-slate-200 bg-white px-4 py-4 text-left transition hover:border-[var(--primary)]/30 hover:bg-[#fff7f2] disabled:cursor-not-allowed disabled:opacity-45"
           >
-            <div className="rounded-full bg-[#ec5b13]/10 p-2 text-[#ec5b13]">
+            <div className="rounded-full bg-[var(--primary)]/10 p-2 text-[var(--primary)]">
               <span className="material-symbols-outlined text-[20px]" aria-hidden="true">receipt_long</span>
             </div>
             <div className="min-w-0 flex-1">
@@ -252,14 +252,14 @@ export function CreateObligationModal({
             </div>
 
             <div className="grid gap-4 lg:grid-cols-[1.25fr_0.95fr]">
-              <div className="space-y-4 rounded-3xl bg-slate-50 p-4">
+              <div className="space-y-4 rounded-[var(--radius-modal)] bg-slate-50 p-4">
                 <label className="block">
                   <span className="text-sm font-semibold text-slate-700">항목 이름</span>
                   <input
                     value={title}
                     onChange={(event) => onTitleChange(event.target.value)}
                     placeholder="예: 2026 봄 대회 참가비"
-                    className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-[#ec5b13] focus:ring-2 focus:ring-[#ec5b13]/10"
+                    className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/10"
                   />
                 </label>
 
@@ -310,15 +310,15 @@ export function CreateObligationModal({
                       value={amount}
                       onChange={(event) => onAmountChange(event.target.value)}
                       inputMode="numeric"
-                      className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-[#ec5b13] focus:ring-2 focus:ring-[#ec5b13]/10"
+                      className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/10"
                     />
                   </label>
                   <label className="block">
                     <span className="text-sm font-semibold text-slate-700">마감일</span>
                     <div className="mt-2 space-y-2">
-                      <DatePopoverField value={dueAtDate} onChange={onDueAtDateChange} buttonClassName="py-3 focus:border-[#ec5b13] focus:ring-2 focus:ring-[#ec5b13]/10" placeholder="마감 날짜를 선택하세요" />
+                      <DatePopoverField value={dueAtDate} onChange={onDueAtDateChange} buttonClassName="py-3 focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/10" placeholder="마감 날짜를 선택하세요" />
                       <div className="flex items-center gap-2">
-                        <TimePopoverField value={dueAtTime} onChange={onDueAtTimeChange} disabled={!dueAtDate} buttonClassName="w-full rounded-2xl border-slate-200 bg-white px-4 py-3 text-slate-900 focus:border-[#ec5b13] focus:ring-2 focus:ring-[#ec5b13]/10 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400" />
+                        <TimePopoverField value={dueAtTime} onChange={onDueAtTimeChange} disabled={!dueAtDate} buttonClassName="w-full rounded-2xl border-slate-200 bg-white px-4 py-3 text-slate-900 focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/10 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400" />
                         <button
                           type="button"
                           onClick={() => {
@@ -343,12 +343,12 @@ export function CreateObligationModal({
                     onChange={(event) => onNoteChange(event.target.value)}
                     rows={3}
                     placeholder="예: 대회 당일 현장 수납 가능"
-                    className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-[#ec5b13] focus:ring-2 focus:ring-[#ec5b13]/10"
+                    className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/10"
                   />
                 </label>
               </div>
 
-              <div className="space-y-4 rounded-3xl border border-slate-200 bg-white p-4">
+              <div className="space-y-4 rounded-[var(--radius-modal)] border border-slate-200 bg-white p-4">
                 <div>
                   <p className="text-sm font-semibold text-slate-700">발행 대상</p>
                   <div className="mt-3 space-y-2">
@@ -358,7 +358,7 @@ export function CreateObligationModal({
                         type="button"
                         onClick={() => onTargetScopeChange(option.value)}
                         className={`w-full rounded-2xl border px-4 py-3 text-left transition ${
-                          targetScope === option.value ? "border-[#ec5b13] bg-[#fff5ef]" : "border-slate-200 bg-slate-50 hover:border-slate-300"
+                          targetScope === option.value ? "border-[var(--primary)] bg-[#fff5ef]" : "border-slate-200 bg-slate-50 hover:border-slate-300"
                         }`}
                       >
                         <p className="text-sm font-bold text-slate-900">{option.label}</p>
@@ -380,7 +380,7 @@ export function CreateObligationModal({
                       value={memberSearchQuery}
                       onChange={(event) => onMemberSearchQueryChange(event.target.value)}
                       placeholder="이름 또는 역할 검색"
-                      className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-[#ec5b13] focus:ring-2 focus:ring-[#ec5b13]/10"
+                      className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/10"
                     />
 
                     <div className="max-h-72 space-y-2 overflow-y-auto pr-1">
@@ -396,14 +396,14 @@ export function CreateObligationModal({
                               type="button"
                               onClick={() => onToggleSelectedMember(member)}
                               className={`flex w-full items-center justify-between rounded-2xl border px-4 py-3 text-left transition ${
-                                selected ? "border-[#ec5b13] bg-[#fff5ef]" : "border-slate-200 bg-slate-50 hover:border-slate-300"
+                                selected ? "border-[var(--primary)] bg-[#fff5ef]" : "border-slate-200 bg-slate-50 hover:border-slate-300"
                               }`}
                             >
                               <div>
                                 <p className="text-sm font-bold text-slate-900">{member.memberDisplayName}</p>
                                 <p className="mt-1 text-xs text-slate-500">{getClubRoleLabel(member.memberRoleCode)}</p>
                               </div>
-                              <span className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${selected ? "bg-[#ec5b13] text-white" : "bg-white text-slate-500"}`}>
+                              <span className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${selected ? "bg-[var(--primary)] text-white" : "bg-white text-slate-500"}`}>
                                 {selected ? "선택됨" : "추가"}
                               </span>
                             </button>
@@ -425,7 +425,7 @@ export function CreateObligationModal({
             type="button"
             disabled={!finance.canManageBilling || isCreating}
             onClick={onCreate}
-            className="w-full rounded-2xl bg-[#ec5b13] px-4 py-3 text-sm font-bold text-white transition hover:bg-[#d94f0b] disabled:cursor-not-allowed disabled:bg-slate-300"
+            className="w-full rounded-2xl bg-[var(--primary)] px-4 py-3 text-sm font-bold text-white transition hover:bg-[#d94f0b] disabled:cursor-not-allowed disabled:bg-slate-300"
           >
             {isCreating ? "발행 중..." : "재정 항목 발행"}
           </button>
@@ -505,7 +505,7 @@ export function ExpenseEntryModal({
         </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5">
-          <div className="space-y-4 rounded-3xl bg-slate-50 p-4">
+          <div className="space-y-4 rounded-[var(--radius-modal)] bg-slate-50 p-4">
             <p className="text-sm leading-6 text-slate-500">실제로 모임 계좌에서 나간 돈이나 운영진이 현장에서 결제한 건을 기록합니다.</p>
             <label className="block">
               <span className="text-sm font-semibold text-slate-700">지출 제목</span>
@@ -513,7 +513,7 @@ export function ExpenseEntryModal({
                 value={title}
                 onChange={(event) => onTitleChange(event.target.value)}
                 placeholder="예: 4월 연습장 대관비"
-                className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-[#ec5b13] focus:ring-2 focus:ring-[#ec5b13]/10"
+                className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/10"
               />
             </label>
 
@@ -523,7 +523,7 @@ export function ExpenseEntryModal({
                 <select
                   value={category}
                   onChange={(event) => onCategoryChange(event.target.value)}
-                  className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-[#ec5b13] focus:ring-2 focus:ring-[#ec5b13]/10"
+                  className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/10"
                 >
                   <option value="MEMBERSHIP_FEE">회비</option>
                   <option value="EVENT_FEE">행사비</option>
@@ -541,7 +541,7 @@ export function ExpenseEntryModal({
                   value={amount}
                   onChange={(event) => onAmountChange(event.target.value)}
                   inputMode="numeric"
-                  className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-[#ec5b13] focus:ring-2 focus:ring-[#ec5b13]/10"
+                  className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/10"
                 />
               </label>
             </div>
@@ -565,13 +565,13 @@ export function ExpenseEntryModal({
               <label className="block">
                 <span className="text-sm font-semibold text-slate-700">지출 날짜</span>
                 <div className="mt-2">
-                  <DatePopoverField value={spentDate} onChange={onSpentDateChange} buttonClassName="py-3 focus:border-[#ec5b13] focus:ring-2 focus:ring-[#ec5b13]/10" placeholder="지출 날짜를 선택하세요" />
+                  <DatePopoverField value={spentDate} onChange={onSpentDateChange} buttonClassName="py-3 focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/10" placeholder="지출 날짜를 선택하세요" />
                 </div>
               </label>
               <label className="block">
                 <span className="text-sm font-semibold text-slate-700">지출 시간</span>
                 <div className="mt-2">
-                  <TimePopoverField value={spentTime} onChange={onSpentTimeChange} disabled={!spentDate} buttonClassName="w-full rounded-2xl border-slate-200 bg-white px-4 py-3 text-slate-900 focus:border-[#ec5b13] focus:ring-2 focus:ring-[#ec5b13]/10 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400" />
+                  <TimePopoverField value={spentTime} onChange={onSpentTimeChange} disabled={!spentDate} buttonClassName="w-full rounded-2xl border-slate-200 bg-white px-4 py-3 text-slate-900 focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/10 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400" />
                 </div>
               </label>
             </div>
@@ -586,7 +586,7 @@ export function ExpenseEntryModal({
             {!linkedScheduleEventId ? (
               <label className="block">
                 <span className="text-sm font-semibold text-slate-700">직접 입력 행사명</span>
-                <input value={relatedEventName} onChange={(event) => onRelatedEventNameChange(event.target.value)} placeholder="일정에 없는 행사만 직접 입력" className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-[#ec5b13] focus:ring-2 focus:ring-[#ec5b13]/10" />
+                <input value={relatedEventName} onChange={(event) => onRelatedEventNameChange(event.target.value)} placeholder="일정에 없는 행사만 직접 입력" className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/10" />
               </label>
             ) : null}
 
@@ -597,7 +597,7 @@ export function ExpenseEntryModal({
                 onChange={(event) => onNoteChange(event.target.value)}
                 rows={4}
                 placeholder="결제 수단, 현장 상황, 증빙 위치 등을 적어주세요."
-                className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-[#ec5b13] focus:ring-2 focus:ring-[#ec5b13]/10"
+                className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/10"
               />
             </label>
           </div>
@@ -608,7 +608,7 @@ export function ExpenseEntryModal({
             type="button"
             disabled={isCreating}
             onClick={onCreate}
-            className="w-full rounded-2xl bg-[#ec5b13] px-4 py-3 text-sm font-bold text-white transition hover:bg-[#d94f0b] disabled:cursor-not-allowed disabled:bg-slate-300"
+            className="w-full rounded-2xl bg-[var(--primary)] px-4 py-3 text-sm font-bold text-white transition hover:bg-[#d94f0b] disabled:cursor-not-allowed disabled:bg-slate-300"
           >
             {isCreating ? "지출 입력 중..." : "지출 입력"}
           </button>
@@ -627,7 +627,7 @@ function FinanceSelect({ label, value, onChange, children }: {
   return (
     <label className="block">
       <span className="text-sm font-semibold text-slate-700">{label}</span>
-      <select value={value} onChange={(event) => onChange(event.target.value)} className="mt-2 min-h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm text-slate-900 outline-none transition focus:border-[#ec5b13] focus:ring-2 focus:ring-[#ec5b13]/10">
+      <select value={value} onChange={(event) => onChange(event.target.value)} className="mt-2 min-h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm text-slate-900 outline-none transition focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/10">
         {children}
       </select>
     </label>

@@ -528,13 +528,13 @@ export function ClubDashboardWidgetFeatureContent({
                 <p className="text-xs font-bold text-amber-700">대기 중</p>
                 <p className="mt-2 text-base font-bold text-slate-900">{bracketData.pendingBracketCount}</p>
               </div>
-              <div className="rounded-xl bg-yellow-50 px-3 py-3">
-                <p className="text-xs font-bold text-yellow-700">내 신청</p>
+              <div className="rounded-xl bg-amber-50 px-3 py-3">
+                <p className="text-xs font-bold text-amber-700">내 신청</p>
                 <p className="mt-2 text-base font-bold text-slate-900">{bracketData.myBrackets.length}</p>
               </div>
             </div>
             {latestMyBracket ? (
-              <div className="rounded-xl border border-yellow-100 bg-white px-3 py-3">
+              <div className="rounded-xl border border-amber-100 bg-white px-3 py-3">
                 <p className="text-xs font-semibold text-slate-500">최근 작업</p>
                 <p className="mt-1 text-sm font-bold text-slate-900">{latestMyBracket.title}</p>
                 <p className="mt-1 text-xs text-slate-500">{latestMyBracket.participantCount}명 참가</p>

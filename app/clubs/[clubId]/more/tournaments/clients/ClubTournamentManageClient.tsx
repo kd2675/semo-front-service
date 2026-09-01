@@ -368,7 +368,7 @@ export function ClubTournamentManageClient({
           ) : null}
 
           <motion.section
-            className="rounded-[30px] border border-slate-200 bg-white p-6 shadow-sm"
+            className="rounded-[var(--radius-modal)] border border-slate-200 bg-white p-6 shadow-sm"
             initial={reduceMotion ? undefined : { opacity: 0, y: 16 }}
             animate={reduceMotion ? undefined : { opacity: 1, y: 0 }}
           >
@@ -394,7 +394,7 @@ export function ClubTournamentManageClient({
                   </p>
                 ) : null}
               </div>
-              <div className="w-full rounded-[20px] bg-slate-100 px-4 py-3 text-left sm:w-auto sm:text-right">
+              <div className="w-full rounded-[var(--radius-card)] bg-slate-100 px-4 py-3 text-left sm:w-auto sm:text-right">
                 <p className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">신청/승인</p>
                 <p className="mt-1 text-lg font-black text-slate-900">
                   {payload.applicantCount}/{payload.approvedCount}
@@ -405,7 +405,7 @@ export function ClubTournamentManageClient({
 
           <motion.section
             id="tournament-approval-section"
-            className={`mt-6 rounded-[28px] border p-5 shadow-sm ${
+            className={`mt-6 rounded-[var(--radius-modal)] border p-5 shadow-sm ${
               payload.approvalStatus === "REJECTED"
                 ? "border-rose-200 bg-rose-50/70"
                 : "border-violet-200 bg-violet-50/70"
@@ -435,7 +435,7 @@ export function ClubTournamentManageClient({
           {mode === "admin" && payload.canReviewTournament && payload.approvalStatus === "PENDING" ? (
             <motion.section
               id="tournament-review-section"
-              className="mt-6 rounded-[28px] border border-amber-200 bg-white p-5 shadow-sm"
+              className="mt-6 rounded-[var(--radius-modal)] border border-amber-200 bg-white p-5 shadow-sm"
               initial={reduceMotion ? undefined : { opacity: 0, y: 16 }}
               animate={reduceMotion ? undefined : { opacity: 1, y: 0 }}
               transition={{ delay: reduceMotion ? 0 : 0.08 }}
@@ -451,7 +451,7 @@ export function ClubTournamentManageClient({
                     key={option.value}
                     type="button"
                     onClick={() => setTournamentReviewStatus(option.value as "APPROVED" | "REJECTED")}
-                    className={`rounded-[18px] border px-4 py-3 text-sm font-black transition ${
+                    className={`rounded-[var(--radius-card)] border px-4 py-3 text-sm font-black transition ${
                       tournamentReviewStatus === option.value
                         ? option.className
                         : "border-slate-200 bg-slate-50 text-slate-500"
@@ -466,7 +466,7 @@ export function ClubTournamentManageClient({
                   aria-label="대회 거절 사유"
                   value={tournamentRejectionReason}
                   onChange={(event) => setTournamentRejectionReason(event.target.value)}
-                  className="mt-4 block min-h-28 w-full rounded-[18px] border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900"
+                  className="mt-4 block min-h-28 w-full rounded-[var(--radius-card)] border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900"
                   placeholder="거절 사유를 입력하세요."
                 />
               ) : null}
@@ -486,7 +486,7 @@ export function ClubTournamentManageClient({
           {payload.canManageApplications ? (
             <motion.section
               id="tournament-management-section"
-              className="mt-6 rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm"
+              className="mt-6 rounded-[var(--radius-modal)] border border-slate-200 bg-white p-5 shadow-sm"
               initial={reduceMotion ? undefined : { opacity: 0, y: 16 }}
               animate={reduceMotion ? undefined : { opacity: 1, y: 0 }}
               transition={{ delay: reduceMotion ? 0 : 0.12 }}
@@ -580,7 +580,7 @@ export function ClubTournamentManageClient({
 
           {payload.canManageApplications ? (
             <motion.section
-              className="mt-6 rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm"
+              className="mt-6 rounded-[var(--radius-modal)] border border-slate-200 bg-white p-5 shadow-sm"
               initial={reduceMotion ? undefined : { opacity: 0, y: 16 }}
               animate={reduceMotion ? undefined : { opacity: 1, y: 0 }}
               transition={{ delay: reduceMotion ? 0 : 0.14 }}
@@ -672,7 +672,7 @@ export function ClubTournamentManageClient({
 
           <motion.section
             id="tournament-action-section"
-            className="mt-6 rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm"
+            className="mt-6 rounded-[var(--radius-modal)] border border-slate-200 bg-white p-5 shadow-sm"
             initial={reduceMotion ? undefined : { opacity: 0, y: 16 }}
             animate={reduceMotion ? undefined : { opacity: 1, y: 0 }}
             transition={{ delay: reduceMotion ? 0 : 0.16 }}

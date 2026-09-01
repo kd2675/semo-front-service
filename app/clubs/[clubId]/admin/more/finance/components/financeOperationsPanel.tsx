@@ -42,7 +42,7 @@ export function FinanceOperationsPanel({
 
   return (
     <motion.section className="space-y-5" {...staggeredFadeUpMotion(2, reduceMotion)}>
-      <section className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm">
+      <section className="rounded-[var(--radius-modal)] border border-slate-200 bg-white p-5 shadow-sm">
         <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
           <div className="max-w-2xl">
             <p className="text-xs font-semibold tracking-wide text-slate-400">예산과 마감</p>
@@ -141,7 +141,7 @@ function PeriodCard({
   const spentTotal = period.budgets.reduce((sum, budget) => sum + budget.spentAmount, 0);
 
   return (
-    <article className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm">
+    <article className="rounded-[var(--radius-modal)] border border-slate-200 bg-white p-5 shadow-sm">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <div className="flex flex-wrap items-center gap-2">
@@ -282,7 +282,7 @@ function SectionHeading({ eyebrow, title, count }: { eyebrow: string; title: str
 
 function EmptyOperationState({ icon, title, description }: { icon: string; title: string; description: string }) {
   return (
-    <div className="rounded-[28px] border border-dashed border-slate-200 bg-white px-5 py-10 text-center">
+    <div className="rounded-[var(--radius-modal)] border border-dashed border-slate-200 bg-white px-5 py-10 text-center">
       <div className="mx-auto flex size-11 items-center justify-center rounded-xl bg-slate-100 text-slate-400"><span className="material-symbols-outlined" aria-hidden="true">{icon}</span></div>
       <p className="mt-3 text-sm font-bold text-slate-800">{title}</p>
       <p className="mx-auto mt-1 max-w-sm text-sm leading-6 text-slate-500">{description}</p>

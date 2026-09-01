@@ -35,8 +35,8 @@ type DecisionRecordEditorProps = {
   onCancel: () => void;
 };
 
-const fieldClassName = "min-h-11 w-full rounded-2xl border border-slate-200 bg-white px-3.5 text-sm text-slate-900 outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100";
-const textareaClassName = "w-full rounded-2xl border border-slate-200 bg-white px-3.5 py-3 text-sm leading-6 text-slate-900 outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100";
+const fieldClassName = "min-h-11 w-full rounded-[var(--radius-control)] border border-slate-200 bg-white px-3.5 text-sm text-slate-900 outline-none transition focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/10";
+const textareaClassName = "w-full rounded-[var(--radius-control)] border border-slate-200 bg-white px-3.5 py-3 text-sm leading-6 text-slate-900 outline-none transition focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/10";
 
 function resourceKey(resourceType: string, resourceId: number) {
   return `${resourceType}:${resourceId}`;
@@ -99,9 +99,9 @@ export function DecisionRecordEditor({ center, draft, editing, pending, onChange
   };
 
   return (
-    <form id="decision-record-editor" onSubmit={onSubmit} className="scroll-mt-24 rounded-[28px] border border-indigo-200 bg-white p-5 shadow-sm sm:p-6">
+    <form id="decision-record-editor" onSubmit={onSubmit} className="scroll-mt-24 rounded-[var(--radius-modal)] border border-[var(--primary)]/25 bg-white p-5 shadow-[var(--shadow-card)] sm:p-6">
       <div className="flex items-start justify-between gap-3">
-        <div><p className="text-xs font-bold text-indigo-600">{editing ? "초안 수정" : "새 기록"}</p><h2 className="mt-1 text-lg font-black text-slate-900">{editing ? "회의록·결정 내용 다듬기" : "회의의 맥락과 결론 남기기"}</h2></div>
+        <div><p className="text-xs font-bold text-[var(--primary)]">{editing ? "초안 수정" : "새 기록"}</p><h2 className="mt-1 text-lg font-black text-slate-900">{editing ? "회의록·결정 내용 다듬기" : "회의의 맥락과 결론 남기기"}</h2></div>
         <button type="button" onClick={onCancel} className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-500" aria-label="편집기 닫기"><span className="material-symbols-outlined text-[21px]" aria-hidden="true">close</span></button>
       </div>
 
@@ -157,7 +157,7 @@ export function DecisionRecordEditor({ center, draft, editing, pending, onChange
         <div className="max-h-64 space-y-2 overflow-y-auto pr-1">{todoOptions.length > 0 ? todoOptions.map((todo) => <ResourceChoice key={todo.resourceId} selected={draft.followUpTodoItemIds.includes(todo.resourceId)} typeLabel="후속 업무" title={todo.title} status={todo.statusLabel} onClick={() => toggleFollowUp(todo.resourceId)} />) : <p className="rounded-2xl bg-slate-50 px-4 py-5 text-center text-xs text-slate-400">연결할 업무가 없습니다.</p>}</div>
       </EditorSection>
 
-      <div className="mt-6 flex gap-2"><button type="button" onClick={onCancel} className="min-h-12 flex-1 rounded-2xl bg-slate-100 text-sm font-bold text-slate-700">취소</button><button type="submit" disabled={pending || draft.deciderClubProfileIds.length === 0} className="min-h-12 flex-[2] rounded-2xl bg-indigo-600 text-sm font-bold text-white disabled:opacity-50">{editing ? "초안 수정 저장" : "초안 저장"}</button></div>
+      <div className="mt-6 flex gap-2"><button type="button" onClick={onCancel} className="min-h-12 flex-1 rounded-[var(--radius-control)] bg-slate-100 text-sm font-bold text-slate-700">취소</button><button type="submit" disabled={pending || draft.deciderClubProfileIds.length === 0} className="min-h-12 flex-[2] rounded-[var(--radius-control)] bg-[var(--primary)] text-sm font-bold text-white disabled:opacity-50">{editing ? "초안 수정 저장" : "초안 저장"}</button></div>
     </form>
   );
 }
@@ -171,17 +171,17 @@ function FormField({ label, children }: { label: string; children: React.ReactNo
 }
 
 function ChoiceCard({ selected, icon, label, description, onClick }: { selected: boolean; icon: string; label: string; description: string; onClick: () => void }) {
-  return <button type="button" aria-pressed={selected} onClick={onClick} className={`flex min-h-20 items-center gap-3 rounded-2xl border px-3 text-left transition ${selected ? "border-indigo-400 bg-indigo-50 text-indigo-800" : "border-slate-200 bg-white text-slate-600"}`}><span className={`flex size-10 shrink-0 items-center justify-center rounded-xl ${selected ? "bg-indigo-600 text-white" : "bg-slate-100 text-slate-500"}`}><span className="material-symbols-outlined text-[20px]" aria-hidden="true">{icon}</span></span><span><span className="block text-sm font-black">{label}</span><span className="mt-1 block text-[11px]">{description}</span></span></button>;
+  return <button type="button" aria-pressed={selected} onClick={onClick} className={`flex min-h-20 items-center gap-3 rounded-[var(--radius-card)] border px-3 text-left transition ${selected ? "border-[var(--primary)] bg-[var(--primary)]/8 text-slate-900" : "border-slate-200 bg-white text-slate-600"}`}><span className={`flex size-10 shrink-0 items-center justify-center rounded-[var(--radius-control)] ${selected ? "bg-[var(--primary)] text-white" : "bg-slate-100 text-slate-500"}`}><span className="material-symbols-outlined text-[20px]" aria-hidden="true">{icon}</span></span><span><span className="block text-sm font-black">{label}</span><span className="mt-1 block text-[11px]">{description}</span></span></button>;
 }
 
 function RoleButton({ selected, label, onClick }: { selected: boolean; label: string; onClick: () => void }) {
-  return <button type="button" aria-pressed={selected} onClick={onClick} className={`min-h-9 rounded-xl px-3 text-xs font-bold ${selected ? "bg-indigo-600 text-white" : "bg-slate-100 text-slate-500"}`}>{label}</button>;
+  return <button type="button" aria-pressed={selected} onClick={onClick} className={`min-h-11 rounded-[var(--radius-control)] px-3 text-xs font-bold ${selected ? "bg-[var(--primary)] text-white" : "bg-slate-100 text-slate-500"}`}>{label}</button>;
 }
 
 function FilterButton({ selected, label, onClick }: { selected: boolean; label: string; onClick: () => void }) {
-  return <button type="button" aria-pressed={selected} onClick={onClick} className={`min-h-9 shrink-0 rounded-xl px-3 text-xs font-bold ${selected ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-500"}`}>{label}</button>;
+  return <button type="button" aria-pressed={selected} onClick={onClick} className={`min-h-11 shrink-0 rounded-[var(--radius-control)] px-3 text-xs font-bold ${selected ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-500"}`}>{label}</button>;
 }
 
 function ResourceChoice({ selected, typeLabel, title, status, onClick }: { selected: boolean; typeLabel: string; title: string; status: string; onClick: () => void }) {
-  return <button type="button" aria-pressed={selected} onClick={onClick} className={`flex min-h-14 w-full items-center gap-3 rounded-2xl border px-3 text-left ${selected ? "border-indigo-300 bg-indigo-50" : "border-slate-200 bg-white"}`}><span className={`flex size-8 shrink-0 items-center justify-center rounded-lg ${selected ? "bg-indigo-600 text-white" : "bg-slate-100 text-slate-400"}`}><span className="material-symbols-outlined text-[17px]" aria-hidden="true">{selected ? "check" : "add"}</span></span><span className="min-w-0 flex-1"><span className="block text-[11px] font-bold text-slate-400">{typeLabel} · {status}</span><span className="mt-0.5 block truncate text-xs font-bold text-slate-700">{title}</span></span></button>;
+  return <button type="button" aria-pressed={selected} onClick={onClick} className={`flex min-h-14 w-full items-center gap-3 rounded-[var(--radius-card)] border px-3 text-left ${selected ? "border-[var(--primary)]/40 bg-[var(--primary)]/6" : "border-slate-200 bg-white"}`}><span className={`flex size-8 shrink-0 items-center justify-center rounded-lg ${selected ? "bg-[var(--primary)] text-white" : "bg-slate-100 text-slate-400"}`}><span className="material-symbols-outlined text-[17px]" aria-hidden="true">{selected ? "check" : "add"}</span></span><span className="min-w-0 flex-1"><span className="block text-[11px] font-bold text-slate-400">{typeLabel} · {status}</span><span className="mt-0.5 block truncate text-xs font-bold text-slate-700">{title}</span></span></button>;
 }

@@ -93,20 +93,8 @@ export function BoardScheduleManageCard({
   });
 
   return (
-    <div className="relative overflow-visible rounded-[8px] border border-slate-100 bg-white shadow-sm">
-      <div
-        role="button"
-        tabIndex={0}
-        onClick={onOpen}
-        onKeyDown={(eventKey) => {
-          if (eventKey.key === "Enter" || eventKey.key === " ") {
-            eventKey.preventDefault();
-            onOpen();
-          }
-        }}
-        className="block cursor-pointer px-4 py-4 text-left transition hover:bg-slate-50"
-        aria-label={`${event.title} 일정 자세히 보기`}
-      >
+    <div className="semo-card relative overflow-visible">
+      <article className="px-4 py-4">
         <div className="mb-2 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <div
@@ -117,7 +105,7 @@ export function BoardScheduleManageCard({
             <div className="flex flex-wrap items-center gap-2">
               <span className="rounded bg-amber-50 px-2 py-0.5 text-[11px] font-bold uppercase text-amber-600">일정</span>
               {event.pinned ? (
-                <span className="rounded bg-red-50 px-2 py-0.5 text-[11px] font-bold uppercase text-red-600">고정</span>
+                <span className="rounded bg-rose-50 px-2 py-0.5 text-[11px] font-bold uppercase text-rose-600">고정</span>
               ) : null}
               {shareBadges.map((shareBadge) => (
                 <span
@@ -154,8 +142,17 @@ export function BoardScheduleManageCard({
               </button>
             ) : null}
           </div>
-          {manageable ? (
-            <div className="relative">
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={onOpen}
+              className="semo-icon-control text-[var(--primary)] transition hover:bg-[var(--primary)]/8"
+              aria-label={`${event.title} 일정 자세히 보기`}
+            >
+              <span className="material-symbols-outlined text-[20px]" aria-hidden="true">arrow_forward</span>
+            </button>
+            {manageable ? (
+              <div className="relative">
               <button
                 type="button"
                 aria-label={`${event.title} 관리 메뉴`}
@@ -209,10 +206,11 @@ export function BoardScheduleManageCard({
                   </motion.div>
                 ) : null}
               </AnimatePresence>
-            </div>
-          ) : null}
+              </div>
+            ) : null}
+          </div>
         </div>
-      </div>
+      </article>
     </div>
   );
 }

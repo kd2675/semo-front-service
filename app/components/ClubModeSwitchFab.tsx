@@ -32,7 +32,7 @@ export function ClubModeSwitchFab({ clubId, mode, className }: ClubModeSwitchFab
         href={isAdminMode ? `/clubs/${clubId}` : `/clubs/${clubId}/admin`}
         aria-label={isAdminMode ? "유저 모드로 전환" : "관리자 모드로 전환"}
         title={isAdminMode ? "관리자 모드 종료" : "관리자 모드"}
-        className={`flex size-14 items-center justify-center rounded-full border shadow-xl backdrop-blur-md transition-transform hover:scale-105 active:scale-95 ${
+        className={`flex size-14 items-center justify-center rounded-full border shadow-[var(--shadow-floating)] backdrop-blur-md transition-transform hover:scale-105 active:scale-95 ${
           isAdminMode ? userAccentClassName : adminAccentClassName
         }`}
       >

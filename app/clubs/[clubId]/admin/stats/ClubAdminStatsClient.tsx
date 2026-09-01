@@ -40,21 +40,21 @@ type ClubAdminStatsClientProps = {
 
 const TONE_CLASS = {
   primary: "text-[var(--primary)]",
-  green: "text-green-600",
-  red: "text-red-500",
+  green: "text-emerald-600",
+  red: "text-rose-500",
   default: "text-slate-500",
 } as const;
 
 const PANEL_TONE_CLASS = {
   primary: "border-[var(--primary)]/20 bg-[var(--primary)]/10",
-  green: "border-green-200 bg-green-50",
-  red: "border-red-200 bg-red-50",
+  green: "border-emerald-200 bg-emerald-50",
+  red: "border-rose-200 bg-rose-50",
   default: "border-slate-200 bg-slate-50",
 } as const;
 
 const ACTIVITY_STATUS_CLASS = {
-  SUCCESS: "bg-green-100 text-green-700",
-  FAIL: "bg-red-100 text-red-600",
+  SUCCESS: "bg-emerald-100 text-emerald-700",
+  FAIL: "bg-rose-100 text-rose-600",
 } as const;
 
 function SnapshotGrid({

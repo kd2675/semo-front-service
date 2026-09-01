@@ -232,7 +232,7 @@ export function ClubFinanceClient({
 
         <main className="semo-nav-bottom-space mx-auto flex w-full max-w-md flex-1 flex-col gap-4 px-4 pt-4">
           <motion.section
-            className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm"
+            className="rounded-[var(--radius-modal)] border border-slate-200 bg-white p-5 shadow-sm"
             {...staggeredFadeUpMotion(0, reduceMotion)}
           >
             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">
@@ -256,7 +256,7 @@ export function ClubFinanceClient({
 
             <div className="mt-4 rounded-2xl bg-slate-50 px-4 py-4">
               <div className="flex items-start gap-3">
-                <div className="mt-0.5 rounded-full bg-[#135bec]/10 p-2 text-[#135bec]">
+                <div className="mt-0.5 rounded-full bg-[var(--primary)]/10 p-2 text-[var(--primary)]">
                   <span className="material-symbols-outlined text-[18px]" aria-hidden="true">task_alt</span>
                 </div>
                 <div className="min-w-0 flex-1">
@@ -413,7 +413,7 @@ export function ClubFinanceClient({
           type="button"
           aria-label="재정 제출 메뉴 열기"
           onClick={() => setShowActionSheet(true)}
-          className={`fixed ${FAB_RIGHT_OFFSET_CLASS_NAME} ${getActionFabBottomClass(isAdmin)} z-40 flex h-14 w-14 items-center justify-center rounded-full bg-[#135bec] text-white transition-transform active:scale-95`}
+          className={`fixed ${FAB_RIGHT_OFFSET_CLASS_NAME} ${getActionFabBottomClass(isAdmin)} z-40 flex h-14 w-14 items-center justify-center rounded-full bg-[var(--primary)] text-white transition-transform active:scale-95`}
           style={{ boxShadow: "0 10px 24px rgba(19, 91, 236, 0.34)" }}
         >
           <span className="material-symbols-outlined text-[28px]" aria-hidden="true">add</span>
@@ -426,7 +426,7 @@ export function ClubFinanceClient({
             <RouteModal
               ariaLabel="재정 요청 메뉴"
               onDismiss={() => setShowActionSheet(false)}
-              contentClassName="max-w-md rounded-[2rem] sm:rounded-[2rem]"
+              contentClassName="max-w-md rounded-[var(--radius-modal)] sm:rounded-[var(--radius-modal)]"
             >
               <section className="px-5 py-5">
                 <div className="flex items-center justify-between">
@@ -452,9 +452,9 @@ export function ClubFinanceClient({
                       key={option.type}
                       type="button"
                       onClick={() => openActionModal(option.type)}
-                      className="flex w-full items-start gap-3 rounded-3xl border border-slate-200 bg-white px-4 py-4 text-left transition hover:border-[#135bec]/30 hover:bg-[#f4f8ff]"
+                      className="flex w-full items-start gap-3 rounded-[var(--radius-modal)] border border-slate-200 bg-white px-4 py-4 text-left transition hover:border-[var(--primary)]/30 hover:bg-[#f4f8ff]"
                     >
-                      <div className="rounded-full bg-[#135bec]/10 p-2 text-[#135bec]">
+                      <div className="rounded-full bg-[var(--primary)]/10 p-2 text-[var(--primary)]">
                         <span className="material-symbols-outlined text-[20px]" aria-hidden="true">{option.icon}</span>
                       </div>
                       <div className="min-w-0 flex-1">
@@ -517,7 +517,7 @@ function FinanceSection({
   children: ReactNode;
 }) {
   return (
-    <section className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm">
+    <section className="rounded-[var(--radius-modal)] border border-slate-200 bg-white p-5 shadow-sm">
       <div className="mb-4">
         <h3 className="text-lg font-bold text-slate-900">{title}</h3>
         <p className="mt-1 text-sm leading-6 text-slate-500">{caption}</p>
@@ -593,9 +593,9 @@ function ObligationCard({
 }) {
   return (
     <article
-      className={`rounded-3xl border p-4 ${
+      className={`rounded-[var(--radius-modal)] border p-4 ${
         emphasize
-          ? "border-[#135bec]/15 bg-blue-50/60"
+          ? "border-[var(--primary)]/15 bg-blue-50/60"
           : muted
             ? "border-slate-100 bg-slate-50"
             : "border-amber-100 bg-amber-50/30"
@@ -627,7 +627,7 @@ function ObligationCard({
 
 function FinanceRequestCard({ request, onOpen }: { request: ClubFinanceRequest; onOpen?: () => void }) {
   return (
-    <article className="rounded-3xl border border-slate-200 bg-slate-50 p-4">
+    <article className="rounded-[var(--radius-modal)] border border-slate-200 bg-slate-50 p-4">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
@@ -654,7 +654,7 @@ function FinanceRequestCard({ request, onOpen }: { request: ClubFinanceRequest; 
         <InfoItem label="검토 메모" value={request.reviewNote ?? "아직 없음"} />
       </div>
       {onOpen ? (
-        <button type="button" onClick={onOpen} className="mt-4 min-h-11 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-bold text-[#135bec] transition hover:bg-blue-50">상세 및 증빙 확인</button>
+        <button type="button" onClick={onOpen} className="mt-4 min-h-11 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-bold text-[var(--primary)] transition hover:bg-blue-50">상세 및 증빙 확인</button>
       ) : null}
     </article>
   );
@@ -699,14 +699,14 @@ function FinanceRequestModal({
       </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5">
-        <div className="space-y-4 rounded-3xl bg-slate-50 p-4">
+        <div className="space-y-4 rounded-[var(--radius-modal)] bg-slate-50 p-4">
           <p className="text-sm leading-6 text-slate-500">{actionMeta.description}</p>
           <label className="block">
             <span className="text-sm font-semibold text-slate-700">제목</span>
             <input
               value={draft.title}
               onChange={(event) => onChange({ ...draft, title: event.target.value })}
-              className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-[#135bec] focus:ring-2 focus:ring-[#135bec]/10"
+              className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/10"
             />
           </label>
           <label className="block">
@@ -716,12 +716,12 @@ function FinanceRequestModal({
               onChange={(event) => onChange({ ...draft, amount: event.target.value })}
               inputMode="numeric"
               placeholder="예: 24800"
-              className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-[#135bec] focus:ring-2 focus:ring-[#135bec]/10"
+              className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/10"
             />
           </label>
           <label className="block">
             <span className="text-sm font-semibold text-slate-700">연결 일정</span>
-            <select value={draft.linkedScheduleEventId} onChange={(event) => onChange({ ...draft, linkedScheduleEventId: event.target.value })} className="mt-2 min-h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm text-slate-900 outline-none focus:border-[#135bec] focus:ring-2 focus:ring-[#135bec]/10">
+            <select value={draft.linkedScheduleEventId} onChange={(event) => onChange({ ...draft, linkedScheduleEventId: event.target.value })} className="mt-2 min-h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm text-slate-900 outline-none focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/10">
               <option value="">일정 연결 안 함</option>
               {scheduleOptions.map((schedule) => <option key={schedule.eventId} value={schedule.eventId}>{schedule.startAtLabel} · {schedule.title}</option>)}
             </select>
@@ -729,7 +729,7 @@ function FinanceRequestModal({
           {!draft.linkedScheduleEventId ? (
             <label className="block">
               <span className="text-sm font-semibold text-slate-700">직접 입력 행사명</span>
-              <input value={draft.relatedEventName} onChange={(event) => onChange({ ...draft, relatedEventName: event.target.value })} placeholder="일정에 없는 행사만 직접 입력" className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-[#135bec] focus:ring-2 focus:ring-[#135bec]/10" />
+              <input value={draft.relatedEventName} onChange={(event) => onChange({ ...draft, relatedEventName: event.target.value })} placeholder="일정에 없는 행사만 직접 입력" className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/10" />
             </label>
           ) : null}
           <label className="block">
@@ -739,7 +739,7 @@ function FinanceRequestModal({
               onChange={(event) => onChange({ ...draft, note: event.target.value })}
               rows={4}
               placeholder="계좌, 영수증 안내, 정산이 필요한 이유 등을 적어주세요."
-              className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-[#135bec] focus:ring-2 focus:ring-[#135bec]/10"
+              className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/10"
             />
           </label>
         </div>
@@ -750,7 +750,7 @@ function FinanceRequestModal({
           type="button"
           disabled={busy}
           onClick={onSubmit}
-          className="w-full rounded-2xl bg-[#135bec] px-4 py-3 text-sm font-bold text-white transition hover:bg-[#0f4dcc] disabled:cursor-not-allowed disabled:bg-slate-300"
+          className="w-full rounded-2xl bg-[var(--primary)] px-4 py-3 text-sm font-bold text-white transition hover:bg-[#0f4dcc] disabled:cursor-not-allowed disabled:bg-slate-300"
         >
           {busy ? "제출 중..." : `${actionMeta.label} 제출`}
         </button>
@@ -771,7 +771,7 @@ function PlaceholderPanel({
   bullets: string[];
 }) {
   return (
-    <article className="rounded-3xl border border-dashed border-slate-200 bg-slate-50 px-5 py-5">
+    <article className="rounded-[var(--radius-modal)] border border-dashed border-slate-200 bg-slate-50 px-5 py-5">
       <div className="flex items-start gap-3">
         <div className="rounded-full bg-white p-2 text-slate-500">
           <span className="material-symbols-outlined text-[20px]" aria-hidden="true">{icon}</span>
@@ -800,7 +800,7 @@ function EmptyStateCard({
   description: string;
 }) {
   return (
-    <div className="rounded-3xl bg-slate-50 px-4 py-8 text-center">
+    <div className="rounded-[var(--radius-modal)] bg-slate-50 px-4 py-8 text-center">
       <p className="text-sm font-semibold text-slate-900">{title}</p>
       <p className="mt-2 text-sm leading-6 text-slate-500">{description}</p>
     </div>

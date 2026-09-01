@@ -201,7 +201,7 @@ export function ClubBracketDetailClient({
             </div>
           ) : null}
 
-          <section className={`overflow-hidden rounded-[30px] p-6 ring-1 ${heroClassName}`}>
+          <section className={`overflow-hidden rounded-[var(--radius-modal)] p-6 ring-1 ${heroClassName}`}>
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
               <div className="min-w-0 sm:max-w-[74%]">
                 <div className="mb-3 flex flex-wrap gap-2">
@@ -220,7 +220,7 @@ export function ClubBracketDetailClient({
                   {payload.summaryText ?? "대진표 설명이 아직 없습니다."}
                 </p>
               </div>
-              <div className="w-full rounded-[22px] bg-white/85 px-4 py-3 text-left shadow-sm sm:w-auto sm:text-right">
+              <div className="w-full rounded-[var(--radius-card)] bg-white/85 px-4 py-3 text-left shadow-sm sm:w-auto sm:text-right">
                 <p className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">작성자</p>
                 <p className="mt-1 text-lg font-black text-slate-900">{payload.authorDisplayName ?? "-"}</p>
               </div>
@@ -232,7 +232,7 @@ export function ClubBracketDetailClient({
             </div>
 
             {payload.rejectionReason ? (
-              <div className="mt-4 rounded-[22px] bg-rose-50 px-4 py-4 text-sm leading-6 text-rose-700">
+              <div className="mt-4 rounded-[var(--radius-card)] bg-rose-50 px-4 py-4 text-sm leading-6 text-rose-700">
                 반려 사유: {payload.rejectionReason}
               </div>
             ) : null}
@@ -275,7 +275,7 @@ export function ClubBracketDetailClient({
           </section>
 
           <section className="mt-6 grid gap-4 xl:grid-cols-[320px_1fr]">
-            <article className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm">
+            <article className="rounded-[var(--radius-modal)] border border-slate-200 bg-white p-5 shadow-sm">
               <div className="mb-4">
                 <p className="text-xs font-black tracking-wide text-slate-400">참가자</p>
                 <h3 className="mt-2 text-xl font-black tracking-tight text-slate-900">참가자</h3>
@@ -304,7 +304,7 @@ export function ClubBracketDetailClient({
               </div>
             </article>
 
-            <article className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm">
+            <article className="rounded-[var(--radius-modal)] border border-slate-200 bg-white p-5 shadow-sm">
               <div className="mb-4">
                 <p className="text-xs font-black tracking-wide text-slate-400">대진 미리보기</p>
                 <h3 className="mt-2 text-xl font-black tracking-tight text-slate-900">라운드 미리보기</h3>
@@ -364,7 +364,7 @@ export function ClubBracketDetailClient({
 
 function InfoCard({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-[20px] bg-white/85 p-4 shadow-sm">
+    <div className="rounded-[var(--radius-card)] bg-white/85 p-4 shadow-sm">
       <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">{label}</p>
       <p className="mt-2 text-sm font-semibold text-slate-700">{value}</p>
     </div>

@@ -43,9 +43,8 @@ function stripQuery(path: string) {
   return pathname ?? path;
 }
 
-const USER_ACTIVE_TEXT_CLASS = "text-[#135bec]";
+const USER_ACTIVE_TEXT_CLASS = "text-[var(--primary)]";
 const USER_INACTIVE_TEXT_CLASS = "text-slate-400";
-const USER_ACTIVE_DOT_CLASS = "bg-[#135bec]";
 
 export function ClubBottomNav({ clubId, isAdmin = false }: ClubBottomNavProps) {
   void isAdmin;
@@ -130,8 +129,8 @@ export function ClubBottomNav({ clubId, isAdmin = false }: ClubBottomNavProps) {
       };
 
   const navItems = BASE_NAV_ITEMS;
-  const floatingMenuClassName = "w-[clamp(280px,33vw,460px)] max-w-[calc(100vw-2.5rem)] gap-3";
-  const dockedMenuContentClassName = "w-[clamp(360px,44vw,640px)] max-w-[calc(100vw-1.5rem)] gap-6";
+  const floatingMenuClassName = "w-[clamp(340px,38vw,480px)] max-w-[calc(100vw-1rem)] justify-around";
+  const dockedMenuContentClassName = "w-[clamp(360px,44vw,640px)] max-w-[calc(100vw-1rem)] justify-around";
 
   const renderButtons = () =>
     navItems.map((item) => {
@@ -156,27 +155,22 @@ export function ClubBottomNav({ clubId, isAdmin = false }: ClubBottomNavProps) {
             onClick={() =>
               setOpenMenuPathname((current) => (current === pathname ? null : pathname))
             }
-            className={`semo-icon-control touch-manipulation transition ${textClassName}`}
+            className={`semo-nav-item relative touch-manipulation transition ${textClassName}`}
             aria-expanded={isMoreOpen}
             aria-haspopup="dialog"
             aria-label={morePendingCount > 0 ? `${item.label}, 확인할 항목 ${morePendingCount}건` : item.label}
           >
-            <div className="relative flex h-11 w-11 items-center justify-center">
+            <span className="semo-nav-icon" data-active={isActive}>
               <span className={`material-symbols-outlined text-[24px] ${iconClassName}`} aria-hidden="true">
                 {item.icon}
               </span>
-              {isActive ? (
-                <motion.div
-                  layoutId="club-nav-active-dot"
-                  className={`absolute -right-0.5 top-1 size-2 rounded-full border-2 border-white ${USER_ACTIVE_DOT_CLASS}`}
-                />
-              ) : null}
               {morePendingCount > 0 ? (
                 <span className="absolute -right-1 -top-0.5 min-w-5 rounded-full border-2 border-white bg-rose-500 px-1 text-center text-[11px] font-bold leading-4 text-white">
                   {morePendingCount > 99 ? "99+" : morePendingCount}
                 </span>
               ) : null}
-            </div>
+            </span>
+            <span>{item.label}</span>
           </motion.button>
         );
       }
@@ -186,13 +180,14 @@ export function ClubBottomNav({ clubId, isAdmin = false }: ClubBottomNavProps) {
           <button
             key={item.key}
             type="button"
-            className={`semo-icon-control touch-manipulation transition ${textClassName}`}
+            className={`semo-nav-item touch-manipulation transition ${textClassName}`}
             aria-disabled="true"
             aria-label={item.label}
           >
             <span className={`material-symbols-outlined text-[24px] ${iconClassName}`} aria-hidden="true">
               {item.icon}
             </span>
+            <span>{item.label}</span>
           </button>
         );
       }
@@ -201,12 +196,14 @@ export function ClubBottomNav({ clubId, isAdmin = false }: ClubBottomNavProps) {
         <RouterLink
           key={item.key}
           href={href}
-          className={`semo-icon-control touch-manipulation transition ${textClassName}`}
+          className={`semo-nav-item touch-manipulation transition ${textClassName}`}
           aria-label={item.label}
+          aria-current={isActive ? "page" : undefined}
         >
           <motion.div
             whileTap={reduceMotion ? undefined : { scale: 0.92 }}
-            className="relative flex h-11 w-11 items-center justify-center"
+            className="semo-nav-icon"
+            data-active={isActive}
           >
             <span
               className={`material-symbols-outlined text-[24px] ${iconClassName}`}
@@ -215,28 +212,24 @@ export function ClubBottomNav({ clubId, isAdmin = false }: ClubBottomNavProps) {
             >
               {item.icon}
             </span>
-            {isActive ? (
-              <motion.div
-                layoutId="club-nav-active-dot"
-                className={`absolute -right-0.5 top-1 size-2 rounded-full border-2 border-white ${USER_ACTIVE_DOT_CLASS}`}
-              />
-            ) : null}
           </motion.div>
+          <span>{item.label}</span>
         </RouterLink>
       );
     });
 
   const FloatingMenu = (
     <nav
-      className={`flex items-center justify-center rounded-full border border-white/70 bg-white/82 px-4 py-3 shadow-[0_18px_42px_rgba(15,23,42,0.12)] backdrop-blur-md ${floatingMenuClassName}`}
+      aria-label="모임 주요 화면"
+      className={`flex items-center rounded-[var(--radius-modal)] border border-white/70 bg-white/88 px-2 py-1.5 shadow-[var(--shadow-floating)] backdrop-blur-md ${floatingMenuClassName}`}
     >
       {renderButtons()}
     </nav>
   );
 
   const DockedMenu = (
-    <nav className="flex w-full items-center justify-center border-t border-slate-200/70 bg-white/88 px-4 pt-3 pb-[calc(env(safe-area-inset-bottom)+12px)] backdrop-blur-md">
-      <div className={`flex items-center justify-center ${dockedMenuContentClassName}`}>
+    <nav aria-label="모임 주요 화면" className="flex w-full items-center justify-center border-t border-slate-200/70 bg-white/92 px-2 pt-1.5 pb-[calc(env(safe-area-inset-bottom)+6px)] backdrop-blur-md">
+      <div className={`flex items-center ${dockedMenuContentClassName}`}>
         {renderButtons()}
       </div>
     </nav>
@@ -268,7 +261,7 @@ export function ClubBottomNav({ clubId, isAdmin = false }: ClubBottomNavProps) {
                 >
                   <div className="mb-4 flex items-start justify-between gap-4 px-1">
                     <div>
-                      <p className="text-base font-bold text-slate-900">클럽 운영 도구</p>
+                      <p className="text-base font-bold text-slate-900">모임 운영 도구</p>
                       <p className="mt-1 text-xs text-slate-500">게시물은 게시판, 일정과 투표는 캘린더에서 확인하세요.</p>
                     </div>
                     <button

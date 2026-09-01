@@ -95,7 +95,7 @@ export function ClubAdminLogsClient({ clubId, clubName, initialData }: ClubAdmin
 
         <main className="semo-nav-bottom-space space-y-5 px-4 pt-4">
           <motion.section
-            className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm"
+            className="rounded-[var(--radius-modal)] border border-slate-200 bg-white p-5 shadow-sm"
             {...staggeredFadeUpMotion(0, reduceMotion)}
           >
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -121,7 +121,7 @@ export function ClubAdminLogsClient({ clubId, clubName, initialData }: ClubAdmin
                   onClick={() => setSelectedPositionId(null)}
                   className={`rounded-full px-3 py-1.5 text-xs font-bold transition ${
                     selectedPositionId == null
-                      ? "bg-[#ec5b13] text-white shadow-sm"
+                      ? "bg-[var(--primary)] text-white shadow-sm"
                       : "bg-slate-100 text-slate-600 hover:bg-slate-200"
                   }`}
                 >
@@ -134,7 +134,7 @@ export function ClubAdminLogsClient({ clubId, clubName, initialData }: ClubAdmin
                     onClick={() => setSelectedPositionId(position.clubPositionId)}
                     className={`rounded-full px-3 py-1.5 text-xs font-bold transition ${
                       selectedPositionId === position.clubPositionId
-                        ? "bg-[#ec5b13] text-white shadow-sm"
+                        ? "bg-[var(--primary)] text-white shadow-sm"
                         : "bg-slate-100 text-slate-600 hover:bg-slate-200"
                     }`}
                   >
@@ -148,7 +148,7 @@ export function ClubAdminLogsClient({ clubId, clubName, initialData }: ClubAdmin
           <section className="space-y-3">
             {items.length === 0 ? (
               <motion.div
-                className="rounded-[28px] border border-slate-200 bg-white p-6 text-sm text-slate-500 shadow-sm"
+                className="rounded-[var(--radius-modal)] border border-slate-200 bg-white p-6 text-sm text-slate-500 shadow-sm"
                 {...staggeredFadeUpMotion(1, reduceMotion)}
               >
                 아직 기록된 활동이 없습니다.
@@ -157,11 +157,11 @@ export function ClubAdminLogsClient({ clubId, clubName, initialData }: ClubAdmin
               items.map((activity, index) => (
                 <motion.article
                   key={`${activity.activityId}-${index}`}
-                  className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm"
+                  className="rounded-[var(--radius-modal)] border border-slate-200 bg-white p-5 shadow-sm"
                   {...staggeredFadeUpMotion(index + 1, reduceMotion)}
                 >
                   <div className="flex gap-4">
-                    <div className="flex size-11 shrink-0 items-center justify-center rounded-full bg-[#ec5b13]/10 text-sm font-bold text-[#ec5b13]">
+                    <div className="flex size-11 shrink-0 items-center justify-center rounded-full bg-[var(--primary)]/10 text-sm font-bold text-[var(--primary)]">
                       {activity.actorAvatarLabel}
                     </div>
                     <div className="min-w-0 flex-1">
@@ -179,7 +179,7 @@ export function ClubAdminLogsClient({ clubId, clubName, initialData }: ClubAdmin
                           {activity.subject}
                         </span>
                         {activity.status === "FAIL" ? (
-                          <span className="rounded-full bg-red-50 px-2.5 py-1 text-[11px] font-semibold text-red-600">
+                          <span className="rounded-full bg-rose-50 px-2.5 py-1 text-[11px] font-semibold text-rose-600">
                             실패
                           </span>
                         ) : (
@@ -194,7 +194,7 @@ export function ClubAdminLogsClient({ clubId, clubName, initialData }: ClubAdmin
                         {activity.createdAtLabel ? <span>{activity.createdAtLabel}</span> : null}
                       </div>
                       {activity.status === "FAIL" && activity.errorMessage ? (
-                        <div className="mt-3 rounded-2xl bg-red-50 px-4 py-3 text-xs leading-relaxed text-red-600">
+                        <div className="mt-3 rounded-2xl bg-rose-50 px-4 py-3 text-xs leading-relaxed text-rose-600">
                           {activity.errorMessage}
                         </div>
                       ) : null}
@@ -206,12 +206,12 @@ export function ClubAdminLogsClient({ clubId, clubName, initialData }: ClubAdmin
           </section>
 
           {loadError ? (
-            <div className="rounded-2xl bg-red-50 px-4 py-3 text-sm text-red-600">{loadError}</div>
+            <div className="rounded-2xl bg-rose-50 px-4 py-3 text-sm text-rose-600">{loadError}</div>
           ) : null}
 
           {hasNext ? (
             <motion.div
-              className="rounded-[24px] border border-dashed border-slate-200 bg-white/70 px-5 py-4 text-center text-sm text-slate-400"
+              className="rounded-[var(--radius-card)] border border-dashed border-slate-200 bg-white/70 px-5 py-4 text-center text-sm text-slate-400"
               {...staggeredFadeUpMotion(items.length + 2, reduceMotion)}
             >
               {isLoadingMore ? "활동을 더 불러오는 중..." : "스크롤을 내리면 다음 활동을 자동으로 불러옵니다."}

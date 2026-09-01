@@ -5,7 +5,7 @@ import { clearModalCallbacks } from "@/app/redux/modalCallbackRegistry";
 import { useAppDispatch, useAppSelector } from "@/app/redux/hooks";
 import { addToast, deleteToast, type ToastTone } from "@/app/redux/slices/modalSlice";
 
-export function useAppToast(durationMs = 2000) {
+export function useAppToast(durationMs = 3600) {
   const dispatch = useAppDispatch();
   const currentToast = useAppSelector((state) => state.modal.toast[0] ?? null);
 

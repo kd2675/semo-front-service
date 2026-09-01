@@ -113,7 +113,7 @@ export function ClubAdminSettingsClient({ clubId, initialClub }: ClubAdminSettin
       />
 
       <main className="semo-page-admin semo-nav-bottom-space space-y-6 px-4 py-6">
-        <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+        <section className="rounded-[var(--radius-modal)] border border-slate-200 bg-white p-5 shadow-sm">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <p className="text-xs font-semibold tracking-wide text-slate-400">클럽 분류</p>
@@ -122,7 +122,7 @@ export function ClubAdminSettingsClient({ clubId, initialClub }: ClubAdminSettin
                 활동 분야, 주요 태그, 소속 유형을 함께 관리합니다.
               </p>
             </div>
-            <div className="w-full max-w-sm rounded-[1.75rem] border border-[var(--primary)]/12 bg-gradient-to-br from-[var(--primary)]/10 via-white to-white px-4 py-4 shadow-sm">
+            <div className="w-full max-w-sm rounded-[var(--radius-modal)] border border-[var(--primary)]/12 bg-gradient-to-br from-[var(--primary)]/10 via-white to-white px-4 py-4 shadow-sm">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <p className="text-[11px] font-semibold text-[var(--primary)]">현재 분류 요약</p>
@@ -168,7 +168,7 @@ export function ClubAdminSettingsClient({ clubId, initialClub }: ClubAdminSettin
           </div>
         </section>
 
-        <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+        <section className="rounded-[var(--radius-modal)] border border-slate-200 bg-white p-5 shadow-sm">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <p className="text-xs font-semibold tracking-wide text-slate-400">클럽 지역</p>

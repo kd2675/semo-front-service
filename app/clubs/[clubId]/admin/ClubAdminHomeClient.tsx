@@ -20,7 +20,7 @@ type AdminActionItem = {
   title: string;
   description: string;
   icon: string;
-  href?: string;
+  href: string;
 };
 
 type AdminActivityItem = {
@@ -88,22 +88,21 @@ export function ClubAdminHomeClient({
   const reduceMotion = Boolean(prefersReducedMotion);
 
   return (
-    <div className="min-h-screen bg-[var(--background-light)] text-slate-900">
-      <div className="min-h-screen bg-[#f8f6f6]">
-        <ClubPageHeader
-          title="관리자"
-          subtitle={clubName}
-          icon="admin_panel_settings"
-          theme="admin"
-          containerClassName="semo-page-admin"
-        />
+    <div className="semo-app-shell text-slate-900">
+      <ClubPageHeader
+        title="관리자"
+        subtitle={clubName}
+        icon="admin_panel_settings"
+        theme="admin"
+        containerClassName="semo-page-admin"
+      />
 
-        <main className="semo-page-admin semo-nav-bottom-space space-y-6 px-4 pt-4">
+      <main className="semo-page-admin semo-nav-bottom-space space-y-6 px-4 pt-4">
           <section className={`grid grid-cols-2 gap-4 ${metrics.length > 2 ? "md:grid-cols-4" : "md:grid-cols-2"}`}>
             {metrics.map((metric, index) => (
               <motion.article
                 key={metric.id}
-                className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm"
+                className="semo-card p-4"
                 {...staggeredFadeUpMotion(index, reduceMotion)}
               >
                 <p className="text-xs font-medium uppercase tracking-wider text-slate-500">{metric.label}</p>
@@ -142,30 +141,18 @@ export function ClubAdminHomeClient({
                   className="rounded-xl"
                   {...staggeredFadeUpMotion(index + 5, reduceMotion)}
                 >
-                  {action.href ? (
-                    <RouterLink
-                      href={action.href}
-                      className="group flex gap-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:border-[var(--primary)]/50"
-                    >
-                      <div className="flex size-12 shrink-0 items-center justify-center rounded-lg bg-[var(--primary)]/10 text-[var(--primary)] transition-colors group-hover:bg-[var(--primary)] group-hover:text-white">
-                        <span className="material-symbols-outlined text-2xl" aria-hidden="true">{action.icon}</span>
-                      </div>
-                      <div className="flex flex-col justify-center gap-1">
-                        <h3 className="text-base font-bold leading-tight">{action.title}</h3>
-                        <p className="text-sm leading-normal text-slate-500">{action.description}</p>
-                      </div>
-                    </RouterLink>
-                  ) : (
-                    <div className="group flex cursor-pointer gap-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:border-[var(--primary)]/50">
-                      <div className="flex size-12 shrink-0 items-center justify-center rounded-lg bg-[var(--primary)]/10 text-[var(--primary)] transition-colors group-hover:bg-[var(--primary)] group-hover:text-white">
-                        <span className="material-symbols-outlined text-2xl" aria-hidden="true">{action.icon}</span>
-                      </div>
-                      <div className="flex flex-col justify-center gap-1">
-                        <h3 className="text-base font-bold leading-tight">{action.title}</h3>
-                        <p className="text-sm leading-normal text-slate-500">{action.description}</p>
-                      </div>
+                  <RouterLink
+                    href={action.href}
+                    className="semo-card semo-card-interactive group flex gap-4 p-5"
+                  >
+                    <div className="flex size-12 shrink-0 items-center justify-center rounded-[var(--radius-control)] bg-[var(--primary)]/10 text-[var(--primary)] transition-colors group-hover:bg-[var(--primary)] group-hover:text-white">
+                      <span className="material-symbols-outlined text-2xl" aria-hidden="true">{action.icon}</span>
                     </div>
-                  )}
+                    <div className="flex flex-col justify-center gap-1">
+                      <h3 className="text-base font-bold leading-tight">{action.title}</h3>
+                      <p className="text-sm leading-normal text-slate-500">{action.description}</p>
+                    </div>
+                  </RouterLink>
                 </motion.article>
               ))}
             </div>
@@ -184,7 +171,7 @@ export function ClubAdminHomeClient({
                 전체 로그 보기
               </RouterLink>
             </div>
-            <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+            <div className="semo-card overflow-hidden">
               {activities.length === 0 ? (
                 <div className="p-6 text-sm text-slate-500">아직 기록된 최근 활동이 없습니다.</div>
               ) : (
@@ -210,13 +197,13 @@ export function ClubAdminHomeClient({
                           {formatRelativeTime(activity.createdAt, activity.createdAtLabel)}
                         </span>
                         {activity.status === "FAIL" ? (
-                          <span className="rounded-full bg-red-50 px-2 py-0.5 font-semibold text-red-600">
+                          <span className="rounded-full bg-rose-50 px-2 py-0.5 font-semibold text-rose-600">
                             실패
                           </span>
                         ) : null}
                       </div>
                       {activity.status === "FAIL" && activity.errorMessage ? (
-                        <p className="mt-1 text-xs text-red-500">{activity.errorMessage}</p>
+                        <p className="mt-1 text-xs text-rose-500">{activity.errorMessage}</p>
                       ) : null}
                     </div>
                   </motion.article>
@@ -224,8 +211,7 @@ export function ClubAdminHomeClient({
               )}
             </div>
           </motion.section>
-        </main>
-      </div>
+      </main>
     </div>
   );
 }

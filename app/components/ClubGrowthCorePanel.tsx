@@ -32,10 +32,10 @@ export function ClubGrowthCorePanel({ growthCore, compact = false }: ClubGrowthC
   const activityLevel = growthCore?.activityLevel ?? 0;
 
   return (
-    <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+    <section className="semo-card overflow-hidden">
       <div className={`grid ${compact ? "gap-4 p-4" : "gap-6 p-5 md:grid-cols-[12rem_1fr] md:p-6"}`}>
-        <div className="relative flex min-h-44 items-center justify-center overflow-hidden rounded-2xl bg-[radial-gradient(circle_at_50%_38%,rgba(19,91,236,0.12),transparent_58%),linear-gradient(145deg,#f8fafc,#eef4ff)]">
-          <div className="absolute inset-x-6 top-5 h-px bg-gradient-to-r from-transparent via-blue-300/60 to-transparent" />
+        <div className="relative flex min-h-44 items-center justify-center overflow-hidden rounded-[var(--radius-card)] bg-[radial-gradient(circle_at_50%_38%,color-mix(in_srgb,var(--primary)_12%,transparent),transparent_58%),linear-gradient(145deg,#f8fafc,#eef4ff)]">
+          <div className="absolute inset-x-6 top-5 h-px bg-gradient-to-r from-transparent via-[var(--primary)]/35 to-transparent" />
           <ClubGrowthCoreMark
             growthCore={growthCore}
             size={compact ? 132 : 164}
@@ -49,7 +49,7 @@ export function ClubGrowthCorePanel({ growthCore, compact = false }: ClubGrowthC
         <div className="min-w-0">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
-              <p className="text-xs font-extrabold tracking-[0.16em] text-[var(--primary)]">SEMO GROWTH CORE</p>
+              <p className="text-xs font-extrabold tracking-[0.16em] text-[var(--primary)]">SEMO · 모임 성장</p>
               <h2 className="mt-1 text-xl font-black tracking-tight text-slate-900">세 꼭짓점이 함께 만드는 성장</h2>
               <p className="mt-2 max-w-xl text-sm leading-6 text-slate-500">
                 활성 멤버가 많을수록 코어가 커지고 실제 모임 기록이 세 축을 키웁니다. 세 축이 모두 차면
@@ -85,7 +85,7 @@ export function ClubGrowthCorePanel({ growthCore, compact = false }: ClubGrowthC
                     aria-valuenow={progress}
                   >
                     <div
-                      className="h-full rounded-full bg-gradient-to-r from-blue-400 to-[var(--primary)] transition-[width] duration-300"
+                      className="h-full rounded-full bg-[var(--primary)] transition-[width] duration-300"
                       style={{ width: `${Math.max(0, Math.min(100, progress))}%` }}
                     />
                   </div>

@@ -343,7 +343,7 @@ export function ClubPollHomeLoadingShell({
       mainClassName="semo-nav-bottom-space flex-1 pb-24"
       showBottomNav={mode === "user"}
     >
-      <nav className="flex border-b border-gray-200 bg-white">
+      <nav className="flex border-b border-slate-200 bg-white">
         {Array.from({ length: 3 }, (_, index) => (
           <div key={`poll-tab-${index}`} className="flex-1 px-4 py-3">
             <div className="mx-auto h-4 w-16 rounded-full bg-slate-200" />
@@ -401,17 +401,17 @@ export function ClubFeedLoadingShell() {
     <MobilePageShell titleWidthClassName="w-28">
       <section className="px-4 pt-4">
         <div className="relative">
-          <div className="absolute left-[19px] top-4 bottom-4 w-0.5 bg-[#135bec]/10" />
+          <div className="absolute left-[19px] top-4 bottom-4 w-0.5 bg-[var(--primary)]/10" />
           <div className="space-y-6">
             {Array.from({ length: 4 }, (_, index) => (
               <div key={`activity-shell-group-${index}`}>
                 <div className="relative flex justify-center py-2">
                   <div className="z-10 h-4 w-20 rounded-full bg-slate-200" />
-                  <div className="absolute inset-x-0 top-1/2 h-px bg-[#135bec]/5" />
+                  <div className="absolute inset-x-0 top-1/2 h-px bg-[var(--primary)]/5" />
                 </div>
                 <div className="relative mt-4 grid grid-cols-[40px_1fr] items-start gap-x-4">
-                  <div className="z-10 flex h-10 w-10 items-center justify-center rounded-full border-2 border-white bg-blue-100 ring-2 ring-[#135bec]/20" />
-                  <div className="rounded-2xl border border-[#135bec]/5 bg-white p-4 shadow-sm">
+                  <div className="z-10 flex h-10 w-10 items-center justify-center rounded-full border-2 border-white bg-blue-100 ring-2 ring-[var(--primary)]/20" />
+                  <div className="rounded-2xl border border-[var(--primary)]/5 bg-white p-4 shadow-sm">
                     <div className="flex items-center gap-2">
                       <div className="h-5 w-14 rounded-md bg-slate-100" />
                       <div className="h-4 w-12 rounded-full bg-slate-100" />

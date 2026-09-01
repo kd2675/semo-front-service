@@ -354,7 +354,7 @@ export function ClubBracketHomeClient({
 
         <main className="semo-page-data semo-nav-bottom-space flex flex-col gap-4 px-4 pt-4 pb-8">
           <section className="grid gap-4 md:grid-cols-[1.4fr_1fr]">
-            <article className="rounded-3xl border border-white/70 bg-white p-6 shadow-sm">
+            <article className="rounded-[var(--radius-modal)] border border-white/70 bg-white p-6 shadow-sm">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
                   {isAdminMode
@@ -376,7 +376,7 @@ export function ClubBracketHomeClient({
               </div>
             </article>
 
-            <article className="grid gap-3 rounded-3xl border border-white/70 bg-white p-5 shadow-sm md:grid-cols-2">
+            <article className="grid gap-3 rounded-[var(--radius-modal)] border border-white/70 bg-white p-5 shadow-sm md:grid-cols-2">
               <div className="rounded-2xl bg-slate-50 p-4">
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
                   승인 완료
@@ -440,7 +440,7 @@ export function ClubBracketHomeClient({
 
           {!isAdminMode ? (
             <section className="grid gap-4 lg:grid-cols-[1.05fr_1fr]">
-              <section className="rounded-3xl border border-white/70 bg-white p-5 shadow-sm">
+              <section className="rounded-[var(--radius-modal)] border border-white/70 bg-white p-5 shadow-sm">
                 <div className="flex items-center justify-between">
                   <h3 className="text-lg font-bold">내 대진표</h3>
                   <span className="text-sm text-slate-400">{myBrackets.length}개</span>
@@ -466,7 +466,7 @@ export function ClubBracketHomeClient({
                 </div>
               </section>
 
-              <section className="rounded-3xl border border-white/70 bg-white p-5 shadow-sm">
+              <section className="rounded-[var(--radius-modal)] border border-white/70 bg-white p-5 shadow-sm">
                 <div className="flex items-center justify-between">
                   <h3 className="text-lg font-bold">공개 대진표</h3>
                   <span className="text-sm text-slate-400">{list.length}개</span>
@@ -493,7 +493,7 @@ export function ClubBracketHomeClient({
               </section>
             </section>
           ) : (
-            <section className="rounded-3xl border border-white/70 bg-white p-5 shadow-sm">
+            <section className="rounded-[var(--radius-modal)] border border-white/70 bg-white p-5 shadow-sm">
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-bold">검토 대상</h3>
                 <span className="text-sm text-slate-400">{list.length}개</span>
@@ -693,7 +693,7 @@ export function ClubBracketHomeClient({
                     ) : null}
                   </div>
 
-                  <div className="mt-6 rounded-3xl border border-slate-200 bg-slate-50 p-4">
+                  <div className="mt-6 rounded-[var(--radius-modal)] border border-slate-200 bg-slate-50 p-4">
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
                         <h4 className="text-base font-bold text-slate-900">참가자</h4>
@@ -711,7 +711,7 @@ export function ClubBracketHomeClient({
                       {form.participants.map((participant, index) => (
                         <div
                           key={`${participant.sourceTournamentApplicationId ?? "manual"}-${index}`}
-                          className="rounded-[22px] border border-slate-200 bg-white p-4"
+                          className="rounded-[var(--radius-card)] border border-slate-200 bg-white p-4"
                         >
                           <div className="flex flex-wrap items-center justify-between gap-3">
                             <div className="flex items-center gap-3">
@@ -780,7 +780,7 @@ export function ClubBracketHomeClient({
                         </div>
                       ))}
                       {isTournamentImportMode ? (
-                        <div className="rounded-[22px] border border-dashed border-slate-200 bg-slate-100 px-4 py-4 text-center text-sm font-medium text-slate-500">
+                        <div className="rounded-[var(--radius-card)] border border-dashed border-slate-200 bg-slate-100 px-4 py-4 text-center text-sm font-medium text-slate-500">
                           대회 불러오기에서는 수동 참가자 추가를 지원하지 않습니다.
                         </div>
                       ) : (
@@ -790,7 +790,7 @@ export function ClubBracketHomeClient({
                             ...currentParticipants,
                             { displayName: "", clubProfileId: null, sourceTournamentApplicationId: null },
                           ]))}
-                          className="flex w-full items-center justify-center gap-2 rounded-[22px] border border-dashed border-[var(--primary)]/35 bg-white px-4 py-4 text-sm font-semibold text-[var(--primary)] transition hover:bg-blue-50"
+                          className="flex w-full items-center justify-center gap-2 rounded-[var(--radius-card)] border border-dashed border-[var(--primary)]/35 bg-white px-4 py-4 text-sm font-semibold text-[var(--primary)] transition hover:bg-blue-50"
                         >
                           <span className="material-symbols-outlined text-[20px]" aria-hidden="true">add_circle</span>
                           참가자 추가

@@ -112,7 +112,7 @@ export function FinanceExpenseDetailModal({
         </div>
 
         <div className="min-h-0 flex-1 space-y-5 overflow-y-auto px-5 py-5">
-          <section className="grid gap-3 rounded-3xl bg-slate-50 p-4 sm:grid-cols-2 lg:grid-cols-4">
+          <section className="grid gap-3 rounded-[var(--radius-modal)] bg-slate-50 p-4 sm:grid-cols-2 lg:grid-cols-4">
             <Meta label="금액" value={expense.amountLabel} strong />
             <Meta label="카테고리" value={expense.categoryLabel} />
             <Meta label="재정 기간" value={expense.financePeriodTitle ?? "미지정"} />
@@ -126,7 +126,7 @@ export function FinanceExpenseDetailModal({
           <ResourceAttachmentPanel clubId={clubId} resourceType="FINANCE_EXPENSE" resourceId={expense.expenseId} canUpload={posted && operations.canCreateExpenses} canDelete={posted && operations.canCreateExpenses} theme="admin" />
 
           {editing && posted ? (
-            <section className="space-y-4 rounded-3xl border border-orange-200 bg-orange-50/40 p-4">
+            <section className="space-y-4 rounded-[var(--radius-modal)] border border-orange-200 bg-orange-50/40 p-4">
               <div><p className="text-sm font-bold text-slate-900">전표 정정</p><p className="mt-1 text-xs leading-5 text-slate-500">원본 값은 이력에 남고 현재 전표만 새 값으로 갱신됩니다.</p></div>
               <div className="grid gap-4 sm:grid-cols-2">
                 <Field label="제목"><input aria-label="정정할 지출 제목" value={title} onChange={(event) => setTitle(event.target.value)} className={FIELD_CLASS} /></Field>
@@ -141,19 +141,19 @@ export function FinanceExpenseDetailModal({
               {!scheduleEventId ? <Field label="직접 입력 행사명"><input aria-label="정정할 지출 행사명" value={relatedEventName} onChange={(event) => setRelatedEventName(event.target.value)} className={FIELD_CLASS} /></Field> : null}
               <Field label="메모"><textarea aria-label="정정할 지출 메모" value={note} onChange={(event) => setNote(event.target.value)} rows={3} className={`${FIELD_CLASS} py-3`} /></Field>
               <Field label="정정 사유"><textarea aria-label="지출 정정 사유" value={reason} onChange={(event) => setReason(event.target.value)} rows={3} placeholder="감사 이력에 남을 구체적인 사유" className={`${FIELD_CLASS} py-3`} /></Field>
-              <div className="flex justify-end gap-2"><button type="button" onClick={() => setEditing(false)} disabled={busy} className="min-h-11 rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-600">취소</button><button type="button" onClick={() => void handleCorrect()} disabled={busy} className="min-h-11 rounded-xl bg-[#ec5b13] px-4 text-sm font-bold text-white disabled:bg-slate-300">{busy ? "저장 중..." : "정정 저장"}</button></div>
+              <div className="flex justify-end gap-2"><button type="button" onClick={() => setEditing(false)} disabled={busy} className="min-h-11 rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-600">취소</button><button type="button" onClick={() => void handleCorrect()} disabled={busy} className="min-h-11 rounded-xl bg-[var(--primary)] px-4 text-sm font-bold text-white disabled:bg-slate-300">{busy ? "저장 중..." : "정정 저장"}</button></div>
             </section>
           ) : null}
 
           {posted && operations.canCreateExpenses && !editing ? (
-            <section className="rounded-3xl border border-slate-200 bg-white p-4">
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between"><Field label="변경·취소 사유"><input aria-label="지출 변경 또는 취소 사유" value={reason} onChange={(event) => setReason(event.target.value)} placeholder="정정 또는 취소 사유" className={FIELD_CLASS} /></Field><div className="flex shrink-0 gap-2"><button type="button" onClick={() => setEditing(true)} className="min-h-11 rounded-xl bg-orange-50 px-4 text-sm font-bold text-[#ec5b13]">전표 정정</button><button type="button" onClick={() => void handleVoid()} disabled={busy} className="min-h-11 rounded-xl bg-rose-50 px-4 text-sm font-bold text-rose-600 disabled:opacity-50">취소 전표 처리</button></div></div>
+            <section className="rounded-[var(--radius-modal)] border border-slate-200 bg-white p-4">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between"><Field label="변경·취소 사유"><input aria-label="지출 변경 또는 취소 사유" value={reason} onChange={(event) => setReason(event.target.value)} placeholder="정정 또는 취소 사유" className={FIELD_CLASS} /></Field><div className="flex shrink-0 gap-2"><button type="button" onClick={() => setEditing(true)} className="min-h-11 rounded-xl bg-orange-50 px-4 text-sm font-bold text-[var(--primary)]">전표 정정</button><button type="button" onClick={() => void handleVoid()} disabled={busy} className="min-h-11 rounded-xl bg-rose-50 px-4 text-sm font-bold text-rose-600 disabled:opacity-50">취소 전표 처리</button></div></div>
             </section>
           ) : null}
 
-          <section className="rounded-3xl border border-slate-200 bg-white p-4">
+          <section className="rounded-[var(--radius-modal)] border border-slate-200 bg-white p-4">
             <div className="flex items-center justify-between"><div><p className="text-xs font-semibold text-slate-400">감사 추적</p><h4 className="mt-1 text-base font-bold text-slate-900">정정·취소 이력</h4></div><span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-500">{revisionsQuery.data?.length ?? 0}건</span></div>
-            {revisionsQuery.isPending ? <div className="mt-4 h-20 animate-pulse rounded-2xl bg-slate-100" /> : revisionsQuery.isError ? <button type="button" onClick={() => void revisionsQuery.refetch()} className="mt-4 w-full rounded-2xl bg-rose-50 px-4 py-3 text-sm font-bold text-rose-600">이력 다시 불러오기</button> : revisionsQuery.data?.length ? <div className="mt-4 space-y-3">{revisionsQuery.data.map((revision) => <article key={revision.financeExpenseRevisionId} className="rounded-2xl bg-slate-50 p-4"><div className="flex items-start justify-between gap-3"><div><span className={`rounded-lg px-2 py-1 text-[11px] font-bold ${revision.revisionTypeCode === "VOID" ? "bg-rose-50 text-rose-600" : "bg-orange-50 text-[#ec5b13]"}`}>{revision.revisionTypeCode === "VOID" ? "취소" : "정정"}</span><p className="mt-3 text-sm font-bold text-slate-900">{revision.reason}</p><p className="mt-1 text-xs text-slate-500">{revision.revisedByDisplayName} · {revision.revisedAt}</p></div><div className="text-right text-xs text-slate-500"><p>{revision.previousAmount.toLocaleString("ko-KR")}원</p><p className="mt-1 font-bold text-slate-900">→ {revision.nextAmount == null ? "취소" : `${revision.nextAmount.toLocaleString("ko-KR")}원`}</p></div></div></article>)}</div> : <p className="mt-4 rounded-2xl bg-slate-50 px-4 py-5 text-sm text-slate-500">아직 정정·취소 이력이 없습니다.</p>}
+            {revisionsQuery.isPending ? <div className="mt-4 h-20 animate-pulse rounded-2xl bg-slate-100" /> : revisionsQuery.isError ? <button type="button" onClick={() => void revisionsQuery.refetch()} className="mt-4 w-full rounded-2xl bg-rose-50 px-4 py-3 text-sm font-bold text-rose-600">이력 다시 불러오기</button> : revisionsQuery.data?.length ? <div className="mt-4 space-y-3">{revisionsQuery.data.map((revision) => <article key={revision.financeExpenseRevisionId} className="rounded-2xl bg-slate-50 p-4"><div className="flex items-start justify-between gap-3"><div><span className={`rounded-lg px-2 py-1 text-[11px] font-bold ${revision.revisionTypeCode === "VOID" ? "bg-rose-50 text-rose-600" : "bg-orange-50 text-[var(--primary)]"}`}>{revision.revisionTypeCode === "VOID" ? "취소" : "정정"}</span><p className="mt-3 text-sm font-bold text-slate-900">{revision.reason}</p><p className="mt-1 text-xs text-slate-500">{revision.revisedByDisplayName} · {revision.revisedAt}</p></div><div className="text-right text-xs text-slate-500"><p>{revision.previousAmount.toLocaleString("ko-KR")}원</p><p className="mt-1 font-bold text-slate-900">→ {revision.nextAmount == null ? "취소" : `${revision.nextAmount.toLocaleString("ko-KR")}원`}</p></div></div></article>)}</div> : <p className="mt-4 rounded-2xl bg-slate-50 px-4 py-5 text-sm text-slate-500">아직 정정·취소 이력이 없습니다.</p>}
           </section>
         </div>
       </section>
@@ -161,7 +161,7 @@ export function FinanceExpenseDetailModal({
   );
 }
 
-const FIELD_CLASS = "mt-2 min-h-12 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-900 outline-none focus:border-[#ec5b13] focus:ring-2 focus:ring-[#ec5b13]/10";
+const FIELD_CLASS = "mt-2 min-h-12 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-900 outline-none focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/10";
 const CATEGORY_OPTIONS = [
   ["MEMBERSHIP_FEE", "회비"], ["EVENT_FEE", "행사비"], ["MEAL", "식비"], ["VENUE", "대관비"],
   ["SUPPLIES", "물품비"], ["TRANSPORT", "교통비"], ["REFUND", "환불"], ["OTHER", "기타"],

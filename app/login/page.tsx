@@ -4,6 +4,7 @@ import { Suspense, useEffect, useMemo, useState } from "react";
 import { motion, useReducedMotion } from "motion/react";
 import { useRouter, useSearchParams } from "next/navigation";
 
+import { SemoBrandMark } from "@/app/components/SemoBrandMark";
 import useAuthSession from "@/app/hooks/useAuthSession";
 import { login, logout, signup } from "@/app/lib/auth";
 import {
@@ -107,25 +108,23 @@ function LoginPageContent() {
   }
 
   return (
-    <main className="relative min-h-screen overflow-x-hidden bg-[var(--background-light)] px-5 py-8 text-[var(--foreground)]">
+    <main className="semo-user-theme relative min-h-screen overflow-x-hidden bg-[var(--background-light)] px-5 py-8 text-[var(--foreground)]">
       <div className="semo-orb semo-orb-left" />
       <div className="semo-orb semo-orb-right" />
       <section className="relative z-10 mx-auto grid min-h-[calc(100vh-4rem)] w-full max-w-5xl items-center gap-10 lg:grid-cols-[1fr_420px]">
         <motion.div {...staggeredFadeUpMotion(0, reduceMotion)}>
-          <div className="flex size-14 items-center justify-center rounded-xl bg-[var(--primary)] text-white shadow-[var(--shadow-soft)]">
-            <span className="material-symbols-outlined !text-3xl" aria-hidden="true">groups</span>
-          </div>
-          <p className="mt-6 text-xs font-black tracking-[0.28em] text-[var(--primary)]">SEMO CLUB NETWORK</p>
+          <SemoBrandMark className="size-16 text-[var(--primary)]" label="SEMO" />
+          <p className="mt-5 text-xs font-black tracking-[0.28em] text-[var(--primary)]">SEMO · 세상의 모든 모임</p>
           <h1 className="mt-4 max-w-xl break-keep text-4xl font-extrabold leading-[1.08] tracking-[-0.045em] md:text-6xl">
             모임의 시작부터
             <br />운영의 마지막까지
           </h1>
           <p className="mt-5 max-w-xl break-keep text-base leading-7 text-[var(--muted)]">
-            내 클럽, 일정, 투표와 회비를 하나의 계정으로 이어 보세요.
-            인증이 끝나면 로그인 전에 보고 있던 클럽 화면으로 다시 이동합니다.
+            함께한 활동, 운영 과정, 다음 사람에게 이어질 기록을 한곳에 남기세요.
+            인증이 끝나면 로그인 전에 보고 있던 모임 화면으로 돌아갑니다.
           </p>
           <div className="mt-8 flex flex-wrap gap-2 text-xs font-bold text-[var(--primary)]">
-            {['클럽', '일정', '투표', '회비', '대회'].map((label) => (
+            {["함께", "운영", "이어짐"].map((label) => (
               <span key={label} className="rounded-lg border border-[var(--primary)]/15 bg-white/70 px-3 py-2">{label}</span>
             ))}
           </div>
@@ -163,7 +162,7 @@ function LoginPageContent() {
           </div>
 
           {message || queryMessage ? (
-            <p role="alert" aria-live="polite" className="mt-4 rounded-lg bg-red-50 px-3 py-2.5 text-sm font-semibold text-red-700">
+            <p role="alert" aria-live="polite" className="mt-4 rounded-lg bg-rose-50 px-3 py-2.5 text-sm font-semibold text-rose-700">
               {message ?? queryMessage}
             </p>
           ) : null}
@@ -226,10 +225,11 @@ function SemoField({
 
 function SemoLoginProgress({ reduceMotion }: { reduceMotion: boolean }) {
   return (
-    <main className="relative grid min-h-screen place-items-center overflow-x-hidden bg-[var(--background-light)] px-5" aria-live="polite">
+    <main className="semo-user-theme relative grid min-h-screen place-items-center overflow-x-hidden bg-[var(--background-light)] px-5" aria-live="polite">
       <div className="semo-orb semo-orb-left" />
       <div className="semo-orb semo-orb-right" />
       <motion.section className="semo-panel relative w-full max-w-sm p-7 text-center" {...staggeredFadeUpMotion(0, reduceMotion)}>
+        <SemoBrandMark className="mx-auto size-12 text-[var(--primary)]" />
         <p className="text-xs font-black tracking-[0.18em] text-[var(--primary)]">로그인 중</p>
         <h1 className="mt-4 text-2xl font-extrabold">로그인을 준비하고 있습니다</h1>
         <p className="mt-2 text-sm font-semibold text-[var(--muted)]">세션과 클럽 프로필을 확인합니다.</p>

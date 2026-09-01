@@ -22,7 +22,7 @@ export function ItemReadStatusModal({
     <RouteModal
       ariaLabel={`${title} 읽음 현황`}
       onDismiss={onClose}
-      contentClassName="max-w-[30rem] rounded-[2rem] sm:rounded-[2rem]"
+      contentClassName="max-w-[30rem] rounded-[var(--radius-modal)] sm:rounded-[var(--radius-modal)]"
     >
       <div className="bg-white px-5 py-5">
         <div className="flex items-start justify-between gap-3">

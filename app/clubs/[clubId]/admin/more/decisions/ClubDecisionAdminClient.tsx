@@ -185,15 +185,15 @@ export function ClubDecisionAdminClient({ clubId }: { clubId: string }) {
     <div className="min-h-screen bg-[var(--background-light)] text-slate-900">
       <ClubPageHeader title="회의록·결정" subtitle={center.clubName} icon="gavel" theme="admin" />
       <main className="semo-nav-bottom-space semo-page-admin px-4 py-5">
-        <section className="rounded-[30px] bg-slate-950 p-5 text-white shadow-lg shadow-slate-200/70">
+        <section className="rounded-[var(--radius-modal)] bg-slate-950 p-5 text-white shadow-lg shadow-slate-200/70">
           <div className="flex items-start justify-between gap-4"><div><p className="text-xs font-bold text-white/55">운영의 이유를 보존합니다</p><h1 className="mt-2 text-2xl font-black tracking-tight">회의에서 실행까지</h1><p className="mt-2 max-w-xl text-sm leading-6 text-white/65">결정자와 참여자, 판단 근거, 관련 운영 항목, 후속 업무와 재검토 시점을 한 기록으로 연결합니다.</p></div><span className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-white/10"><span className="material-symbols-outlined text-[27px]" aria-hidden="true">history_edu</span></span></div>
           <div className="mt-5 grid grid-cols-3 gap-2"><HeroMetric label="초안" value={center.draftCount} /><HeroMetric label="확정" value={center.confirmedCount} /><HeroMetric label="검토 필요" value={center.reviewDueCount} danger={center.reviewDueCount > 0} /></div>
         </section>
 
-        <div className="mt-4 flex items-end justify-between gap-3"><div><h2 className="text-base font-black">운영 기록</h2><p className="mt-1 text-xs text-slate-500">확정된 기록은 수정하지 않고 새 결정으로 대체합니다.</p></div>{center.canManage && !editorOpen ? <button type="button" onClick={startCreate} className="min-h-11 shrink-0 rounded-2xl bg-indigo-600 px-4 text-xs font-bold text-white">새 기록</button> : null}</div>
+        <div className="mt-4 flex items-end justify-between gap-3"><div><h2 className="text-base font-black">운영 기록</h2><p className="mt-1 text-xs text-slate-500">확정된 기록은 수정하지 않고 새 결정으로 대체합니다.</p></div>{center.canManage && !editorOpen ? <button type="button" onClick={startCreate} className="min-h-11 shrink-0 rounded-[var(--radius-control)] bg-[var(--primary)] px-4 text-xs font-bold text-white">새 기록</button> : null}</div>
 
         <div className="mt-4 grid grid-cols-4 gap-1 rounded-2xl border border-slate-200 bg-white p-2 shadow-sm">
-          {([ ["ACTIVE", "진행"], ["DRAFT", "초안"], ["CONFIRMED", "확정"], ["HISTORY", "이력"] ] as const).map(([key, label]) => <button key={key} type="button" aria-pressed={statusFilter === key} onClick={() => setStatusFilter(key)} className={`min-h-11 rounded-xl px-1 text-xs font-bold ${statusFilter === key ? "bg-indigo-600 text-white" : "text-slate-500"}`}>{label}</button>)}
+          {([ ["ACTIVE", "진행"], ["DRAFT", "초안"], ["CONFIRMED", "확정"], ["HISTORY", "이력"] ] as const).map(([key, label]) => <button key={key} type="button" aria-pressed={statusFilter === key} onClick={() => setStatusFilter(key)} className={`min-h-11 rounded-[var(--radius-control)] px-1 text-xs font-bold ${statusFilter === key ? "bg-[var(--primary)] text-white" : "text-slate-500"}`}>{label}</button>)}
         </div>
 
         {editorOpen ? <div className="mt-5"><DecisionRecordEditor center={center} draft={draft} editing={editingRecordId != null} pending={pending} onChange={setDraft} onSubmit={submitDraft} onCancel={closeEditor} /></div> : null}
@@ -245,7 +245,7 @@ export function ClubDecisionAdminClient({ clubId }: { clubId: string }) {
                 },
               });
             }}
-          />) : <div className="rounded-[26px] border border-dashed border-slate-300 bg-white px-5 py-10 text-center"><span className="material-symbols-outlined text-[34px] text-slate-300" aria-hidden="true">history_edu</span><p className="mt-3 text-sm font-black text-slate-700">조건에 맞는 기록이 없습니다.</p><p className="mt-1 text-xs leading-5 text-slate-400">새 기록에서 회의 배경과 결정 내용을 초안으로 남겨보세요.</p></div>}
+          />) : <div className="rounded-[var(--radius-modal)] border border-dashed border-slate-300 bg-white px-5 py-10 text-center"><span className="material-symbols-outlined text-[34px] text-slate-300" aria-hidden="true">history_edu</span><p className="mt-3 text-sm font-black text-slate-700">조건에 맞는 기록이 없습니다.</p><p className="mt-1 text-xs leading-5 text-slate-400">새 기록에서 회의 배경과 결정 내용을 초안으로 남겨보세요.</p></div>}
         </section>
       </main>
       {confirmation ? (

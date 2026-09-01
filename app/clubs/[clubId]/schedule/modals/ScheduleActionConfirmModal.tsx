@@ -32,7 +32,7 @@ export function ScheduleActionConfirmModal({
   onConfirm,
 }: ScheduleActionConfirmModalProps) {
   return (
-    <RouteModal ariaLabel={title} onDismiss={onCancel} contentClassName="max-w-[22rem] rounded-[1.75rem] sm:rounded-[1.75rem]">
+    <RouteModal ariaLabel={title} onDismiss={onCancel} contentClassName="max-w-[22rem] rounded-[var(--radius-modal)] sm:rounded-[var(--radius-modal)]">
       <div className="bg-white px-5 py-5">
         <div className={`mx-auto mb-4 flex size-12 items-center justify-center rounded-2xl ${tone === "danger" ? "bg-rose-50 text-rose-500" : "bg-[var(--primary)]/10 text-[var(--primary)]"}`}>
           <span className="material-symbols-outlined text-[24px]" aria-hidden="true">{iconName}</span>

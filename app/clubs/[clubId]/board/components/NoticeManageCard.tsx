@@ -46,23 +46,9 @@ export function NoticeManageCard({
   });
 
   return (
-    <div className="relative overflow-visible rounded-[8px] border border-slate-100 bg-white shadow-sm">
-      <div
-        role="button"
-        tabIndex={0}
-        onClick={onOpen}
-        onKeyDown={(event) => {
-          if (event.key === "Enter" || event.key === " ") {
-            event.preventDefault();
-            onOpen();
-          }
-        }}
-        aria-label={`${notice.title} 자세히 보기`}
-        className="block cursor-pointer text-left transition-colors hover:bg-slate-50"
-      >
-        <article>
+    <article className="semo-card relative overflow-visible">
           {notice.imageUrl ? (
-            <div className="relative h-40 w-full overflow-hidden rounded-t-[8px] bg-slate-100">
+            <div className="relative h-40 w-full overflow-hidden rounded-t-[var(--radius-card)] bg-slate-100">
               <Image
                 src={notice.imageUrl}
                 alt={notice.title}
@@ -79,7 +65,7 @@ export function NoticeManageCard({
                   {badge.label}
                 </span>
                 {notice.pinned ? (
-                  <span className="rounded bg-red-50 px-2 py-0.5 text-[11px] font-bold uppercase text-red-600">
+                  <span className="rounded bg-rose-50 px-2 py-0.5 text-[11px] font-bold uppercase text-rose-600">
                     고정
                   </span>
                 ) : null}
@@ -132,8 +118,17 @@ export function NoticeManageCard({
                 ) : null}
               </div>
 
-              {manageable ? (
-                <div className="relative">
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={onOpen}
+                  className="semo-icon-control text-[var(--primary)] transition hover:bg-[var(--primary)]/8"
+                  aria-label={`${notice.title} 자세히 보기`}
+                >
+                  <span className="material-symbols-outlined text-[20px]" aria-hidden="true">arrow_forward</span>
+                </button>
+                {manageable ? (
+                  <div className="relative">
                   <button
                     type="button"
                     aria-label={`${notice.title} 관리 메뉴`}
@@ -188,12 +183,11 @@ export function NoticeManageCard({
                       </motion.div>
                     ) : null}
                   </AnimatePresence>
-                </div>
-              ) : null}
+                  </div>
+                ) : null}
+              </div>
             </div>
           </div>
-        </article>
-      </div>
-    </div>
+    </article>
   );
 }

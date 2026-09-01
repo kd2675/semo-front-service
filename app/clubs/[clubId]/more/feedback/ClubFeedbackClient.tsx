@@ -48,7 +48,7 @@ function getStatusTone(statusCode: ClubFeedbackStatusCode) {
     case "CLOSED":
       return "bg-slate-200 text-slate-600";
     default:
-      return "bg-blue-50 text-[#135bec]";
+      return "bg-blue-50 text-[var(--primary)]";
   }
 }
 
@@ -185,12 +185,12 @@ export function ClubFeedbackClient({
           title="피드백"
           subtitle={feedbackHome.clubName}
           icon="forum"
-          className="border-[#135bec]/10 bg-white/85 backdrop-blur-md"
+          className="border-[var(--primary)]/10 bg-white/85 backdrop-blur-md"
         />
 
         <main className="semo-nav-bottom-space space-y-4 px-4 pt-4">
           <motion.section
-            className="overflow-hidden rounded-[28px] border border-[#135bec]/10 bg-[linear-gradient(155deg,rgba(255,255,255,0.96)_0%,rgba(243,247,255,0.96)_58%,rgba(228,238,255,0.92)_100%)] p-5 shadow-[0_20px_48px_rgba(19,91,236,0.12)]"
+            className="overflow-hidden rounded-[var(--radius-modal)] border border-[var(--primary)]/10 bg-[linear-gradient(155deg,rgba(255,255,255,0.96)_0%,rgba(243,247,255,0.96)_58%,rgba(228,238,255,0.92)_100%)] p-5 shadow-[0_20px_48px_rgba(19,91,236,0.12)]"
             {...staggeredFadeUpMotion(0, reduceMotion)}
           >
             <p className="text-xs font-bold tracking-wide text-[var(--primary)]">
@@ -206,7 +206,7 @@ export function ClubFeedbackClient({
             </p>
 
             <div className="mt-5 grid grid-cols-2 gap-3">
-              <div className="rounded-[22px] border border-white/90 bg-white/85 px-4 py-3 shadow-sm">
+              <div className="rounded-[var(--radius-card)] border border-white/90 bg-white/85 px-4 py-3 shadow-sm">
                 <p className="text-xs font-semibold text-slate-400">
                   확인 가능한 요청
                 </p>
@@ -214,7 +214,7 @@ export function ClubFeedbackClient({
                   {feedbackHome.totalVisibleCount}
                 </p>
               </div>
-              <div className="rounded-[22px] border border-white/90 bg-white/85 px-4 py-3 shadow-sm">
+              <div className="rounded-[var(--radius-card)] border border-white/90 bg-white/85 px-4 py-3 shadow-sm">
                 <p className="text-xs font-semibold text-slate-400">
                   내 요청
                 </p>
@@ -226,7 +226,7 @@ export function ClubFeedbackClient({
           </motion.section>
 
           <motion.section
-            className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm"
+            className="rounded-[var(--radius-modal)] border border-slate-200 bg-white p-5 shadow-sm"
             {...staggeredFadeUpMotion(1, reduceMotion)}
           >
             <div className="flex items-start justify-between gap-3">
@@ -293,7 +293,7 @@ export function ClubFeedbackClient({
           </motion.section>
 
           <motion.section
-            className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm"
+            className="rounded-[var(--radius-modal)] border border-slate-200 bg-white p-5 shadow-sm"
             {...staggeredFadeUpMotion(2, reduceMotion)}
           >
             <div className="flex items-start justify-between gap-3">
@@ -340,7 +340,7 @@ export function ClubFeedbackClient({
                     key={item.feedbackId}
                     type="button"
                     onClick={() => void loadDetail(item.feedbackId)}
-                    className={`w-full rounded-[24px] border px-4 py-4 text-left transition ${
+                    className={`w-full rounded-[var(--radius-card)] border px-4 py-4 text-left transition ${
                       selectedFeedbackId === item.feedbackId
                         ? "border-[var(--primary)]/35 bg-[var(--primary)]/5"
                         : "border-slate-200 bg-white hover:border-slate-300"
@@ -373,7 +373,7 @@ export function ClubFeedbackClient({
           </motion.section>
 
           <motion.section
-            className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm"
+            className="rounded-[var(--radius-modal)] border border-slate-200 bg-white p-5 shadow-sm"
             {...staggeredFadeUpMotion(3, reduceMotion)}
           >
             <div className="flex items-start justify-between gap-3">
@@ -416,7 +416,7 @@ export function ClubFeedbackClient({
                 <div className="rounded-2xl bg-slate-50 px-4 py-4 text-sm text-slate-500">
                   작성자 {selectedDetail.authorDisplayName} · {selectedDetail.createdAtLabel ?? "-"}
                 </div>
-                <div className="rounded-[24px] border border-slate-200 bg-slate-50/70 p-4">
+                <div className="rounded-[var(--radius-card)] border border-slate-200 bg-slate-50/70 p-4">
                   <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
                     운영 답변
                   </p>

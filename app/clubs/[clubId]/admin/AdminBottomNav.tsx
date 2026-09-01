@@ -36,10 +36,10 @@ const ADMIN_ITEMS: AdminNavItem[] = [
   { key: "MEMBERS", label: "멤버", icon: "groups", href: (clubId) => `/clubs/${clubId}/admin/members` },
   { key: "MORE", label: "더보기", icon: "more_horiz" },
   { key: "STATS", label: "통계", icon: "insights", href: (clubId) => `/clubs/${clubId}/admin/stats` },
-  { key: "USER", label: "사용자 모드", icon: "exit_to_app", href: (clubId) => `/clubs/${clubId}`, exact: true },
+  { key: "USER", label: "사용자", icon: "exit_to_app", href: (clubId) => `/clubs/${clubId}`, exact: true },
 ];
 
-const ADMIN_ACTIVE_TEXT_CLASS = "text-[var(--color-admin-primary)]";
+const ADMIN_ACTIVE_TEXT_CLASS = "text-[var(--primary)]";
 const ADMIN_INACTIVE_TEXT_CLASS = "text-slate-400";
 
 function stripQuery(path: string) {
@@ -136,23 +136,20 @@ export function AdminBottomNav({ clubId }: AdminBottomNavProps) {
             type="button"
             whileTap={reduceMotion ? undefined : { scale: 0.92 }}
             onClick={() => setOpenMenuPathname((current) => (current === pathname ? null : pathname))}
-            className={`semo-icon-control relative touch-manipulation transition ${textClassName}`}
+            className={`semo-nav-item relative touch-manipulation transition ${textClassName}`}
             aria-expanded={isMoreOpen}
             aria-haspopup="dialog"
             aria-label={morePendingCount > 0 ? `${item.label}, 확인할 항목 ${morePendingCount}건` : item.label}
           >
-            <span className="material-symbols-outlined text-[24px]" aria-hidden="true">{item.icon}</span>
-            {isActive ? (
-              <motion.span
-                layoutId="admin-nav-active-dot"
-                className="absolute right-1 top-1 size-2 rounded-full border-2 border-white bg-[var(--color-admin-primary)]"
-              />
-            ) : null}
-            {morePendingCount > 0 ? (
-              <span className="absolute -right-1 -top-0.5 min-w-5 rounded-full border-2 border-white bg-rose-500 px-1 text-center text-[11px] font-bold leading-4 text-white">
-                {morePendingCount > 99 ? "99+" : morePendingCount}
-              </span>
-            ) : null}
+            <span className="semo-nav-icon" data-active={isActive}>
+              <span className="material-symbols-outlined text-[24px]" aria-hidden="true">{item.icon}</span>
+              {morePendingCount > 0 ? (
+                <span className="absolute -right-1 -top-0.5 min-w-5 rounded-full border-2 border-white bg-rose-500 px-1 text-center text-[11px] font-bold leading-4 text-white">
+                  {morePendingCount > 99 ? "99+" : morePendingCount}
+                </span>
+              ) : null}
+            </span>
+            <span>{item.label}</span>
           </motion.button>
         );
       }
@@ -161,10 +158,11 @@ export function AdminBottomNav({ clubId }: AdminBottomNavProps) {
         <RouterLink
           key={item.key}
           href={href}
-          className={`semo-icon-control touch-manipulation transition ${textClassName}`}
+          className={`semo-nav-item touch-manipulation transition ${textClassName}`}
           aria-label={item.label}
+          aria-current={isActive ? "page" : undefined}
         >
-          <motion.span className="relative flex size-11 items-center justify-center" whileTap={reduceMotion ? undefined : { scale: 0.92 }}>
+          <motion.span className="semo-nav-icon" data-active={isActive} whileTap={reduceMotion ? undefined : { scale: 0.92 }}>
             <span
               className="material-symbols-outlined text-[24px]"
               aria-hidden="true"
@@ -172,25 +170,20 @@ export function AdminBottomNav({ clubId }: AdminBottomNavProps) {
             >
               {item.icon}
             </span>
-            {isActive ? (
-              <motion.span
-                layoutId="admin-nav-active-dot"
-                className="absolute right-0 top-0 size-2 rounded-full border-2 border-white bg-[var(--color-admin-primary)]"
-              />
-            ) : null}
           </motion.span>
+          <span>{item.label}</span>
         </RouterLink>
       ) : null;
     });
 
   const floatingMenu = (
-    <nav className="flex w-[clamp(320px,38vw,520px)] max-w-[calc(100vw-2rem)] items-center justify-between rounded-full border border-white/70 bg-white/85 px-4 py-3 shadow-[var(--shadow-floating)] backdrop-blur-md">
+    <nav aria-label="관리자 주요 화면" className="flex w-[clamp(350px,42vw,560px)] max-w-[calc(100vw-1rem)] items-center justify-around rounded-[var(--radius-modal)] border border-white/70 bg-white/90 px-2 py-1.5 shadow-[var(--shadow-floating)] backdrop-blur-md">
       {renderButtons()}
     </nav>
   );
   const dockedMenu = (
-    <nav className="flex w-full items-center justify-center border-t border-slate-200/70 bg-white/90 px-4 pt-3 pb-[calc(env(safe-area-inset-bottom)+12px)] backdrop-blur-md">
-      <div className="flex w-[clamp(360px,48vw,680px)] max-w-full items-center justify-between">
+    <nav aria-label="관리자 주요 화면" className="flex w-full items-center justify-center border-t border-slate-200/70 bg-white/92 px-2 pt-1.5 pb-[calc(env(safe-area-inset-bottom)+6px)] backdrop-blur-md">
+      <div className="flex w-[clamp(360px,48vw,680px)] max-w-full items-center justify-around">
         {renderButtons()}
       </div>
     </nav>

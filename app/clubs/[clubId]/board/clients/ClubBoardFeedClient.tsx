@@ -375,7 +375,7 @@ export function ClubBoardFeedClient({ clubId }: ClubBoardFeedClientProps) {
                 <div className="mb-4 flex items-center justify-between gap-3">
                   <h2 className="flex items-center gap-2 text-base font-bold text-slate-900">
                     <span
-                      className="material-symbols-outlined text-red-500 text-[20px]"
+                      className="material-symbols-outlined text-rose-500 text-[20px]"
                       aria-hidden="true"
                       style={{ fontVariationSettings: "'FILL' 1, 'wght' 600, 'GRAD' 0, 'opsz' 20" }}
                     >
@@ -397,7 +397,7 @@ export function ClubBoardFeedClient({ clubId }: ClubBoardFeedClientProps) {
                 <div className="mb-4 flex items-center justify-between gap-3">
                   <h2 className="flex items-center gap-2 text-base font-bold text-slate-900">
                     <span
-                      className="material-symbols-outlined text-red-500 text-[20px]"
+                      className="material-symbols-outlined text-rose-500 text-[20px]"
                       aria-hidden="true"
                       style={{ fontVariationSettings: "'FILL' 1, 'wght' 600, 'GRAD' 0, 'opsz' 20" }}
                     >

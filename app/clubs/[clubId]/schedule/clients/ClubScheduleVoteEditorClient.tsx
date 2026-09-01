@@ -156,7 +156,7 @@ export function ClubScheduleVoteEditorClient({
     : "bg-[var(--background-light)] font-display text-slate-900";
   const shellClassName = isModal
     ? "flex min-h-0 flex-1 flex-col bg-white"
-    : "relative mx-auto flex min-h-screen max-w-md flex-col bg-white shadow-xl";
+    : "relative mx-auto flex min-h-screen max-w-md flex-col bg-white shadow-[var(--shadow-floating)]";
   const bottomBarClassName = isModal
     ? "sticky bottom-0 border-t border-slate-200 bg-white p-4 shadow-[0_-4px_10px_rgba(0,0,0,0.05)]"
     : "fixed bottom-0 left-0 right-0 z-20 mx-auto max-w-md bg-white p-4 shadow-[0_-4px_10px_rgba(0,0,0,0.05)]";
@@ -177,7 +177,7 @@ export function ClubScheduleVoteEditorClient({
               <RouterLink
                 href={backHref}
                 replace={isModal}
-                className="p-1 text-gray-600"
+                className="p-1 text-slate-600"
                 aria-label="투표로 돌아가기"
               >
                 <span className="material-symbols-outlined" aria-hidden="true">arrow_back</span>
@@ -189,7 +189,7 @@ export function ClubScheduleVoteEditorClient({
               <button
                 type="button"
                 onClick={onRequestClose}
-                className="semo-icon-control text-gray-600 transition-colors hover:bg-gray-100"
+                className="semo-icon-control text-slate-600 transition-colors hover:bg-slate-100"
                 aria-label="투표 작성 닫기"
               >
                 <span className="material-symbols-outlined" aria-hidden="true">close</span>
@@ -203,58 +203,58 @@ export function ClubScheduleVoteEditorClient({
         >
           <form id={formId} className="space-y-8" onSubmit={handleSubmit}>
             <section>
-              <label className="mb-2 block text-sm font-semibold text-gray-700" htmlFor={`${formId}-vote-title`}>
+              <label className="mb-2 block text-sm font-semibold text-slate-700" htmlFor={`${formId}-vote-title`}>
                 1단계. 투표 제목
               </label>
               <input
                 id={`${formId}-vote-title`}
                 value={title}
                 onChange={(event) => setTitle(event.target.value)}
-                className="h-12 w-full rounded-lg border border-gray-300 px-4 shadow-sm outline-none transition focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/20"
+                className="h-12 w-full rounded-lg border border-slate-300 px-4 shadow-sm outline-none transition focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/20"
                 placeholder="투표 제목을 입력해주세요"
                 required
               />
             </section>
 
             <section>
-              <h2 className="mb-2 block text-sm font-semibold text-gray-700">2단계. 투표 기간 설정</h2>
+              <h2 className="mb-2 block text-sm font-semibold text-slate-700">2단계. 투표 기간 설정</h2>
               <div className="grid grid-cols-2 gap-4">
                 <label>
-                  <span className="mb-1 block text-xs text-gray-500">시작일</span>
+                  <span className="mb-1 block text-xs text-slate-500">시작일</span>
                   <DatePopoverField
                     value={voteStartDate}
                     onChange={(nextStartDate) => {
                       setVoteStartDate(nextStartDate);
                       setVoteEndDate((current) => (!current || current < nextStartDate ? nextStartDate : current));
                     }}
-                    buttonClassName="h-11 rounded-lg border-gray-300 px-3 shadow-sm focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/20"
+                    buttonClassName="h-11 rounded-lg border-slate-300 px-3 shadow-sm focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/20"
                   />
                 </label>
                 <label>
-                  <span className="mb-1 block text-xs text-gray-500">종료일</span>
+                  <span className="mb-1 block text-xs text-slate-500">종료일</span>
                   <DatePopoverField
                     value={voteEndDate}
                     minDate={voteStartDate}
                     onChange={setVoteEndDate}
-                    buttonClassName="h-11 rounded-lg border-gray-300 px-3 shadow-sm focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/20"
+                    buttonClassName="h-11 rounded-lg border-slate-300 px-3 shadow-sm focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/20"
                   />
                 </label>
               </div>
               <div className="mt-4 grid grid-cols-2 gap-4">
                 <label>
-                  <span className="mb-1 block text-xs text-gray-500">시작 시간</span>
+                  <span className="mb-1 block text-xs text-slate-500">시작 시간</span>
                   <TimePopoverField
                     value={voteStartTime}
                     onChange={setVoteStartTime}
-                    buttonClassName="h-11 rounded-lg border-gray-300 px-3 shadow-sm focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/20"
+                    buttonClassName="h-11 rounded-lg border-slate-300 px-3 shadow-sm focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/20"
                   />
                 </label>
                 <label>
-                  <span className="mb-1 block text-xs text-gray-500">종료 시간</span>
+                  <span className="mb-1 block text-xs text-slate-500">종료 시간</span>
                   <TimePopoverField
                     value={voteEndTime}
                     onChange={setVoteEndTime}
-                    buttonClassName="h-11 rounded-lg border-gray-300 px-3 shadow-sm focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/20"
+                    buttonClassName="h-11 rounded-lg border-slate-300 px-3 shadow-sm focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/20"
                   />
                 </label>
               </div>
@@ -262,8 +262,8 @@ export function ClubScheduleVoteEditorClient({
 
             <section>
               <div className="mb-2 flex items-center justify-between">
-                <h2 className="text-sm font-semibold text-gray-700">3단계. 투표 항목</h2>
-                <span className="text-xs text-gray-400">{optionCountLabel}</span>
+                <h2 className="text-sm font-semibold text-slate-700">3단계. 투표 항목</h2>
+                <span className="text-xs text-slate-400">{optionCountLabel}</span>
               </div>
 
               {responsesStarted ? (
@@ -280,7 +280,7 @@ export function ClubScheduleVoteEditorClient({
                       value={option}
                       onChange={(event) => updateOption(index, event.target.value)}
                       disabled={responsesStarted}
-                      className="h-11 flex-1 rounded-lg border border-gray-300 px-4 text-sm shadow-sm outline-none transition focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/20"
+                      className="h-11 flex-1 rounded-lg border border-slate-300 px-4 text-sm shadow-sm outline-none transition focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/20"
                       placeholder="항목 내용을 입력하세요"
                       required={index < 2}
                     />
@@ -288,7 +288,7 @@ export function ClubScheduleVoteEditorClient({
                       type="button"
                       onClick={() => removeOption(index)}
                       disabled={responsesStarted || options.length <= 2}
-                      className="p-2 text-gray-400 transition-colors hover:text-rose-500 disabled:cursor-not-allowed disabled:opacity-40"
+                      className="p-2 text-slate-400 transition-colors hover:text-rose-500 disabled:cursor-not-allowed disabled:opacity-40"
                       aria-label={`항목 ${index + 1} 삭제`}
                     >
                       <span className="material-symbols-outlined text-[20px]" aria-hidden="true">close</span>
@@ -301,19 +301,19 @@ export function ClubScheduleVoteEditorClient({
                 type="button"
                 onClick={addOption}
                 disabled={addOptionDisabled}
-                className="mt-4 flex w-full items-center justify-center gap-1 rounded-lg border-2 border-dashed border-gray-300 py-3 text-sm font-medium text-gray-500 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+                className="mt-4 flex w-full items-center justify-center gap-1 rounded-lg border-2 border-dashed border-slate-300 py-3 text-sm font-medium text-slate-500 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <span className="material-symbols-outlined text-[18px]" aria-hidden="true">add</span>
                 항목 추가
               </button>
             </section>
 
-            <section className="border-t border-gray-100 pt-4">
+            <section className="border-t border-slate-100 pt-4">
               <div className="space-y-3">
                 <div className="flex items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm">
                   <div>
-                    <h2 className="text-sm font-semibold text-gray-700">4단계. 게시판에도 공유</h2>
-                    <p className="text-xs text-gray-400">투표를 게시판에도 함께 노출합니다.</p>
+                    <h2 className="text-sm font-semibold text-slate-700">4단계. 게시판에도 공유</h2>
+                    <p className="text-xs text-slate-400">투표를 게시판에도 함께 노출합니다.</p>
                   </div>
                   <label className="relative inline-flex cursor-pointer items-center">
                     <input
@@ -323,14 +323,14 @@ export function ClubScheduleVoteEditorClient({
                       type="checkbox"
                       onChange={(event) => setPostToBoard(event.target.checked)}
                     />
-                    <div className="h-6 w-11 rounded-full bg-gray-200 transition peer-checked:bg-[var(--primary)] after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:after:translate-x-full peer-checked:after:border-white" />
+                    <div className="h-6 w-11 rounded-full bg-slate-200 transition peer-checked:bg-[var(--primary)] after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-slate-300 after:bg-white after:transition-all after:content-[''] peer-checked:after:translate-x-full peer-checked:after:border-white" />
                   </label>
                 </div>
 
                 <div className="flex items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm">
                   <div>
-                    <h2 className="text-sm font-semibold text-gray-700">5단계. 캘린더에도 공유</h2>
-                    <p className="text-xs text-gray-400">투표를 캘린더 화면에도 함께 노출합니다.</p>
+                    <h2 className="text-sm font-semibold text-slate-700">5단계. 캘린더에도 공유</h2>
+                    <p className="text-xs text-slate-400">투표를 캘린더 화면에도 함께 노출합니다.</p>
                   </div>
                   <label className="relative inline-flex cursor-pointer items-center">
                     <input
@@ -340,14 +340,14 @@ export function ClubScheduleVoteEditorClient({
                       type="checkbox"
                       onChange={(event) => setPostToCalendar(event.target.checked)}
                     />
-                    <div className="h-6 w-11 rounded-full bg-gray-200 transition peer-checked:bg-[var(--primary)] after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:after:translate-x-full peer-checked:after:border-white" />
+                    <div className="h-6 w-11 rounded-full bg-slate-200 transition peer-checked:bg-[var(--primary)] after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-slate-300 after:bg-white after:transition-all after:content-[''] peer-checked:after:translate-x-full peer-checked:after:border-white" />
                   </label>
                 </div>
 
                 <div className="flex items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm">
                   <div>
-                    <h2 className="text-sm font-semibold text-gray-700">6단계. 핀 고정</h2>
-                    <p className="text-xs text-gray-400">게시판 중요 고정 게시물 영역에 우선 노출합니다.</p>
+                    <h2 className="text-sm font-semibold text-slate-700">6단계. 핀 고정</h2>
+                    <p className="text-xs text-slate-400">게시판 중요 고정 게시물 영역에 우선 노출합니다.</p>
                   </div>
                   <label className="relative inline-flex cursor-pointer items-center">
                     <input
@@ -357,7 +357,7 @@ export function ClubScheduleVoteEditorClient({
                       type="checkbox"
                       onChange={(event) => setPinned(event.target.checked)}
                     />
-                    <div className="h-6 w-11 rounded-full bg-gray-200 transition peer-checked:bg-[var(--primary)] after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:after:translate-x-full peer-checked:after:border-white" />
+                    <div className="h-6 w-11 rounded-full bg-slate-200 transition peer-checked:bg-[var(--primary)] after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-slate-300 after:bg-white after:transition-all after:content-[''] peer-checked:after:translate-x-full peer-checked:after:border-white" />
                   </label>
                 </div>
               </div>
