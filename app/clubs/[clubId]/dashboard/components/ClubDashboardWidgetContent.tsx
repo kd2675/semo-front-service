@@ -44,9 +44,10 @@ export function ClubDashboardWidgetContent(props: ClubDashboardWidgetCardProps) 
         ) : (
           <RouterLink
             href={widget.userPath || `/clubs/${clubId}`}
-            className="inline-flex items-center gap-1 rounded-full bg-[var(--primary)]/10 px-3 py-1.5 text-xs font-bold text-[var(--primary)] transition-colors hover:bg-[var(--primary)]/20"
+            className="inline-flex min-h-11 items-center gap-1 rounded-[var(--radius-control)] bg-[var(--primary)]/10 px-3 text-xs font-bold text-[var(--primary)] transition-colors hover:bg-[var(--primary)]/20"
+            aria-label={`${getWidgetTitle(widget)} 열기`}
           >
-            열기
+            바로가기
             <span className="material-symbols-outlined text-sm" aria-hidden="true">arrow_forward</span>
           </RouterLink>
         )}

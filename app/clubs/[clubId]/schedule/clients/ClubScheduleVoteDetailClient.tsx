@@ -8,7 +8,6 @@ import { motion } from "motion/react";
 import { useHydrationSafeReducedMotion } from "@/app/hooks/useHydrationSafeReducedMotion";
 import { RouterLink } from "@/app/components/RouterLink";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
-import { ClubModeSwitchFab } from "@/app/components/ClubModeSwitchFab";
 import { type ClubScheduleVoteDetailResponse } from "@/app/lib/clubs";
 import { getShareTargetBadges } from "@/app/lib/contentBadge";
 import { staggeredFadeUpMotion } from "@/app/lib/motion";
@@ -325,7 +324,6 @@ export function ClubScheduleVoteDetailClient({
           ) : null}
         </main>
 
-        {!isModal && payload?.admin ? <ClubModeSwitchFab clubId={clubId} mode="user" /> : null}
         {showCloseConfirm ? (
           <ScheduleActionConfirmModal
             title="투표 종료"

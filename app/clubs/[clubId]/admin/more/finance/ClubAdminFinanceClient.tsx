@@ -859,7 +859,7 @@ export function ClubAdminFinanceClient({
             type="button"
             aria-label="재정 입력 메뉴"
             onClick={() => setShowActionSheet(true)}
-            className={`fixed ${FAB_RIGHT_OFFSET_CLASS_NAME} ${getActionFabBottomClass(true)} z-40 flex h-14 w-14 items-center justify-center rounded-full bg-[var(--primary)] text-white transition-transform active:scale-95`}
+            className={`fixed ${FAB_RIGHT_OFFSET_CLASS_NAME} ${getActionFabBottomClass()} z-40 flex h-14 w-14 items-center justify-center rounded-full bg-[var(--primary)] text-white transition-transform active:scale-95`}
             style={{ boxShadow: "0 6px 16px rgba(236, 91, 19, 0.32)" }}
           >
             <span className="material-symbols-outlined text-[28px]" aria-hidden="true">add</span>

@@ -16,8 +16,6 @@ export function ClubDashboardWidgetCard(props: ClubDashboardWidgetCardProps) {
     .filter(Boolean)
     .join(" ");
   const isEditMode = isAdmin && editMode;
-  const baseBoxShadow = "0 1px 2px rgba(15, 23, 42, 0.06)";
-
   return (
     <motion.article
       key={widget.widgetKey}
@@ -36,10 +34,10 @@ export function ClubDashboardWidgetCard(props: ClubDashboardWidgetCardProps) {
         event.preventDefault();
         onDrop(widget.widgetKey);
       }}
-      className={`relative flex min-h-[180px] flex-col rounded-xl border bg-white p-5 shadow-sm transition ${
+      className={`semo-card relative flex min-h-[180px] flex-col p-5 transition ${
         isDropTarget ? "border-[var(--primary)] ring-2 ring-[var(--primary)]/20" : "border-slate-200"
       } ${isDragging ? "opacity-60" : ""} ${spanClass}`}
-      animate={{ scale: 1, boxShadow: baseBoxShadow }}
+      animate={{ scale: 1 }}
       transition={{ duration: reduceMotion ? 0 : 0.2, ease: "easeOut" }}
     >
       {isEditMode ? (

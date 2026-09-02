@@ -11,7 +11,6 @@ import { motion } from "motion/react";
 
 import { useHydrationSafeReducedMotion } from "@/app/hooks/useHydrationSafeReducedMotion";
 import { ClubGrowthCoreCoverLink } from "@/app/components/ClubGrowthCoreCoverLink";
-import { ClubModeSwitchFab } from "@/app/components/ClubModeSwitchFab";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import { useAppToast } from "@/app/hooks/useAppToast";
 import {
@@ -615,7 +614,7 @@ export function ClubDashboardFallbackClient({
 
         <main className="semo-page-dashboard semo-nav-bottom-space flex-1 space-y-6 p-4 md:p-6">
           <motion.section {...staggeredFadeUpMotion(0, reduceMotion)}>
-            <div className="relative h-48 w-full overflow-hidden rounded-xl bg-slate-200 shadow-sm">
+            <div className="semo-feature-surface relative h-56 w-full overflow-hidden bg-slate-200 p-0 sm:h-64">
               {club?.imageUrl ? (
                 <div
                   className="absolute inset-0 bg-cover bg-center"
@@ -624,64 +623,42 @@ export function ClubDashboardFallbackClient({
               ) : (
                 <div className="absolute inset-0 bg-gradient-to-br from-[var(--primary)]/10 to-blue-100" />
               )}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/18 to-transparent" />
               {club ? (
                 <ClubGrowthCoreCoverLink clubId={clubId} growthCore={club.growthCore} />
               ) : null}
-              <div className="absolute bottom-4 left-4 flex items-end gap-4">
-                <div className="flex size-20 items-center justify-center overflow-hidden rounded-xl border-4 border-white bg-white text-2xl font-bold text-[var(--primary)] shadow-lg">
+              <div className="absolute bottom-4 left-4 flex max-w-[calc(100%-9rem)] items-end gap-3 sm:bottom-5 sm:left-5 sm:max-w-[calc(100%-11rem)]">
+                <div className="flex size-16 shrink-0 items-center justify-center overflow-hidden rounded-xl border-2 border-white/90 bg-white text-xl font-black text-[var(--primary)] shadow-md sm:size-20 sm:text-2xl">
                   {(club?.name ?? "SEMO").slice(0, 2).toUpperCase()}
                 </div>
-                {club?.admin ? (
-                  <div className="pb-1">
+                <div className="min-w-0 pb-0.5 text-white">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h2 className="truncate text-xl font-black tracking-tight sm:text-2xl">{club?.name ?? "모임 홈"}</h2>
+                    {club?.admin ? (
                     <span className="inline-flex items-center rounded-full bg-[var(--primary)] px-2.5 py-0.5 text-xs font-semibold text-white">
                       관리자
                     </span>
+                    ) : null}
                   </div>
-                ) : null}
+                  <p className="mt-1 line-clamp-2 text-xs font-medium leading-5 text-slate-200 sm:text-sm">
+                    {club?.summary ?? club?.description ?? "클럽 소개가 아직 없습니다."}
+                  </p>
+                </div>
               </div>
             </div>
+            {isLoading || error || (club?.admin && editMode) ? (
+              <div className={`semo-status-strip mt-3 ${error ? "border-rose-200 bg-rose-50 text-rose-700" : ""}`}>
+                <span className="material-symbols-outlined text-[20px]" aria-hidden="true">
+                  {error ? "error" : isLoading ? "progress_activity" : "dashboard_customize"}
+                </span>
+                <p className="text-sm font-semibold">
+                  {error ? `클럽 정보를 열지 못했습니다. ${error}` : isLoading ? "클럽 정보를 갱신하고 있습니다." : "위젯 편집 중 · 순서와 구성을 변경할 수 있습니다."}
+                </p>
+              </div>
+            ) : null}
           </motion.section>
 
-          <motion.section
-            className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm"
-            {...staggeredFadeUpMotion(1, reduceMotion)}
-          >
-            {isLoading ? (
-              <>
-                <div className="h-6 w-36 rounded-full bg-slate-200" />
-                <div className="mt-3 h-4 w-full rounded-full bg-slate-100" />
-                <div className="mt-2 h-4 w-2/3 rounded-full bg-slate-100" />
-              </>
-            ) : error ? (
-              <>
-                <h2 className="text-lg font-bold">클럽 정보를 열지 못했습니다.</h2>
-                <p className="mt-2 text-sm text-slate-500">{error}</p>
-              </>
-            ) : (
-              <>
-                <div className="flex items-center justify-between gap-3">
-                  <div>
-                    <h2 className="text-lg font-bold">{club?.name}</h2>
-                    <p className="mt-1 text-sm text-slate-500">
-                      {club?.summary ?? club?.description ?? "클럽 소개가 아직 없습니다."}
-                    </p>
-                  </div>
-                  {club?.admin ? (
-                    <span className={`rounded-full px-3 py-1 text-xs font-bold ${
-                      editMode
-                        ? "bg-[var(--primary)]/10 text-[var(--primary)]"
-                        : "bg-slate-100 text-slate-500"
-                    }`}>
-                      {editMode ? "위젯 편집 중" : "홈 위젯"}
-                    </span>
-                  ) : null}
-                </div>
-              </>
-            )}
-          </motion.section>
-
-          <motion.section {...staggeredFadeUpMotion(2, reduceMotion)}>
+          <motion.section {...staggeredFadeUpMotion(1, reduceMotion)}>
             {dashboardLoading ? (
               <ClubDashboardWidgetGridShell />
             ) : dashboardError ? (
@@ -788,7 +765,6 @@ export function ClubDashboardFallbackClient({
           </div>
         ) : null}
 
-        {club?.admin ? <ClubModeSwitchFab clubId={clubId} mode="user" /> : null}
       </div>
     </div>
   );

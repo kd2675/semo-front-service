@@ -6,7 +6,6 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion } from "motion/react";
 
 import { useHydrationSafeReducedMotion } from "@/app/hooks/useHydrationSafeReducedMotion";
-import { ClubModeSwitchFab } from "@/app/components/ClubModeSwitchFab";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import { ResourceAttachmentPanel } from "@/app/components/ResourceAttachmentPanel";
 import { useAppToast } from "@/app/hooks/useAppToast";
@@ -76,7 +75,6 @@ export function ClubFeedbackClient({
   clubId,
   initialData,
   initialDetail,
-  isAdmin,
   canPersist = true,
 }: ClubFeedbackClientProps) {
   const reduceMotion = useHydrationSafeReducedMotion();
@@ -443,7 +441,6 @@ export function ClubFeedbackClient({
           </motion.section>
         </main>
 
-        {isAdmin ? <ClubModeSwitchFab clubId={clubId} mode="user" /> : null}
       </div>
     </div>
   );

@@ -9,6 +9,7 @@
   --color-surface: #ffffff;
   --color-surface-raised: rgba(255, 255, 255, 0.9);
   --color-surface-muted: #eff3f8;
+  --color-surface-subtle: #f8fafc;
   --color-foreground: #0f172a;
   --color-muted: #5b6474;
   --color-line: #dce2ea;
@@ -55,9 +56,9 @@
   --page-data: 72rem;
   --page-admin-wide: 72rem;
 
-  --shadow-card: 0 1px 2px rgba(15, 23, 42, 0.045), 0 7px 22px rgba(15, 23, 42, 0.055);
-  --shadow-floating: 0 18px 48px rgba(15, 23, 42, 0.13);
-  --shadow-modal: 0 28px 84px rgba(15, 23, 42, 0.24);
+  --shadow-card: 0 1px 2px rgba(15, 23, 42, 0.045), 0 6px 18px rgba(15, 23, 42, 0.045);
+  --shadow-floating: 0 16px 42px rgba(15, 23, 42, 0.12);
+  --shadow-modal: 0 26px 72px rgba(15, 23, 42, 0.22);
   --shadow: var(--shadow-floating);
   --shadow-soft: var(--shadow-card);
 
@@ -142,13 +143,13 @@ body {
 .semo-motion-grid {
   position: absolute;
   inset: -12%;
-  opacity: 0.34;
+  opacity: 0.2;
   background-image:
     linear-gradient(30deg, color-mix(in srgb, var(--scene-primary) 7%, transparent) 1px, transparent 1px),
     linear-gradient(150deg, color-mix(in srgb, var(--scene-primary) 6%, transparent) 1px, transparent 1px);
   background-size: 72px 42px;
   mask-image: radial-gradient(ellipse at center, black 8%, transparent 72%);
-  animation: semo-grid-drift 32s linear infinite;
+  animation: semo-grid-drift 42s linear infinite;
 }
 
 .semo-motion-beam {
@@ -158,8 +159,8 @@ body {
   border-radius: var(--radius-round);
   background: radial-gradient(circle, color-mix(in srgb, var(--scene-primary) 11%, transparent), transparent 66%);
   filter: blur(18px);
-  opacity: 0.78;
-  animation: semo-beam-breathe 11s var(--ease-standard) infinite alternate;
+  opacity: 0.56;
+  animation: semo-beam-breathe 14s var(--ease-standard) infinite alternate;
 }
 
 .semo-motion-beam-one {
@@ -187,7 +188,7 @@ body {
     color-mix(in srgb, var(--scene-primary) 9%, transparent),
     transparent 66%
   );
-  opacity: 0.44;
+  opacity: 0.28;
   will-change: transform;
 }
 
@@ -205,7 +206,7 @@ body {
   position: absolute;
   overflow: visible;
   fill: color-mix(in srgb, var(--scene-primary) 3%, transparent);
-  stroke: color-mix(in srgb, var(--scene-primary) 26%, transparent);
+  stroke: color-mix(in srgb, var(--scene-primary) 18%, transparent);
   stroke-width: 0.8;
   vector-effect: non-scaling-stroke;
 }
@@ -275,6 +276,12 @@ body {
 
 .semo-nav-bottom-space {
   padding-bottom: calc(env(safe-area-inset-bottom) + 9rem);
+}
+
+@media (min-width: 1280px) {
+  .semo-nav-bottom-space {
+    padding-bottom: 4rem;
+  }
 }
 
 :where(a, button, input, textarea, select, [role="button"]):focus-visible {
@@ -504,10 +511,8 @@ button {
 .semo-card {
   border: 1px solid var(--color-line);
   border-radius: var(--radius-card);
-  background:
-    linear-gradient(145deg, color-mix(in srgb, var(--primary) 2.5%, transparent), transparent 42%),
-    var(--color-surface);
-  box-shadow: var(--shadow-card);
+  background: var(--color-surface);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.035);
 }
 
 .semo-card-interactive {
@@ -520,8 +525,154 @@ button {
 @media (hover: hover) and (pointer: fine) {
   .semo-card-interactive:hover {
     border-color: color-mix(in srgb, var(--primary) 24%, var(--color-line));
-    box-shadow: 0 8px 22px rgba(15, 23, 42, 0.09);
-    transform: translateY(-3px);
+    box-shadow: var(--shadow-card);
+    transform: translateY(-2px);
+  }
+}
+
+.semo-feature-surface {
+  border: 1px solid color-mix(in srgb, var(--color-line) 92%, transparent);
+  border-radius: var(--radius-card);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-card);
+}
+
+.semo-section-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.semo-section-heading h2 {
+  color: var(--color-foreground);
+  font-size: 1.125rem;
+  font-weight: 800;
+  line-height: 1.4;
+  letter-spacing: -0.025em;
+}
+
+.semo-section-heading p {
+  margin-top: var(--space-1);
+  color: var(--color-muted);
+  font-size: 0.75rem;
+  line-height: 1.5;
+}
+
+.semo-list {
+  overflow: hidden;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-card);
+  background: var(--color-surface);
+}
+
+.semo-list-row {
+  position: relative;
+  display: flex;
+  min-height: 4.5rem;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  transition:
+    background-color var(--duration-fast) var(--ease-standard),
+    color var(--duration-fast) var(--ease-standard);
+}
+
+.semo-list-row + .semo-list-row {
+  border-top: 1px solid color-mix(in srgb, var(--color-line) 72%, transparent);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .semo-list-row:hover {
+    background: color-mix(in srgb, var(--primary) 3.5%, var(--color-surface));
+  }
+}
+
+.semo-metric-strip {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  overflow: hidden;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-card);
+  background: var(--color-surface);
+}
+
+.semo-metric-cell {
+  min-width: 0;
+  padding: var(--space-4);
+}
+
+.semo-metric-cell:nth-child(even) {
+  border-left: 1px solid color-mix(in srgb, var(--color-line) 72%, transparent);
+}
+
+.semo-metric-cell:nth-child(n + 3) {
+  border-top: 1px solid color-mix(in srgb, var(--color-line) 72%, transparent);
+}
+
+@media (min-width: 768px) {
+  .semo-metric-strip-wide {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .semo-metric-strip-wide .semo-metric-cell {
+    border-top: 0;
+  }
+
+  .semo-metric-strip-wide .semo-metric-cell:nth-child(n + 2) {
+    border-left: 1px solid color-mix(in srgb, var(--color-line) 72%, transparent);
+  }
+}
+
+.semo-status-strip {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-card);
+  background: var(--color-surface-subtle);
+  padding: var(--space-4);
+}
+
+.semo-quiet-link {
+  display: inline-flex;
+  min-height: var(--control-default);
+  align-items: center;
+  gap: var(--space-1);
+  color: color-mix(in srgb, var(--primary) 88%, var(--color-foreground));
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .semo-quiet-link:hover {
+    text-decoration: underline;
+    text-underline-offset: 0.2rem;
+  }
+}
+
+.semo-desktop-nav-rail {
+  position: fixed;
+  top: 50%;
+  left: max(1.5rem, calc(50vw - 36rem - 5.5rem));
+  z-index: 35;
+  display: none;
+  width: 4.75rem;
+  transform: translateY(-50%);
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.125rem;
+  border: 1px solid rgba(255, 255, 255, 0.72);
+  border-radius: var(--radius-modal);
+  background: rgba(255, 255, 255, 0.9);
+  padding: 0.5rem;
+  box-shadow: var(--shadow-floating);
+  backdrop-filter: blur(18px);
+}
+
+@media (min-width: 1280px) {
+  .semo-desktop-nav-rail {
+    display: flex;
   }
 }
 

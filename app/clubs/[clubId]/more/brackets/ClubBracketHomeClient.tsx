@@ -3,7 +3,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { AnimatePresence } from "motion/react";
-import { ClubModeSwitchFab } from "@/app/components/ClubModeSwitchFab";
 import { ClubBracketDetailModal } from "@/app/components/ClubDetailModals";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import { RouteModal } from "@/app/components/RouteModal";
@@ -162,7 +161,6 @@ export function ClubBracketHomeClient({
   const isAdminMode = mode === "admin";
   const userPayload = !isAdminMode ? (payload as ClubBracketHomeResponse) : null;
   const adminPayload = isAdminMode ? (payload as ClubAdminBracketHomeResponse) : null;
-  const hasModeSwitchFab = !isAdminMode && Boolean(userPayload?.admin);
   const [detailBracketId, setDetailBracketId] = useState<string | null>(null);
   const [pendingDeleteBracketId, setPendingDeleteBracketId] = useState<number | null>(null);
   const [pendingRejectBracketId, setPendingRejectBracketId] = useState<number | null>(null);
@@ -533,14 +531,12 @@ export function ClubBracketHomeClient({
             type="button"
             aria-label="대진표 작성"
             onClick={openCreateForm}
-            className={`fixed ${FAB_RIGHT_OFFSET_CLASS_NAME} ${getActionFabBottomClass(hasModeSwitchFab)} z-40 flex h-14 w-14 items-center justify-center rounded-full bg-[var(--primary)] text-white transition-transform active:scale-95`}
+            className={`fixed ${FAB_RIGHT_OFFSET_CLASS_NAME} ${getActionFabBottomClass()} z-40 flex h-14 w-14 items-center justify-center rounded-full bg-[var(--primary)] text-white transition-transform active:scale-95`}
             style={{ boxShadow: "0 8px 20px rgba(19, 91, 236, 0.28)" }}
           >
             <span className="material-symbols-outlined text-[28px]" aria-hidden="true">account_tree</span>
           </button>
         ) : null}
-
-        {hasModeSwitchFab ? <ClubModeSwitchFab clubId={clubId} mode="user" /> : null}
 
         <AnimatePresence>
           {formOpen ? (

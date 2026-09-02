@@ -7,7 +7,6 @@ import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tansta
 import { motion } from "motion/react";
 
 import { useHydrationSafeReducedMotion } from "@/app/hooks/useHydrationSafeReducedMotion";
-import { ClubModeSwitchFab } from "@/app/components/ClubModeSwitchFab";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import { TodoCollaborationPanel } from "@/app/components/TodoCollaborationPanel";
 import { useAppToast } from "@/app/hooks/useAppToast";
@@ -30,7 +29,7 @@ type ClubTodoClientProps = {
   isAdmin: boolean;
 };
 
-export function ClubTodoClient({ clubId, initialData, isAdmin }: ClubTodoClientProps) {
+export function ClubTodoClient({ clubId, initialData }: ClubTodoClientProps) {
   const queryClient = useQueryClient();
   const reduceMotion = useHydrationSafeReducedMotion();
   const [claimableSize, setClaimableSize] = useState(8);
@@ -186,7 +185,6 @@ export function ClubTodoClient({ clubId, initialData, isAdmin }: ClubTodoClientP
           />
         </main>
 
-        {isAdmin ? <ClubModeSwitchFab clubId={clubId} mode="user" /> : null}
       </div>
     </div>
   );

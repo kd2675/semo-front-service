@@ -6,7 +6,6 @@ import { AnimatePresence, motion } from "motion/react";
 
 import { useHydrationSafeReducedMotion } from "@/app/hooks/useHydrationSafeReducedMotion";
 import { RouteModal } from "@/app/components/RouteModal";
-import { ClubModeSwitchFab } from "@/app/components/ClubModeSwitchFab";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import { RouterLink } from "@/app/components/RouterLink";
 import { ClubTournamentDetailClient } from "@/app/clubs/[clubId]/more/tournaments/clients/ClubTournamentDetailClient";
@@ -177,7 +176,6 @@ export function ClubTournamentHomeClient({
     initialSection: TournamentManagementEntryPoint;
   } | null>(null);
   const userPayload = isUserPayload(payload) ? payload : null;
-  const hasModeSwitchFab = mode === "user" && payload.admin;
 
   const activeUserList = useMemo(() => {
     if (!userPayload) {
@@ -429,14 +427,12 @@ export function ClubTournamentHomeClient({
             type="button"
             aria-label="대회 생성"
             onClick={() => setShowCreateModal(true)}
-            className={`fixed ${FAB_RIGHT_OFFSET_CLASS_NAME} ${getActionFabBottomClass(hasModeSwitchFab)} z-40 flex h-14 w-14 items-center justify-center rounded-full bg-[var(--primary)] text-white transition-transform active:scale-95`}
+            className={`fixed ${FAB_RIGHT_OFFSET_CLASS_NAME} ${getActionFabBottomClass()} z-40 flex h-14 w-14 items-center justify-center rounded-full bg-[var(--primary)] text-white transition-transform active:scale-95`}
             style={{ boxShadow: "0 10px 24px rgba(0,75,202,0.28)" }}
           >
             <span className="material-symbols-outlined text-[28px]" aria-hidden="true">add</span>
           </button>
         ) : null}
-
-        {hasModeSwitchFab ? <ClubModeSwitchFab clubId={clubId} mode="user" /> : null}
 
         <AnimatePresence>
           {showCreateModal ? (

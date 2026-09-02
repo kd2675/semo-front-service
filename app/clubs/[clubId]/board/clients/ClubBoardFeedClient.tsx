@@ -12,7 +12,6 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "motion/react";
 
 import { useHydrationSafeReducedMotion } from "@/app/hooks/useHydrationSafeReducedMotion";
-import { ClubModeSwitchFab } from "@/app/components/ClubModeSwitchFab";
 import { ItemReadStatusModal } from "@/app/components/ItemReadStatusModal";
 import { RouteModal } from "@/app/components/RouteModal";
 import {
@@ -349,12 +348,12 @@ export function ClubBoardFeedClient({ clubId }: ClubBoardFeedClientProps) {
   }
 
   const pinnedItems = items.filter(isPinnedBoardItem);
-  const visibleItems = items;
+  const visibleItems = pinnedOnly ? pinnedItems : items;
   const canCreateContent = Object.values(createPermissions).some(Boolean);
 
   return (
     <div className="bg-[var(--background-light)] font-display text-slate-900">
-      <div className="semo-page-user relative flex min-h-full flex-col bg-white/92">
+      <div className="semo-page-user relative flex min-h-full flex-col">
         <ClubPageHeader
           title="게시판"
           subtitle={clubName}
@@ -372,30 +371,8 @@ export function ClubBoardFeedClient({ clubId }: ClubBoardFeedClientProps) {
         />
 
         <main className="semo-nav-bottom-space flex-1">
-          <div className="space-y-6 px-4 pt-6">
-            {pinnedOnly ? (
-              <section>
-                <div className="mb-4 flex items-center justify-between gap-3">
-                  <h2 className="flex items-center gap-2 text-base font-bold text-slate-900">
-                    <span
-                      className="material-symbols-outlined text-rose-500 text-[20px]"
-                      aria-hidden="true"
-                      style={{ fontVariationSettings: "'FILL' 1, 'wght' 600, 'GRAD' 0, 'opsz' 20" }}
-                    >
-                      push_pin
-                    </span>
-                    중요 핀 게시물
-                  </h2>
-                  <button
-                    type="button"
-                    onClick={() => setPinnedOnly(false)}
-                    className="text-xs font-medium text-slate-400 transition hover:text-slate-600"
-                  >
-                    전체 게시글
-                  </button>
-                </div>
-              </section>
-            ) : pinnedItems.length > 0 ? (
+          <div className="space-y-6 px-4 pt-6 md:px-6">
+            {!pinnedOnly && pinnedItems.length > 0 ? (
               <section>
                 <div className="mb-4 flex items-center justify-between gap-3">
                   <h2 className="flex items-center gap-2 text-base font-bold text-slate-900">
@@ -411,7 +388,7 @@ export function ClubBoardFeedClient({ clubId }: ClubBoardFeedClientProps) {
                   <button
                     type="button"
                     onClick={() => setPinnedOnly(true)}
-                    className="text-xs font-medium text-slate-400 transition hover:text-slate-600"
+                    className="semo-quiet-link"
                   >
                     전체보기
                   </button>
@@ -426,6 +403,15 @@ export function ClubBoardFeedClient({ clubId }: ClubBoardFeedClientProps) {
             <section>
               <div className="mb-4 flex items-center justify-between gap-3">
                 <h2 className="text-base font-bold text-slate-900">{pinnedOnly ? "중요 핀 게시물" : "최근 게시글"}</h2>
+                {pinnedOnly ? (
+                  <button
+                    type="button"
+                    onClick={() => setPinnedOnly(false)}
+                    className="semo-quiet-link"
+                  >
+                    전체 게시글
+                  </button>
+                ) : null}
               </div>
               <div className="flex flex-col gap-4">
             {visibleItems.map((item, index) => (
@@ -604,7 +590,6 @@ export function ClubBoardFeedClient({ clubId }: ClubBoardFeedClientProps) {
           ) : null}
         </main>
 
-        {isAdmin ? <ClubModeSwitchFab clubId={clubId} mode="user" /> : null}
         <AnimatePresence>
           {composer === "chooser" ? (
             <RouteModal ariaLabel="게시 콘텐츠 작성" onDismiss={() => setComposer(null)}>

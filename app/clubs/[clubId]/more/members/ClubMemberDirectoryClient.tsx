@@ -5,7 +5,6 @@ import { startTransition, useDeferredValue, useMemo, useState } from "react";
 import { motion } from "motion/react";
 
 import { useHydrationSafeReducedMotion } from "@/app/hooks/useHydrationSafeReducedMotion";
-import { ClubModeSwitchFab } from "@/app/components/ClubModeSwitchFab";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import {
   type ClubMemberDirectoryActivity,
@@ -211,9 +210,7 @@ function DirectoryMetric({
 }
 
 export function ClubMemberDirectoryClient({
-  clubId,
   initialData,
-  isAdmin,
 }: ClubMemberDirectoryClientProps) {
   const reduceMotion = useHydrationSafeReducedMotion();
   const [query, setQuery] = useState("");
@@ -559,7 +556,6 @@ export function ClubMemberDirectoryClient({
           )}
         </main>
 
-        {isAdmin ? <ClubModeSwitchFab clubId={clubId} mode="user" /> : null}
       </div>
     </div>
   );

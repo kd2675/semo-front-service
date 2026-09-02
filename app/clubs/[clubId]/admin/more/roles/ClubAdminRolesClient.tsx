@@ -726,7 +726,7 @@ export function ClubAdminRolesClient({ clubId, initialData }: ClubAdminRolesClie
           <RouterLink
             href={`/clubs/${clubId}/admin/more/roles/new`}
             aria-label="직책 만들기"
-            className={`fixed ${FAB_RIGHT_OFFSET_CLASS_NAME} ${getActionFabBottomClass(true)} z-40 flex h-14 w-14 items-center justify-center rounded-full bg-[var(--primary)] text-white shadow-[var(--shadow-card)] transition-transform active:scale-95`}
+            className={`fixed ${FAB_RIGHT_OFFSET_CLASS_NAME} ${getActionFabBottomClass()} z-40 flex h-14 w-14 items-center justify-center rounded-full bg-[var(--primary)] text-white shadow-[var(--shadow-card)] transition-transform active:scale-95`}
           >
             <span className="material-symbols-outlined text-[28px]" aria-hidden="true">add</span>
           </RouterLink>

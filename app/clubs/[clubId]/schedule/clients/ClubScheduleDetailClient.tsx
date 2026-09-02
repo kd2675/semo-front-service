@@ -9,7 +9,6 @@ import { useHydrationSafeReducedMotion } from "@/app/hooks/useHydrationSafeReduc
 import { RouterLink } from "@/app/components/RouterLink";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import { RouteModal } from "@/app/components/RouteModal";
-import { ClubModeSwitchFab } from "@/app/components/ClubModeSwitchFab";
 import { type ClubScheduleEventDetailResponse } from "@/app/lib/clubs";
 import { getShareTargetBadges } from "@/app/lib/contentBadge";
 import { staggeredFadeUpMotion } from "@/app/lib/motion";
@@ -511,7 +510,6 @@ export function ClubScheduleDetailClient({
           ) : null}
         </AnimatePresence>
 
-        {!isModal && payload?.admin ? <ClubModeSwitchFab clubId={clubId} mode="user" /> : null}
       </div>
     </div>
   );

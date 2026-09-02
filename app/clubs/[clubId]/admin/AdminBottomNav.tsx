@@ -43,7 +43,7 @@ const ADMIN_ITEMS: AdminNavItem[] = [
 ];
 
 const ADMIN_ACTIVE_TEXT_CLASS = "text-[var(--primary)]";
-const ADMIN_INACTIVE_TEXT_CLASS = "text-slate-400";
+const ADMIN_INACTIVE_TEXT_CLASS = "text-slate-500";
 
 function stripQuery(path: string) {
   const [pathname] = path.split("?");
@@ -190,6 +190,11 @@ export function AdminBottomNav({ clubId }: AdminBottomNavProps) {
       </div>
     </nav>
   );
+  const desktopMenu = (
+    <nav aria-label="관리자 주요 화면" className="semo-desktop-nav-rail">
+      {renderButtons()}
+    </nav>
+  );
 
   return (
     <>
@@ -203,7 +208,7 @@ export function AdminBottomNav({ clubId }: AdminBottomNavProps) {
               {...overlayFadeMotion(reduceMotion)}
             />
             <motion.div
-              className="pointer-events-none fixed inset-x-0 bottom-24 z-50 px-4"
+              className="pointer-events-none fixed inset-x-0 bottom-24 z-50 px-4 xl:inset-0 xl:flex xl:items-center xl:justify-center"
               {...popInMotion(reduceMotion)}
             >
               <div className="pointer-events-auto mx-auto w-full max-w-lg">
@@ -254,7 +259,7 @@ export function AdminBottomNav({ clubId }: AdminBottomNavProps) {
           <motion.div
             key="admin-bottom-docked"
             {...unifiedMotion}
-            className="pointer-events-auto fixed inset-x-0 bottom-0 z-30 flex flex-col items-stretch"
+            className="pointer-events-auto fixed inset-x-0 bottom-0 z-30 flex flex-col items-stretch xl:hidden"
           >
             {dockedMenu}
           </motion.div>
@@ -262,12 +267,13 @@ export function AdminBottomNav({ clubId }: AdminBottomNavProps) {
           <motion.div
             key="admin-bottom-floating"
             {...unifiedMotion}
-            className="pointer-events-auto fixed bottom-0 left-1/2 z-30 flex -translate-x-1/2 flex-col items-center pb-[calc(env(safe-area-inset-bottom)+12px)]"
+            className="pointer-events-auto fixed bottom-0 left-1/2 z-30 flex -translate-x-1/2 flex-col items-center pb-[calc(env(safe-area-inset-bottom)+12px)] xl:hidden"
           >
             {floatingMenu}
           </motion.div>
         )}
       </AnimatePresence>
+      {desktopMenu}
     </>
   );
 }

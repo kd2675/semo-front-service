@@ -496,11 +496,11 @@ API는 `app/lib/api.ts`와 도메인별 `app/lib/semo/*`, `app/lib/react-query/*
 - 성공 toast
 - 처리 중 중복 제출 방지
 
-### 7.3 More 허브와 결합 카드
+### 7.3 More 허브와 결합 항목
 
-대표 화면을 공유하는 기능은 결합 카드로 표시할 수 있습니다.
+대표 화면을 공유하는 기능은 하나의 결합 항목으로 표시할 수 있습니다. 영구 허브와 빠른 이동 메뉴에서는 기능을 개별 카드로 반복하지 않고 그룹별 목록 행을 기본값으로 사용합니다.
 
-결합 카드 규칙:
+결합 항목 규칙:
 
 - 활성화된 기능 이름만 카드 제목과 설명에 사용합니다.
 - pending/overdue는 포함 기능의 합계입니다.
@@ -521,6 +521,9 @@ API는 `app/lib/api.ts`와 도메인별 `app/lib/semo/*`, `app/lib/react-query/*
 - 주요 터치 대상은 최소 44px를 확보합니다.
 - 아이콘만 있는 버튼은 accessible name을 제공합니다.
 - 헤더, 닫기 버튼, 좌우 여백은 데스크톱과 모바일에서 기준선이 맞아야 합니다.
+- 독립 콘텐츠 객체와 편집 단위는 `semo-card`, 내비게이션·설정·운영 작업은 `semo-list`/`semo-list-row`, 묶음 지표는 `semo-metric-strip`을 사용합니다.
+- 한 화면의 대표 상태·소개 표면은 원칙적으로 하나만 두고, 같은 정보를 대표 카드와 보조 카드에 중복하지 않습니다.
+- 모바일 하단 내비게이션은 `1280px` 이상에서 같은 항목의 왼쪽 세로 레일로 전환합니다. 목적지, 활성 상태, 미처리 배지, 키보드 이름은 양쪽에서 같아야 합니다.
 
 SEMO 시각 식별 체계:
 
@@ -528,7 +531,7 @@ SEMO 시각 식별 체계:
 - `ClubGrowthCoreMark`는 특정 모임의 멤버 수, 활동, 성장 기록을 표현하는 데이터 표식입니다. 외부 목록·공개 소개·클럽 커버에서는 `core-only`, 클럽 내부 성장 상세 화면에서는 전체 성장 프레임을 사용하며 앱 로고나 일반 페이지 아이콘으로 대체하지 않습니다.
 - 화면 문맥 아이콘은 `ClubPageHeader`의 삼각 프레임 안에 두고, 현재 하단 내비게이션 항목은 삼각 배경과 보이는 텍스트 라벨을 함께 사용합니다.
 - 유저 화면의 주색은 user token, 관리자 화면의 주색은 admin token입니다. 의사결정, 재정 같은 기능 이름을 이유로 주 CTA 전체를 별도 색으로 바꾸지 않습니다.
-- 기본 표면은 `semo-card`, 상호작용 카드는 `semo-card-interactive`, 컨트롤은 `semo-control` 또는 `semo-icon-control`을 우선합니다. 임의 radius와 shadow를 새로 늘리지 않습니다.
+- 독립 콘텐츠의 기본 표면은 `semo-card`, 상호작용 카드는 `semo-card-interactive`, 목록은 `semo-list`/`semo-list-row`, 대표 표면은 `semo-feature-surface`, 컨트롤은 `semo-control` 또는 `semo-icon-control`을 우선합니다. 임의 radius와 shadow를 새로 늘리지 않습니다.
 - 사용자 중심 단일 작업은 `semo-page-user`, 운영 화면은 `semo-page-admin`, 대시보드·데이터 밀집 화면은 각 공용 폭 token을 사용합니다. 데스크톱에서도 모바일 미리보기 폭으로 전체 앱을 가두지 않습니다.
 
 카드 정보 순서:

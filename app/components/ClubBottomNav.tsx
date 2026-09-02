@@ -23,7 +23,6 @@ import { useDialogFocusManagement } from "@/app/hooks/useDialogFocusManagement";
 
 type ClubBottomNavProps = {
   clubId: string;
-  isAdmin?: boolean;
 };
 
 type NavItem = {
@@ -47,10 +46,9 @@ function stripQuery(path: string) {
 }
 
 const USER_ACTIVE_TEXT_CLASS = "text-[var(--primary)]";
-const USER_INACTIVE_TEXT_CLASS = "text-slate-400";
+const USER_INACTIVE_TEXT_CLASS = "text-slate-500";
 
-export function ClubBottomNav({ clubId, isAdmin = false }: ClubBottomNavProps) {
-  void isAdmin;
+export function ClubBottomNav({ clubId }: ClubBottomNavProps) {
   const pathname = usePathname();
   const reduceMotion = useHydrationSafeReducedMotion();
   const isDocked = useBottomNavScrollDocking({ routeKey: pathname });
@@ -237,6 +235,12 @@ export function ClubBottomNav({ clubId, isAdmin = false }: ClubBottomNavProps) {
     </nav>
   );
 
+  const DesktopMenu = (
+    <nav aria-label="모임 주요 화면" className="semo-desktop-nav-rail">
+      {renderButtons()}
+    </nav>
+  );
+
   return (
     <>
       <AnimatePresence initial={false}>
@@ -249,7 +253,7 @@ export function ClubBottomNav({ clubId, isAdmin = false }: ClubBottomNavProps) {
               {...overlayFadeMotion(reduceMotion)}
             />
             <motion.div
-              className="pointer-events-none fixed inset-x-0 bottom-24 z-50 px-6"
+              className="pointer-events-none fixed inset-x-0 bottom-24 z-50 px-6 xl:inset-0 xl:flex xl:items-center xl:justify-center"
               {...popInMotion(reduceMotion)}
             >
               <div className="pointer-events-auto mx-auto w-full max-w-sm">
@@ -280,6 +284,19 @@ export function ClubBottomNav({ clubId, isAdmin = false }: ClubBottomNavProps) {
                     mode="user"
                     onNavigate={handleFeatureNavigate}
                   />
+                  {moreSummary?.fullAdmin ? (
+                    <RouterLink
+                      href={`/clubs/${clubId}/admin`}
+                      onClick={() => setOpenMenuPathname(null)}
+                      className="mt-4 flex min-h-11 items-center justify-between gap-3 rounded-[var(--radius-control)] border border-[var(--color-admin-primary)]/20 bg-orange-50 px-4 text-sm font-bold text-[var(--color-admin-primary)] transition hover:bg-orange-100"
+                    >
+                      <span className="flex items-center gap-2">
+                        <span className="material-symbols-outlined text-[19px]" aria-hidden="true">admin_panel_settings</span>
+                        운영자 모드로 전환
+                      </span>
+                      <span className="material-symbols-outlined text-[18px]" aria-hidden="true">arrow_forward</span>
+                    </RouterLink>
+                  ) : null}
                   <RouterLink
                     href={`/clubs/${clubId}/more`}
                     onClick={() => setOpenMenuPathname(null)}
@@ -300,7 +317,7 @@ export function ClubBottomNav({ clubId, isAdmin = false }: ClubBottomNavProps) {
           <motion.div
             key="club-bottom-docked"
             {...unifiedMotion}
-            className="pointer-events-auto fixed inset-x-0 bottom-0 z-30 flex flex-col items-stretch"
+            className="pointer-events-auto fixed inset-x-0 bottom-0 z-30 flex flex-col items-stretch xl:hidden"
           >
             {DockedMenu}
           </motion.div>
@@ -308,12 +325,13 @@ export function ClubBottomNav({ clubId, isAdmin = false }: ClubBottomNavProps) {
           <motion.div
             key="club-bottom-floating"
             {...unifiedMotion}
-            className="pointer-events-auto fixed bottom-0 left-1/2 z-30 flex -translate-x-1/2 flex-col items-center gap-4 pb-[calc(env(safe-area-inset-bottom)+12px)]"
+            className="pointer-events-auto fixed bottom-0 left-1/2 z-30 flex -translate-x-1/2 flex-col items-center gap-4 pb-[calc(env(safe-area-inset-bottom)+12px)] xl:hidden"
           >
             {FloatingMenu}
           </motion.div>
         )}
       </AnimatePresence>
+      {DesktopMenu}
     </>
   );
 }

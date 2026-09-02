@@ -92,12 +92,12 @@ export function toastMotion(reduced: boolean): MotionPreset {
 }
 
 export function staggeredFadeUpMotion(index: number, reduced: boolean): MotionPreset {
-  const step = index % 5;
-  const travelY = reduced ? 0 : 10 + step * 4;
-  const itemDuration = duration(0.2 + step * 0.03, reduced);
-  const itemDelay = reduced ? 0 : Math.min(index * 0.045 + step * 0.01, 0.36);
+  const step = index % 4;
+  const travelY = reduced ? 0 : 4 + step * 2;
+  const itemDuration = duration(0.16 + step * 0.015, reduced);
+  const itemDelay = reduced ? 0 : Math.min(index * 0.018, 0.12);
   return {
-    initial: { opacity: reduced ? 1 : 0, y: travelY },
+    initial: { opacity: reduced ? 1 : 0.94, y: travelY },
     animate: { opacity: 1, y: 0 },
     exit: { opacity: 1, y: reduced ? 0 : -6 },
     transition: {
@@ -111,24 +111,24 @@ export function staggeredFadeUpMotion(index: number, reduced: boolean): MotionPr
 export function pageTransitionMotion(reduced: boolean): MotionPreset {
   return {
     initial: {
-      opacity: reduced ? 1 : 0.82,
-      y: reduced ? 0 : 8,
-      scale: reduced ? 1 : 0.997,
+      opacity: reduced ? 1 : 0.96,
+      y: reduced ? 0 : 4,
+      scale: 1,
     },
     animate: { opacity: 1, y: 0, scale: 1 },
     exit: { opacity: reduced ? 1 : 0.9, y: reduced ? 0 : -4, scale: 1 },
-    transition: { duration: duration(0.22, reduced), ease: EASE_OUT },
+    transition: { duration: duration(0.18, reduced), ease: EASE_OUT },
   };
 }
 
 export function inViewFadeUpMotion(index: number, reduced: boolean): MotionPreset {
   const step = index % 4;
-  const travelY = reduced ? 0 : 12 + step * 5;
-  const itemDuration = duration(0.24 + step * 0.04, reduced);
-  const itemDelay = reduced ? 0 : Math.min(index * 0.06 + step * 0.015, 0.42);
+  const travelY = reduced ? 0 : 8 + step * 2;
+  const itemDuration = duration(0.22 + step * 0.02, reduced);
+  const itemDelay = reduced ? 0 : Math.min(index * 0.03, 0.18);
 
   return {
-    initial: { opacity: reduced ? 1 : 0, y: travelY },
+    initial: { opacity: reduced ? 1 : 0.9, y: travelY },
     whileInView: { opacity: 1, y: 0 },
     viewport: { once: true, amount: 0.2, margin: "0px 0px -8% 0px" },
     transition: {

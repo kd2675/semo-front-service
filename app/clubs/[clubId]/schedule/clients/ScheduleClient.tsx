@@ -5,7 +5,6 @@ import { startTransition, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 
 import { useHydrationSafeReducedMotion } from "@/app/hooks/useHydrationSafeReducedMotion";
-import { ClubModeSwitchFab } from "@/app/components/ClubModeSwitchFab";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import { RouteModal } from "@/app/components/RouteModal";
 import {
@@ -273,25 +272,21 @@ function renderCalendarBadges(badges: Array<{ label: string; className: string }
   ));
 }
 
-function getEventDotClassName(eventCount: number, maxEventCount: number, isActive: boolean) {
-  if (eventCount <= 0 || maxEventCount <= 0) {
+function getEventDotClassName(eventCount: number, isActive: boolean) {
+  if (eventCount <= 0) {
     return "";
   }
-
-  const ratio = (eventCount / maxEventCount) * 100;
-  if (ratio > 75) {
-    return "bg-rose-500";
+  const sizeClassName = eventCount >= 4 ? "size-2" : eventCount >= 2 ? "size-1.5" : "size-1";
+  if (isActive) {
+    return `${sizeClassName} bg-white`;
   }
-  if (ratio > 50) {
-    return "bg-orange-500";
+  if (eventCount >= 4) {
+    return `${sizeClassName} bg-rose-500`;
   }
-  if (ratio > 25) {
-    return "bg-amber-400";
+  if (eventCount >= 2) {
+    return `${sizeClassName} bg-orange-500`;
   }
-  if (ratio > 0) {
-    return isActive ? "bg-white" : "bg-white ring-1 ring-slate-300";
-  }
-  return "";
+  return `${sizeClassName} bg-amber-400`;
 }
 
 function getWeekendTextClassName(weekdayIndex: number) {
@@ -583,7 +578,6 @@ export function ScheduleClient({
       return [];
     })
     .sort((left, right) => left.sortValue.localeCompare(right.sortValue));
-  const maxEventCount = Math.max(0, ...Object.values(month.scheduleItemCountByDay));
   const canCreateContent = payload.canCreateSchedule || payload.canCreatePoll;
 
   const openCalendarItemDetail = (item: SelectedScheduleItem) => {
@@ -632,178 +626,186 @@ export function ScheduleClient({
           ) : null}
         />
 
-        <main className="semo-nav-bottom-space relative flex-1">
-          <motion.div className="bg-white p-4 shadow-sm" {...staggeredFadeUpMotion(0, reduceMotion)}>
-            <div className="mb-4 flex items-center justify-between">
-              <button
-                type="button"
-                onClick={() => handleMoveMonth("prev")}
-                className="semo-icon-control rounded-full text-slate-900 transition-colors hover:bg-slate-100"
-                aria-label="이전 달"
-              >
-                <span className="material-symbols-outlined" aria-hidden="true">chevron_left</span>
-              </button>
-              <p className="text-base font-bold text-slate-900">{month.label}</p>
-              <button
-                type="button"
-                onClick={() => handleMoveMonth("next")}
-                className="semo-icon-control rounded-full text-slate-900 transition-colors hover:bg-slate-100"
-                aria-label="다음 달"
-              >
-                <span className="material-symbols-outlined" aria-hidden="true">chevron_right</span>
-              </button>
-            </div>
-
-            <div className="mb-2 grid grid-cols-7 text-center">
-              {WEEKDAY_LABELS.map((label, index) => (
-                <p
-                  key={`${month.id}-weekday-${index}`}
-                  className={`py-2 text-xs font-bold ${getWeekendTextClassName(index)}`}
-                >
-                  {label}
-                </p>
-              ))}
-
-              {Array.from({ length: month.leadingBlankDays }, (_, index) => (
-                <div key={`${month.id}-blank-${index + 1}`} className="h-10" />
-              ))}
-
-              {Array.from({ length: month.daysInMonth }, (_, index) => {
-                const day = index + 1;
-                const isActive = day === selectedDay;
-                const weekdayIndex = new Date(month.year, month.month - 1, day).getDay();
-                const isToday =
-                  month.year === today.getFullYear()
-                  && month.month === today.getMonth() + 1
-                  && day === today.getDate();
-                const eventCount = month.scheduleItemCountByDay[day] ?? 0;
-                const hasEvents = eventCount > 0;
-                const eventDotClassName = getEventDotClassName(eventCount, maxEventCount, isActive);
-                const weekendTextClassName = weekdayIndex === 0
-                  ? "text-rose-500"
-                  : weekdayIndex === 6
-                    ? "text-blue-500"
-                    : "text-slate-700";
-                const dayTextClassName = isToday ? "text-emerald-600" : weekendTextClassName;
-
-                return (
+        <main className="semo-page-user semo-nav-bottom-space relative flex-1 p-4 md:p-6">
+          <div className="grid gap-6 lg:grid-cols-[minmax(0,1.2fr)_minmax(20rem,0.8fr)] lg:items-start">
+            <div className="relative">
+              <motion.div className="semo-feature-surface p-4" {...staggeredFadeUpMotion(0, reduceMotion)}>
+                <div className="mb-4 flex items-center justify-between">
                   <button
-                    key={`${month.id}-${day}`}
                     type="button"
-                    onClick={() => handleSelectDay(day)}
-                    aria-label={`${month.year}년 ${month.month}월 ${day}일${eventCount > 0 ? `, 일정 ${eventCount}건` : ""}`}
-                    aria-pressed={isActive}
-                    className="flex h-11 w-full items-center justify-center text-sm font-medium"
+                    onClick={() => handleMoveMonth("prev")}
+                    className="semo-icon-control rounded-full text-slate-900 transition-colors hover:bg-slate-100"
+                    aria-label="이전 달"
                   >
-                    {isActive ? (
-                      <div className="relative flex size-8 items-center justify-center rounded-full bg-[var(--primary)] font-bold text-white shadow-lg shadow-[var(--primary)]/30">
-                        <span className={isToday ? "text-emerald-200" : ""}>{day}</span>
-                        {hasEvents ? (
-                          <div
-                            className={`absolute -bottom-0.5 left-1/2 size-1.5 -translate-x-1/2 rounded-full ${eventDotClassName}`}
-                          />
-                        ) : null}
-                      </div>
-                    ) : (
-                      <div className="relative flex size-8 items-center justify-center rounded-full">
-                        <span className={`font-medium ${dayTextClassName}`}>
-                          {day}
-                        </span>
-                        {hasEvents ? (
-                          <div
-                            className={`absolute bottom-0.5 left-1/2 size-1.5 -translate-x-1/2 rounded-full ${eventDotClassName}`}
-                          />
-                        ) : null}
-                      </div>
-                    )}
+                    <span className="material-symbols-outlined" aria-hidden="true">chevron_left</span>
                   </button>
-                );
-              })}
-            </div>
+                  <p className="text-base font-bold text-slate-900">{month.label}</p>
+                  <button
+                    type="button"
+                    onClick={() => handleMoveMonth("next")}
+                    className="semo-icon-control rounded-full text-slate-900 transition-colors hover:bg-slate-100"
+                    aria-label="다음 달"
+                  >
+                    <span className="material-symbols-outlined" aria-hidden="true">chevron_right</span>
+                  </button>
+                </div>
 
-            <div className="mt-3 flex justify-end">
-              <div className="flex items-center gap-2 rounded-full bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-500">
-                <span>적음</span>
-                <span className="size-1.5 rounded-full bg-white ring-1 ring-slate-300" />
-                <span className="size-1.5 rounded-full bg-amber-400" />
-                <span className="size-1.5 rounded-full bg-orange-500" />
-                <span className="size-1.5 rounded-full bg-rose-500" />
-                <span>많음</span>
-              </div>
-            </div>
-          </motion.div>
+                <div className="mb-2 grid grid-cols-7 text-center">
+                  {WEEKDAY_LABELS.map((label, index) => (
+                    <p
+                      key={`${month.id}-weekday-${index}`}
+                      className={`py-2 text-xs font-bold ${getWeekendTextClassName(index)}`}
+                    >
+                      {label}
+                    </p>
+                  ))}
 
-          {isMonthLoading ? (
-            <div className="pointer-events-none absolute inset-x-0 top-[5.75rem] z-10 px-4">
-              <div className="rounded-2xl border border-slate-200/80 bg-white/90 px-4 py-3 text-center text-sm font-medium text-slate-500 shadow-sm backdrop-blur">
-                월별 일정을 불러오는 중입니다.
-              </div>
-            </div>
-          ) : null}
+                  {Array.from({ length: month.leadingBlankDays }, (_, index) => (
+                    <div key={`${month.id}-blank-${index + 1}`} className="h-10" />
+                  ))}
 
-          <motion.div
-            className="flex items-center justify-between px-4 pb-2 pt-6"
-            {...staggeredFadeUpMotion(1, reduceMotion)}
-          >
-            <h3 className="text-lg font-bold leading-tight tracking-tight text-slate-900">
-              {month.shortLabel} {selectedDay}일 일정
-            </h3>
-            <span className="rounded bg-[var(--primary)]/10 px-2 py-1 text-xs font-semibold text-[var(--primary)]">
-              {selectedItems.length}건
-            </span>
-          </motion.div>
+                  {Array.from({ length: month.daysInMonth }, (_, index) => {
+                    const day = index + 1;
+                    const isActive = day === selectedDay;
+                    const weekdayIndex = new Date(month.year, month.month - 1, day).getDay();
+                    const isToday =
+                      month.year === today.getFullYear()
+                      && month.month === today.getMonth() + 1
+                      && day === today.getDate();
+                    const eventCount = month.scheduleItemCountByDay[day] ?? 0;
+                    const hasEvents = eventCount > 0;
+                    const eventDotClassName = getEventDotClassName(eventCount, isActive);
+                    const weekendTextClassName = weekdayIndex === 0
+                      ? "text-rose-500"
+                      : weekdayIndex === 6
+                        ? "text-blue-500"
+                        : "text-slate-700";
+                    const dayTextClassName = isToday ? "text-emerald-600" : weekendTextClassName;
 
-          <div className="space-y-3 px-4">
-            {selectedItems.length > 0 ? (
-              selectedItems.map((item, index) => (
-                <motion.article
-                  key={item.key}
-                  className="rounded-xl"
-                  {...staggeredFadeUpMotion(index + 2, reduceMotion)}
-                >
-                  {item.type === "event" ? (
-                    <EventCard
-                      event={item.event}
-                      onOpen={() => {
-                        openCalendarItemDetail(item);
-                      }}
-                    />
-                  ) : item.type === "vote" ? (
-                    <VoteCard
-                      vote={item.vote}
-                      onOpen={() => {
-                        openCalendarItemDetail(item);
-                      }}
-                    />
-                  ) : item.type === "tournament" ? (
-                    <TournamentCard
-                      tournament={item.tournament}
-                      onOpen={() => {
-                        openCalendarItemDetail(item);
-                      }}
-                    />
-                  ) : (
-                    <NoticeCard
-                      notice={item.notice}
-                      onOpen={() => {
-                        openCalendarItemDetail(item);
-                      }}
-                    />
-                  )}
-                </motion.article>
-              ))
-            ) : (
-              <motion.div
-                className="rounded-xl border border-dashed border-slate-300 bg-white px-4 py-6 text-center text-sm text-slate-500"
-                {...staggeredFadeUpMotion(2, reduceMotion)}
-              >
-                선택한 날짜에는 캘린더 항목이 없습니다.
+                    return (
+                      <button
+                        key={`${month.id}-${day}`}
+                        type="button"
+                        onClick={() => handleSelectDay(day)}
+                        aria-label={`${month.year}년 ${month.month}월 ${day}일${eventCount > 0 ? `, 일정 ${eventCount}건` : ""}`}
+                        aria-pressed={isActive}
+                        className="flex h-11 w-full items-center justify-center text-sm font-medium"
+                      >
+                        {isActive ? (
+                          <div className="relative flex size-8 items-center justify-center rounded-full bg-[var(--primary)] font-bold text-white shadow-lg shadow-[var(--primary)]/30">
+                            <span className={isToday ? "text-emerald-200" : ""}>{day}</span>
+                            {hasEvents ? (
+                              <div
+                                className={`absolute -bottom-0.5 left-1/2 -translate-x-1/2 rounded-full ${eventDotClassName}`}
+                              />
+                            ) : null}
+                          </div>
+                        ) : (
+                          <div className="relative flex size-8 items-center justify-center rounded-full">
+                            <span className={`font-medium ${dayTextClassName}`}>
+                              {day}
+                            </span>
+                            {hasEvents ? (
+                              <div
+                                className={`absolute bottom-0.5 left-1/2 -translate-x-1/2 rounded-full ${eventDotClassName}`}
+                              />
+                            ) : null}
+                          </div>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <div className="mt-3 flex justify-end">
+                  <div className="flex flex-wrap items-center justify-end gap-x-3 gap-y-1 rounded-[var(--radius-control)] bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-500" aria-label="날짜별 일정 개수 범례">
+                    <span className="flex items-center gap-1.5"><i className="size-1 rounded-full bg-amber-400" aria-hidden="true" />1건</span>
+                    <span className="flex items-center gap-1.5"><i className="size-1.5 rounded-full bg-orange-500" aria-hidden="true" />2~3건</span>
+                    <span className="flex items-center gap-1.5"><i className="size-2 rounded-full bg-rose-500" aria-hidden="true" />4건 이상</span>
+                  </div>
+                </div>
               </motion.div>
-            )}
+
+              {isMonthLoading ? (
+                <div className="pointer-events-none absolute inset-x-4 top-[4.75rem] z-10">
+                  <div className="rounded-[var(--radius-control)] border border-slate-200/80 bg-white/90 px-4 py-3 text-center text-sm font-medium text-slate-500 shadow-sm backdrop-blur">
+                    월별 일정을 불러오는 중입니다.
+                  </div>
+                </div>
+              ) : null}
+            </div>
+
+            <motion.section {...staggeredFadeUpMotion(1, reduceMotion)}>
+              <div className="mb-3 flex items-center justify-between">
+                <h3 className="text-lg font-bold leading-tight tracking-tight text-slate-900">
+                  {month.shortLabel} {selectedDay}일 일정
+                </h3>
+                <span className="rounded bg-[var(--primary)]/10 px-2 py-1 text-xs font-semibold text-[var(--primary)]">
+                  {selectedItems.length}건
+                </span>
+              </div>
+
+              <div className="space-y-3">
+                {selectedItems.length > 0 ? (
+                  selectedItems.map((item, index) => (
+                    <motion.article
+                      key={item.key}
+                      className="rounded-xl"
+                      {...staggeredFadeUpMotion(index + 2, reduceMotion)}
+                    >
+                      {item.type === "event" ? (
+                        <EventCard
+                          event={item.event}
+                          onOpen={() => {
+                            openCalendarItemDetail(item);
+                          }}
+                        />
+                      ) : item.type === "vote" ? (
+                        <VoteCard
+                          vote={item.vote}
+                          onOpen={() => {
+                            openCalendarItemDetail(item);
+                          }}
+                        />
+                      ) : item.type === "tournament" ? (
+                        <TournamentCard
+                          tournament={item.tournament}
+                          onOpen={() => {
+                            openCalendarItemDetail(item);
+                          }}
+                        />
+                      ) : (
+                        <NoticeCard
+                          notice={item.notice}
+                          onOpen={() => {
+                            openCalendarItemDetail(item);
+                          }}
+                        />
+                      )}
+                    </motion.article>
+                  ))
+                ) : (
+                  <motion.div
+                    className="rounded-[var(--radius-card)] border border-dashed border-slate-300 bg-white px-4 py-7 text-center text-sm text-slate-500"
+                    {...staggeredFadeUpMotion(2, reduceMotion)}
+                  >
+                    <p>선택한 날짜에는 캘린더 항목이 없습니다.</p>
+                    {canCreateContent ? (
+                      <button
+                        type="button"
+                        onClick={() => setComposer("chooser")}
+                        className="mt-4 min-h-11 rounded-[var(--radius-control)] bg-[var(--primary)]/10 px-4 text-sm font-bold text-[var(--primary)] transition hover:bg-[var(--primary)]/15"
+                      >
+                        이 날짜에 추가
+                      </button>
+                    ) : null}
+                  </motion.div>
+                )}
+              </div>
+            </motion.section>
           </div>
         </main>
 
-        {payload.admin ? <ClubModeSwitchFab clubId={clubId} mode="user" /> : null}
         <AnimatePresence>
           {composer === "chooser" ? (
             <RouteModal ariaLabel="캘린더 항목 추가" onDismiss={() => setComposer(null)}>

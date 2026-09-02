@@ -141,17 +141,16 @@ export function ClubMoreHubClient({ clubId, mode }: ClubMoreHubClientProps) {
       />
 
       <main className={`semo-nav-bottom-space px-4 py-5 ${isAdmin ? "semo-page-admin" : "semo-page-user"}`}>
-        <section className={`overflow-hidden rounded-[var(--radius-card)] p-5 text-white ${isAdmin ? "bg-slate-900" : "bg-[var(--primary)]"}`}>
+        {pendingCount > 0 ? (
+        <section className={`semo-feature-surface overflow-hidden border-0 p-5 text-white ${isAdmin ? "bg-slate-900" : "bg-[var(--primary)]"}`}>
           <div className="flex items-start justify-between gap-4">
             <div>
               <p className="text-xs font-bold text-white/65">지금 확인할 운영 항목</p>
               <p className="mt-2 text-3xl font-black tracking-tight">{pendingCount}건</p>
-              <p className="mt-1 text-sm text-white/75">
-                {pendingCount > 0 ? "기능별 대기 항목을 한곳에서 확인하세요." : "현재 처리할 항목이 없습니다."}
-              </p>
+              <p className="mt-1 text-sm text-white/75">기능별 대기 항목을 한곳에서 확인하세요.</p>
             </div>
             <span className="material-symbols-outlined rounded-2xl bg-white/12 p-3 text-[28px]" aria-hidden="true">
-              {pendingCount > 0 ? "inbox" : "task_alt"}
+              inbox
             </span>
           </div>
           {overdueCount > 0 ? (
@@ -161,12 +160,21 @@ export function ClubMoreHubClient({ clubId, mode }: ClubMoreHubClientProps) {
             </div>
           ) : null}
         </section>
+        ) : (
+          <section className="semo-status-strip" aria-label="처리할 항목 없음">
+            <span className="material-symbols-outlined text-emerald-600" aria-hidden="true">task_alt</span>
+            <div>
+              <p className="text-sm font-bold text-slate-800">지금 확인할 항목이 없습니다.</p>
+              <p className="mt-0.5 text-xs text-slate-500">필요한 기능은 아래 목록에서 바로 열 수 있습니다.</p>
+            </div>
+          </section>
+        )}
 
         {attentionItems.length > 0 ? (
           <HubSection title="확인 필요" description="대기 또는 지연 상태가 있는 기능입니다.">
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className="semo-list">
               {attentionItems.map((item) => (
-                <HubFeatureCard
+                <HubFeatureRow
                   key={`attention-${item.key}`}
                   item={item}
                   onNavigate={handleNavigate}
@@ -180,9 +188,9 @@ export function ClubMoreHubClient({ clubId, mode }: ClubMoreHubClientProps) {
 
         {favoriteItems.length > 0 ? (
           <HubSection title="즐겨찾기" description="자주 쓰는 기능을 빠르게 열 수 있습니다.">
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className="semo-list">
               {favoriteItems.map((item) => (
-                <HubFeatureCard
+                <HubFeatureRow
                   key={`favorite-${item.key}`}
                   item={item}
                   onNavigate={handleNavigate}
@@ -215,15 +223,15 @@ export function ClubMoreHubClient({ clubId, mode }: ClubMoreHubClientProps) {
 
         <HubSection title="전체 기능" description="관리자가 설정한 순서와 내 접근 권한을 반영합니다.">
           {groups.length > 0 ? (
-            <div className="space-y-6">
+            <div className="grid gap-6 lg:grid-cols-2">
               {groups.map(([group, groupItems]) => (
                 <section key={group} aria-labelledby={`more-hub-group-${mode}-${group}`}>
                   <h3 id={`more-hub-group-${mode}-${group}`} className="mb-2 px-1 text-xs font-bold tracking-wide text-slate-400">
                     {getMoreNavigationGroupLabel(group)}
                   </h3>
-                  <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="semo-list">
                     {groupItems.map((item) => (
-                      <HubFeatureCard
+                      <HubFeatureRow
                         key={item.key}
                         item={item}
                         onNavigate={handleNavigate}
@@ -268,7 +276,7 @@ function HubSection({
   );
 }
 
-function HubFeatureCard({
+function HubFeatureRow({
   item,
   onNavigate,
   onFavorite,
@@ -284,7 +292,7 @@ function HubFeatureCard({
   const accentClassName = "bg-[var(--primary)]/10 text-[var(--primary)]";
 
   return (
-    <article className="flex min-h-24 items-center gap-2 rounded-[var(--radius-card)] border border-slate-200 bg-white p-3 shadow-[var(--shadow-card)] transition hover:border-slate-300">
+    <article className="semo-list-row min-h-20 gap-2 px-3 py-2.5">
       <RouterLink
         href={item.href}
         onClick={() => onNavigate(item)}
@@ -301,9 +309,7 @@ function HubFeatureCard({
               <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${overdueCount > 0 ? "bg-rose-50 text-rose-700" : "bg-slate-100 text-slate-600"}`}>
                 {overdueCount > 0 ? `지연 ${overdueCount} · 전체 ${pendingCount}` : `대기 ${pendingCount}`}
               </span>
-            ) : (
-              <span className="text-xs font-medium text-slate-400">바로가기</span>
-            )}
+            ) : <span className="text-xs font-medium text-slate-500">바로가기</span>}
           </span>
         </span>
       </RouterLink>

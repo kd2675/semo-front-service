@@ -217,7 +217,7 @@ export default function Home() {
       </AnimatePresence>
 
       <div className="relative flex min-h-screen w-full flex-col">
-        <main className="relative mx-auto flex min-h-screen w-full max-w-6xl flex-col overflow-x-hidden pb-28">
+        <main className="relative mx-auto flex min-h-screen w-full max-w-6xl flex-col overflow-x-hidden pb-12">
           <motion.header
             className="semo-sticky-surface sticky top-0 z-20 flex items-center justify-between gap-4 border-b px-4 py-3 sm:px-6"
             {...staggeredFadeUpMotion(0, reduceMotion)}
@@ -271,126 +271,113 @@ export default function Home() {
             </div>
           </motion.section>
 
-          <motion.section
-            className="flex items-center justify-between px-4 pb-2 pt-6 sm:px-6"
-            {...staggeredFadeUpMotion(3, reduceMotion)}
-          >
-            <div className="flex flex-col">
-              <h2 className="text-lg font-black leading-none text-slate-900">내 모임</h2>
-              <span className="mt-1 text-xs font-medium text-slate-500">참여 중인 모임과 현재 세모</span>
-            </div>
-            <span className="text-sm font-semibold text-[var(--primary)]">
-              {myClubs.length.toLocaleString("ko-KR")}개
-            </span>
-          </motion.section>
-
-          <motion.section className="px-4 pb-4 sm:px-6" {...staggeredFadeUpMotion(4, reduceMotion)}>
-            {isLoadingMyClubs ? (
-              <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-10 text-center">
-                <p className="text-sm font-semibold text-slate-700">내 클럽을 불러오는 중입니다.</p>
-                <p className="mt-1 text-xs text-slate-500">가입한 모임을 확인하고 있습니다.</p>
-              </div>
-            ) : myClubs.length > 0 ? (
-              <div className="semo-horizontal-rail flex overflow-x-auto pb-2 md:overflow-visible">
-                <div className="flex items-stretch gap-4 md:grid md:w-full md:grid-cols-2 lg:grid-cols-3">
-                  {myClubs.map((club, index) => (
-                    <motion.div
-                      key={club.clubId}
-                      className="semo-card semo-card-interactive relative h-full min-w-[240px] snap-start p-3 sm:min-w-[280px] md:min-w-0"
-                      {...staggeredFadeUpMotion(index + 4, reduceMotion)}
-                    >
-                      <RouterLink
-                        href={`/clubs/${club.clubId}`}
-                        aria-label={`${club.name} 클럽으로 이동`}
-                        className="absolute inset-0 z-10 rounded-[var(--radius-card)]"
-                      >
-                        <span className="sr-only">{club.name} 클럽으로 이동</span>
-                      </RouterLink>
-                      <div className="pointer-events-none relative flex h-full flex-col gap-3">
-                        <div
-                          className="relative aspect-[16/9] w-full overflow-hidden rounded-lg bg-slate-200 bg-cover bg-center"
-                          style={club.imageUrl ? { backgroundImage: `url("${club.imageUrl}")` } : undefined}
-                        >
-                          {!club.imageUrl ? (
-                            <div className="flex h-full w-full items-center justify-center bg-[linear-gradient(145deg,color-mix(in_srgb,var(--primary)_12%,white),color-mix(in_srgb,var(--primary)_3%,white))] text-[var(--primary)]">
-                              <span className="text-4xl font-black opacity-45" aria-hidden="true">
-                                {club.name.trim().slice(0, 1) || "세"}
-                              </span>
-                            </div>
-                          ) : null}
-                          <div className="pointer-events-auto absolute bottom-2 right-2 z-20 flex size-16 items-center justify-center">
-                            <ClubGrowthCoreExplainerTrigger
-                              growthCore={club.growthCore}
-                              size={60}
-                              presentation="core-only"
-                              className="size-full"
-                              surfaceClassName="rounded-xl border border-white/80 bg-white/90 shadow-md backdrop-blur-sm"
-                            />
-                          </div>
-                        </div>
-                        <div>
-                          <div className="flex items-center justify-between gap-3">
-                            <p className="text-base font-bold text-slate-900">{club.name}</p>
-                            {club.admin ? (
-                              <span className="rounded-full bg-[var(--primary)]/10 px-2 py-1 text-xs font-bold uppercase tracking-[0.18em] text-[var(--primary)]">
-                                관리자
-                              </span>
-                            ) : null}
-                          </div>
-                          <p className="mt-1 line-clamp-2 text-xs font-medium text-slate-500">
-                            {club.summary ?? club.description ?? "모임 소개가 아직 없습니다."}
-                          </p>
-                          <div className="mt-3 flex flex-wrap items-center gap-1.5 text-xs font-medium text-slate-500">
-                            <span className="material-symbols-outlined text-sm text-[var(--primary)]" aria-hidden="true">group</span>
-                            <span>{getClubRoleLabel(club.roleCode)}</span>
-                            <span>· {getPrimaryClubActivityLabel(club.activityTags, club.activityCategory, club.categoryKey)}</span>
-                            {club.affiliationType ? <span>· {getAffiliationTypeLabel(club.affiliationType)}</span> : null}
-                            {club.regionLabel ? <span>· {club.regionLabel}</span> : null}
-                          </div>
-                        </div>
-                      </div>
-                    </motion.div>
-                  ))}
+          <div className="grid gap-8 px-4 pb-8 pt-6 sm:px-6 lg:grid-cols-[minmax(0,0.82fr)_minmax(0,1.18fr)] lg:items-start">
+            <motion.section {...staggeredFadeUpMotion(3, reduceMotion)}>
+              <div className="semo-section-heading">
+                <div>
+                  <h2 className="text-lg font-black leading-none text-slate-900">내 모임</h2>
+                  <p className="mt-1 text-xs font-medium text-slate-500">참여 중인 모임과 현재 세모</p>
                 </div>
+                <span className="text-sm font-semibold text-[var(--primary)]">
+                  {myClubs.length.toLocaleString("ko-KR")}개
+                </span>
               </div>
-            ) : (
-              <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-10 text-center">
-                <p className="text-sm font-semibold text-slate-700">아직 참여 중인 모임이 없습니다.</p>
-                <p className="mt-1 text-xs text-slate-500">
-                  {myClubsError ?? "공개 모임을 둘러보고 원하는 모임에 참여해 보세요."}
-                </p>
+
+              <div className="mt-3">
+                {isLoadingMyClubs ? (
+                  <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-10 text-center">
+                    <p className="text-sm font-semibold text-slate-700">내 클럽을 불러오는 중입니다.</p>
+                    <p className="mt-1 text-xs text-slate-500">가입한 모임을 확인하고 있습니다.</p>
+                  </div>
+                ) : myClubs.length > 0 ? (
+                  <div className="semo-horizontal-rail flex overflow-x-auto pb-2 md:overflow-visible">
+                    <div className="flex items-stretch gap-4 md:grid md:w-full md:grid-cols-2 lg:grid-cols-1">
+                      {myClubs.map((club, index) => (
+                        <motion.div
+                          key={club.clubId}
+                          className="semo-card semo-card-interactive relative h-full min-w-[min(20rem,calc(100vw-3rem))] snap-start p-3 md:min-w-0"
+                          {...staggeredFadeUpMotion(index + 4, reduceMotion)}
+                        >
+                          <RouterLink
+                            href={`/clubs/${club.clubId}`}
+                            aria-label={`${club.name} 클럽으로 이동`}
+                            className="absolute inset-0 z-10 rounded-[var(--radius-card)]"
+                          >
+                            <span className="sr-only">{club.name} 클럽으로 이동</span>
+                          </RouterLink>
+                          <div className="pointer-events-none relative flex h-full flex-col gap-3">
+                            <div
+                              className="relative aspect-[16/9] w-full overflow-hidden rounded-lg bg-slate-200 bg-cover bg-center"
+                              style={club.imageUrl ? { backgroundImage: `url("${club.imageUrl}")` } : undefined}
+                            >
+                              {!club.imageUrl ? (
+                                <div className="flex h-full w-full items-center justify-center bg-[linear-gradient(145deg,color-mix(in_srgb,var(--primary)_12%,white),color-mix(in_srgb,var(--primary)_3%,white))] text-[var(--primary)]">
+                                  <span className="text-4xl font-black opacity-45" aria-hidden="true">
+                                    {club.name.trim().slice(0, 1) || "세"}
+                                  </span>
+                                </div>
+                              ) : null}
+                              <div className="pointer-events-auto absolute bottom-2 right-2 z-20 flex size-16 items-center justify-center">
+                                <ClubGrowthCoreExplainerTrigger
+                                  growthCore={club.growthCore}
+                                  size={60}
+                                  presentation="core-only"
+                                  className="size-full"
+                                  surfaceClassName="rounded-xl border border-white/80 bg-white/90 shadow-md backdrop-blur-sm"
+                                />
+                              </div>
+                            </div>
+                            <div>
+                              <div className="flex items-center justify-between gap-3">
+                                <p className="text-base font-bold text-slate-900">{club.name}</p>
+                                {club.admin ? (
+                                  <span className="rounded-full bg-[var(--primary)]/10 px-2 py-1 text-xs font-bold uppercase tracking-[0.18em] text-[var(--primary)]">
+                                    관리자
+                                  </span>
+                                ) : null}
+                              </div>
+                              <p className="mt-1 line-clamp-2 text-xs font-medium text-slate-500">
+                                {club.summary ?? club.description ?? "모임 소개가 아직 없습니다."}
+                              </p>
+                              <div className="mt-3 flex flex-wrap items-center gap-1.5 text-xs font-medium text-slate-500">
+                                <span className="material-symbols-outlined text-sm text-[var(--primary)]" aria-hidden="true">group</span>
+                                <span>{getClubRoleLabel(club.roleCode)}</span>
+                                <span>· {getPrimaryClubActivityLabel(club.activityTags, club.activityCategory, club.categoryKey)}</span>
+                                {club.affiliationType ? <span>· {getAffiliationTypeLabel(club.affiliationType)}</span> : null}
+                                {club.regionLabel ? <span>· {club.regionLabel}</span> : null}
+                              </div>
+                            </div>
+                          </div>
+                        </motion.div>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-10 text-center">
+                    <p className="text-sm font-semibold text-slate-700">아직 참여 중인 모임이 없습니다.</p>
+                    <p className="mt-1 text-xs text-slate-500">
+                      {myClubsError ?? "공개 모임을 둘러보고 원하는 모임에 참여해 보세요."}
+                    </p>
+                  </div>
+                )}
               </div>
-            )}
-          </motion.section>
+            </motion.section>
 
-          <DiscoverSection
-            searchQuery={searchQuery}
-            onSearchQueryChange={setSearchQuery}
-            discoverTitle={discoverTitle}
-            discoverSubtitle={discoverSubtitle}
-            discoverClubs={discoverClubs}
-            isLoadingDiscover={isLoadingDiscover}
-            discoverError={discoverError}
-            hasSearchQuery={deferredSearchQuery.length > 0}
-            pendingJoinClubId={pendingJoinClubId}
-            reduceMotion={reduceMotion}
-            onOpenClub={handleOpenClubAction}
-            onCancelJoinRequest={handleCancelJoinRequest}
-          />
-
-          <motion.div
-            className="fixed bottom-6 right-[max(1.5rem,calc((100vw-72rem)/2+1.5rem))] z-20 flex size-14 items-center justify-center rounded-full bg-[var(--primary)] text-white shadow-[var(--shadow-floating)] transition-transform active:scale-90"
-            {...staggeredFadeUpMotion(8, reduceMotion)}
-            whileTap={reduceMotion ? undefined : { scale: 0.9 }}
-          >
-            <RouterLink
-              href="/clubs/create"
-              aria-label="새 모임 만들기"
-              className="flex size-full items-center justify-center"
-            >
-              <span className="material-symbols-outlined text-3xl" aria-hidden="true">add</span>
-            </RouterLink>
-          </motion.div>
+            <DiscoverSection
+              searchQuery={searchQuery}
+              onSearchQueryChange={setSearchQuery}
+              discoverTitle={discoverTitle}
+              discoverSubtitle={discoverSubtitle}
+              discoverClubs={discoverClubs}
+              isLoadingDiscover={isLoadingDiscover}
+              discoverError={discoverError}
+              hasSearchQuery={deferredSearchQuery.length > 0}
+              pendingJoinClubId={pendingJoinClubId}
+              reduceMotion={reduceMotion}
+              onOpenClub={handleOpenClubAction}
+              onCancelJoinRequest={handleCancelJoinRequest}
+            />
+          </div>
         </main>
       </div>
 

@@ -6,7 +6,6 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "motion/react";
 
 import { useHydrationSafeReducedMotion } from "@/app/hooks/useHydrationSafeReducedMotion";
-import { ClubModeSwitchFab } from "@/app/components/ClubModeSwitchFab";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import { ResourceAttachmentPanel } from "@/app/components/ResourceAttachmentPanel";
 import { RouteModal } from "@/app/components/RouteModal";
@@ -121,7 +120,6 @@ export function ClubFinanceClient({
   clubId,
   initialData,
   initialRequestFeed,
-  isAdmin,
 }: ClubFinanceClientProps) {
   const queryClient = useQueryClient();
   const reduceMotion = useHydrationSafeReducedMotion();
@@ -415,13 +413,11 @@ export function ClubFinanceClient({
           type="button"
           aria-label="재정 제출 메뉴 열기"
           onClick={() => setShowActionSheet(true)}
-          className={`fixed ${FAB_RIGHT_OFFSET_CLASS_NAME} ${getActionFabBottomClass(isAdmin)} z-40 flex h-14 w-14 items-center justify-center rounded-full bg-[var(--primary)] text-white transition-transform active:scale-95`}
+          className={`fixed ${FAB_RIGHT_OFFSET_CLASS_NAME} ${getActionFabBottomClass()} z-40 flex h-14 w-14 items-center justify-center rounded-full bg-[var(--primary)] text-white transition-transform active:scale-95`}
           style={{ boxShadow: "0 10px 24px rgba(19, 91, 236, 0.34)" }}
         >
           <span className="material-symbols-outlined text-[28px]" aria-hidden="true">add</span>
         </button>
-
-        {isAdmin ? <ClubModeSwitchFab clubId={clubId} mode="user" /> : null}
 
         <AnimatePresence>
           {showActionSheet ? (

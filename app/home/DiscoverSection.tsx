@@ -76,8 +76,8 @@ export function DiscoverSection({
   onCancelJoinRequest,
 }: DiscoverSectionProps) {
   return (
-    <>
-      <motion.div className="px-4 py-4 sm:px-6" {...staggeredFadeUpMotion(1, reduceMotion)}>
+    <motion.section {...staggeredFadeUpMotion(4, reduceMotion)}>
+      <div>
         <label className="flex w-full flex-col">
           <div className="flex h-12 w-full items-stretch rounded-xl border border-transparent bg-slate-100 transition-colors focus-within:border-[var(--primary)]/50">
             <div className="flex items-center justify-center pl-4 text-slate-500">
@@ -95,20 +95,22 @@ export function DiscoverSection({
             />
           </div>
         </label>
-      </motion.div>
+      </div>
 
-      <motion.section className="px-4 pb-3 pt-6 sm:px-6" {...staggeredFadeUpMotion(6, reduceMotion)}>
-        <div className="flex items-baseline gap-2">
-          <h2 className="text-lg font-bold text-slate-900">{discoverTitle}</h2>
-          <span className="text-xs font-medium text-slate-400">모임 찾기 · 가입 신청</span>
+      <div className="semo-section-heading pb-3 pt-5">
+        <div>
+          <div className="flex flex-wrap items-baseline gap-2">
+            <h2 className="text-lg font-bold text-slate-900">{discoverTitle}</h2>
+            <span className="text-xs font-medium text-slate-500">모임 찾기 · 가입 신청</span>
+          </div>
+          <p className="mt-1 text-xs text-slate-500">{discoverSubtitle}</p>
         </div>
-        <p className="mt-1 text-xs text-slate-500">{discoverSubtitle}</p>
-      </motion.section>
+      </div>
 
-      <section className="grid flex-1 gap-4 px-4 pb-20 sm:px-6 md:grid-cols-2">
+      <div className="grid gap-4 xl:grid-cols-2">
         {isLoadingDiscover ? (
           <motion.div
-            className="rounded-[var(--radius-card)] border border-dashed border-slate-200 bg-slate-50 px-4 py-10 text-center md:col-span-2"
+            className="rounded-[var(--radius-card)] border border-dashed border-slate-200 bg-slate-50 px-4 py-10 text-center xl:col-span-2"
             {...staggeredFadeUpMotion(7, reduceMotion)}
           >
             <p className="text-sm font-semibold text-slate-700">모임을 탐색하는 중입니다.</p>
@@ -211,7 +213,7 @@ export function DiscoverSection({
           })
         ) : (
           <motion.div
-            className="rounded-[var(--radius-card)] border border-dashed border-slate-200 bg-slate-50 px-4 py-10 text-center md:col-span-2"
+            className="rounded-[var(--radius-card)] border border-dashed border-slate-200 bg-slate-50 px-4 py-10 text-center xl:col-span-2"
             {...staggeredFadeUpMotion(7, reduceMotion)}
           >
             <p className="text-sm font-semibold text-slate-700">
@@ -224,7 +226,7 @@ export function DiscoverSection({
             </p>
           </motion.div>
         )}
-      </section>
-    </>
+      </div>
+    </motion.section>
   );
 }

@@ -10,7 +10,6 @@ import { useInfiniteQuery } from "@tanstack/react-query";
 import { motion } from "motion/react";
 
 import { useHydrationSafeReducedMotion } from "@/app/hooks/useHydrationSafeReducedMotion";
-import { ClubModeSwitchFab } from "@/app/components/ClubModeSwitchFab";
 import {
   type ClubMemberActivityEntry,
   type ClubMemberActivityResponse,
@@ -142,7 +141,6 @@ function getSubjectMeta(subject: string) {
 export function ClubMemberActivityClient({
   clubId,
   initialData,
-  isAdmin,
 }: ClubMemberActivityClientProps) {
   const reduceMotion = useHydrationSafeReducedMotion();
   const [sentinelNode, setSentinelNode] = useState<HTMLDivElement | null>(null);
@@ -326,7 +324,6 @@ export function ClubMemberActivityClient({
           <div ref={setSentinelNode} className="h-16" />
         </main>
 
-        {isAdmin ? <ClubModeSwitchFab clubId={clubId} mode="user" /> : null}
       </div>
     </div>
   );

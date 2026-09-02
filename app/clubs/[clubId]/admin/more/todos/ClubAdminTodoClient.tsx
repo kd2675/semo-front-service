@@ -622,7 +622,7 @@ export function ClubAdminTodoClient({ clubId, initialData }: ClubAdminTodoClient
             type="button"
             aria-label="할 일 등록"
             onClick={openCreateModal}
-            className={`fixed ${FAB_RIGHT_OFFSET_CLASS_NAME} ${getActionFabBottomClass(true)} z-40 flex h-14 w-14 items-center justify-center rounded-full bg-[var(--primary)] text-white shadow-lg shadow-[var(--primary)]/25 transition-transform active:scale-95`}
+            className={`fixed ${FAB_RIGHT_OFFSET_CLASS_NAME} ${getActionFabBottomClass()} z-40 flex h-14 w-14 items-center justify-center rounded-full bg-[var(--primary)] text-white shadow-lg shadow-[var(--primary)]/25 transition-transform active:scale-95`}
           >
             <span className="material-symbols-outlined text-[28px]" aria-hidden="true">assignment_add</span>
           </button>

@@ -98,13 +98,15 @@ export function ClubAdminHomeClient({
         containerClassName="semo-page-admin"
       />
 
-      <main className="semo-page-admin semo-nav-bottom-space space-y-6 px-4 pt-4">
-          <section className={`grid grid-cols-2 gap-4 ${metrics.length > 2 ? "md:grid-cols-4" : "md:grid-cols-2"}`}>
-            {metrics.map((metric, index) => (
-              <motion.article
+      <main className="semo-page-admin semo-nav-bottom-space space-y-7 px-4 pt-4 md:px-6">
+          <motion.section
+            className={`semo-metric-strip grid-cols-2 ${metrics.length > 2 ? "semo-metric-strip-wide md:grid-cols-4" : ""}`}
+            {...staggeredFadeUpMotion(0, reduceMotion)}
+          >
+            {metrics.map((metric) => (
+              <article
                 key={metric.id}
-                className="semo-card p-4"
-                {...staggeredFadeUpMotion(index, reduceMotion)}
+                className="semo-metric-cell"
               >
                 <p className="text-xs font-medium uppercase tracking-wider text-slate-500">{metric.label}</p>
                 <h3
@@ -126,35 +128,31 @@ export function ClubAdminHomeClient({
                   <span className="material-symbols-outlined text-xs" aria-hidden="true">{metric.detailIcon}</span>
                   {metric.detail}
                 </p>
-              </motion.article>
+              </article>
             ))}
-          </section>
+          </motion.section>
 
           <motion.section {...staggeredFadeUpMotion(4, reduceMotion)}>
             <div className="mb-4 flex items-center gap-2">
               <span className="material-symbols-outlined text-[var(--primary)]" aria-hidden="true">dashboard</span>
               <h2 className="text-lg font-bold">대시보드 개요</h2>
             </div>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              {actions.map((action, index) => (
-                <motion.article
-                  key={action.id}
-                  className="rounded-xl"
-                  {...staggeredFadeUpMotion(index + 5, reduceMotion)}
-                >
+            <div className="semo-list">
+              {actions.map((action) => (
                   <RouterLink
+                    key={action.id}
                     href={action.href}
-                    className="semo-card semo-card-interactive group flex gap-4 p-5"
+                    className="semo-list-row group"
                   >
                     <div className="flex size-12 shrink-0 items-center justify-center rounded-[var(--radius-control)] bg-[var(--primary)]/10 text-[var(--primary)] transition-colors group-hover:bg-[var(--primary)] group-hover:text-white">
                       <span className="material-symbols-outlined text-2xl" aria-hidden="true">{action.icon}</span>
                     </div>
-                    <div className="flex flex-col justify-center gap-1">
+                    <div className="min-w-0 flex flex-1 flex-col justify-center gap-1">
                       <h3 className="text-base font-bold leading-tight">{action.title}</h3>
                       <p className="text-sm leading-normal text-slate-500">{action.description}</p>
                     </div>
+                    <span className="material-symbols-outlined text-slate-400 transition-transform group-hover:translate-x-0.5" aria-hidden="true">chevron_right</span>
                   </RouterLink>
-                </motion.article>
               ))}
             </div>
           </motion.section>
@@ -167,20 +165,19 @@ export function ClubAdminHomeClient({
               </div>
               <RouterLink
                 href={`/clubs/${clubId}/admin/logs`}
-                className="text-xs font-bold text-[var(--primary)] hover:underline"
+                className="semo-quiet-link"
               >
                 전체 로그 보기
               </RouterLink>
             </div>
-            <div className="semo-card overflow-hidden">
+            <div className="semo-list">
               {activities.length === 0 ? (
                 <div className="p-6 text-sm text-slate-500">아직 기록된 최근 활동이 없습니다.</div>
               ) : (
                 activities.map((activity, index) => (
-                  <motion.article
+                  <article
                     key={activity.activityId}
-                    className={`flex gap-3 p-4 ${index > 0 ? "border-t border-slate-100" : ""}`}
-                    {...staggeredFadeUpMotion(index + 10, reduceMotion)}
+                    className={`semo-list-row items-start ${index > 0 ? "" : ""}`}
                   >
                     <div className="flex size-8 items-center justify-center rounded-full bg-[var(--primary)]/12 text-xs font-bold text-[var(--primary)]">
                       {activity.actorAvatarLabel}
@@ -207,7 +204,7 @@ export function ClubAdminHomeClient({
                         <p className="mt-1 text-xs text-rose-500">{activity.errorMessage}</p>
                       ) : null}
                     </div>
-                  </motion.article>
+                  </article>
                 ))
               )}
             </div>

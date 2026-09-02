@@ -8,7 +8,6 @@ import { motion } from "motion/react";
 import { useHydrationSafeReducedMotion } from "@/app/hooks/useHydrationSafeReducedMotion";
 import { RouterLink } from "@/app/components/RouterLink";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
-import { ClubModeSwitchFab } from "@/app/components/ClubModeSwitchFab";
 import { type ClubNoticeDetailResponse } from "@/app/lib/clubs";
 import { getLinkedContentBadge, getShareTargetBadges } from "@/app/lib/contentBadge";
 import { staggeredFadeUpMotion } from "@/app/lib/motion";
@@ -199,7 +198,6 @@ export function ClubNoticeDetailClient({
           <NoticeDetailBody payload={payload} error={error} reduceMotion={reduceMotion} />
         </main>
 
-        {payload?.admin ? <ClubModeSwitchFab clubId={clubId} mode="user" /> : null}
       </div>
     </div>
   );
