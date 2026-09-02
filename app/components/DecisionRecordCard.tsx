@@ -132,7 +132,7 @@ export function DecisionRecordCard({
         type="button"
         onClick={() => setDetailsOpen((current) => !current)}
         aria-expanded={detailsOpen}
-        className="mt-4 flex min-h-10 w-full items-center justify-between rounded-xl bg-slate-50 px-3 text-xs font-bold text-slate-600"
+        className="mt-4 flex min-h-11 w-full items-center justify-between rounded-xl bg-slate-50 px-3 text-xs font-bold text-slate-600"
       >
         <span>배경·이유와 연결 항목</span>
         <span className="material-symbols-outlined text-[18px]" aria-hidden="true">{detailsOpen ? "expand_less" : "expand_more"}</span>
@@ -152,7 +152,7 @@ export function DecisionRecordCard({
         type="button"
         onClick={() => setAttachmentsOpen((current) => !current)}
         aria-expanded={attachmentsOpen}
-        className="mt-3 flex min-h-10 w-full items-center justify-between rounded-xl bg-slate-50 px-3 text-xs font-bold text-slate-600"
+        className="mt-3 flex min-h-11 w-full items-center justify-between rounded-xl bg-slate-50 px-3 text-xs font-bold text-slate-600"
       >
         <span className="inline-flex items-center gap-1.5"><span className="material-symbols-outlined text-[17px]" aria-hidden="true">attach_file</span>첨부 자료</span>
         <span className="material-symbols-outlined text-[18px]" aria-hidden="true">{attachmentsOpen ? "expand_less" : "expand_more"}</span>
@@ -196,5 +196,5 @@ function ResourceLinks({ title, links }: { title: string; links: DecisionRecord[
 
 function ActionButton({ label, onClick, pending, tone }: { label: string; onClick: () => void; pending: boolean; tone: "primary" | "light" | "danger" }) {
   const toneClass = tone === "primary" ? "bg-slate-900 text-white" : tone === "danger" ? "bg-rose-50 text-rose-700" : "bg-slate-100 text-slate-600";
-  return <button type="button" disabled={pending} onClick={onClick} className={`min-h-10 min-w-20 flex-1 rounded-xl px-3 text-xs font-bold disabled:opacity-50 ${toneClass}`}>{label}</button>;
+  return <button type="button" disabled={pending} onClick={onClick} className={`min-h-11 min-w-20 flex-1 rounded-xl px-3 text-xs font-bold disabled:opacity-50 ${toneClass}`}>{label}</button>;
 }

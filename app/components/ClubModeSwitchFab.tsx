@@ -18,8 +18,8 @@ type ClubModeSwitchFabProps = {
 export function ClubModeSwitchFab({ clubId, mode, className }: ClubModeSwitchFabProps) {
   const reduceMotion = useHydrationSafeReducedMotion();
   const isAdminMode = mode === "admin";
-  const adminAccentClassName = "border-[#ec5b13]/20 bg-white text-[#ec5b13]";
-  const userAccentClassName = "border-[#135bec]/20 bg-white text-[#135bec]";
+  const adminAccentClassName = "border-[var(--color-admin-primary)]/20 bg-white text-[var(--color-admin-primary)]";
+  const userAccentClassName = "border-[var(--color-user-primary)]/20 bg-white text-[var(--color-user-primary)]";
 
   return (
     <motion.div

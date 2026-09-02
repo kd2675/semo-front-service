@@ -1,8 +1,9 @@
 "use client";
 
+import { useEffect } from "react";
 import { usePathname } from "next/navigation";
 
-import { motion, useScroll, useSpring } from "motion/react";
+import { motion, useMotionValue, useScroll, useSpring } from "motion/react";
 
 import { useHydrationSafeReducedMotion } from "@/app/hooks/useHydrationSafeReducedMotion";
 
@@ -15,6 +16,10 @@ const FLOATING_TRIANGLES = [
 export function SemoMotionField() {
   const pathname = usePathname();
   const prefersReducedMotion = useHydrationSafeReducedMotion();
+  const pointerX = useMotionValue(0);
+  const pointerY = useMotionValue(0);
+  const smoothPointerX = useSpring(pointerX, { stiffness: 90, damping: 24, mass: 0.6 });
+  const smoothPointerY = useSpring(pointerY, { stiffness: 90, damping: 24, mass: 0.6 });
   const { scrollYProgress } = useScroll();
   const progress = useSpring(scrollYProgress, {
     stiffness: 170,
@@ -22,6 +27,27 @@ export function SemoMotionField() {
     mass: 0.25,
   });
   const tone = pathname?.includes("/admin") ? "admin" : "user";
+
+  useEffect(() => {
+    if (prefersReducedMotion) {
+      pointerX.set(0);
+      pointerY.set(0);
+      return;
+    }
+
+    const precisePointer = window.matchMedia("(hover: hover) and (pointer: fine)");
+    if (!precisePointer.matches) {
+      return;
+    }
+
+    const handlePointerMove = (event: PointerEvent) => {
+      pointerX.set(event.clientX - window.innerWidth / 2);
+      pointerY.set(event.clientY - window.innerHeight / 2);
+    };
+
+    window.addEventListener("pointermove", handlePointerMove, { passive: true });
+    return () => window.removeEventListener("pointermove", handlePointerMove);
+  }, [pointerX, pointerY, prefersReducedMotion]);
 
   return (
     <>
@@ -40,6 +66,10 @@ export function SemoMotionField() {
         <div className="semo-motion-grid" />
         <div className="semo-motion-beam semo-motion-beam-one" />
         <div className="semo-motion-beam semo-motion-beam-two" />
+        <motion.div
+          className="semo-motion-pointer"
+          style={{ x: smoothPointerX, y: smoothPointerY }}
+        />
         {FLOATING_TRIANGLES.map((triangle, index) => (
           <motion.svg
             key={triangle.className}

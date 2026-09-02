@@ -324,7 +324,7 @@ function EventCard({
       aria-label={`${event.title} 자세히 보기`}
       className="block w-full text-left"
     >
-      <div className="flex items-center gap-4 rounded-xl border border-slate-100 bg-white p-3 shadow-sm transition-all hover:border-[var(--primary)]/50 hover:bg-slate-50">
+      <div className="flex items-center gap-4 rounded-xl border border-slate-100 bg-white p-3 shadow-sm transition-colors hover:border-[var(--primary)]/50 hover:bg-slate-50">
         <div
           className={`flex size-12 shrink-0 items-center justify-center rounded-lg ${visual.iconSurfaceClassName} ${visual.iconClassName}`}
         >
@@ -375,7 +375,7 @@ function NoticeCard({
       aria-label={`${notice.title} 자세히 보기`}
       className="block w-full text-left"
     >
-      <div className="flex items-center gap-4 rounded-xl border border-slate-100 bg-white p-3 shadow-sm transition-all hover:border-sky-500/50 hover:bg-slate-50">
+      <div className="flex items-center gap-4 rounded-xl border border-slate-100 bg-white p-3 shadow-sm transition-colors hover:border-sky-500/50 hover:bg-slate-50">
         <div className="flex size-12 shrink-0 items-center justify-center rounded-lg bg-sky-500/10 text-sky-600">
           <span className="material-symbols-outlined" aria-hidden="true">campaign</span>
         </div>
@@ -424,7 +424,7 @@ function VoteCard({
       aria-label={`${vote.title} 자세히 보기`}
       className="block w-full text-left"
     >
-      <div className="flex items-center gap-4 rounded-xl border border-slate-100 bg-white p-3 shadow-sm transition-all hover:border-amber-500/50 hover:bg-slate-50">
+      <div className="flex items-center gap-4 rounded-xl border border-slate-100 bg-white p-3 shadow-sm transition-colors hover:border-amber-500/50 hover:bg-slate-50">
         <div className="flex size-12 shrink-0 items-center justify-center rounded-lg bg-amber-500/10 text-amber-500">
           <span className="material-symbols-outlined" aria-hidden="true">poll</span>
         </div>
@@ -477,7 +477,7 @@ function TournamentCard({
       aria-label={`${tournament.title} 자세히 보기`}
       className="block w-full text-left"
     >
-      <div className="flex items-center gap-4 rounded-xl border border-slate-100 bg-white p-3 shadow-sm transition-all hover:border-emerald-500/50 hover:bg-slate-50">
+      <div className="flex items-center gap-4 rounded-xl border border-slate-100 bg-white p-3 shadow-sm transition-colors hover:border-emerald-500/50 hover:bg-slate-50">
         <div className="flex size-12 shrink-0 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600">
           <span className="material-symbols-outlined" aria-hidden="true">emoji_events</span>
         </div>

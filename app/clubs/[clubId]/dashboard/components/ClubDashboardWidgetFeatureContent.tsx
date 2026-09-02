@@ -180,7 +180,7 @@ export function ClubDashboardWidgetFeatureContent({
               <RouterLink
                 key={`board-strip-${notice.id}`}
                 href={`/clubs/${clubId}/board`}
-                className="flex items-center justify-between gap-3 rounded-xl border border-sky-100 bg-white px-3 py-3 shadow-sm transition-all hover:border-sky-300"
+                className="flex items-center justify-between gap-3 rounded-xl border border-sky-100 bg-white px-3 py-3 shadow-sm transition-colors hover:border-sky-300"
               >
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-bold text-slate-900">{notice.title}</p>
@@ -218,7 +218,7 @@ export function ClubDashboardWidgetFeatureContent({
                     <RouterLink
                       key={`schedule-widget-event-${item.calendarItemId}`}
                       href={`/clubs/${clubId}/schedule/${item.event.eventId}`}
-                      className="flex items-center gap-3 rounded-xl border border-slate-100 bg-white p-3 shadow-sm transition-all hover:border-[var(--primary)]/40"
+                      className="flex items-center gap-3 rounded-xl border border-slate-100 bg-white p-3 shadow-sm transition-colors hover:border-[var(--primary)]/40"
                     >
                       <div className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-[var(--primary)]/10 text-[var(--primary)]">
                         <span className="material-symbols-outlined" aria-hidden="true">edit_calendar</span>
@@ -240,7 +240,7 @@ export function ClubDashboardWidgetFeatureContent({
                     <RouterLink
                       key={`schedule-widget-vote-${item.calendarItemId}`}
                       href={`/clubs/${clubId}/schedule/votes/${item.vote.voteId}`}
-                      className="flex items-center gap-3 rounded-xl border border-slate-100 bg-white p-3 shadow-sm transition-all hover:border-amber-500/40"
+                      className="flex items-center gap-3 rounded-xl border border-slate-100 bg-white p-3 shadow-sm transition-colors hover:border-amber-500/40"
                     >
                       <div className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-amber-500/10 text-amber-500">
                         <span className="material-symbols-outlined" aria-hidden="true">poll</span>
@@ -265,7 +265,7 @@ export function ClubDashboardWidgetFeatureContent({
                     <RouterLink
                       key={`schedule-widget-notice-${item.calendarItemId}`}
                       href={`/clubs/${clubId}/board/${item.notice.noticeId}`}
-                      className="flex items-center gap-3 rounded-xl border border-slate-100 bg-white p-3 shadow-sm transition-all hover:border-sky-500/40"
+                      className="flex items-center gap-3 rounded-xl border border-slate-100 bg-white p-3 shadow-sm transition-colors hover:border-sky-500/40"
                     >
                       <div className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-sky-500/10 text-sky-600">
                         <span className="material-symbols-outlined" aria-hidden="true">campaign</span>
@@ -363,7 +363,7 @@ export function ClubDashboardWidgetFeatureContent({
         ) : tournamentHero ? (
           <RouterLink
             href={`/clubs/${clubId}/more/tournaments/${tournamentHero.tournamentRecordId}`}
-            className="block rounded-xl border border-emerald-100 bg-white p-4 shadow-sm transition-all hover:border-emerald-300"
+            className="block rounded-xl border border-emerald-100 bg-white p-4 shadow-sm transition-colors hover:border-emerald-300"
           >
             <div className="flex items-start justify-between gap-3">
               <div>
@@ -453,7 +453,7 @@ export function ClubDashboardWidgetFeatureContent({
         ) : bracketHero ? (
           <RouterLink
             href={widget.userPath || `/clubs/${clubId}/more/brackets`}
-            className="block rounded-xl border border-amber-100 bg-white p-4 shadow-sm transition-all hover:border-amber-300"
+            className="block rounded-xl border border-amber-100 bg-white p-4 shadow-sm transition-colors hover:border-amber-300"
           >
             <div className="flex items-start justify-between gap-3">
               <div>

@@ -1,7 +1,12 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
+
+import {
+  ClubGrowthCoreExplainerTrigger,
+  ClubGrowthCoreExplanationContent,
+} from "@/app/components/ClubGrowthCoreExplainer";
 import { RouteModal } from "@/app/components/RouteModal";
-import { ClubGrowthCoreMark } from "@/app/components/ClubGrowthCoreMark";
 import {
   getActivityCategoryLabel,
   getAffiliationTypeLabel,
@@ -43,12 +48,47 @@ export function DiscoverClubModal({
   onRequestMessageChange,
   onSubmit,
 }: DiscoverClubModalProps) {
+  const [showGrowthExplanation, setShowGrowthExplanation] = useState(false);
+  const growthTriggerRegionRef = useRef<HTMLDivElement | null>(null);
+  const restoreGrowthTriggerFocusRef = useRef(false);
   const actionLabel = getJoinActionLabel(club);
   const showRequestMessage = club.membershipPolicy === "APPROVAL";
 
+  useEffect(() => {
+    if (showGrowthExplanation || !restoreGrowthTriggerFocusRef.current) {
+      return;
+    }
+
+    const focusFrame = window.requestAnimationFrame(() => {
+      growthTriggerRegionRef.current?.querySelector<HTMLElement>("button")?.focus({ preventScroll: true });
+      restoreGrowthTriggerFocusRef.current = false;
+    });
+
+    return () => window.cancelAnimationFrame(focusFrame);
+  }, [showGrowthExplanation]);
+
+  const handleReturnToClub = () => {
+    restoreGrowthTriggerFocusRef.current = true;
+    setShowGrowthExplanation(false);
+  };
+
   return (
-    <RouteModal onDismiss={onClose} ariaLabel={`${club.name} 가입 안내`} contentClassName="max-w-[30rem]">
-      <div className="overflow-y-auto bg-white px-5 py-5">
+    <RouteModal
+      onDismiss={onClose}
+      ariaLabel={showGrowthExplanation ? `${club.name} 티어 표시 설명` : `${club.name} 가입 안내`}
+      contentClassName={showGrowthExplanation ? "max-w-[34rem]" : "max-w-[30rem]"}
+    >
+      {showGrowthExplanation ? (
+        <div className="flex min-h-0 flex-1" data-growth-core-explainer-embedded>
+          <ClubGrowthCoreExplanationContent
+            growthCore={club.growthCore}
+            presentation="core-only"
+            onDismiss={onClose}
+            onBack={handleReturnToClub}
+          />
+        </div>
+      ) : (
+        <div className="overflow-y-auto bg-white px-5 py-5">
         <div className="flex items-start justify-between gap-4">
           <div>
             <div className="flex flex-wrap items-center gap-2">
@@ -73,9 +113,19 @@ export function DiscoverClubModal({
           </button>
         </div>
 
-        <div className="mt-5 flex min-h-40 items-center justify-center overflow-hidden rounded-[var(--radius-card)] border border-slate-200 bg-slate-50">
-          <ClubGrowthCoreMark growthCore={club.growthCore} size={120} presentation="core-only" />
-        </div>
+          <div
+            ref={growthTriggerRegionRef}
+            className="mt-5 flex min-h-40 items-center justify-center"
+          >
+            <ClubGrowthCoreExplainerTrigger
+              growthCore={club.growthCore}
+              size={120}
+              presentation="core-only"
+              className="min-h-40 w-full"
+              surfaceClassName="rounded-[var(--radius-card)] border border-slate-200 bg-slate-50"
+              onRequestExplanation={() => setShowGrowthExplanation(true)}
+            />
+          </div>
 
         <div className="mt-5 grid grid-cols-2 gap-3">
           <div className="rounded-2xl bg-slate-50 px-4 py-3">
@@ -145,7 +195,8 @@ export function DiscoverClubModal({
             {isSubmitting ? "처리 중..." : actionLabel}
           </button>
         </div>
-      </div>
+        </div>
+      )}
     </RouteModal>
   );
 }

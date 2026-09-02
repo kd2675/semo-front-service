@@ -405,7 +405,7 @@ export function ClubScheduleDetailClient({
                       type="button"
                       onClick={() => handleParticipation("GOING")}
                       disabled={savingParticipation || payload.myParticipationStatus === "GOING"}
-                      className={`rounded-2xl px-4 py-4 font-bold transition-all active:scale-[0.98] disabled:opacity-70 ${
+                      className={`rounded-2xl px-4 py-4 font-bold transition-[background-color,box-shadow,transform,opacity] active:scale-[0.98] disabled:opacity-70 ${
                         payload.myParticipationStatus === "GOING"
                           ? "bg-[var(--primary)] text-white"
                           : "border border-[var(--primary)]/20 bg-[var(--primary)]/5 text-[var(--primary)]"

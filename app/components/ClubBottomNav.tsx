@@ -142,7 +142,7 @@ export function ClubBottomNav({ clubId, isAdmin = false }: ClubBottomNavProps) {
         ? isMoreOpen || isFeatureRouteActive
         : href
           ? item.key === "HOME"
-            ? pathname === href
+            ? pathname === href || pathname === `${href}/growth`
             : pathname === href || pathname.startsWith(`${href}/`)
           : false;
       const textClassName = isActive ? USER_ACTIVE_TEXT_CLASS : USER_INACTIVE_TEXT_CLASS;

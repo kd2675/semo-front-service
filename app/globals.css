@@ -173,6 +173,34 @@ body {
   animation-delay: -5s;
 }
 
+.semo-motion-pointer {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  display: none;
+  width: 38rem;
+  height: 38rem;
+  margin: -19rem 0 0 -19rem;
+  border-radius: var(--radius-round);
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--scene-primary) 9%, transparent),
+    transparent 66%
+  );
+  opacity: 0.44;
+  will-change: transform;
+}
+
+.semo-motion-field[data-reduced-motion="true"] .semo-motion-pointer {
+  display: none;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .semo-motion-field[data-reduced-motion="false"] .semo-motion-pointer {
+    display: block;
+  }
+}
+
 .semo-motion-triangle {
   position: absolute;
   overflow: visible;
@@ -224,13 +252,25 @@ body {
   overflow-wrap: break-word;
 }
 
-.hide-scrollbar::-webkit-scrollbar {
-  display: none;
+.semo-horizontal-rail {
+  overscroll-behavior-x: contain;
+  scroll-padding-inline: var(--space-1);
+  scroll-snap-type: x proximity;
+  scrollbar-color: color-mix(in srgb, var(--primary) 32%, var(--color-line)) transparent;
+  scrollbar-width: thin;
 }
 
-.hide-scrollbar {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
+.semo-horizontal-rail::-webkit-scrollbar {
+  height: 6px;
+}
+
+.semo-horizontal-rail::-webkit-scrollbar-thumb {
+  border-radius: var(--radius-round);
+  background: color-mix(in srgb, var(--primary) 32%, var(--color-line));
+}
+
+.semo-horizontal-rail::-webkit-scrollbar-track {
+  background: transparent;
 }
 
 .semo-nav-bottom-space {
@@ -656,6 +696,7 @@ button {
 
   .semo-motion-grid,
   .semo-motion-beam,
+  .semo-motion-pointer,
   .semo-nav-icon[data-active="true"]::before,
   .semo-launch-panel::before,
   .semo-launch-symbol,
@@ -663,6 +704,10 @@ button {
   [data-semo-brand-mark][data-animated="true"] [data-semo-brand-core] {
     animation: none;
     stroke-dashoffset: 0;
+  }
+
+  .semo-motion-pointer {
+    display: none;
   }
 }
 
@@ -772,7 +817,7 @@ button {
 
 .cp-day {
   appearance: none;
-  min-height: 40px;
+  min-height: 44px;
   border: 1px solid transparent;
   border-radius: var(--radius-control);
   background: transparent;

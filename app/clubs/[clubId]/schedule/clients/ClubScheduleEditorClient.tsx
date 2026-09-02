@@ -4,6 +4,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { RouterLink } from "@/app/components/RouterLink";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import { DatePopoverField } from "@/app/components/DatePopoverField";
+import { SemoSwitch } from "@/app/components/SemoSwitch";
 import { TimePopoverField } from "@/app/components/TimePopoverField";
 import { AnimatePresence } from "motion/react";
 import { useRouter } from "next/navigation";
@@ -401,7 +402,7 @@ export function ClubScheduleEditorClient({
                 <div>
                   <span className="mb-1.5 block text-sm font-medium text-slate-700">일정 유형</span>
                   <div className="flex h-11 items-center justify-center rounded-xl border border-[var(--primary)]/10 bg-[var(--primary)]/5 p-1">
-                    <label className="flex h-full grow cursor-pointer items-center justify-center overflow-hidden rounded-lg px-2 text-xs font-bold text-slate-500 transition-all has-[:checked]:bg-[var(--primary)] has-[:checked]:text-white">
+                    <label className="flex h-full grow cursor-pointer items-center justify-center overflow-hidden rounded-lg px-2 text-xs font-bold text-slate-500 transition-colors has-[:checked]:bg-[var(--primary)] has-[:checked]:text-white">
                       <span className="truncate">날짜 지정</span>
                       <input
                         checked={scheduleDateMode === "single"}
@@ -411,7 +412,7 @@ export function ClubScheduleEditorClient({
                         onChange={() => handleScheduleDateModeChange("single")}
                       />
                     </label>
-                    <label className="flex h-full grow cursor-pointer items-center justify-center overflow-hidden rounded-lg px-2 text-xs font-bold text-slate-500 transition-all has-[:checked]:bg-[var(--primary)] has-[:checked]:text-white">
+                    <label className="flex h-full grow cursor-pointer items-center justify-center overflow-hidden rounded-lg px-2 text-xs font-bold text-slate-500 transition-colors has-[:checked]:bg-[var(--primary)] has-[:checked]:text-white">
                       <span className="truncate">기간 설정</span>
                       <input
                         checked={scheduleDateMode === "range"}
@@ -512,16 +513,7 @@ export function ClubScheduleEditorClient({
                       </span>
                     </div>
                   </div>
-                  <label className="relative inline-flex cursor-pointer items-center">
-                    <input
-                      checked={postToBoard}
-                      aria-label="게시판 공유"
-                      className="peer sr-only"
-                      type="checkbox"
-                      onChange={(event) => setPostToBoard(event.target.checked)}
-                    />
-                    <div className="h-6 w-11 rounded-full bg-slate-200 transition peer-checked:bg-[var(--primary)] after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-slate-300 after:bg-white after:transition-all after:content-[''] peer-checked:after:translate-x-full peer-checked:after:border-white" />
-                  </label>
+                  <SemoSwitch checked={postToBoard} label="게시판 공유" onCheckedChange={setPostToBoard} />
                 </div>
 
                 <div className="flex items-center justify-between rounded-xl border border-[var(--primary)]/5 bg-white p-4 shadow-sm">
@@ -534,16 +526,7 @@ export function ClubScheduleEditorClient({
                       </span>
                     </div>
                   </div>
-                  <label className="relative inline-flex cursor-pointer items-center">
-                    <input
-                      checked={postToCalendar}
-                      aria-label="캘린더 공유"
-                      className="peer sr-only"
-                      type="checkbox"
-                      onChange={(event) => setPostToCalendar(event.target.checked)}
-                    />
-                    <div className="h-6 w-11 rounded-full bg-slate-200 transition peer-checked:bg-[var(--primary)] after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-slate-300 after:bg-white after:transition-all after:content-[''] peer-checked:after:translate-x-full peer-checked:after:border-white" />
-                  </label>
+                  <SemoSwitch checked={postToCalendar} label="캘린더 공유" onCheckedChange={setPostToCalendar} />
                 </div>
 
                 <div className="flex items-center justify-between rounded-xl border border-[var(--primary)]/5 bg-white p-4 shadow-sm">
@@ -556,16 +539,7 @@ export function ClubScheduleEditorClient({
                       </span>
                     </div>
                   </div>
-                  <label className="relative inline-flex cursor-pointer items-center">
-                    <input
-                      checked={pinned}
-                      aria-label="중요 일정 고정"
-                      className="peer sr-only"
-                      type="checkbox"
-                      onChange={(event) => setPinned(event.target.checked)}
-                    />
-                    <div className="h-6 w-11 rounded-full bg-slate-200 transition peer-checked:bg-[var(--primary)] after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-slate-300 after:bg-white after:transition-all after:content-[''] peer-checked:after:translate-x-full peer-checked:after:border-white" />
-                  </label>
+                  <SemoSwitch checked={pinned} label="중요 일정 고정" onCheckedChange={setPinned} />
                 </div>
               </div>
 
@@ -580,16 +554,7 @@ export function ClubScheduleEditorClient({
                       </span>
                     </div>
                   </div>
-                  <label className="relative inline-flex cursor-pointer items-center">
-                    <input
-                      checked={feeRequired}
-                      aria-label="참가비 사용"
-                      className="peer sr-only"
-                      type="checkbox"
-                      onChange={(event) => handleFeeRequiredChange(event.target.checked)}
-                    />
-                    <div className="h-6 w-11 rounded-full bg-slate-200 transition peer-checked:bg-[var(--primary)] after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-slate-300 after:bg-white after:transition-all after:content-[''] peer-checked:after:translate-x-full peer-checked:after:border-white" />
-                  </label>
+                  <SemoSwitch checked={feeRequired} label="참가비 사용" onCheckedChange={handleFeeRequiredChange} />
                 </div>
 
                 {feeRequired ? (
@@ -615,16 +580,7 @@ export function ClubScheduleEditorClient({
                         <span className="text-sm font-medium text-slate-700">금액 미정</span>
                         <span className="text-xs text-slate-400">아직 금액이 확정되지 않았으면 켜두세요</span>
                       </div>
-                      <label className="relative inline-flex cursor-pointer items-center">
-                        <input
-                          checked={feeAmountUndecided}
-                          aria-label="참가비 금액 미정"
-                          className="peer sr-only"
-                          type="checkbox"
-                          onChange={(event) => setFeeAmountUndecided(event.target.checked)}
-                        />
-                        <div className="h-5 w-10 rounded-full bg-slate-200 transition peer-checked:bg-[var(--primary)] after:absolute after:left-[2px] after:top-[2px] after:h-4 after:w-4 after:rounded-full after:border after:border-slate-300 after:bg-white after:transition-all after:content-[''] peer-checked:after:translate-x-full peer-checked:after:border-white" />
-                      </label>
+                      <SemoSwitch checked={feeAmountUndecided} label="참가비 금액 미정" onCheckedChange={setFeeAmountUndecided} />
                     </div>
                   </div>
                 ) : null}
@@ -641,16 +597,7 @@ export function ClubScheduleEditorClient({
                       </span>
                     </div>
                   </div>
-                  <label className="relative inline-flex cursor-pointer items-center">
-                    <input
-                      checked={participationEnabled}
-                      aria-label="참석 응답 사용"
-                      className="peer sr-only"
-                      type="checkbox"
-                      onChange={(event) => handleParticipationEnabledChange(event.target.checked)}
-                    />
-                    <div className="h-6 w-11 rounded-full bg-slate-200 transition peer-checked:bg-[var(--primary)] after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-slate-300 after:bg-white after:transition-all after:content-[''] peer-checked:after:translate-x-full peer-checked:after:border-white" />
-                  </label>
+                  <SemoSwitch checked={participationEnabled} label="참석 응답 사용" onCheckedChange={handleParticipationEnabledChange} />
                 </div>
 
                 {participationEnabled ? (
@@ -696,16 +643,7 @@ export function ClubScheduleEditorClient({
                         </span>
                       </div>
                     </div>
-                    <label className="relative inline-flex cursor-pointer items-center">
-                      <input
-                        checked={feeNWaySplit}
-                        aria-label="참석 인원 기준 더치페이"
-                        className="peer sr-only"
-                        type="checkbox"
-                        onChange={(event) => setFeeNWaySplit(event.target.checked)}
-                      />
-                      <div className="h-6 w-11 rounded-full bg-slate-200 transition peer-checked:bg-[var(--primary)] after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-slate-300 after:bg-white after:transition-all after:content-[''] peer-checked:after:translate-x-full peer-checked:after:border-white" />
-                    </label>
+                    <SemoSwitch checked={feeNWaySplit} label="참석 인원 기준 더치페이" onCheckedChange={setFeeNWaySplit} />
                   </div>
                 </div>
               ) : null}
@@ -727,7 +665,7 @@ export function ClubScheduleEditorClient({
                   type="button"
                   onClick={() => setShowDeleteModal(true)}
                   disabled={deleting || saving}
-                  className="flex h-14 flex-1 items-center justify-center gap-2 rounded-xl bg-rose-500 text-base font-bold text-white shadow-lg shadow-rose-500/25 transition-all hover:bg-rose-600 disabled:opacity-60"
+                  className="flex h-14 flex-1 items-center justify-center gap-2 rounded-xl bg-rose-500 text-base font-bold text-white shadow-lg shadow-rose-500/25 transition-[background-color,box-shadow,transform,opacity] hover:bg-rose-600 disabled:opacity-60"
                 >
                   <span className="material-symbols-outlined text-xl" aria-hidden="true">delete</span>
                   {deleting ? "삭제 중..." : "삭제"}
@@ -738,7 +676,7 @@ export function ClubScheduleEditorClient({
                   type="submit"
                   form={formId}
                   disabled={saving || deleting}
-                  className={`h-14 rounded-xl bg-[var(--primary)] font-bold text-white shadow-lg shadow-[var(--primary)]/20 transition-all hover:brightness-110 active:scale-[0.99] disabled:opacity-60 ${
+                  className={`h-14 rounded-xl bg-[var(--primary)] font-bold text-white shadow-lg shadow-[var(--primary)]/20 transition-[filter,box-shadow,transform,opacity] hover:brightness-110 active:scale-[0.99] disabled:opacity-60 ${
                     isEdit && canDelete ? "flex-[2]" : "w-full"
                   }`}
                 >

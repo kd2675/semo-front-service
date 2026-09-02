@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { motion } from "motion/react";
 
 import { useHydrationSafeReducedMotion } from "@/app/hooks/useHydrationSafeReducedMotion";
+import { pageTransitionMotion } from "@/app/lib/motion";
 
 import { AdminBottomNav } from "./AdminBottomNav";
 
@@ -22,9 +23,7 @@ export function AdminChrome({ clubId, children }: AdminChromeProps) {
       <motion.div
         key={pathname}
         className="semo-route-stage"
-        initial={{ opacity: prefersReducedMotion ? 1 : 0.72 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: prefersReducedMotion ? 0.01 : 0.24, ease: "easeOut" }}
+        {...pageTransitionMotion(prefersReducedMotion)}
       >
         {children}
       </motion.div>

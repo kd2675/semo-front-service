@@ -165,7 +165,7 @@ export function NotificationsClient({ backHref }: NotificationsClientProps) {
               role="tab"
               aria-selected={unreadOnly === tab.value}
               onClick={() => setUnreadOnly(tab.value)}
-              className={`min-h-10 rounded-[calc(var(--radius-control)-4px)] px-3 text-sm font-bold transition ${
+              className={`min-h-11 rounded-[calc(var(--radius-control)-4px)] px-3 text-sm font-bold transition ${
                 unreadOnly === tab.value
                   ? "bg-white text-slate-900 shadow-sm"
                   : "text-slate-500 hover:text-slate-800"

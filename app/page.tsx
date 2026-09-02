@@ -12,7 +12,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { useHydrationSafeReducedMotion } from "@/app/hooks/useHydrationSafeReducedMotion";
 import { DiscoverClubModal } from "@/app/home/DiscoverClubModal";
 import { DiscoverSection } from "@/app/home/DiscoverSection";
-import { ClubGrowthCoreMark } from "@/app/components/ClubGrowthCoreMark";
+import { ClubGrowthCoreExplainerTrigger } from "@/app/components/ClubGrowthCoreExplainer";
 import { RouterLink } from "@/app/components/RouterLink";
 import { SemoBrandMark } from "@/app/components/SemoBrandMark";
 import { useAppToast } from "@/app/hooks/useAppToast";
@@ -260,7 +260,7 @@ export default function Home() {
               <div className="flex-1">
                 <p className="text-xs font-bold tracking-[0.18em] text-blue-200">새로운 시작 · 작은 세모</p>
                 <h2 className="mt-1 text-lg font-black text-white">새 모임의 첫 세모 만들기</h2>
-                <p className="mt-1 text-sm leading-5 text-slate-300">모임이 만들어지는 순간 작은 세모와 원석 코어가 함께 시작됩니다.</p>
+                <p className="mt-1 text-sm leading-5 text-slate-300">모임이 만들어지는 순간 작은 세모와 첫 보석이 함께 시작됩니다.</p>
               </div>
               <RouterLink
                 href="/clubs/create"
@@ -291,18 +291,22 @@ export default function Home() {
                 <p className="mt-1 text-xs text-slate-500">가입한 모임을 확인하고 있습니다.</p>
               </div>
             ) : myClubs.length > 0 ? (
-              <div className="hide-scrollbar flex overflow-x-auto pb-1 md:overflow-visible">
+              <div className="semo-horizontal-rail flex overflow-x-auto pb-2 md:overflow-visible">
                 <div className="flex items-stretch gap-4 md:grid md:w-full md:grid-cols-2 lg:grid-cols-3">
                   {myClubs.map((club, index) => (
                     <motion.div
                       key={club.clubId}
-                      className="min-w-[240px] md:min-w-0"
+                      className="semo-card semo-card-interactive relative h-full min-w-[240px] snap-start p-3 sm:min-w-[280px] md:min-w-0"
                       {...staggeredFadeUpMotion(index + 4, reduceMotion)}
                     >
                       <RouterLink
                         href={`/clubs/${club.clubId}`}
-                        className="semo-card semo-card-interactive flex h-full min-w-[240px] flex-col gap-3 p-3 sm:min-w-[280px] md:min-w-0"
+                        aria-label={`${club.name} 클럽으로 이동`}
+                        className="absolute inset-0 z-10 rounded-[var(--radius-card)]"
                       >
+                        <span className="sr-only">{club.name} 클럽으로 이동</span>
+                      </RouterLink>
+                      <div className="pointer-events-none relative flex h-full flex-col gap-3">
                         <div
                           className="relative aspect-[16/9] w-full overflow-hidden rounded-lg bg-slate-200 bg-cover bg-center"
                           style={club.imageUrl ? { backgroundImage: `url("${club.imageUrl}")` } : undefined}
@@ -314,8 +318,14 @@ export default function Home() {
                               </span>
                             </div>
                           ) : null}
-                          <div className="absolute bottom-2 right-2 flex size-16 items-center justify-center rounded-xl border border-white/80 bg-white/90 shadow-md backdrop-blur-sm">
-                            <ClubGrowthCoreMark growthCore={club.growthCore} size={60} presentation="core-only" />
+                          <div className="pointer-events-auto absolute bottom-2 right-2 z-20 flex size-16 items-center justify-center">
+                            <ClubGrowthCoreExplainerTrigger
+                              growthCore={club.growthCore}
+                              size={60}
+                              presentation="core-only"
+                              className="size-full"
+                              surfaceClassName="rounded-xl border border-white/80 bg-white/90 shadow-md backdrop-blur-sm"
+                            />
                           </div>
                         </div>
                         <div>
@@ -338,7 +348,7 @@ export default function Home() {
                             {club.regionLabel ? <span>· {club.regionLabel}</span> : null}
                           </div>
                         </div>
-                      </RouterLink>
+                      </div>
                     </motion.div>
                   ))}
                 </div>

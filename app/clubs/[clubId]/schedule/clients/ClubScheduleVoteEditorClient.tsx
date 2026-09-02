@@ -4,6 +4,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { RouterLink } from "@/app/components/RouterLink";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import { DatePopoverField } from "@/app/components/DatePopoverField";
+import { SemoSwitch } from "@/app/components/SemoSwitch";
 import { TimePopoverField } from "@/app/components/TimePopoverField";
 import { useRouter } from "next/navigation";
 import { useEffect, useEffectEvent, useId, useState } from "react";
@@ -315,16 +316,7 @@ export function ClubScheduleVoteEditorClient({
                     <h2 className="text-sm font-semibold text-slate-700">4단계. 게시판에도 공유</h2>
                     <p className="text-xs text-slate-400">투표를 게시판에도 함께 노출합니다.</p>
                   </div>
-                  <label className="relative inline-flex cursor-pointer items-center">
-                    <input
-                      checked={postToBoard}
-                      aria-label="게시판 공유"
-                      className="peer sr-only"
-                      type="checkbox"
-                      onChange={(event) => setPostToBoard(event.target.checked)}
-                    />
-                    <div className="h-6 w-11 rounded-full bg-slate-200 transition peer-checked:bg-[var(--primary)] after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-slate-300 after:bg-white after:transition-all after:content-[''] peer-checked:after:translate-x-full peer-checked:after:border-white" />
-                  </label>
+                  <SemoSwitch checked={postToBoard} label="게시판 공유" onCheckedChange={setPostToBoard} />
                 </div>
 
                 <div className="flex items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm">
@@ -332,16 +324,7 @@ export function ClubScheduleVoteEditorClient({
                     <h2 className="text-sm font-semibold text-slate-700">5단계. 캘린더에도 공유</h2>
                     <p className="text-xs text-slate-400">투표를 캘린더 화면에도 함께 노출합니다.</p>
                   </div>
-                  <label className="relative inline-flex cursor-pointer items-center">
-                    <input
-                      checked={postToCalendar}
-                      aria-label="캘린더 공유"
-                      className="peer sr-only"
-                      type="checkbox"
-                      onChange={(event) => setPostToCalendar(event.target.checked)}
-                    />
-                    <div className="h-6 w-11 rounded-full bg-slate-200 transition peer-checked:bg-[var(--primary)] after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-slate-300 after:bg-white after:transition-all after:content-[''] peer-checked:after:translate-x-full peer-checked:after:border-white" />
-                  </label>
+                  <SemoSwitch checked={postToCalendar} label="캘린더 공유" onCheckedChange={setPostToCalendar} />
                 </div>
 
                 <div className="flex items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm">
@@ -349,16 +332,7 @@ export function ClubScheduleVoteEditorClient({
                     <h2 className="text-sm font-semibold text-slate-700">6단계. 핀 고정</h2>
                     <p className="text-xs text-slate-400">게시판 중요 고정 게시물 영역에 우선 노출합니다.</p>
                   </div>
-                  <label className="relative inline-flex cursor-pointer items-center">
-                    <input
-                      checked={pinned}
-                      aria-label="중요 투표 고정"
-                      className="peer sr-only"
-                      type="checkbox"
-                      onChange={(event) => setPinned(event.target.checked)}
-                    />
-                    <div className="h-6 w-11 rounded-full bg-slate-200 transition peer-checked:bg-[var(--primary)] after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-slate-300 after:bg-white after:transition-all after:content-[''] peer-checked:after:translate-x-full peer-checked:after:border-white" />
-                  </label>
+                  <SemoSwitch checked={pinned} label="중요 투표 고정" onCheckedChange={setPinned} />
                 </div>
               </div>
             </section>

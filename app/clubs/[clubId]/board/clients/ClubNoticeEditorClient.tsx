@@ -6,6 +6,7 @@ import { AnimatePresence } from "motion/react";
 import { RouterLink } from "@/app/components/RouterLink";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import { DatePopoverField } from "@/app/components/DatePopoverField";
+import { SemoSwitch } from "@/app/components/SemoSwitch";
 import { TimePopoverField } from "@/app/components/TimePopoverField";
 import { useRouter } from "next/navigation";
 import { useEffect, useEffectEvent, useId, useState } from "react";
@@ -66,26 +67,7 @@ function SettingSwitch({
   label: string;
   onChange: (checked: boolean) => void;
 }) {
-  return (
-    <label
-      className={`relative inline-flex h-[31px] w-[51px] cursor-pointer items-center rounded-full p-0.5 transition-colors ${
-        checked ? "bg-[var(--primary)]" : "bg-slate-200"
-      }`}
-    >
-      <input
-        checked={checked}
-        aria-label={label}
-        className="sr-only"
-        type="checkbox"
-        onChange={(event) => onChange(event.target.checked)}
-      />
-      <div
-        className={`h-[27px] w-[27px] rounded-full bg-white shadow-md transition-transform ${
-          checked ? "translate-x-5" : "translate-x-0"
-        }`}
-      />
-    </label>
-  );
+  return <SemoSwitch checked={checked} label={label} onCheckedChange={onChange} />;
 }
 
 export function ClubNoticeEditorClient({
@@ -468,7 +450,7 @@ export function ClubNoticeEditorClient({
                     <div>
                       <span className="mb-1.5 block text-sm font-medium text-slate-700">일정 유형</span>
                       <div className="flex h-11 items-center justify-center rounded-xl border border-[var(--primary)]/10 bg-[var(--primary)]/5 p-1">
-                        <label className="flex h-full grow cursor-pointer items-center justify-center overflow-hidden rounded-lg px-2 text-xs font-bold text-slate-500 transition-all has-[:checked]:bg-[var(--primary)] has-[:checked]:text-white">
+                        <label className="flex h-full grow cursor-pointer items-center justify-center overflow-hidden rounded-lg px-2 text-xs font-bold text-slate-500 transition-colors has-[:checked]:bg-[var(--primary)] has-[:checked]:text-white">
                           <span className="truncate">날짜 지정</span>
                           <input
                             checked={scheduleDateMode === "single"}
@@ -478,7 +460,7 @@ export function ClubNoticeEditorClient({
                             onChange={() => handleScheduleDateModeChange("single")}
                           />
                         </label>
-                        <label className="flex h-full grow cursor-pointer items-center justify-center overflow-hidden rounded-lg px-2 text-xs font-bold text-slate-500 transition-all has-[:checked]:bg-[var(--primary)] has-[:checked]:text-white">
+                        <label className="flex h-full grow cursor-pointer items-center justify-center overflow-hidden rounded-lg px-2 text-xs font-bold text-slate-500 transition-colors has-[:checked]:bg-[var(--primary)] has-[:checked]:text-white">
                           <span className="truncate">기간 설정</span>
                           <input
                             checked={scheduleDateMode === "range"}
@@ -627,7 +609,7 @@ export function ClubNoticeEditorClient({
                   type="button"
                   onClick={() => setShowDeleteModal(true)}
                   disabled={deleting || saving}
-                  className="flex h-14 flex-1 items-center justify-center gap-2 rounded-xl bg-rose-500 text-base font-bold text-white shadow-lg shadow-rose-500/25 transition-all hover:bg-rose-600 disabled:opacity-60"
+                  className="flex h-14 flex-1 items-center justify-center gap-2 rounded-xl bg-rose-500 text-base font-bold text-white shadow-lg shadow-rose-500/25 transition-[background-color,box-shadow,transform,opacity] hover:bg-rose-600 disabled:opacity-60"
                 >
                   <span className="material-symbols-outlined text-xl" aria-hidden="true">delete</span>
                   {deleting ? "삭제 중..." : "삭제"}
@@ -638,7 +620,7 @@ export function ClubNoticeEditorClient({
                   type="submit"
                   form={formId}
                   disabled={saving || deleting}
-                  className="h-14 flex-[2] rounded-xl bg-[var(--primary)] text-base font-bold text-white shadow-lg shadow-[var(--primary)]/25 transition-all hover:bg-[var(--primary)]/90 disabled:opacity-60"
+                  className="h-14 flex-[2] rounded-xl bg-[var(--primary)] text-base font-bold text-white shadow-lg shadow-[var(--primary)]/25 transition-[background-color,box-shadow,transform,opacity] hover:bg-[var(--primary)]/90 disabled:opacity-60"
                 >
                   {saving ? "수정 중..." : "수정 완료"}
                 </button>

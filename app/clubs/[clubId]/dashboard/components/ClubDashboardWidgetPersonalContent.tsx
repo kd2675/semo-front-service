@@ -264,7 +264,7 @@ export function ClubDashboardWidgetPersonalContent({
         ) : nextFinanceObligation ? (
           <RouterLink
             href={`/clubs/${clubId}/more/finance`}
-            className="block rounded-xl border border-emerald-100 bg-white p-4 shadow-sm transition-all hover:border-emerald-300"
+            className="block rounded-xl border border-emerald-100 bg-white p-4 shadow-sm transition-colors hover:border-emerald-300"
           >
             <div className="flex items-start justify-between gap-3">
               <div>
@@ -354,7 +354,7 @@ export function ClubDashboardWidgetPersonalContent({
         ) : latestOngoingPoll ? (
           <RouterLink
             href={`/clubs/${clubId}/schedule/votes/${latestOngoingPoll.voteId}`}
-            className="block rounded-xl border border-amber-100 bg-white p-4 shadow-sm transition-all hover:border-amber-300"
+            className="block rounded-xl border border-amber-100 bg-white p-4 shadow-sm transition-colors hover:border-amber-300"
           >
             <p className="text-xs font-semibold text-amber-600">진행 중인 투표</p>
             <p className="mt-2 line-clamp-2 text-base font-bold text-slate-900">{latestOngoingPoll.title}</p>

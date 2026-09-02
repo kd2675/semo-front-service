@@ -1,7 +1,7 @@
 "use client";
 
 import { AnimatePresence } from "motion/react";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { BasicAlert } from "@/app/components/modal/BasicAlert";
 import { BasicConfirm } from "@/app/components/modal/BasicConfirm";
 import { BasicNoti } from "@/app/components/modal/BasicNoti";
@@ -53,30 +53,11 @@ function GlobalAlertLayer() {
 function GlobalToastLayer() {
   const dispatch = useAppDispatch();
   const toast = useAppSelector((state) => state.modal.toast[0] ?? null);
-  const [progress, setProgress] = useState(0);
 
   useEffect(() => {
     if (!toast) {
       return;
     }
-
-    const startedAt = performance.now();
-    let frameId = 0;
-
-    const updateProgress = () => {
-      const elapsed = performance.now() - startedAt;
-      const nextProgress = Math.min((elapsed / toast.durationMs) * 100, 100);
-      setProgress(nextProgress);
-
-      if (nextProgress < 100) {
-        frameId = window.requestAnimationFrame(updateProgress);
-      }
-    };
-
-    frameId = window.requestAnimationFrame(() => {
-      setProgress(0);
-      updateProgress();
-    });
 
     const timeoutId = window.setTimeout(() => {
       dispatch(deleteToast(toast.id));
@@ -84,7 +65,6 @@ function GlobalToastLayer() {
     }, toast.durationMs);
 
     return () => {
-      window.cancelAnimationFrame(frameId);
       window.clearTimeout(timeoutId);
     };
   }, [dispatch, toast]);
@@ -110,7 +90,6 @@ function GlobalToastLayer() {
       {toast ? (
         <BasicToast
           key={toast.id}
-          progress={progress}
           toast={toast}
           onAction={() => void handleAction()}
           onClose={handleClose}

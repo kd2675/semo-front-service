@@ -348,7 +348,7 @@ export function TodoEditorModal({
                             <button
                               type="button"
                               onClick={() => onRecurrenceEndDateChange("")}
-                              className="mt-2 min-h-9 w-full rounded-xl bg-slate-100 px-3 text-xs font-semibold text-slate-600"
+                              className="mt-2 min-h-11 w-full rounded-xl bg-slate-100 px-3 text-xs font-semibold text-slate-600"
                             >
                               종료일 지우기
                             </button>
@@ -579,7 +579,7 @@ function DateTimePanel({
               onTimeChange("");
             }}
             disabled={!dateValue}
-            className="min-h-9 shrink-0 rounded-xl border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-600 transition hover:border-slate-300 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
+            className="min-h-11 shrink-0 rounded-xl border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-600 transition hover:border-slate-300 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
           >
             초기화
           </button>

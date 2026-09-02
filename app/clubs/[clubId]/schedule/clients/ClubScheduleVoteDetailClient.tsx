@@ -302,7 +302,7 @@ export function ClubScheduleVoteDetailClient({
                         type="button"
                         onClick={handleVoteSubmit}
                         disabled={submitDisabled}
-                        className="w-full rounded-2xl bg-blue-600 py-4 font-bold text-white shadow-lg shadow-blue-100 transition-all active:scale-[0.98] disabled:opacity-60"
+                        className="w-full rounded-2xl bg-[var(--primary)] py-4 font-bold text-white shadow-lg shadow-blue-100 transition-[background-color,box-shadow,transform,opacity] active:scale-[0.98] disabled:opacity-60"
                       >
                         {getSubmitLabel(payload, selectedOptionId, submittingVoteOptionId)}
                       </button>

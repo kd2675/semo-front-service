@@ -8,7 +8,7 @@ import { motion } from "motion/react";
 import { useHydrationSafeReducedMotion } from "@/app/hooks/useHydrationSafeReducedMotion";
 import { RouterLink } from "@/app/components/RouterLink";
 import { ClubClassificationField } from "@/app/components/ClubClassificationField";
-import { ClubGrowthCoreMark } from "@/app/components/ClubGrowthCoreMark";
+import { ClubGrowthCoreExplainerTrigger } from "@/app/components/ClubGrowthCoreExplainer";
 import { ClubRegionField } from "@/app/components/ClubRegionField";
 import { SemoBrandMark } from "@/app/components/SemoBrandMark";
 import { createClub } from "@/app/lib/clubs";
@@ -209,12 +209,17 @@ export default function CreateClubPage() {
 
             <motion.section className="px-4 pb-4" {...staggeredFadeUpMotion(2, reduceMotion)}>
               <div className="semo-card flex items-center gap-4 p-4">
-                <div className="flex size-24 shrink-0 items-center justify-center rounded-[var(--radius-card)] bg-[var(--primary)]/6">
-                  <ClubGrowthCoreMark size={88} />
+                <div className="flex size-24 shrink-0 items-center justify-center">
+                  <ClubGrowthCoreExplainerTrigger
+                    size={88}
+                    presentation="full"
+                    className="size-full"
+                    surfaceClassName="rounded-[var(--radius-card)] bg-[var(--primary)]/6"
+                  />
                 </div>
                 <div className="min-w-0">
                   <p className="text-xs font-black tracking-[0.16em] text-[var(--primary)]">첫 세모</p>
-                  <h3 className="mt-1 text-base font-black text-slate-900">작은 세모와 원석 코어로 시작합니다</h3>
+                  <h3 className="mt-1 text-base font-black text-slate-900">작은 세모와 첫 보석으로 시작합니다</h3>
                   <p className="mt-1 text-sm leading-6 text-slate-500">
                     함께·운영·이어짐에 해당하는 실제 기록이 쌓이면 바깥 세모와 코어가 자연스럽게 성장합니다.
                   </p>

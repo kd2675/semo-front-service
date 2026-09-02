@@ -110,10 +110,14 @@ export function staggeredFadeUpMotion(index: number, reduced: boolean): MotionPr
 
 export function pageTransitionMotion(reduced: boolean): MotionPreset {
   return {
-    initial: { opacity: reduced ? 1 : 0 },
-    animate: { opacity: 1 },
-    exit: { opacity: reduced ? 1 : 0 },
-    transition: { duration: duration(0.16, reduced), ease: EASE_OUT },
+    initial: {
+      opacity: reduced ? 1 : 0.82,
+      y: reduced ? 0 : 8,
+      scale: reduced ? 1 : 0.997,
+    },
+    animate: { opacity: 1, y: 0, scale: 1 },
+    exit: { opacity: reduced ? 1 : 0.9, y: reduced ? 0 : -4, scale: 1 },
+    transition: { duration: duration(0.22, reduced), ease: EASE_OUT },
   };
 }
 

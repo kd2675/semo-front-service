@@ -10,7 +10,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion } from "motion/react";
 
 import { useHydrationSafeReducedMotion } from "@/app/hooks/useHydrationSafeReducedMotion";
-import { ClubGrowthCorePanel } from "@/app/components/ClubGrowthCorePanel";
+import { ClubGrowthCoreCoverLink } from "@/app/components/ClubGrowthCoreCoverLink";
 import { ClubModeSwitchFab } from "@/app/components/ClubModeSwitchFab";
 import { ClubPageHeader } from "@/app/components/ClubPageHeader";
 import { useAppToast } from "@/app/hooks/useAppToast";
@@ -625,6 +625,9 @@ export function ClubDashboardFallbackClient({
                 <div className="absolute inset-0 bg-gradient-to-br from-[var(--primary)]/10 to-blue-100" />
               )}
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+              {club ? (
+                <ClubGrowthCoreCoverLink clubId={clubId} growthCore={club.growthCore} />
+              ) : null}
               <div className="absolute bottom-4 left-4 flex items-end gap-4">
                 <div className="flex size-20 items-center justify-center overflow-hidden rounded-xl border-4 border-white bg-white text-2xl font-bold text-[var(--primary)] shadow-lg">
                   {(club?.name ?? "SEMO").slice(0, 2).toUpperCase()}
@@ -678,13 +681,7 @@ export function ClubDashboardFallbackClient({
             )}
           </motion.section>
 
-          {club ? (
-            <motion.div {...staggeredFadeUpMotion(2, reduceMotion)}>
-              <ClubGrowthCorePanel growthCore={club.growthCore} />
-            </motion.div>
-          ) : null}
-
-          <motion.section {...staggeredFadeUpMotion(3, reduceMotion)}>
+          <motion.section {...staggeredFadeUpMotion(2, reduceMotion)}>
             {dashboardLoading ? (
               <ClubDashboardWidgetGridShell />
             ) : dashboardError ? (
@@ -779,7 +776,7 @@ export function ClubDashboardFallbackClient({
                   type="button"
                   onClick={() => void handleSaveEditor()}
                   disabled={isSaving}
-                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--primary)] py-4 text-base font-bold text-white shadow-lg transition-all hover:scale-[1.01] hover:shadow-[0_18px_36px_rgba(19,91,236,0.24)] disabled:cursor-not-allowed disabled:opacity-70"
+                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--primary)] py-4 text-base font-bold text-white shadow-lg transition-[box-shadow,transform,opacity] hover:scale-[1.01] hover:shadow-[0_18px_36px_rgba(19,91,236,0.24)] disabled:cursor-not-allowed disabled:opacity-70"
                 >
                   <span className="material-symbols-outlined" aria-hidden="true">
                     {isSaving ? "progress_activity" : "save"}

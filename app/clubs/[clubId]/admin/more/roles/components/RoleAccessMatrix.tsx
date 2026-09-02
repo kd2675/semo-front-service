@@ -115,7 +115,7 @@ function RoleAccessRow({
                 type="button"
                 disabled={disabled}
                 onClick={() => onChange(applyLatestFeaturePolicy(group, featureGrants))}
-                className="min-h-10 rounded-[var(--radius-control)] bg-white px-3 text-xs font-bold text-sky-700 ring-1 ring-sky-200 disabled:opacity-50"
+                className="min-h-11 rounded-[var(--radius-control)] bg-white px-3 text-xs font-bold text-sky-700 ring-1 ring-sky-200 disabled:opacity-50"
               >
                 {selection.grant?.status === "LEGACY_DERIVED" ? "표준 정책으로 전환" : "최신 정책 적용"}
               </button>

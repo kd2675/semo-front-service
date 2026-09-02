@@ -233,7 +233,7 @@ export function ScheduleAttendanceModal({
                   key={action.value}
                   type="button"
                   onClick={() => setAttendanceStatus(action.value)}
-                  className={`min-h-10 rounded-xl border px-2 py-2 text-xs font-bold transition ${
+                  className={`min-h-11 rounded-xl border px-2 py-2 text-xs font-bold transition ${
                     attendanceStatus === action.value
                       ? action.className
                       : "border-slate-200 bg-white text-slate-500"

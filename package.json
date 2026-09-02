@@ -8,6 +8,7 @@
     "start": "next start -p 3003",
     "lint": "eslint",
     "verify:auth": "node --no-warnings --experimental-strip-types scripts/verify-auth-flow.mjs",
+    "verify:growth": "node --no-warnings --experimental-strip-types scripts/verify-growth-core-geometry.mjs",
     "verify:ui": "node scripts/verify-ui-contract.mjs"
   },
   "dependencies": {

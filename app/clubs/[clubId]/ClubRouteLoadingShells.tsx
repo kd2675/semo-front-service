@@ -70,7 +70,9 @@ export function ClubDashboardLoadingShell() {
         </header>
 
         <main className="semo-nav-bottom-space flex-1 space-y-6 p-4 md:p-6">
-          <section className="relative h-48 w-full overflow-hidden rounded-xl bg-slate-200 shadow-sm" />
+          <section className="relative h-48 w-full overflow-hidden rounded-xl bg-slate-200 shadow-sm">
+            <div className="absolute bottom-3 right-3 top-3 w-[7.25rem] animate-pulse rounded-[var(--radius-card)] bg-slate-300/80 md:bottom-4 md:right-4 md:top-4 md:w-36" />
+          </section>
           <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
             <ShellLine className="h-6 w-40" />
             <ShellLine className="mt-3 h-4 w-full" />

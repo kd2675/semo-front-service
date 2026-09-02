@@ -4,7 +4,7 @@ import { startTransition } from "react";
 
 import { motion } from "motion/react";
 
-import { ClubGrowthCoreMark } from "@/app/components/ClubGrowthCoreMark";
+import { ClubGrowthCoreExplainerTrigger } from "@/app/components/ClubGrowthCoreExplainer";
 import {
   getAffiliationTypeLabel,
   getPrimaryClubActivityLabel,
@@ -79,7 +79,7 @@ export function DiscoverSection({
     <>
       <motion.div className="px-4 py-4 sm:px-6" {...staggeredFadeUpMotion(1, reduceMotion)}>
         <label className="flex w-full flex-col">
-          <div className="flex h-12 w-full items-stretch rounded-xl border border-transparent bg-slate-100 transition-all focus-within:border-[var(--primary)]/50">
+          <div className="flex h-12 w-full items-stretch rounded-xl border border-transparent bg-slate-100 transition-colors focus-within:border-[var(--primary)]/50">
             <div className="flex items-center justify-center pl-4 text-slate-500">
               <span className="material-symbols-outlined text-xl" aria-hidden="true">search</span>
             </div>
@@ -125,8 +125,14 @@ export function DiscoverSection({
                 {...staggeredFadeUpMotion(index + 7, reduceMotion)}
               >
                 <div className="flex gap-4">
-                  <div className="flex size-20 shrink-0 items-center justify-center overflow-hidden rounded-[var(--radius-card)] border border-slate-200 bg-slate-50">
-                    <ClubGrowthCoreMark growthCore={club.growthCore} size={68} presentation="core-only" />
+                  <div className="flex size-20 shrink-0 items-center justify-center">
+                    <ClubGrowthCoreExplainerTrigger
+                      growthCore={club.growthCore}
+                      size={68}
+                      presentation="core-only"
+                      className="size-full"
+                      surfaceClassName="rounded-[var(--radius-card)] border border-slate-200 bg-slate-50"
+                    />
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">

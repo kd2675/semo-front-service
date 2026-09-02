@@ -772,7 +772,7 @@ export function ClubAdminMenuClient({
                 disabledFeatures.map((feature, index) => (
                   <motion.article
                     key={`${feature.featureKey || feature.adminPath || feature.userPath || "feature"}-${index}`}
-                    className="group flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 shadow-sm transition-all hover:border-slate-300"
+                    className="group flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 shadow-sm transition-colors hover:border-slate-300"
                     {...staggeredFadeUpMotion(index + 5, reduceMotion)}
                   >
                     <div className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-slate-200 text-slate-600">
@@ -825,7 +825,7 @@ export function ClubAdminMenuClient({
                   type="button"
                   onClick={() => void handleSave()}
                   disabled={isSaving}
-                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--primary)] py-4 text-base font-bold text-white shadow-lg transition-all hover:scale-[1.01] hover:shadow-[0_18px_36px_rgba(236,91,19,0.22)] disabled:cursor-not-allowed disabled:opacity-70"
+                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--primary)] py-4 text-base font-bold text-white shadow-lg transition-[box-shadow,transform,opacity] hover:scale-[1.01] hover:shadow-[0_18px_36px_rgba(236,91,19,0.22)] disabled:cursor-not-allowed disabled:opacity-70"
                 >
                   <span className="material-symbols-outlined" aria-hidden="true">
                     {isSaving ? "progress_activity" : "save"}

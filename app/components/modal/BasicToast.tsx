@@ -44,21 +44,18 @@ function getToastToneStyles(tone: ToastItem["tone"]) {
 }
 
 type BasicToastProps = {
-  progress: number;
   toast: ToastItem;
   onAction: () => void;
   onClose: () => void;
 };
 
 export function BasicToast({
-  progress,
   toast,
   onAction,
   onClose,
 }: BasicToastProps) {
   const reduceMotion = useHydrationSafeReducedMotion();
   const styles = getToastToneStyles(toast.tone);
-  const remainingProgress = Math.max(0, Math.min(100, 100 - progress));
 
   return (
     <motion.div
@@ -94,9 +91,12 @@ export function BasicToast({
         >
           <span className="material-symbols-outlined text-[20px]" aria-hidden="true">close</span>
         </button>
-        <span
+        <motion.span
           className={`absolute bottom-0 left-0 h-1 ${styles.railClassName}`}
-          style={{ width: reduceMotion ? "100%" : `${remainingProgress}%` }}
+          initial={{ scaleX: 1 }}
+          animate={{ scaleX: reduceMotion ? 1 : 0 }}
+          transition={{ duration: reduceMotion ? 0 : toast.durationMs / 1000, ease: "linear" }}
+          style={{ width: "100%", transformOrigin: "0 50%" }}
           aria-hidden="true"
         />
       </div>

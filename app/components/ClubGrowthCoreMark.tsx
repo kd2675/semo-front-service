@@ -8,109 +8,70 @@ import { useHydrationSafeReducedMotion } from "@/app/hooks/useHydrationSafeReduc
 import type { ClubGrowthCore } from "@/app/lib/clubs";
 import {
   clampGrowthProgress,
+  DEFAULT_CLUB_GROWTH_CORE,
+  getActivitySparkleCount,
+  getGrowthAxisPoint,
+  getGrowthStageVertices,
+  getMemberTriangleCount,
+  getTierAchievedStage,
+  getTierDisplayLabel,
   getTierTransitionProgress,
-  getTierTransitionStage,
+  GROWTH_AXES,
+  GROWTH_TRIANGLE_CENTER,
   TIER_STAGE_GUIDES,
-  type TierTransitionStage,
+  type GrowthPoint,
 } from "@/app/lib/growthCore";
 
 type ClubGrowthCoreMarkProps = {
   growthCore?: ClubGrowthCore | null;
   size?: number;
   animateActivity?: boolean;
-  presentation?: "full" | "core-only";
+  presentation?: "full" | "core-only" | "growth-only";
   className?: string;
 };
 
-type MaterialPalette = {
-  dark: string;
-  middle: string;
+type SparklePalette = {
   light: string;
   highlight: string;
 };
 
-const INITIAL_CORE: ClubGrowthCore = {
-  tierCode: "RAW",
-  tierLabel: "원석",
-  nextTierCode: "IRON",
-  nextTierLabel: "아이언",
-  togetherProgress: 0,
-  operationsProgress: 0,
-  continuityProgress: 0,
-  memberCount: 0,
-  activityLevel: 0,
-  policyVersion: 1,
-  lastProjectedAt: null,
+const SPARKLE_PALETTES: Record<string, SparklePalette> = {
+  RAW: { light: "#cbd5e1", highlight: "#f8fafc" },
+  IRON: { light: "#d7dee7", highlight: "#ffffff" },
+  BRONZE: { light: "#f0b96d", highlight: "#fff1cf" },
+  SILVER: { light: "#f8fafc", highlight: "#ffffff" },
+  GOLD: { light: "#fde68a", highlight: "#fffbea" },
+  PLATINUM: { light: "#ccfbf1", highlight: "#ffffff" },
+  DIAMOND: { light: "#c4b5fd", highlight: "#ffffff" },
 };
 
-const MATERIALS: Record<string, MaterialPalette> = {
-  RAW: { dark: "#475569", middle: "#64748b", light: "#cbd5e1", highlight: "#f8fafc" },
-  IRON: { dark: "#1f2937", middle: "#64748b", light: "#d7dee7", highlight: "#ffffff" },
-  BRONZE: { dark: "#713f12", middle: "#b45309", light: "#f0b96d", highlight: "#fff1cf" },
-  SILVER: { dark: "#64748b", middle: "#cbd5e1", light: "#f8fafc", highlight: "#ffffff" },
-  GOLD: { dark: "#a16207", middle: "#f5b51b", light: "#fde68a", highlight: "#fffbea" },
-  PLATINUM: { dark: "#0f766e", middle: "#5eead4", light: "#ccfbf1", highlight: "#ffffff" },
-  DIAMOND: { dark: "#1d4ed8", middle: "#60a5fa", light: "#c4b5fd", highlight: "#ffffff" },
+const TIER_GEM_ASSETS: Record<string, string> = {
+  RAW: "/image/growth-gems/raw.png",
+  IRON: "/image/growth-gems/iron.png",
+  BRONZE: "/image/growth-gems/bronze.png",
+  SILVER: "/image/growth-gems/silver.png",
+  GOLD: "/image/growth-gems/gold.png",
+  PLATINUM: "/image/growth-gems/platinum.png",
+  DIAMOND: "/image/growth-gems/diamond.png",
 };
 
-const INITIAL_GROWTH_RADIUS = 24;
-const TIER_STAGE_RADII: Record<TierTransitionStage, number> = {
-  1: 30,
-  2: 43,
-  3: 56,
-};
+const CORE_ONLY_GEM_DIAMETER = 34;
+const FULL_PANEL_GEM_DIAMETER = 44;
+const GEM_SHADOW_COLOR = "#020617";
+const ACTIVITY_SPARKLE_PATH = "M 0 -3.6 L 0.9 -0.9 L 3.6 0 L 0.9 0.9 L 0 3.6 L -0.9 0.9 L -3.6 0 L -0.9 -0.9 Z";
+const ACTIVITY_SPARKLE_POSITIONS = [
+  { xFactor: 0.72, yFactor: -0.72, scale: 1 },
+  { xFactor: -0.78, yFactor: -0.54, scale: 0.82 },
+  { xFactor: 0.96, yFactor: 0.12, scale: 0.7 },
+  { xFactor: -0.5, yFactor: 0.86, scale: 0.64 },
+  { xFactor: 0.55, yFactor: 0.78, scale: 0.56 },
+] as const;
+const MEMBER_TRIANGLE_PATH = "M 0 -2.1 L 2.2 1.7 L -2.2 1.7 Z";
+const MEMBER_TRIANGLE_SLOTS = [0, 1, 2, 3, 4] as const;
+const MEMBER_TRIANGLE_SPACING = 5.6;
 
-function growthRadius(progress: number): number {
-  const normalizedProgress = clampGrowthProgress(progress);
-  const firstThreshold = TIER_STAGE_GUIDES[0].threshold;
-  const secondThreshold = TIER_STAGE_GUIDES[1].threshold;
-
-  if (normalizedProgress <= firstThreshold) {
-    return INITIAL_GROWTH_RADIUS
-      + (TIER_STAGE_RADII[1] - INITIAL_GROWTH_RADIUS) * (normalizedProgress / firstThreshold);
-  }
-  if (normalizedProgress <= secondThreshold) {
-    return TIER_STAGE_RADII[1]
-      + (TIER_STAGE_RADII[2] - TIER_STAGE_RADII[1])
-      * ((normalizedProgress - firstThreshold) / (secondThreshold - firstThreshold));
-  }
-  return TIER_STAGE_RADII[2]
-    + (TIER_STAGE_RADII[3] - TIER_STAGE_RADII[2])
-    * ((normalizedProgress - secondThreshold) / (100 - secondThreshold));
-}
-
-function trianglePointAtRadius(radius: number, direction: "top" | "right" | "left") {
-  if (direction === "top") {
-    return `60,${64 - radius}`;
-  }
-  const xOffset = radius * 0.866;
-  const yOffset = radius * 0.5;
-  return direction === "right"
-    ? `${60 + xOffset},${64 + yOffset}`
-    : `${60 - xOffset},${64 + yOffset}`;
-}
-
-function trianglePoint(progress: number, direction: "top" | "right" | "left") {
-  return trianglePointAtRadius(growthRadius(progress), direction);
-}
-
-function trianglePointsAtRadius(radius: number) {
-  return [
-    trianglePointAtRadius(radius, "top"),
-    trianglePointAtRadius(radius, "right"),
-    trianglePointAtRadius(radius, "left"),
-  ].join(" ");
-}
-
-function memberCoreRadius(value: number | undefined) {
-  const memberCount = Number.isFinite(value) ? Math.max(1, Math.floor(value ?? 0)) : 1;
-  if (memberCount <= 1) return 9;
-  if (memberCount <= 4) return 11;
-  if (memberCount <= 9) return 13;
-  if (memberCount <= 19) return 15;
-  if (memberCount <= 49) return 17;
-  if (memberCount <= 99) return 18;
-  return 19;
+function pointsAttribute(points: readonly GrowthPoint[]) {
+  return points.map((point) => `${point.x},${point.y}`).join(" ");
 }
 
 export function ClubGrowthCoreMark({
@@ -120,35 +81,56 @@ export function ClubGrowthCoreMark({
   presentation = "full",
   className,
 }: ClubGrowthCoreMarkProps) {
-  const core = growthCore ?? INITIAL_CORE;
+  const core = growthCore ?? DEFAULT_CLUB_GROWTH_CORE;
   const prefersReducedMotion = useHydrationSafeReducedMotion();
   const id = useId().replaceAll(":", "");
-  const palette = MATERIALS[core.tierCode] ?? MATERIALS.RAW;
+  const tierCode = core.tierCode?.toUpperCase() ?? "RAW";
+  const tierLabel = getTierDisplayLabel(core);
+  const palette = SPARKLE_PALETTES[tierCode] ?? SPARKLE_PALETTES.RAW;
+  const gemAssetPath = TIER_GEM_ASSETS[tierCode] ?? TIER_GEM_ASSETS.RAW;
   const together = clampGrowthProgress(core.togetherProgress);
   const operations = clampGrowthProgress(core.operationsProgress);
   const continuity = clampGrowthProgress(core.continuityProgress);
   const memberCount = Number.isFinite(core.memberCount) ? Math.max(0, Math.floor(core.memberCount)) : 0;
   const activityLevel = Math.max(0, Math.min(4, Math.round(core.activityLevel ?? 0)));
-  const coreRadius = memberCoreRadius(memberCount);
-  const showGrowthFrame = presentation === "full";
+  const activitySparkleCount = getActivitySparkleCount(activityLevel);
+  const memberTriangleCount = getMemberTriangleCount(memberCount);
+  const gemDiameter = presentation === "full" ? FULL_PANEL_GEM_DIAMETER : CORE_ONLY_GEM_DIAMETER;
+  const sparkleOrbitRadius = presentation === "full" ? 34 : 25;
+  const memberTriangleRowY = presentation === "full" ? 91 : 89;
+  const gemPosition = {
+    x: 60 - gemDiameter / 2,
+    y: 64 - gemDiameter / 2,
+  };
+  const showGrowthFrame = presentation !== "core-only";
+  const showCore = presentation !== "growth-only";
+  const showSeparatedGrowthStats = presentation === "growth-only";
   const hasNextTier = Boolean(core.nextTierCode || core.nextTierLabel);
   const tierTransitionProgress = getTierTransitionProgress(core);
-  const tierTransitionStage = getTierTransitionStage(tierTransitionProgress);
-  const togetherRadius = growthRadius(together);
-  const operationsRadius = growthRadius(operations);
-  const continuityRadius = growthRadius(continuity);
-  const currentTriangle = [trianglePoint(together, "top"), trianglePoint(operations, "right"), trianglePoint(continuity, "left")].join(" ");
-  const ariaLabel = showGrowthFrame
-    ? `${core.tierLabel} 코어. 활성 멤버 ${memberCount}명, 함께 ${together}%, 운영 ${operations}%, 이어짐 ${continuity}%, 최근 활동 밝기 ${activityLevel}단계.${hasNextTier ? ` ${core.nextTierLabel ?? "다음 소재"}까지 3단계 중 ${tierTransitionStage}단계.` : " 최종 소재 단계."}`
-    : `${core.tierLabel} 소재 코어. 활성 멤버 ${memberCount}명에 따른 크기, 최근 활동 밝기 ${activityLevel}단계.`;
-  const glowOpacity = 0.12 + activityLevel * 0.12;
-  const shouldAnimate = animateActivity && activityLevel > 0 && !prefersReducedMotion;
+  const tierAchievedStage = getTierAchievedStage(tierTransitionProgress);
+  const togetherAchievedStage = getTierAchievedStage(together);
+  const operationsAchievedStage = getTierAchievedStage(operations);
+  const continuityAchievedStage = getTierAchievedStage(continuity);
+  const currentVertices = [
+    getGrowthAxisPoint(together, "together"),
+    getGrowthAxisPoint(operations, "operations"),
+    getGrowthAxisPoint(continuity, "continuity"),
+  ];
+  const currentTriangle = pointsAttribute(currentVertices);
+  const initialStageVertices = getGrowthStageVertices(0);
+  const outerStageVertices = getGrowthStageVertices(3);
+  const ariaLabel = showSeparatedGrowthStats
+    ? `모임 성장 스탯. 함께 ${togetherAchievedStage}/3단계, 운영 ${operationsAchievedStage}/3단계, 이어짐 ${continuityAchievedStage}/3단계.${hasNextTier ? ` ${core.nextTierLabel ?? "다음 티어"}까지 전체 ${tierAchievedStage}/3단계 달성.` : " 최종 티어 단계."}`
+    : showGrowthFrame
+      ? `${tierLabel} 티어: 보석. 활성 멤버 ${memberCount}명, 규모: 세모 ${memberTriangleCount}개, 함께 ${togetherAchievedStage}/3단계, 운영 ${operationsAchievedStage}/3단계, 이어짐 ${continuityAchievedStage}/3단계, 활동: 반짝임 ${activitySparkleCount}개.${hasNextTier ? ` ${core.nextTierLabel ?? "다음 티어"}까지 전체 ${tierAchievedStage}/3단계 달성.` : " 최종 티어 단계."}`
+      : `${tierLabel} 티어: 보석. 활성 멤버 ${memberCount}명, 규모: 세모 ${memberTriangleCount}개, 활동: 반짝임 ${activitySparkleCount}개.`;
+  const shouldAnimateSparkles = animateActivity && !prefersReducedMotion;
 
   return (
     <svg
       width={size}
       height={size}
-      viewBox={showGrowthFrame ? "0 0 120 120" : "34 38 52 52"}
+      viewBox={presentation === "core-only" ? "30 34 60 60" : "0 0 120 120"}
       role="img"
       aria-label={ariaLabel}
       data-presentation={presentation}
@@ -160,117 +142,210 @@ export function ClubGrowthCoreMark({
           <stop offset="0.52" stopColor="#135bec" />
           <stop offset="1" stopColor="#1e40af" stopOpacity="0.9" />
         </linearGradient>
-        <radialGradient id={`${id}-core`} cx="34%" cy="26%" r="74%">
-          <stop offset="0" stopColor={palette.highlight} />
-          <stop offset="0.32" stopColor={palette.light} />
-          <stop offset="0.7" stopColor={palette.middle} />
-          <stop offset="1" stopColor={palette.dark} />
-        </radialGradient>
-        <filter id={`${id}-core-glow`} x="-80%" y="-80%" width="260%" height="260%">
-          <feGaussianBlur stdDeviation={2.2 + activityLevel * 0.7} result="blur" />
-          <feFlood floodColor={palette.light} floodOpacity={glowOpacity} result="color" />
-          <feComposite in="color" in2="blur" operator="in" result="glow" />
-          <feMerge>
-            <feMergeNode in="glow" />
-            <feMergeNode in="SourceGraphic" />
-          </feMerge>
+        <filter id={`${id}-core-shadow`} x="-40%" y="-40%" width="180%" height="180%">
+          <feDropShadow dx="0" dy="1.2" stdDeviation="1.6" floodColor={GEM_SHADOW_COLOR} floodOpacity="0.58" />
         </filter>
       </defs>
 
       {showGrowthFrame ? (
         <>
+          <g
+            fill="none"
+            stroke="#bfdbfe"
+            strokeOpacity={showSeparatedGrowthStats ? 0.2 : 0.14}
+            strokeWidth="0.6"
+            strokeDasharray="1 5"
+            vectorEffect="non-scaling-stroke"
+            data-growth-axis-guides="vertex-aligned"
+            aria-hidden="true"
+          >
+            {outerStageVertices.map((vertex, vertexIndex) => (
+              <line
+                key={GROWTH_AXES[vertexIndex]}
+                x1={GROWTH_TRIANGLE_CENTER.x}
+                y1={GROWTH_TRIANGLE_CENTER.y}
+                x2={vertex.x}
+                y2={vertex.y}
+              />
+            ))}
+          </g>
           <polygon
-            points={currentTriangle}
-            fill={`url(#${id}-frame)`}
-            fillOpacity="0.1"
-            stroke={`url(#${id}-frame)`}
-            strokeWidth="2"
+            points={pointsAttribute(initialStageVertices)}
+            fill="none"
+            stroke="#bfdbfe"
+            strokeOpacity={tierAchievedStage === 0 ? (showSeparatedGrowthStats ? 0.42 : 0.34) : 0.16}
+            strokeWidth="0.65"
             strokeLinejoin="round"
+            vectorEffect="non-scaling-stroke"
+            data-growth-stage-baseline="0"
+            aria-hidden="true"
           />
           {hasNextTier
             ? TIER_STAGE_GUIDES.map(({ stage }) => {
-                const state = stage < tierTransitionStage
+                const state = stage < tierAchievedStage
                   ? "passed"
-                  : stage === tierTransitionStage
+                  : tierAchievedStage > 0 && stage === tierAchievedStage
                     ? "current"
                     : "upcoming";
+                const stageVertices = getGrowthStageVertices(stage);
+                const guideColor = state === "current" ? "#93c5fd" : state === "passed" ? "#bfdbfe" : "#cbd5e1";
+                const guideOpacity = showSeparatedGrowthStats
+                  ? state === "current" ? 0.42 : state === "passed" ? 0.28 : 0.2
+                  : state === "current" ? 0.55 : state === "passed" ? 0.38 : 0.28;
                 return (
-                  <polygon
+                  <g
                     key={stage}
-                    points={trianglePointsAtRadius(TIER_STAGE_RADII[stage])}
-                    fill="none"
-                    stroke={state === "upcoming" ? "#94a3b8" : state === "passed" ? "#60a5fa" : "#135bec"}
-                    strokeOpacity={state === "current" ? 0.9 : state === "passed" ? 0.72 : 0.54}
-                    strokeWidth={state === "current" ? 1.3 : state === "passed" ? 1 : 0.9}
-                    strokeDasharray="3 4"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
                     data-tier-stage={stage}
                     data-tier-stage-state={state}
+                    data-tier-guide-emphasis="background"
                     aria-hidden="true"
-                  />
+                  >
+                    <polygon
+                      points={pointsAttribute(stageVertices)}
+                      fill="none"
+                      stroke={guideColor}
+                      strokeOpacity={guideOpacity}
+                      strokeWidth={state === "current" ? 0.8 : 0.65}
+                      strokeDasharray="1.25 5.25"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      vectorEffect="non-scaling-stroke"
+                    />
+                    {stageVertices.map((vertex, vertexIndex) => (
+                      <circle
+                        key={vertexIndex}
+                        cx={vertex.x}
+                        cy={vertex.y}
+                        r={state === "current" ? 0.82 : 0.64}
+                        fill={guideColor}
+                        fillOpacity={Math.min(0.78, guideOpacity + 0.16)}
+                        data-tier-stage-vertex={vertexIndex + 1}
+                      />
+                    ))}
+                  </g>
                 );
               })
             : null}
-          <circle cx="60" cy={64 - togetherRadius} r="2.2" fill="#135bec" />
-          <circle cx={60 + operationsRadius * 0.866} cy={64 + operationsRadius * 0.5} r="2.2" fill="#135bec" />
-          <circle cx={60 - continuityRadius * 0.866} cy={64 + continuityRadius * 0.5} r="2.2" fill="#135bec" />
+          <polygon
+            points={currentTriangle}
+            fill={`url(#${id}-frame)`}
+            fillOpacity={showSeparatedGrowthStats ? 0.16 : 0.045}
+            stroke={`url(#${id}-frame)`}
+            strokeOpacity={showSeparatedGrowthStats ? 0.88 : 0.42}
+            strokeWidth={showSeparatedGrowthStats ? 1.35 : 1.15}
+            strokeLinejoin="round"
+            vectorEffect="non-scaling-stroke"
+          />
+          {currentVertices.map((vertex, vertexIndex) => (
+            <circle
+              key={GROWTH_AXES[vertexIndex]}
+              cx={vertex.x}
+              cy={vertex.y}
+              r={showSeparatedGrowthStats ? 1.9 : 1.45}
+              fill="#60a5fa"
+              fillOpacity={showSeparatedGrowthStats ? 0.92 : 0.78}
+              data-growth-current-axis={GROWTH_AXES[vertexIndex]}
+            />
+          ))}
+          {presentation === "full" ? (
+            <g
+              fill="#e0f2fe"
+              fontSize="4.8"
+              fontWeight="800"
+              aria-hidden="true"
+              data-growth-axis-labels="vertex-aligned"
+            >
+              <text x={outerStageVertices[0].x} y={outerStageVertices[0].y - 3.5} textAnchor="middle">
+                함께 · {togetherAchievedStage}/3
+              </text>
+              <text x={outerStageVertices[2].x} y={outerStageVertices[2].y + 8} textAnchor="start">
+                이어짐 · {continuityAchievedStage}/3
+              </text>
+              <text x={outerStageVertices[1].x} y={outerStageVertices[1].y + 8} textAnchor="end">
+                운영 · {operationsAchievedStage}/3
+              </text>
+            </g>
+          ) : null}
         </>
       ) : null}
 
-      {shouldAnimate ? (
-        <motion.circle
-          cx="60"
-          cy="64"
-          r={coreRadius + 4}
-          fill={palette.light}
-          initial={false}
-          animate={{ opacity: [0.06, glowOpacity, 0.06], scale: [0.92, 1.12, 0.92] }}
-          transition={{ duration: 2.8, repeat: Number.POSITIVE_INFINITY, ease: "easeInOut" }}
-          style={{ transformOrigin: "60px 64px" }}
-        />
-      ) : (
-        <circle cx="60" cy="64" r={coreRadius + 4} fill={palette.light} opacity={glowOpacity * 0.55} />
-      )}
-
-      <motion.g
-        filter={`url(#${id}-core-glow)`}
-        initial={false}
-        animate={shouldAnimate ? { scale: [1, 1.035, 1] } : { scale: 1 }}
-        transition={{ duration: 2.8, repeat: shouldAnimate ? Number.POSITIVE_INFINITY : 0, ease: "easeInOut" }}
-        style={{ transformOrigin: "60px 64px" }}
-      >
-        <polygon
-          points={`60,${64 - coreRadius} ${60 + coreRadius * 0.86},${64 - coreRadius * 0.24} ${60 + coreRadius * 0.62},${64 + coreRadius * 0.78} 60,${64 + coreRadius} ${60 - coreRadius * 0.62},${64 + coreRadius * 0.78} ${60 - coreRadius * 0.86},${64 - coreRadius * 0.24}`}
-          fill={`url(#${id}-core)`}
-          stroke={palette.highlight}
-          strokeOpacity="0.68"
-          strokeWidth="1"
-          strokeLinejoin="round"
-        />
-        <path
-          d={`M60 ${64 - coreRadius} L60 64 L${60 + coreRadius * 0.86} ${64 - coreRadius * 0.24} M60 64 L${60 + coreRadius * 0.62} ${64 + coreRadius * 0.78} M60 64 L${60 - coreRadius * 0.62} ${64 + coreRadius * 0.78} M60 64 L${60 - coreRadius * 0.86} ${64 - coreRadius * 0.24}`}
-          fill="none"
-          stroke={palette.highlight}
-          strokeOpacity="0.44"
-          strokeWidth="0.8"
-        />
-        <motion.ellipse
-          cx={60 - coreRadius * 0.2}
-          cy={64 - coreRadius * 0.3}
-          rx={Math.max(1.2, coreRadius * 0.18)}
-          ry={Math.max(0.8, coreRadius * 0.1)}
-          fill="#ffffff"
-          opacity={0.28 + activityLevel * 0.1}
-          initial={false}
-          animate={
-            shouldAnimate
-              ? { opacity: [0.18 + activityLevel * 0.08, 0.4 + activityLevel * 0.11, 0.18 + activityLevel * 0.08] }
-              : { opacity: 0.28 + activityLevel * 0.1 }
-          }
-          transition={{ duration: 2.3, repeat: shouldAnimate ? Number.POSITIVE_INFINITY : 0, ease: "easeInOut" }}
-        />
-      </motion.g>
+      {showCore ? (
+        <>
+          <g filter={`url(#${id}-core-shadow)`}>
+            <image
+              href={gemAssetPath}
+              x={gemPosition.x}
+              y={gemPosition.y}
+              width={gemDiameter}
+              height={gemDiameter}
+              preserveAspectRatio="xMidYMid meet"
+              data-tier-gem-asset={tierCode}
+              data-tier-gem-emphasis={presentation === "full" ? "panel-primary" : "standard"}
+              data-tier-gem-size="fixed"
+            />
+          </g>
+          <g
+            data-member-triangles="count"
+            data-member-triangle-count={memberTriangleCount}
+            aria-hidden="true"
+          >
+            {MEMBER_TRIANGLE_SLOTS.slice(0, memberTriangleCount).map((slotIndex) => {
+              const triangleX = 60 + (slotIndex - (memberTriangleCount - 1) / 2) * MEMBER_TRIANGLE_SPACING;
+              return (
+                <path
+                  key={slotIndex}
+                  d={MEMBER_TRIANGLE_PATH}
+                  transform={`translate(${triangleX} ${memberTriangleRowY})`}
+                  fill={palette.light}
+                  fillOpacity="0.88"
+                  stroke={GEM_SHADOW_COLOR}
+                  strokeOpacity="0.8"
+                  strokeWidth="0.85"
+                  strokeLinejoin="round"
+                  paintOrder="stroke fill"
+                  vectorEffect="non-scaling-stroke"
+                  data-member-triangle={slotIndex + 1}
+                />
+              );
+            })}
+          </g>
+          <g
+            data-activity-sparkles="count"
+            data-activity-sparkle-count={activitySparkleCount}
+            aria-hidden="true"
+          >
+            {ACTIVITY_SPARKLE_POSITIONS.slice(0, activitySparkleCount).map((sparkle, index) => {
+              const sparkleX = 60 + sparkleOrbitRadius * sparkle.xFactor;
+              const sparkleY = 64 + sparkleOrbitRadius * sparkle.yFactor;
+              return (
+                <g key={index} transform={`translate(${sparkleX} ${sparkleY})`}>
+                  <motion.path
+                    d={ACTIVITY_SPARKLE_PATH}
+                    fill={palette.highlight}
+                    stroke={GEM_SHADOW_COLOR}
+                    strokeOpacity="0.76"
+                    strokeWidth="0.72"
+                    initial={false}
+                    animate={shouldAnimateSparkles
+                      ? { opacity: [0.48, 1, 0.48], rotate: [0, 14, 0], scale: [sparkle.scale * 0.84, sparkle.scale * 1.14, sparkle.scale * 0.84] }
+                      : { opacity: 0.88, rotate: 0, scale: sparkle.scale }}
+                    transition={{
+                      duration: 2.4,
+                      delay: index * 0.26,
+                      repeat: shouldAnimateSparkles ? Number.POSITIVE_INFINITY : 0,
+                      ease: "easeInOut",
+                    }}
+                    style={{ transformBox: "fill-box", transformOrigin: "center" }}
+                    paintOrder="stroke fill"
+                    vectorEffect="non-scaling-stroke"
+                    data-activity-sparkle={index + 1}
+                  />
+                </g>
+              );
+            })}
+          </g>
+        </>
+      ) : null}
     </svg>
   );
 }
